@@ -3,6 +3,8 @@
 - DAO smart contract.
 
 ## Diagram flow
+![image](https://user-images.githubusercontent.com/44410798/172245583-e01f3d29-46f1-4fda-864c-4a52d4e190bc.png)
+
 - A customer can rent a film for 72 hours.
 - If enough VAB(governance token) is in the customer's DAO account then Vabble payment gateway service will process some logic, if not enogh funds, then the streaming service will reject and alert user about unavailable VAB.
 - Vabble audit service will submit periodically the audit actions to DAO contract.
