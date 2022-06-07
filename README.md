@@ -7,12 +7,14 @@
 
 - A customer can rent a film for 72 hours.
 - If enough VAB(governance token) is in the customer's DAO account then Vabble payment gateway service will process some logic, if not enogh funds, then the streaming service will reject and alert user about unavailable VAB.
+
 ## Staking
 - Vab holders must be staking to receive voting rights.
 - Stakers must cast a vote within a 30day period to receive staking reward.
 - Condition. If proposal = zero during 30 day period, everyone receives reward.
 - Otherwise, it is a percentage of proposals voted on. Example. 10 proposals but only voted on 5, 50% of rewards will be issued.
-- 
+
+## Audit Service
 - Vabble audit service will submit periodically the audit actions to DAO contract.
 - DAO contract has ability as follows:
   1) Ability to add definition for films
@@ -23,12 +25,23 @@
     - Auditor governance by the VAB holders:
       - A purposal to change the auditor address will need be a significant amount of VAB to vote on this change. Because this is an attack vector, there will need to be a grade period of 30 days to overturn the purposal. 
         - For example at least 100 million VAB required to pass the governance to change from current auditor address to new address, and then 30 days to overturn the purposal will require double the amount of VAB to vote agenst.
-    - Film Governance by the VAB holders
+ 
+ ## Governance
+ - Film Governance by the VAB holders
       - Vote if a film should be listed on the platform.
         - If the vote is for funding of a film, have the ability to hold the ability to get hold a defined amount of VAB for the film.
         - If the vote is for simply listing a film on the platform and passes with majority vote, the film ID will be added to the smart contract.
   4) Manage the Vault(Treasury).
       - Rewards vault, Revenue vault
+  - If film is already funded, studio will select non funded. Film will go to community Vote. Film ID added to Smart Contract
+  - If film needs funding, studio creates prospoal for film. Proposal goes to community vote. If passes by 51%, goes to funding. If <49% proposal rejected.
+
+ ## FilmBoard
+ - Are whitelisted addresses and voted on by the stakers.
+ - Film board addresses are whitelisted as part of community but whitelist address carry more weight per vote.
+ - Filmboard max weight is 30%
+    - Example: If only half of board vote, that equates to 15%, leaving a remainder of 85% to be made up by community.
+      
 
 ### Deployment
   1) Testnet Rinkeby
