@@ -11,8 +11,8 @@
 ## Staking -
 - Vab holders must be staking to receive voting rights.
 - Stakers must cast a vote within a 30day period to receive staking reward.
-- Condition. If proposal = zero during 30 day period, everyone receives reward.
-- Otherwise, it is a percentage of proposals voted on. Example. 10 proposals but only voted on 5, 50% of rewards will be issued.
+  - Condition. If there are no perposals during the 30 day period from when the user locked, they get the rewards.
+  - Otherwise, it is a percentage of proposals voted on. Example. 10 proposals but only voted on 5, 50% of rewards will be issued.
 - Locking
   - Inital start of staking, there is a 30 days lock on the VAB.
   - After the 30 days, they can claim the rewards.
