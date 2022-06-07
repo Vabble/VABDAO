@@ -33,8 +33,7 @@
 ## Audit Service
 - Vabble audit service will submit periodically the audit actions to DAO contract.
 - DAO contract has ability as follows:
-  1) Ability to add definition for films
-      - Each studio will be able to define the addresses based on % (this can be individuals who the studio agrees to pay a certain % of VAB recieved by the viewers) and NFT address to those who get a % of revenue.
+  1) Ability to add the price of VAB when the video was rented.
   2) Ability to approve actions
       - Move VAB to appropriate accounts and approve actions
   3) Vote by VAB Stakers
@@ -48,6 +47,10 @@
       - **Film Perposals:**
         - If the perposal is for funding of a film, the studio has the ability to set the amount of VAB they are seeking to raise for the film.
         - If the vote is for simply listing a film on the platform without needing funding and passes with majority vote, the status of the film can be listed in the smart contract.
+
+## Studio 
+- After a film is added to the smart contract as sucessfully listed, Each studio will be able to define the addresses based on % (this can be individuals who the studio agrees to pay a certain % of VAB recieved by the viewers) and NFT address to those who get a % of revenue.
+- The studio will also be able to define if they want to accept a static amount of VAB (100 VAB) or if they want to use the Vabble aggregator to get $1 for 100% of the film.
 
 ## Manage the Vault(Treasury).
 - Staking vault and rewards vault will all have properties of how much users will be rewarded, and for these properties to change, there will need to be a governance vote.
