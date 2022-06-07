@@ -3,7 +3,10 @@
 - DAO smart contract.
 - Staking.
 - Audit Service
-- 
+- FilmBoard
+- Deployment
+- Assets store
+
 ## Diagram flow
 ![image](https://user-images.githubusercontent.com/44410798/172245583-e01f3d29-46f1-4fda-864c-4a52d4e190bc.png)
 
@@ -67,9 +70,8 @@
 ### Assets store
   - User
     Customer
-  - Admin
+  - Auditor
     Asset Manager
-
 
 
 - EIP1967 pattern implementation
