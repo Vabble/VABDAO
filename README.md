@@ -38,20 +38,20 @@
         - For example at least 100 million VAB required to pass the governance to change from current auditor address to new address, and then 30 days to overturn the purposal will require double the amount of VAB to vote agenst.
  
  ## Governance
- - Film Governance by the VAB holders
-      - Vote if a film should be listed on the platform.
-        - If the vote is for funding of a film, have the ability to hold the ability to get hold a defined amount of VAB for the film.
-        - If the vote is for simply listing a film on the platform and passes with majority vote, the film ID will be added to the smart contract.
-  4) Manage the Vault(Treasury).
-      - Rewards vault, Revenue vault
-  - If film is already funded, studio will select non funded. Film will go to community Vote. Film ID added to Smart Contract
-  - If film needs funding, studio creates prospoal for film. Proposal goes to community vote. If passes by 51%, goes to funding. If <49% proposal rejected.
+ - All of the properties of the governance shold be able to change with a perposal of more than .
+ - Film Governance are by the film board and VAB Stakers. If passes by >=51%, perposal is accepted. If <=50% proposal rejected.
+      - **Film Perposals:**
+        - If the perposal is for funding of a film, the studio has the ability to set the amount of VAB they are seeking to raise for the film.
+        - If the vote is for simply listing a film on the platform without needing funding and passes with majority vote, the status of the film can be listed in the smart contract.
+
+## Manage the Vault(Treasury).
+- Rewards vault, Revenue vault
 
  ## FilmBoard
  - Are whitelisted addresses and voted on by the stakers.
  - Film board addresses are whitelisted as part of community but whitelist address carry more weight per vote.
- - Filmboard max weight is 30%
-    - Example: If only half of board vote, that equates to 15%, leaving a remainder of 85% to be made up by community.
+  - Filmboard max weight is 30%
+    - _Example:_ If only half of board vote, that equates to 15%, leaving a remainder of 85% to be made up by community.
       
 
 ### Deployment
