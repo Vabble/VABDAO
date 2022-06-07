@@ -8,11 +8,22 @@
 - A customer can rent a film for 72 hours.
 - If enough VAB(governance token) is in the customer's DAO account then Vabble payment gateway service will process some logic, if not enogh funds, then the streaming service will reject and alert user about unavailable VAB.
 
-## Staking
+## Staking -
 - Vab holders must be staking to receive voting rights.
 - Stakers must cast a vote within a 30day period to receive staking reward.
 - Condition. If proposal = zero during 30 day period, everyone receives reward.
 - Otherwise, it is a percentage of proposals voted on. Example. 10 proposals but only voted on 5, 50% of rewards will be issued.
+- Locking
+  - Inital start of staking, there is a 30 days lock on the VAB.
+  - After the 30 days, they can claim the rewards.
+  - If they add more VAB, it increases the lock on the whole balance for 30 days.
+- Staking Rewards
+  - The rewards will be paid at a rate of 0.02% of the available pool balance.
+  - The more weight (More VAB Held) the more of the rewards they get.
+  - The rewards will be based on if they participated in the purposals in day of the lock for 30 days.
+  - If VAB is added, the 30 day lock is reset.
+  - Rewards only become available after the 30 days to calculate if they particitaped or not in the perposals.
+  - Allow the user to relock for each 30 days without having them withdraw, allow them to re-stake.
 
 ## Audit Service
 - Vabble audit service will submit periodically the audit actions to DAO contract.
