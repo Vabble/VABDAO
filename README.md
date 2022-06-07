@@ -50,7 +50,7 @@
         - If the vote is for simply listing a film on the platform without needing funding and passes with majority vote, the status of the film can be listed in the smart contract.
 
 ## Manage the Vault(Treasury).
-- Rewards vault, Revenue vault
+- Staking vault and rewards vault will all have properties of how much users will be rewarded, and for these properties to change, there will need to be a governance vote.
 
  ## FilmBoard
  - Are whitelisted addresses and voted on by the stakers.
