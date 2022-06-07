@@ -40,11 +40,10 @@
       - Move VAB to appropriate accounts and approve actions
   3) Vote by VAB Stakers
     - Auditor governance by the VAB holders:
-      - A purposal to change the auditor address will need be a significant amount of VAB to vote on this change. Because this is an attack vector, there will need to be a grade period of 30 days to overturn the purposal. 
-        - At least 150 million VAB Stakeing required to pass the governance to change from current auditor address to new address over a 30 day period, and then 30 days to dispute the purposal will require double the amount of VAB to vote agenst. (60 Days Total)
+      - A purposal to change the auditor address will need be a significant amount of VAB (_At least 150 million staked VAB_) to vote on this change over a 30 day period. Because this is an attack vector, there will need to be a grade period of 30 days to dispute the purposal. This will require double the amount of VAB Staked to vote agenst. (60 Days Total)
  
  ## Governance
- - All of the properties of the governance shold be able to change with a perposal of more than .
+ - All of the properties of the governance shold be able to change with a perposal of more than **150m** staked VAB.
  - Film Governance are by the **film board** and **VAB Stakers**. If passes by >=51%, perposal is accepted. If <=50% proposal rejected.
       - **Film Perposals:**
         - If the perposal is for funding of a film, the studio has the ability to set the amount of VAB they are seeking to raise for the film.
