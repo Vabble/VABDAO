@@ -1,7 +1,9 @@
 # Vabble DAO Smart contract
 
 - DAO smart contract.
-
+- Staking.
+- Audit Service
+- 
 ## Diagram flow
 ![image](https://user-images.githubusercontent.com/44410798/172245583-e01f3d29-46f1-4fda-864c-4a52d4e190bc.png)
 
@@ -32,14 +34,14 @@
       - Each studio will be able to define the addresses based on % (this can be individuals who the studio agrees to pay a certain % of VAB recieved by the viewers) and NFT address to those who get a % of revenue.
   2) Ability to approve actions
       - Move VAB to appropriate accounts and approve actions
-  3) Vote by VAB holders
+  3) Vote by VAB Stakers
     - Auditor governance by the VAB holders:
       - A purposal to change the auditor address will need be a significant amount of VAB to vote on this change. Because this is an attack vector, there will need to be a grade period of 30 days to overturn the purposal. 
-        - For example at least 100 million VAB required to pass the governance to change from current auditor address to new address, and then 30 days to overturn the purposal will require double the amount of VAB to vote agenst.
+        - At least 150 million VAB Stakeing required to pass the governance to change from current auditor address to new address over a 30 day period, and then 30 days to dispute the purposal will require double the amount of VAB to vote agenst. (60 Days Total)
  
  ## Governance
  - All of the properties of the governance shold be able to change with a perposal of more than .
- - Film Governance are by the film board and VAB Stakers. If passes by >=51%, perposal is accepted. If <=50% proposal rejected.
+ - Film Governance are by the **film board** and **VAB Stakers**. If passes by >=51%, perposal is accepted. If <=50% proposal rejected.
       - **Film Perposals:**
         - If the perposal is for funding of a film, the studio has the ability to set the amount of VAB they are seeking to raise for the film.
         - If the vote is for simply listing a film on the platform without needing funding and passes with majority vote, the status of the film can be listed in the smart contract.
