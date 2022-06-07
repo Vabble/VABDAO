@@ -1,11 +1,13 @@
 # Vabble DAO Smart contract
 
-- DAO smart contract.
-- Staking.
-- Audit Service
-- FilmBoard
-- Deployment
-- Assets store
+- [DAO smart contract](https://github.com/Vabble/dao-sc#diagram-flow)
+- [Staking](https://github.com/Vabble/dao-sc#staking--)
+- [Audit Service](https://github.com/Vabble/dao-sc#audit-service)
+- [Governance](https://github.com/Vabble/dao-sc#governance)
+- [Manage the Vault (Treasury)](https://github.com/Vabble/dao-sc#manage-the-vaulttreasury)
+- [FilmBoard](https://github.com/Vabble/dao-sc#filmboard)
+- [Deployment](https://github.com/Vabble/dao-sc#deployment)
+- [Assets store](https://github.com/Vabble/dao-sc#assets-store)
 
 ## Diagram flow
 ![image](https://user-images.githubusercontent.com/44410798/172245583-e01f3d29-46f1-4fda-864c-4a52d4e190bc.png)
