@@ -18,8 +18,8 @@
   - After the 30 days, they can claim the rewards.
   - If they add more VAB, it increases the lock on the whole balance for 30 days.
 - Staking Rewards
-  - The rewards will be paid at a rate of 0.02% of the available pool balance.
-  - The more weight (More VAB Held) the more of the rewards they get.
+  - The rewards should pay out 0.02% of the available pool balance over a 30 day period.
+  - The more weight (_More VAB Held_) the more of the rewards they get.
   - The rewards will be based on if they participated in the purposals in day of the lock for 30 days.
   - If VAB is added, the 30 day lock is reset.
   - Rewards only become available after the 30 days to calculate if they particitaped or not in the perposals.
