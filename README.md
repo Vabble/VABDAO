@@ -44,7 +44,7 @@
  
  ## Governance
  - All of the properties of the governance shold be able to change with a perposal of more than **150m** staked VAB.
- - Film Governance are by the **film board** and **VAB Stakers**. If passes by >=51%, perposal is accepted. If <=50% proposal rejected.
+ - Film Governance are by the **film board** and **VAB Stakers**. If passes by >=51%, perposal is accepted. If <=49% proposal rejected.
       - **Film Perposals:**
         - If the perposal is for funding of a film, the studio has the ability to set the amount of VAB they are seeking to raise for the film.
         - If the vote is for simply listing a film on the platform without needing funding and passes with majority vote, the status of the film can be listed in the smart contract.
