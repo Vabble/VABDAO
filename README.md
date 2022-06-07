@@ -7,6 +7,12 @@
 
 - A customer can rent a film for 72 hours.
 - If enough VAB(governance token) is in the customer's DAO account then Vabble payment gateway service will process some logic, if not enogh funds, then the streaming service will reject and alert user about unavailable VAB.
+## Staking
+- Vab holders must be staking to receive voting rights.
+- Stakers must cast a vote within a 30day period to receive staking reward.
+- Condition. If proposal = zero during 30 day period, everyone receives reward.
+- Otherwise, it is a percentage of proposals voted on. Example. 10 proposals but only voted on 5, 50% of rewards will be issued.
+- 
 - Vabble audit service will submit periodically the audit actions to DAO contract.
 - DAO contract has ability as follows:
   1) Ability to add definition for films
