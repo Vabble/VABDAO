@@ -28,7 +28,7 @@
   - The rewards should pay out 0.02% of the available pool balance over a 30 day period.
     - Only for film funding votes: 50% of the reward will be locked until the film is funded, and released based on film metrics.
     - Metrics:
-      - Average revenue per film (_Look at Audit Service -> #5_), then if the film preforms better than over 50% of the average film in the smart contract, that reward would be sent back to the address up to 100% of the reward, otherwise it will be sent to the rewards pool.
+      - Average revenue per film (_Look at Audit Service -> #4_), then if the film preforms better than over 50% of the average film in the smart contract, that reward would be sent back to the address up to 100% of the reward, otherwise it will be sent to the rewards pool.
       - Have a check method that any user can call that will loop through the funded films, and check to see if the performance metric has been meet on all funded films. Then any films where not meet for over 2 years, then the rewards get released back to the rewards pool. _(Designed so that the user have to pay the fee)_
         - Exception: If the film is delisted before that 2 years, then the funds are released back to the rewards pool. 
   - The more weight (_More VAB Held_) the more of the rewards they get.
@@ -49,7 +49,7 @@
   3) Vote by VAB Stakers
     - Auditor governance by the VAB holders:
       - A proposal to change the auditor address will need be a significant amount of VAB (_At least 150 million staked VAB_) to vote on this change over a 30 day period. Because this is an attack vector, there will need to be a grade period of 30 days to dispute the proposal. This will require double the amount of VAB Staked to vote agents. (60 Days Total)
-  6) Average over film revenue once every week.
+  4) Average over film revenue once every week.
  
  ## Governance
  - To start **ANY** proposal we will charge $100 worth of VAB using the UniswapRouter as a price aggregator, this VAB will go into the rewards pool.
