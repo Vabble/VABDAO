@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -10,251 +10,259 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 // import "../interfaces/IRentFilm.sol";
 import "../libraries/Ownable.sol";
 import "../libraries/RentFilmHelper.sol";
+import "hardhat/console.sol";
 
 contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
-
-    event FilmsRegistered(uint256[] indexed filmIds);
+    
+    event FilmsProposalCreated(uint256[] indexed filmIds);    
+    event FilmApproved(uint256 filmId);
+    event FilmsFinalSet(uint256[] filmIds);
     event FilmsRented(uint256[] indexed filmIds, address customer);
-    event FilmsUpdated(uint256[] indexed _filmIds, uint256[] _watchPercents);
-    event CustomerDeopsited(uint256 amount, address token, address customer);
-    event CustomerWithdrawed(uint256 amount, address token, address customer);
+    event FilmsUpdatedByStudio(uint256[] indexed filmIds);
+    event CustomerDeopsited(address customer, address token, uint256 amount);
+    event CustomerWithdrawed(address customer, address token, uint256 amount);
 
     enum Status {
-        LISTED,
-        RENTED,
-        EXPIRED,
-        DESTROYED
-    }
-
-    struct RentRules {
-        uint256 rentPeriod;
+        LISTED,   // proposal created by studio
+        APPROVED // approved by vote from VAB holders
     }
 
     struct UserInfo {
-        uint256 amount;
+        uint256 amount;          // current user balance in DAO
+        uint256 withdrawAmount;  // withdraw amount coming from user
     }
 
+    // 1% = 100, 100% = 10000
     struct Film {
         address[] studioActors; // addresses who studio define to pay revenue
         uint256[] sharePercents;// percents(1% = 100) that studio defines to pay revenue for each actor
         uint256 rentPrice;      // amount that a customer rents a film
         uint256 startTime;      // time that a customer rents a film
-        uint256 watchPercent;   // percent(100% = 10000) that a customer watch the film
-        address customer;       // address of customer  
-        RentRules rentRules;
+        address studio;         // address of studio who is admin of film 
         Status status;          // status of film
     }
 
-    IERC20 public immutable PAYOUT_TOKEN; // Vab token
+    IERC20 public immutable PAYOUT_TOKEN;     // Vab token    
 
-    address public DAOManager; // DAO manager
+    address immutable public VOTE;            // Vote contract address
+    address public DAOFee;                    // address for transferring DAO Fee
 
-    uint256 public constant GRACE_PERIOD = 30 days; // 30 days
+    uint256[] private proposalFilmIds;    
+    uint256[] public finalFilmIds;
 
-    uint256 public constant EXPIRE_PERIOD = 72 hours; // 72 hours
-
-    uint256[] private registeredFilmIds;
-
-    mapping(uint256 => Film) public filmInfo; // Registered total films(filmId => Film)
-
+    mapping(uint256 => Film) public filmInfo; // Total films(filmId => Film)
     mapping(address => uint256[]) public customerFilmIds; // Rented film IDs for a customer(customer => fimlId[])
-
     mapping(address => UserInfo) public userInfo;
 
-    Counters.Counter public filmIds; // filmId is from No.1
+    Counters.Counter public filmIds;          // filmId is from No.1
+
+    modifier onlyVote() {
+        require(msg.sender == VOTE, "caller is not the vote contract");
+        _;
+    }
 
     constructor(
-        address _daoManager,
-        address _payoutToken
+        address _daoFee,
+        address _payoutToken,
+        address _voteContract
     ) {        
-        require(_daoManager != address(0), "_daoManager: ZERO address");
-        DAOManager = _daoManager;
+        require(_daoFee != address(0), "_daoFee: ZERO address");
+        DAOFee = _daoFee;
         require(_payoutToken != address(0), "_payoutToken: ZERO address");
         PAYOUT_TOKEN = IERC20(_payoutToken);
+        require(_voteContract != address(0), "_voteContract: ZERO address");
+        VOTE = _voteContract;
     }
 
-    /// @notice Register multiple films by Admin
-    function registerFilms(
-        Film[] calldata _films
-    ) external onlyAdmin nonReentrant {
-        require(_films.length > 0, "registerFilms: Invalid films");      
+    /// @notice Create Proposal with rentPrice for multiple films by studio
+    function createProposalFilms(
+        uint256[] calldata _proposalfilms
+    ) external onlyStudio nonReentrant {
+        require(_proposalfilms.length > 0, "Proposal: Invalid films length");      
 
-        for (uint256 i = 0; i < _films.length; i++) {
-            registeredFilmIds[i] = _registerFilm(
-                    _films[i].studioActors, 
-                    _films[i].sharePercents, 
-                    _films[i].rentPrice,
-                    _films[i].rentRules.rentPeriod
-                );
+        for (uint256 i = 0; i < _proposalfilms.length; i++) {
+            proposalFilmIds.push(_proposalFilm(_proposalfilms[i])); 
         }
         
-        emit FilmsRegistered(registeredFilmIds);
+        emit FilmsProposalCreated(proposalFilmIds);
     }
 
-    /// @notice Register a film
-    function _registerFilm(
-        address[] calldata _studioActors, 
-        uint256[] calldata _sharePercents, 
-        uint256 _rentPrice,
-        uint256 _rentPeriod
-    ) private returns(uint256) {
-        require(_studioActors.length != _sharePercents.length, "_registerFilm: Bad items length");
-
+    /// @notice Create a Proposal for a film
+    function _proposalFilm(uint256 _rentPrice) private returns(uint256) {
         filmIds.increment();
-        uint256 filmID = filmIds.current();
+        uint256 filmId = filmIds.current();
 
-        filmInfo[filmID] = Film({
-            studioActors: _studioActors,
-            sharePercents: _sharePercents,
-            rentPrice: _rentPrice,
-            startTime: 0,
-            watchPercent: 0,
-            customer: address(0),
-            rentRules: RentRules({rentPeriod: _rentPeriod}),
-            status: Status.LISTED
-        });
+        Film storage _filmInfo = filmInfo[filmId];
+        _filmInfo.rentPrice = _rentPrice;
 
-        return filmID;
+        return filmId;
     }
-    
-    /// @notice Update multiple films with watched percents to a customer
-    function updateFilms(
-        uint256[] calldata _filmIds,
-        uint256[] calldata _watchPercents,
-        address _customer
-    ) external onlyAdmin nonReentrant {
-        require(_customer != address(0), "updateFilms: Zero customer address");
-        require(_filmIds.length == _watchPercents.length, "updateFilms: Invalid item length");
 
-        for (uint256 i = 0; i < _filmIds.length; i++) {
-            if(filmInfo[_filmIds[i]].status == Status.RENTED) {
+    /// @notice Update multiple films with param by studio
+    function updateFilmsByStudio(
+        bytes[] calldata _updateFilms
+    ) external onlyStudio nonReentrant {
+        require(_updateFilms.length > 0, "updateFilms: Invalid item length");
 
-                filmInfo[_filmIds[i]].watchPercent = _watchPercents[i];   
+        uint256[] memory updateItemIDs = new uint256[](_updateFilms.length);
+        for (uint256 i; i < _updateFilms.length; i++) {            
+            
+            (
+                uint256 filmId_, 
+                uint256[] memory sharePercents_, 
+                address[] memory studioActors_
+            ) = abi.decode(_updateFilms[i], (uint256, uint256[], address[]));
 
-                if(_isExpired(_filmIds[i]) || _watchPercents[i] == 10000) {
-                    filmInfo[_filmIds[i]].status = Status.EXPIRED;                
+            Film storage _filmInfo = filmInfo[filmId_];
+            _filmInfo.studioActors = studioActors_;   
+            _filmInfo.sharePercents = sharePercents_;   
 
-                    uint256 payout = _getPayoutFor(_filmIds[i], _watchPercents[i]);
-                    userInfo[_customer].amount -= payout; 
+            updateItemIDs[i] = filmId_;
+        }   
 
-                    for(uint256 k = 0; k < filmInfo[_filmIds[i]].studioActors.length; k++) {
-                        userInfo[filmInfo[_filmIds[i]].studioActors[k]].amount += _getShareAmount(payout, _filmIds[i], k);
+        emit FilmsUpdatedByStudio(updateItemIDs);
+    }
 
-                        // ToDo transfer revenue to actors when they ask
-                    }
-                }                  
+    /// @notice Approve a film from vote contract
+    function ApproveFilm(uint256 _filmId) external onlyVote {
+        require(_filmId > 0, "ApproveFilm: Invalid filmId");      
+
+        filmInfo[_filmId].status = Status.APPROVED;
+        
+        emit FilmApproved(_filmId);
+    }
+
+    /// @notice Update multiple films with watched percents by Auditor
+    function finalSetFilms(
+        bytes[] calldata _finalFilms
+    ) external onlyAuditor nonReentrant {
+        
+        require(_finalFilms.length > 0, "finalSetFilms: Bad items length");
+
+        for (uint256 i = 0; i < _finalFilms.length; i++) {
+            _finalSetFilms(_finalFilms[i]);
+        }
+
+        emit FilmsFinalSet(finalFilmIds);
+    }
+
+    /// @notice Set final films for a customer with watched percents
+    function _finalSetFilms(        
+        bytes calldata _filmData
+    ) private returns(uint256[] memory) {
+        (   
+            address customer_,
+            uint256[] memory filmIds_,
+            uint256[] memory watchPercents_
+        ) = abi.decode(_filmData, (address, uint256[], uint256[]));
+        
+        require(customer_ != address(0), "_finalSetFilms: Zero customer address");
+
+        require(filmIds_.length == watchPercents_.length, "_finalSetFilms: Invalid items length");
+
+        // Assgin the VAB token to actors based on share(%) and watch(%)
+        for (uint256 i = 0; i < filmIds_.length; i++) {
+            if(filmInfo[filmIds_[i]].status == Status.APPROVED) {       
+
+                uint256 payout = _getPayoutFor(filmIds_[i], watchPercents_[i]);
+                userInfo[customer_].amount -= payout; 
+
+                for(uint256 k = 0; k < filmInfo[filmIds_[i]].studioActors.length; k++) {
+                    userInfo[filmInfo[filmIds_[i]].studioActors[k]].amount += _getShareAmount(payout, filmIds_[i], k);
+                }
+
+                finalFilmIds.push(filmIds_[i]);
             }
         }   
 
-        emit FilmsUpdated(_filmIds, _watchPercents);
+        // Transfer withdraw to user if he asked
+        transferWithdraw(customer_);
+
+        return finalFilmIds;
     }
 
-    /// @notice Rent multiple films to a customer
-    function rentFilms(
-        uint256[] calldata _filmIds,
-        address _customer
-    ) external onlyAdmin nonReentrant {
-        require(_customer != address(0), "rentFilms: Zero customer address");
-        require(_filmIds.length > 0, "rentFilms: Invalid film Ids");
-
-        for (uint256 i = 0; i < _filmIds.length; i++) {
-            if((filmInfo[_filmIds[i]].status == Status.LISTED || filmInfo[_filmIds[i]].status == Status.EXPIRED) && 
-            userInfo[_customer].amount >= filmInfo[_filmIds[i]].rentPrice) {
-
-                customerFilmIds[_customer].push(
-                    _rentFilm(_filmIds[i], _customer)
-                );
-            }
-        }   
-
-        emit FilmsRented(customerFilmIds[_customer], _customer);
-    }
-
-    /// @notice Rent a film to a customer
-    function _rentFilm(
-        uint256 _filmId,
-        address _customer
-    ) private returns(uint256) {
-        require(_filmId > 0, "_rentFilm: Invalid film Id");
-
-        filmInfo[_filmId].status = Status.RENTED;
-        filmInfo[_filmId].customer = _customer;
-        filmInfo[_filmId].startTime = block.timestamp;        
-
-        return _filmId;
-    }
-
-    /// @notice Deposit VAB token for customer from Admin
+    /// @notice Deposit VAB token by customer
     function customerDeopsit(uint256 _amount) external nonReentrant returns(uint256) {
-        require(msg.sender != address(0), "Invalid customer address");
-        require(_amount > 0, "Invalid deposit amount");
-        require(PAYOUT_TOKEN.balanceOf(msg.sender) > _amount, "Insufficient amount");
+        require(msg.sender != address(0), "customerDeopsit: Invalid customer address");
+        require(_amount > 0 && PAYOUT_TOKEN.balanceOf(msg.sender) > _amount, "customerDeopsit: Insufficient amount");
 
         PAYOUT_TOKEN.transferFrom(msg.sender, address(this), _amount);
-
         userInfo[msg.sender].amount += _amount;
 
-        emit CustomerDeopsited(_amount, address(PAYOUT_TOKEN), msg.sender);
+        emit CustomerDeopsited(msg.sender, address(PAYOUT_TOKEN), _amount);
 
         return _amount;
     }
 
-    /// @notice Withdraw VAB token by customer
-    function customerWithdraw(uint256 _amount, address _customer) external onlyAdmin nonReentrant {
-        require(_customer != address(0), "customerWithdraw: Invalid customer address");
-        require(_amount > 0 && _amount <= userInfo[_customer].amount, "customerWithdraw: Insufficient amount");
+    /// @notice Pending Withdraw VAB token by customer
+    function customerWithdraw(uint256 _amount) external nonReentrant {
+        require(msg.sender != address(0), "customerWithdraw: Invalid customer address");
+        require(_amount > 0 && _amount <= userInfo[msg.sender].amount, "customerWithdraw: Insufficient amount");
 
-        PAYOUT_TOKEN.transfer(msg.sender, _amount);
-        userInfo[msg.sender].amount -= _amount;
+        // PAYOUT_TOKEN.transfer(msg.sender, _amount);
+        // userInfo[msg.sender].amount -= _amount;
 
-        emit CustomerWithdrawed(_amount, address(PAYOUT_TOKEN), msg.sender);
+        userInfo[msg.sender].withdrawAmount = _amount;
+        emit CustomerWithdrawed(msg.sender, address(PAYOUT_TOKEN), _amount);
     }
 
-    /// @notice Get user(customer, actors...) balance of DAO contract
-    function getUserAmount(address _user) external view returns (uint256) {
+    /// @notice Transfer payment to user
+    function transferWithdraw(address _to) private returns(bool flag_) {
+        uint256 payAmount = userInfo[_to].withdrawAmount;
+        require(payAmount > 0 && payAmount <= userInfo[_to].amount, "transferPayment: Insufficient amount");
+
+        PAYOUT_TOKEN.transfer(_to, payAmount);
+
+        userInfo[_to].amount -= payAmount;
+        userInfo[_to].withdrawAmount = 0;
+
+        emit CustomerWithdrawed(msg.sender, address(PAYOUT_TOKEN), payAmount);
+
+        flag_ = true;        
+    }
+
+    /// @notice Check user balance in DAO if enough for rent
+    function checkUserBalance(address _user, uint256[] calldata _filmIds) public view returns(bool) {
+        uint256 totalRentPrice = 0;
+        for(uint256 i; i < _filmIds.length; i++) {
+            totalRentPrice += filmInfo[_filmIds[i]].rentPrice;
+        }        
+
+        if(userInfo[_user].amount >= totalRentPrice) return true;
+        return false;
+    }
+
+    /// @notice Get user balance in DAO
+    function getUserBalance(address _user) public view returns(uint256) {
         return userInfo[_user].amount;
     }
 
-    /// @notice Get user balance of DAO contract
-    function getFilmCountRented(address _customer) external view returns (uint256) {
-        return customerFilmIds[_customer].length;
-    }
-
     /// @notice Get film item based on Id
-    function getFilmItem(uint256 _filmId) external view 
+    function getFilmById(uint256 _filmId) external view 
     returns (
         address[] memory studioActors_, 
         uint256[] memory sharePercents_, 
         uint256 rentPrice_,
         uint256 startTime_,
-        address customer_,
+        address studio_,
         Status status_
     ) {
-        studioActors_ = filmInfo[_filmId].studioActors;
-        sharePercents_ = filmInfo[_filmId].sharePercents;
-        rentPrice_ = filmInfo[_filmId].rentPrice;
-        startTime_ = filmInfo[_filmId].startTime;
-        customer_ = filmInfo[_filmId].customer;
-        status_ = filmInfo[_filmId].status;
-    }
-
-    /// @notice Get the Ids registered for films
-    function getRegisteredFilmIds() external view returns (uint256[] memory) {
-        return registeredFilmIds;
+        Film storage _filmInfo = filmInfo[_filmId];
+        studioActors_ = _filmInfo.studioActors;
+        sharePercents_ = _filmInfo.sharePercents;
+        rentPrice_ = _filmInfo.rentPrice;
+        startTime_ = _filmInfo.startTime;
+        studio_ = _filmInfo.studio;
+        status_ = _filmInfo.status;
     }
 
     /// @notice Get payout amount based on watched percent for a film
-    function _getPayoutFor(uint256 _filmId, uint256 _watchPercent) private returns(uint256) {
+    function _getPayoutFor(uint256 _filmId, uint256 _watchPercent) private view returns(uint256) {
         return filmInfo[_filmId].rentPrice * _watchPercent / 10000;
     }
 
-    function _getShareAmount(uint256 _payout, uint256 _filmId, uint256 _k) private returns(uint256) {
+    function _getShareAmount(uint256 _payout, uint256 _filmId, uint256 _k) private view returns(uint256) {
         return _payout * filmInfo[_filmId].sharePercents[_k] / 10000;
-    }
-
-    /// @notice Check if expired or not based on 72 hours
-    function _isExpired(uint256 _filmId) private returns(bool) {
-        return block.timestamp - filmInfo[_filmId].startTime >= EXPIRE_PERIOD;
     }    
 }

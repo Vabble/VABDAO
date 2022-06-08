@@ -23,8 +23,8 @@
     "prettier": "prettier --write scripts/**/*.js && prettier --write test/**/*.js && prettier --write contracts/**/*.sol"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Vabble",
+  "license": "MIT",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
     "@nomiclabs/hardhat-etherscan": "^2.1.4",

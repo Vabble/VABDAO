@@ -1,48 +1,46 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 contract Ownable {
-    address public manager;
+    address public auditor;
+    mapping(address => bool) private studioList;
 
-    mapping(address => bool) private admins; 
-
-    event AddAdmin(address indexed _setter, address indexed _admin);
-    event RemoveAdmin(address indexed _setter, address indexed _admin);
+    event StudioAdded(address indexed _setter, address indexed _studio);
+    event StudioRemoved(address indexed _setter, address indexed _studio);
 
     constructor() {
-        manager = msg.sender;
+        auditor = msg.sender;
     }
 
-    modifier onlyManager() {
-        require(msg.sender == manager, "Ownable: caller is not the manager");
+    modifier onlyAuditor() {
+        require(msg.sender == auditor, "Ownable: caller is not the auditor");
         _;
     }
 
-    modifier onlyAdmin() {
-        require(admins[msg.sender], "Ownable: caller is not the admin");
+    modifier onlyStudio() {
+        require(studioList[msg.sender], "Ownable: caller is not the studio");
         _;
     }
 
-    function isAdmin(address _admin) public view returns (bool) {
-        return admins[_admin];
-    }
-    function addAdmin(address _admin) external onlyManager {
-        require(!isAdmin(_admin), "Already admin");
-        admins[_admin] = true;
-
-        emit AddAdmin(msg.sender, _admin);
+    function transferAuditor(address _newAuditor) external onlyAuditor {
+        require(_newAuditor != address(0), "Ownable: Zero newAuditor address");
+        auditor = _newAuditor;
     }
 
-    function removeAdmin(address _admin) external onlyManager {
-        require(isAdmin(_admin), "This address is not admin");
-        admins[_admin] = false;
-
-        emit RemoveAdmin(msg.sender, _admin);
+    function isStudio(address _studio) public view returns (bool) {
+        return studioList[_studio];
     }
 
-    function transferManager(address _newManager) external onlyManager {
-        require(_newManager != address(0), "Ownable: Zero newManager address");
-        manager = _newManager;
+    function addStudio(address _studio) external onlyAuditor {
+        require(!isStudio(_studio), "addStudio: Already studio");
+        studioList[_studio] = true;
+        emit StudioAdded(msg.sender, _studio);
+    }
+
+    function removeStudio(address _studio) external onlyAuditor {
+        require(isStudio(_studio), "removeStudio: No studio");
+        studioList[_studio] = false;
+        emit StudioRemoved(msg.sender, _studio);
     }
 }
