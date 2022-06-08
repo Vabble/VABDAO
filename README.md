@@ -66,13 +66,14 @@
 ## Manage the Vault(Treasury).
 - Staking vault and rewards vault will all have properties of how much users will be rewarded, and for these properties to change, there will need to be a governance vote.
 
-## FilmBoard - (Only for funding of films)
+## FilmBoard
  - Are whitelisted addresses and voted on by the stakers.
- - Film board addresses are whitelisted as part of community but whitelist address carry more weight per vote.
+  - A perposal is created with the case to be added to the film board, where stakers can vote.
+ - Film board addresses carry more weight per vote **only for funding of films**.
   - Filmboard max weight is 30%
     - _Example:_ If only half of board vote, that equates to 15%, leaving a remainder of 85% to be made up by community.
- - Rewards to the film board 25% higher than the community rewards for voting.
- - If a member of the film board does vote on any proposal over 3 months amount of time, the person is removed from the film board.
+ - Rewards to the film board 25% higher than the community rewards for voting only for funding of films.
+ - If a member of the film board does **NOT** vote on any proposal over 3 months amount of time, the person is removed from the film board.
 
 ## Funding (Launch Pad)
  - _To Be Defined._
