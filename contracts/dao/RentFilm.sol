@@ -95,6 +95,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
         Film storage _filmInfo = filmInfo[filmId];
         _filmInfo.rentPrice = _rentPrice;
+        _filmInfo.status = Status.LISTED;
 
         return filmId;
     }
@@ -264,5 +265,13 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
     function _getShareAmount(uint256 _payout, uint256 _filmId, uint256 _k) private view returns(uint256) {
         return _payout * filmInfo[_filmId].sharePercents[_k] / 10000;
+    }    
+
+    function getUserAmount(address _user) external view returns(uint256 amount_) {
+        amount_ = userInfo[_user].amount;
+    }    
+
+    function getProposalFilmIds() external view returns(uint256[] memory) {
+        return proposalFilmIds;
     }    
 }
