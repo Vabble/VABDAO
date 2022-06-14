@@ -6,5 +6,5 @@ interface IRentFilm {
 
     function getProposalFilmIds() external view returns(uint256[] memory);
 
-    function ApproveFilm(uint256 _filmId) external;
+    function approveFilm(uint256 _filmId) external;
 }

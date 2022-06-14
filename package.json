@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npx hardhat test",
-    "test:local": "npx hardhat test --network hardhat",
+    "test": "hardhat test test/main.test.js --network hardhat",
     "compile": "npx hardhat compile",
     "mainnet:deploy": "hardhat --network mainnet deploy",
     "mainnet:verify": "hardhat --network mainnet etherscan-verify --solc-input",

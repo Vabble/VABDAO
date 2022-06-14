@@ -7,25 +7,27 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-// import "../interfaces/IRentFilm.sol";
 import "../libraries/Ownable.sol";
-import "../libraries/RentFilmHelper.sol";
+import "../libraries/Helper.sol";
 import "hardhat/console.sol";
 
 contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
     
-    event FilmsProposalCreated(uint256[] indexed filmIds);    
+    event FilmsProposalCreated(uint256[] indexed filmIds, address studio);
     event FilmApproved(uint256 filmId);
     event FilmsFinalSet(uint256[] filmIds);
     event FilmsRented(uint256[] indexed filmIds, address customer);
-    event FilmsUpdatedByStudio(uint256[] indexed filmIds);
-    event CustomerDeopsited(address customer, address token, uint256 amount);
-    event CustomerWithdrawed(address customer, address token, uint256 amount);
+    event FilmsUpdatedByStudio(uint256[] indexed filmIds, address studio);
+    event CustomerDeposited(address customer, address token, uint256 depositAmount);
+    event WithdrawTransferred(address customer, address token, uint256 withdrawAmount);
+    event CustomerRequestWithdrawed(address customer, address token, uint256 amount);
+    
 
     enum Status {
-        LISTED,   // proposal created by studio
-        APPROVED // approved by vote from VAB holders
+        LISTED,           // proposal created by studio
+        LISTING_APPROVED, // approved for listing by vote from VAB holders
+        FUNDING_APPROVED  // approved for funding by vote from VAB holders
     }
 
     struct UserInfo {
@@ -49,6 +51,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     address public DAOFee;                    // address for transferring DAO Fee
 
     uint256[] private proposalFilmIds;    
+    uint256[] private updatedFilmIds;    
     uint256[] public finalFilmIds;
 
     mapping(uint256 => Film) public filmInfo; // Total films(filmId => Film)
@@ -85,7 +88,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
             proposalFilmIds.push(_proposalFilm(_proposalfilms[i])); 
         }
         
-        emit FilmsProposalCreated(proposalFilmIds);
+        emit FilmsProposalCreated(proposalFilmIds, msg.sender);
     }
 
     /// @notice Create a Proposal for a film
@@ -95,6 +98,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
         Film storage _filmInfo = filmInfo[filmId];
         _filmInfo.rentPrice = _rentPrice;
+        _filmInfo.studio = msg.sender;
         _filmInfo.status = Status.LISTED;
 
         return filmId;
@@ -106,9 +110,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     ) external onlyStudio nonReentrant {
         require(_updateFilms.length > 0, "updateFilms: Invalid item length");
 
-        uint256[] memory updateItemIDs = new uint256[](_updateFilms.length);
-        for (uint256 i; i < _updateFilms.length; i++) {            
-            
+        for (uint256 i; i < _updateFilms.length; i++) {        
             (
                 uint256 filmId_, 
                 uint256[] memory sharePercents_, 
@@ -119,93 +121,95 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
             _filmInfo.studioActors = studioActors_;   
             _filmInfo.sharePercents = sharePercents_;   
 
-            updateItemIDs[i] = filmId_;
+            updatedFilmIds.push(filmId_);
         }   
 
-        emit FilmsUpdatedByStudio(updateItemIDs);
+        emit FilmsUpdatedByStudio(updatedFilmIds, msg.sender);
     }
 
     /// @notice Approve a film from vote contract
-    function ApproveFilm(uint256 _filmId) external onlyVote {
-        require(_filmId > 0, "ApproveFilm: Invalid filmId");      
+    function approveFilm(uint256 _filmId) external onlyVote {
+        require(_filmId > 0, "ApproveFilm: Invalid filmId"); 
 
-        filmInfo[_filmId].status = Status.APPROVED;
+        filmInfo[_filmId].status = Status.LISTING_APPROVED;
         
         emit FilmApproved(_filmId);
     }
 
     /// @notice Update multiple films with watched percents by Auditor
-    function finalSetFilms(
+    function setFinalFilms(
         bytes[] calldata _finalFilms
     ) external onlyAuditor nonReentrant {
         
         require(_finalFilms.length > 0, "finalSetFilms: Bad items length");
-
+        
         for (uint256 i = 0; i < _finalFilms.length; i++) {
-            _finalSetFilms(_finalFilms[i]);
+            _setFinalFilm(_finalFilms[i]);
         }
 
         emit FilmsFinalSet(finalFilmIds);
     }
 
     /// @notice Set final films for a customer with watched percents
-    function _finalSetFilms(        
+    function _setFinalFilm(        
         bytes calldata _filmData
-    ) private returns(uint256[] memory) {
+    ) private {
         (   
             address customer_,
             uint256[] memory filmIds_,
             uint256[] memory watchPercents_
         ) = abi.decode(_filmData, (address, uint256[], uint256[]));
         
-        require(customer_ != address(0), "_finalSetFilms: Zero customer address");
-
-        require(filmIds_.length == watchPercents_.length, "_finalSetFilms: Invalid items length");
+        require(customer_ != address(0), "_setFinalFilm: Zero customer address");
+        require(userInfo[customer_].amount > 0, "_setFinalFilm: Zero balance");
+        require(filmIds_.length == watchPercents_.length, "_setFinalFilm: Invalid items length");
 
         // Assgin the VAB token to actors based on share(%) and watch(%)
         for (uint256 i = 0; i < filmIds_.length; i++) {
-            if(filmInfo[filmIds_[i]].status == Status.APPROVED) {       
+            // Todo should check again with listing_approved or funding_approved
+            if(filmInfo[filmIds_[i]].status == Status.LISTING_APPROVED) {       
 
                 uint256 payout = _getPayoutFor(filmIds_[i], watchPercents_[i]);
-                userInfo[customer_].amount -= payout; 
+                if(payout > 0 && userInfo[customer_].amount >= payout) {
+                    userInfo[customer_].amount -= payout; 
 
-                for(uint256 k = 0; k < filmInfo[filmIds_[i]].studioActors.length; k++) {
-                    userInfo[filmInfo[filmIds_[i]].studioActors[k]].amount += _getShareAmount(payout, filmIds_[i], k);
-                }
+                    for(uint256 k = 0; k < filmInfo[filmIds_[i]].studioActors.length; k++) {
+                        userInfo[filmInfo[filmIds_[i]].studioActors[k]].amount += _getShareAmount(payout, filmIds_[i], k);
+                    }
 
-                finalFilmIds.push(filmIds_[i]);
+                    finalFilmIds.push(filmIds_[i]);
+                }                
             }
         }   
 
         // Transfer withdraw to user if he asked
-        transferWithdraw(customer_);
-
-        return finalFilmIds;
+        if(userInfo[customer_].withdrawAmount > 0) {
+            if(userInfo[customer_].withdrawAmount <= userInfo[customer_].amount) {
+                transferWithdraw(customer_);
+            }            
+        }
     }
 
     /// @notice Deposit VAB token by customer
     function customerDeopsit(uint256 _amount) external nonReentrant returns(uint256) {
-        require(msg.sender != address(0), "customerDeopsit: Invalid customer address");
-        require(_amount > 0 && PAYOUT_TOKEN.balanceOf(msg.sender) > _amount, "customerDeopsit: Insufficient amount");
+        require(msg.sender != address(0), "customerDeopsit: Zero customer address");
+        require(_amount > 0 && PAYOUT_TOKEN.balanceOf(msg.sender) >= _amount, "customerDeopsit: Insufficient amount");
 
         PAYOUT_TOKEN.transferFrom(msg.sender, address(this), _amount);
         userInfo[msg.sender].amount += _amount;
 
-        emit CustomerDeopsited(msg.sender, address(PAYOUT_TOKEN), _amount);
+        emit CustomerDeposited(msg.sender, address(PAYOUT_TOKEN), _amount);
 
         return _amount;
     }
 
     /// @notice Pending Withdraw VAB token by customer
-    function customerWithdraw(uint256 _amount) external nonReentrant {
-        require(msg.sender != address(0), "customerWithdraw: Invalid customer address");
-        require(_amount > 0 && _amount <= userInfo[msg.sender].amount, "customerWithdraw: Insufficient amount");
-
-        // PAYOUT_TOKEN.transfer(msg.sender, _amount);
-        // userInfo[msg.sender].amount -= _amount;
+    function customerRequestWithdraw(uint256 _amount) external nonReentrant {
+        require(msg.sender != address(0), "customerRequestWithdraw: Invalid customer address");
+        require(_amount > 0 && _amount <= userInfo[msg.sender].amount, "customerRequestWithdraw: Insufficient amount");
 
         userInfo[msg.sender].withdrawAmount = _amount;
-        emit CustomerWithdrawed(msg.sender, address(PAYOUT_TOKEN), _amount);
+        emit CustomerRequestWithdrawed(msg.sender, address(PAYOUT_TOKEN), _amount);
     }
 
     /// @notice Transfer payment to user
@@ -218,7 +222,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         userInfo[_to].amount -= payAmount;
         userInfo[_to].withdrawAmount = 0;
 
-        emit CustomerWithdrawed(msg.sender, address(PAYOUT_TOKEN), payAmount);
+        emit WithdrawTransferred(_to, address(PAYOUT_TOKEN), payAmount);
 
         flag_ = true;        
     }
@@ -267,11 +271,28 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         return _payout * filmInfo[_filmId].sharePercents[_k] / 10000;
     }    
 
-    function getUserAmount(address _user) external view returns(uint256 amount_) {
+    function sliceUint(bytes memory bs, uint256 start) internal pure returns(uint) {
+        require(bs.length >= start + 32, "slicing out of range");
+        uint x;
+        assembly {
+            x := mload(add(bs, add(0x20, start)))
+        }
+        return x;
+    }
+
+    /// @notice Get VAB amount of a user
+    function getUserAmount(address _user) external view returns(uint256 amount_, uint256 withdrawAmount_) {
         amount_ = userInfo[_user].amount;
+        withdrawAmount_ = userInfo[_user].withdrawAmount;
     }    
 
+    /// @notice Get proposal film Ids
     function getProposalFilmIds() external view returns(uint256[] memory) {
         return proposalFilmIds;
     }    
+
+    /// @notice Get proposal film Ids updated
+    function getUpdatedFilmIds() external view returns(uint256[] memory) {
+        return updatedFilmIds;
+    }
 }

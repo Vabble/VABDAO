@@ -3,14 +3,13 @@
 module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const { CONFIG } = require('../scripts/utils');
+
   this.mockVAB = await deployments.get('MockERC20');
   this.Vote = await deployments.get('VoteFilm');
 
-  await deploy('RentFilm', {
+  await deploy('StakingPool', {
     from: deployer,
     args: [
-      CONFIG.daoFee,
       this.mockVAB.address, // fee currency
       this.Vote.address, // Vote contract
     ],
@@ -18,12 +17,8 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     deterministicDeployment: false,
     skipIfAlreadyDeployed: true,
   });
-
-  this.rentFilmContract = await deployments.get('RentFilm');
-  console.log("vote contract address==", this.Vote.address+"=="+this.rentFilmContract.address);
-  this.Vote.setting(this.rentFilmContract.address)
 };
 
-module.exports.id = 'deploy_rent_film'
-module.exports.tags = ['RentFilm'];
+module.exports.id = 'deploy_staking_pool'
+module.exports.tags = ['StakingPool'];
 module.exports.dependencies = ['MockERC20', 'VoteFilm'];

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-library RentFilmHelper {
+library Helper {
     enum TokenType {
         ERC20,
         ERC721,
@@ -56,5 +56,13 @@ library RentFilmHelper {
         } else {
             IERC1155(_nft).safeTransferFrom(_from, _to, _tokenId, 1, "0x00");
         }
+    }
+
+    function isContract(address _address) internal view returns(bool){
+        uint32 size;
+        assembly {
+            size := extcodesize(_address)
+        }
+        return (size > 0);
     }
 }

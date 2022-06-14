@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 
 contract Ownable {
     address public auditor;
-    mapping(address => bool) private studioList;
+    mapping(address => bool) public studioList;
 
     event StudioAdded(address indexed _setter, address indexed _studio);
     event StudioRemoved(address indexed _setter, address indexed _studio);

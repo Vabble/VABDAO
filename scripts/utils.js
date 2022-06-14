@@ -24,6 +24,7 @@ const STATUS = {
   EXPIRED: 2
 };
 
+///=================== start==
 const FILM = [
   {
     actors: [r_address(), r_address(), r_address()],
@@ -45,6 +46,8 @@ const FILM = [
 const FILM_DATA = {
   actors: [r_address(), r_address(), r_address()],
   shares: [r_number(), r_number(), r_number()],
+  watchs: [r_number(), r_number(), r_number()],
+  sWatchs: [2000, 1500, 3000], // 20% 15% 30%
   rentPrice: r_number()
 };
 
@@ -56,6 +59,23 @@ function getByteFilm() {
   const uint8Arr = ethers.utils.arrayify(hexStr); // Uint8Array [ 18, 52 ]
   return ethers.utils.hexlify(uint8Arr);// '0x01020304'
 }
+
+function getByteFilmUpdate(filmId) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "uint256", "uint256[]", "address[]" ], [filmId, FILM_DATA.shares, FILM_DATA.actors]
+  );
+  const uint8Arr = ethers.utils.arrayify(hexStr);
+  return ethers.utils.hexlify(uint8Arr);
+}
+
+function getFinalFilm(customer, filmIds) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "address", "uint256[]", "uint256[]" ], [customer, filmIds, FILM_DATA.sWatchs]
+  );
+  const uint8Arr = ethers.utils.arrayify(hexStr);
+  return ethers.utils.hexlify(uint8Arr);
+}
+/// ============== end==
 
 function r_address() {
   const wallet = ethers.Wallet.createRandom();
@@ -83,11 +103,8 @@ async function getSignatures(signers, hexCallData) {
     ss.push(splitSig.s);
     vs.push(splitSig.v);
   }
-
   return { rs, ss, vs };
 }
-
-
 
 module.exports = {
   ZERO_ADDRESS,
@@ -97,5 +114,7 @@ module.exports = {
   getBigNumber,
   getSignatures,
   getByteFilm,
+  getByteFilmUpdate,
+  getFinalFilm,
   FILM
 };
