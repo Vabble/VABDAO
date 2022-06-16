@@ -7,7 +7,12 @@ const ZERO_ADDRESS = ethers.constants.AddressZero;
 const CONFIG = {
   daoFeeAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
-  vab: '',
+  usdcAdress: "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926",//usdc in rinkeby    
+  vabToken: "0x7e8a9cB60E99baF479FECCb4a29C33caaEeb1c52",  //vab in rinkeby
+  uniswap: {//Mainnet, kovan, rinkeby ...
+    factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+    router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+  },
   expire_period: 72 * 3600, // 72 hours
   grace_period: 30 * 24 * 3600, // 30 days
 };
@@ -48,7 +53,8 @@ const FILM_DATA = {
   shares: [r_number(), r_number(), r_number()],
   watchs: [r_number(), r_number(), r_number()],
   sWatchs: [2000, 1500, 3000], // 20% 15% 30%
-  rentPrice: r_number()
+  rentPrice: r_number(),
+  voteItem: [1, 1, 2], // 1=>yes, 2=>no, 3=> abstain
 };
 
 function getByteFilm() {
@@ -71,6 +77,14 @@ function getByteFilmUpdate(filmId) {
 function getFinalFilm(customer, filmIds) {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
     [ "address", "uint256[]", "uint256[]" ], [customer, filmIds, FILM_DATA.sWatchs]
+  );
+  const uint8Arr = ethers.utils.arrayify(hexStr);
+  return ethers.utils.hexlify(uint8Arr);
+}
+
+function getVoteData(filmIds) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "uint256[]", "uint256[]" ], [filmIds, FILM_DATA.voteItem]
   );
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);
@@ -116,5 +130,6 @@ module.exports = {
   getByteFilm,
   getByteFilmUpdate,
   getFinalFilm,
+  getVoteData,
   FILM
 };

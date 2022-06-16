@@ -26,13 +26,12 @@ contract VoteFilm is Ownable, ReentrancyGuard {
         uint256 voteStartTime;  // vote start time for a film
     }
 
-    address public rentFilmContract;
-
-    address public stakingPool;
+    address public RENT_FILM;
+    address public STAKING_POOL;
 
     bool public isInitialized;
 
-    uint256 public votePeriod;
+    uint256 public votePeriod = 10 days;
 
     uint256[] private approvedFilmIds;  
 
@@ -40,8 +39,8 @@ contract VoteFilm is Ownable, ReentrancyGuard {
     
     mapping(address => mapping(uint256 => bool)) public voteAttend; // If true, a customer voted to a film
     
-    modifier notInitialized() {
-        require(!isInitialized, "Need initialized!");
+    modifier initialized() {
+        require(isInitialized, "Need initialized!");
         _;
     }
 
@@ -49,7 +48,7 @@ contract VoteFilm is Ownable, ReentrancyGuard {
     modifier onlyCandidate() {
         require(msg.sender != address(0), "onlyCandidate: Zero address");
         // Todo should check candidate condition again
-        require(IStakingPool(stakingPool).getStakeAmount(msg.sender) > 0, "onlyCandidate: Insufficient staking amount");
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) > 0, "onlyCandidate: Insufficient staking amount");
         _;
     }
 
@@ -58,28 +57,25 @@ contract VoteFilm is Ownable, ReentrancyGuard {
     /// @notice Set RentFilm contract address and stakingPool address by only auditor
     function setting(
         address _rentFilm,
-        address _stakingPool,
-        uint256 _votePeriod
-    ) external onlyAuditor notInitialized {
+        address _stakingPool
+    ) external onlyAuditor {
         require(_rentFilm != address(0) && Helper.isContract(_rentFilm), "setting: Invalid rentfilm address");
-        rentFilmContract = _rentFilm;        
+        RENT_FILM = _rentFilm;        
         require(_stakingPool != address(0) && Helper.isContract(_stakingPool), "setting: Invalid stakingPool address");
-        stakingPool = _stakingPool;
-        require(_votePeriod > 0, "setting: Zero vote period");
-        votePeriod = _votePeriod;
+        STAKING_POOL = _stakingPool;
+
         isInitialized = true;
     }    
 
     /// @notice Update vote period by only auditor
     function updateVotePeriod(uint256 _period) external onlyAuditor {
-        require(isInitialized, "updateVotePeriod: Need to initialize");
         votePeriod = _period;
 
         emit VotePeriodUpdated(_period);
     }
 
     /// @notice Vote to multi films from a VAB holder
-    function voteToFilms(bytes calldata _voteData) external onlyCandidate {
+    function voteToFilms(bytes calldata _voteData) external onlyCandidate initialized {
         require(_voteData.length > 0, "voteToFilm: Bad items length");
         (
             uint256[] memory filmIds_, 
@@ -110,8 +106,8 @@ contract VoteFilm is Ownable, ReentrancyGuard {
         }
         _proposal.voteCount++;
 
-        uint256 stakingAmount = IStakingPool(stakingPool).getStakeAmount(msg.sender);
-        if(_voteInfo == 1) _proposal.stakeAmount_1 += stakingAmount; // Yes
+        uint256 stakingAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
+        if(_voteInfo == 1) _proposal.stakeAmount_1 += stakingAmount;      // Yes
         else if(_voteInfo == 2) _proposal.stakeAmount_2 += stakingAmount; // No
         else if(_voteInfo == 3) _proposal.stakeAmount_3 += stakingAmount; // Abstain
 
@@ -121,22 +117,22 @@ contract VoteFilm is Ownable, ReentrancyGuard {
         // Example: withdrawTime is 6/15 and voteStartTime is 6/10, votePeriod is 10 days
         // In this case, we update the withdrawTime to sum(6/20) of voteStartTime and votePeriod
         // so, staker cannot unstake his amount till 6/20
-        uint256 withdrawableTime =  IStakingPool(stakingPool).getWithdrawableTime(msg.sender);
+        uint256 withdrawableTime =  IStakingPool(STAKING_POOL).getWithdrawableTime(msg.sender);
         if (_proposal.voteStartTime + votePeriod > withdrawableTime) {
-            IStakingPool(stakingPool).updateWithdrawableTime(msg.sender, _proposal.voteStartTime + votePeriod);
+            IStakingPool(STAKING_POOL).updateWithdrawableTime(msg.sender, _proposal.voteStartTime + votePeriod);
         }
 
         return true;
     }
 
-    /// @notice Approve multi films that votePeriod has elapsed by auditor
+    /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by auditor
     function approveFilms(uint256[] memory _filmIds) external onlyAuditor {
         for (uint256 i; i < _filmIds.length; i++) {
-            // Example: "YES"(stakeAmount) is 2000 and "NO"(stakeAmount) is 1000, "ABSTAIN"(stakeAmount) is 500 in 10 days(votePeriod)
+            // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000, stakeAmount("ABSTAIN") is 500 in 10 days(votePeriod)
             // In this case, Approved since 2000 > 1000 + 500
-            if(block.timestamp - proposal[_filmIds[i]].voteStartTime > votePeriod) {
+            if(block.timestamp - proposal[_filmIds[i]].voteStartTime >= votePeriod) {
                 if(proposal[_filmIds[i]].stakeAmount_1 > proposal[_filmIds[i]].stakeAmount_2 + proposal[_filmIds[i]].stakeAmount_3) {
-                    IRentFilm(rentFilmContract).approveFilm(_filmIds[i]);
+                    IRentFilm(RENT_FILM).approveFilm(_filmIds[i]);
                     approvedFilmIds.push(_filmIds[i]);
                 }
             }        

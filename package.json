@@ -4,21 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "hardhat test test/main.test.js --network hardhat",
+    "clean": "hardhat clean",
     "compile": "npx hardhat compile",
+    "test": "hardhat test test/main.test.js --network hardhat",
+    "test:rinkeby": "hardhat test test/main.test.js --network rinkeby",
+    "fork:rinkeby": "hardhat node --fork https://eth-rinkeby.alchemyapi.io/v2/khT7j5E7O7LBI-Vf53jsKg9epwhAk2uh",
+
     "mainnet:deploy": "hardhat --network mainnet deploy",
     "mainnet:verify": "hardhat --network mainnet etherscan-verify --solc-input",
     "mainnet:export": "hardhat --network mainnet export --export exports/mainnet.json",
-    "ropsten:deploy": "hardhat --network ropsten deploy",
-    "ropsten:verify": "hardhat --network ropsten etherscan-verify --solc-input",
-    "ropsten:export": "hardhat --network ropsten export --export exports/ropsten.json",
+
     "rinkeby:deploy": "hardhat --network rinkeby deploy",
     "rinkeby:verify": "hardhat --network rinkeby etherscan-verify --solc-input",
     "rinkeby:export": "hardhat --network rinkeby export --export exports/rinkeby.json",
+
     "bscTest:deploy": "hardhat --network bscTest deploy",
     "bscTest:verify": "hardhat --network bscTest etherscan-verify --solc-input",
     "bscMain:deploy": "hardhat --network bscMain deploy",
     "bscMain:verify": "hardhat --network bscMain etherscan-verify --solc-input",
+    
     "prettier": "prettier --write scripts/**/*.js && prettier --write test/**/*.js && prettier --write contracts/**/*.sol"
   },
   "keywords": [],

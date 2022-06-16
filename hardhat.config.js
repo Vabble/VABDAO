@@ -20,19 +20,31 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
-
-const accounts = {
-  mnemonic: process.env.MNEMONIC || "test test test test test test test test test test test junk",
-  // accountsBalance: "990000000000000000000",
+const alchemy_key = process.env.ALCHEMY_KEY;
+const etherScan_api_key = process.env.ETHERSCAN_API_KEY;
+const mnemonic = process.env.MNEMONIC;
+const coinmarketcap_api_key = process.env.COINMARKETCAP_API_KEY;
+const chainIds = {
+  ganache: 1337,
+  goerli: 5,
+  hardhat: 31337,
+  kovan: 42,
+  mainnet: 1,
+  rinkeby: 4,
+  ropsten: 3,
+  bscTest: 97,
+  bscMain: 56
+};
+if (!mnemonic || !alchemy_key || !etherScan_api_key) {
+  throw new Error("Please set your data in a .env file");
 }
-
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
   defaultNetwork: 'hardhat',
   gasReporter: {
-    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+    coinmarketcap: coinmarketcap_api_key,
     currency: "USD",
     enabled: false
   },
@@ -46,32 +58,40 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      hardfork: "london",
+      // hardfork: "london",
       allowUnlimitedContractSize: true,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 9999,
-        },
-      },
-      evmVersion: "byzantium",
+      // settings: {
+      //   optimizer: {
+      //     enabled: true,
+      //     runs: 9999,
+      //   },
+      // },
+      // evmVersion: "byzantium",
+      chainId: chainIds.rinkeby,
+      saveDeployments: true,
       forking: {
-        url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
       },
       gasPrice: "auto",
-      accounts
+      accounts: {
+        mnemonic,
+      },
     },
     mainnet: {
-      url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      accounts,
-      chainId: 1,
+      url: `https://eth-mainnet.alchemyapi.io/v2/${alchemy_key}`,
+      accounts: {
+        mnemonic,
+      },
+      chainId: chainIds.mainnet,
       live: false,
       saveDeployments: true
     },
     rinkeby: {
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      accounts,
-      chainId: 4,
+      url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
+      accounts: {
+        mnemonic,
+      },
+      chainId: chainIds.rinkeby,
       live: false,
       saveDeployments: true,
       tags: ["staging"],
@@ -80,22 +100,26 @@ module.exports = {
     },
     bscTest: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-      chainId: 97,
-      accounts: {mnemonic: process.env.MNEMONIC},
+      chainId: chainIds.bscTest,
+      accounts: {
+        mnemonic,
+      },
       live: true,
       saveDeployments: true,
       gasMultiplier: 2,
     },
     bscMain: {
       url: "https://bsc-dataseed.binance.org/",
-      chainId: 56,
-      accounts: {mnemonic: process.env.MNEMONIC},
+      chainId: chainIds.bscMain,
+      accounts: {
+        mnemonic,
+      },
       live: true,
       saveDeployments: true
     }
   },
   etherscan: {
-    apiKey: process.env.ETHER_SCAN_API_KEY
+    apiKey: etherScan_api_key
   },
   paths: {
     deploy: "deploy",

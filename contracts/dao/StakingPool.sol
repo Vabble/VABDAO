@@ -9,23 +9,26 @@ import "../libraries/Ownable.sol";
 import "hardhat/console.sol";
 
 contract StakingPool is Ownable, ReentrancyGuard {
-
+    
     using Counters for Counters.Counter;
 
     event TokenStaked(address staker, uint256 stakeAmount, uint256 withdrawableTime);
     event TokenUnstaked(address unstaker, uint256 unStakeAmount);
     event LockTimeUpdated(uint256 lockTime);
+    event RewardWithdraw(address staker, uint256 rewardAmount);
+    event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount);
 
     struct UserInfo {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
-        uint256 rewards;         // 
     }
 
     IERC20 public immutable PAYOUT_TOKEN;// VAB token   
     address immutable public VOTE;       // vote contract address
     uint256 public LOCK_PERIOD;          // lock period for staked VAB
-    uint256 public rewardRate;           //
+    uint256 public rewardRate;           // 1% = 100, 100% = 10000
+    uint256 public totalStakingAmount;   // 
+    uint256 public totalRewardAmount;    // 
 
     mapping(address => UserInfo) public userInfo;
 
@@ -45,6 +48,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         require(_voteContract != address(0), "_voteContract: ZERO address");
         VOTE = _voteContract;
         LOCK_PERIOD = 30 days;
+        rewardRate = 1; // 0.01%
     }
 
     /// @notice Update lock time(in second) by auditor
@@ -52,6 +56,22 @@ contract StakingPool is Ownable, ReentrancyGuard {
         require(_lockPeriod > 0, "updateLockPeriod: not allow zero lock period");
         LOCK_PERIOD = _lockPeriod;
         emit LockTimeUpdated(_lockPeriod);
+    }
+
+    /// @notice Add reward token(VAB)
+    function addReward(uint256 _amount) external {
+        require(_amount > 0 && _amount <= PAYOUT_TOKEN.balanceOf(msg.sender), 'addReward: Insufficient reward amount');
+
+        PAYOUT_TOKEN.transferFrom(msg.sender, address(this), _amount);
+        totalRewardAmount += _amount;
+
+        emit RewardAdded(totalRewardAmount, _amount);
+    }
+
+    /// @notice Update reward rate by auditor
+    function updateRewardRate(uint256 _rate) external onlyAuditor {
+        require(_rate > 0 && rewardRate != _rate, "updateRewardRate: not allow rate");
+        rewardRate = _rate;
     }
 
     /// @notice Staking VAB token by staker
@@ -67,6 +87,8 @@ contract StakingPool is Ownable, ReentrancyGuard {
         userInfo[msg.sender].stakeAmount += _amount;
         userInfo[msg.sender].withdrawableTime = block.timestamp + LOCK_PERIOD;
 
+        totalStakingAmount += _amount;
+
         emit TokenStaked(msg.sender, _amount, block.timestamp + LOCK_PERIOD);
     }
 
@@ -78,10 +100,33 @@ contract StakingPool is Ownable, ReentrancyGuard {
             block.timestamp >= userInfo[msg.sender].withdrawableTime, "unstakeToken: Token locked yet"
         );
 
+        // Todo should check if we consider reward amount here or not
+
         PAYOUT_TOKEN.transfer(msg.sender, _amount);
         userInfo[msg.sender].stakeAmount -= _amount;
 
+        totalStakingAmount -= _amount;
+
         emit TokenUnstaked(msg.sender, _amount);
+    }
+
+    /// @notice Withdraw reward
+    function withdrawReward() external {
+        require(msg.sender != address(0), "withdrawReward: Zero staker address");
+        require(userInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
+        require(
+            block.timestamp >= userInfo[msg.sender].withdrawableTime, "withdrawReward: Token locked yet"
+        );
+
+        // Todo should calculate rewardAmount
+        uint256 rewardAmount = userInfo[msg.sender].stakeAmount * rewardRate / 10000;
+        require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
+
+        PAYOUT_TOKEN.transfer(msg.sender, rewardAmount);
+
+        totalRewardAmount -= rewardAmount;
+
+        emit RewardWithdraw(msg.sender, rewardAmount);
     }
 
     /// @notice Get staking amount for a staker

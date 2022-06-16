@@ -5,14 +5,12 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deployer } = await getNamedAccounts();
   const { CONFIG } = require('../scripts/utils');
 
-  // this.mockVAB = await deployments.get('MockERC20');
-  this.Vote = await deployments.get('VoteFilm');
-
-  await deploy('StakingPool', {
+  await deploy('UniHelper', {
     from: deployer,
     args: [
-      CONFIG.vabToken, // fee currency
-      this.Vote.address, // Vote contract
+      CONFIG.uniswap.factory,
+      CONFIG.uniswap.router, 
+      CONFIG.usdcAdress
     ],
     log: true,
     deterministicDeployment: false,
@@ -20,6 +18,5 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   });
 };
 
-module.exports.id = 'deploy_staking_pool'
-module.exports.tags = ['StakingPool'];
-module.exports.dependencies = ['MockERC20', 'VoteFilm'];
+module.exports.id = 'deploy_uni_helper'
+module.exports.tags = ['UniHelper'];

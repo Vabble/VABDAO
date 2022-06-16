@@ -9,16 +9,20 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
+import "../interfaces/IUniHelper.sol";
+import "../interfaces/IStakingPool.sol";
 import "hardhat/console.sol";
 
 contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
     
+    event ProposalFeeAmountUpdated(uint256 proposalFeeAmount);
     event FilmsProposalCreated(uint256[] indexed filmIds, address studio);
     event FilmApproved(uint256 filmId);
     event FilmsFinalSet(uint256[] filmIds);
     event FilmsRented(uint256[] indexed filmIds, address customer);
-    event FilmsUpdatedByStudio(uint256[] indexed filmIds, address studio);
+    event FilmsMultiUpdated(uint256[] indexed filmIds, address studio);
+    event FilmSingleUpdated(uint256 filmId, address studio);
     event CustomerDeposited(address customer, address token, uint256 depositAmount);
     event WithdrawTransferred(address customer, address token, uint256 withdrawAmount);
     event CustomerRequestWithdrawed(address customer, address token, uint256 amount);
@@ -37,22 +41,25 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
     // 1% = 100, 100% = 10000
     struct Film {
-        address[] studioActors; // addresses who studio define to pay revenue
-        uint256[] sharePercents;// percents(1% = 100) that studio defines to pay revenue for each actor
+        address[] studioPayees; // addresses who studio define to pay revenue
+        uint256[] sharePercents;// percents(1% = 100) that studio defines to pay revenue for each payee
         uint256 rentPrice;      // amount that a customer rents a film
         uint256 startTime;      // time that a customer rents a film
         address studio;         // address of studio who is admin of film 
         Status status;          // status of film
     }
 
-    IERC20 public immutable PAYOUT_TOKEN;     // Vab token    
-
-    address immutable public VOTE;            // Vote contract address
+    IERC20 public immutable PAYOUT_TOKEN;     // VAB token        
+    address public immutable VOTE;            // Vote contract address
+    address public immutable STAKING_POOL;    // StakingPool contract address
+    address public immutable UNI_HELPER;      // UniHelper contract address
     address public DAOFee;                    // address for transferring DAO Fee
 
+    uint256 public proposalFeeAmount;         // $100
     uint256[] private proposalFilmIds;    
     uint256[] private updatedFilmIds;    
-    uint256[] public finalFilmIds;
+    uint256[] private finalFilmIds;
+    // address[] private withdrawRequesters;
 
     mapping(uint256 => Film) public filmInfo; // Total films(filmId => Film)
     mapping(address => uint256[]) public customerFilmIds; // Rented film IDs for a customer(customer => fimlId[])
@@ -68,27 +75,63 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     constructor(
         address _daoFee,
         address _payoutToken,
-        address _voteContract
+        address _voteContract,
+        address _stakingContract,
+        address _uniHelperContract
     ) {        
-        require(_daoFee != address(0), "_daoFee: ZERO address");
+        require(_daoFee != address(0), "_daoFee: Zero address");
         DAOFee = _daoFee;
-        require(_payoutToken != address(0), "_payoutToken: ZERO address");
-        PAYOUT_TOKEN = IERC20(_payoutToken);
-        require(_voteContract != address(0), "_voteContract: ZERO address");
+        require(_payoutToken != address(0), "_payoutToken: Zero address");
+        PAYOUT_TOKEN = IERC20(_payoutToken);        
+        require(_voteContract != address(0), "_voteContract: Zero address");
         VOTE = _voteContract;
+        require(_stakingContract != address(0), "_stakingContract: Zero address");
+        STAKING_POOL = _stakingContract;
+        require(_uniHelperContract != address(0), "_uniHelperContract: Zero address");
+        UNI_HELPER = _uniHelperContract;
+
+        proposalFeeAmount = 100;
+    }
+
+    /// @notice Update lock time(in second) by auditor
+    function updateProposalFeeAmount(uint256 _amount) external onlyAuditor {
+        require(_amount > 0, "updateProposalFeeAmount: not allow zero value");
+        proposalFeeAmount = _amount;
+
+        emit ProposalFeeAmountUpdated(_amount);
     }
 
     /// @notice Create Proposal with rentPrice for multiple films by studio
     function createProposalFilms(
         uint256[] calldata _proposalfilms
     ) external onlyStudio nonReentrant {
-        require(_proposalfilms.length > 0, "Proposal: Invalid films length");      
+        require(_proposalfilms.length > 0, "createProposalFilms: Invalid films length");    
+
+        require(_isPaidFee(), 'createProposalFilms: Not paid fee');
 
         for (uint256 i = 0; i < _proposalfilms.length; i++) {
             proposalFilmIds.push(_proposalFilm(_proposalfilms[i])); 
         }
         
-        emit FilmsProposalCreated(proposalFilmIds, msg.sender);
+        emit FilmsProposalCreated(proposalFilmIds, msg.sender);        
+    }
+
+    /// @notice Paid proposal fee from studio to stakingPool
+    // Get expected VAB amount from UniswapV2.
+    // Transfer VAB: user(studio) -> this contract(RentFilm) -> stakingPool.
+    function _isPaidFee() private returns(bool) {       
+        uint256 expectedVABAmount = IUniHelper(UNI_HELPER).expectedAmount(proposalFeeAmount, address(PAYOUT_TOKEN));
+           
+        if(expectedVABAmount > 0 && expectedVABAmount <= PAYOUT_TOKEN.balanceOf(msg.sender)) {
+            PAYOUT_TOKEN.transferFrom(msg.sender, address(this), expectedVABAmount);
+            if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
+                PAYOUT_TOKEN.approve(STAKING_POOL, PAYOUT_TOKEN.totalSupply());
+            }
+            IStakingPool(STAKING_POOL).addReward(expectedVABAmount);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /// @notice Create a Proposal for a film
@@ -104,27 +147,48 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         return filmId;
     }
 
-    /// @notice Update multiple films with param by studio
-    function updateFilmsByStudio(
+    /// @notice Update multi films with param by studio
+    function updateMultiFilms(
         bytes[] calldata _updateFilms
     ) external onlyStudio nonReentrant {
-        require(_updateFilms.length > 0, "updateFilms: Invalid item length");
+        require(_updateFilms.length > 0, "updateMultiFilms: Invalid item length");
 
         for (uint256 i; i < _updateFilms.length; i++) {        
             (
                 uint256 filmId_, 
                 uint256[] memory sharePercents_, 
-                address[] memory studioActors_
+                address[] memory studioPayees_
             ) = abi.decode(_updateFilms[i], (uint256, uint256[], address[]));
 
             Film storage _filmInfo = filmInfo[filmId_];
-            _filmInfo.studioActors = studioActors_;   
+            _filmInfo.studioPayees = studioPayees_;   
             _filmInfo.sharePercents = sharePercents_;   
 
             updatedFilmIds.push(filmId_);
         }   
 
-        emit FilmsUpdatedByStudio(updatedFilmIds, msg.sender);
+        emit FilmsMultiUpdated(updatedFilmIds, msg.sender);
+    }
+
+    /// @notice Update single film with param by studio
+    function updateSingleFilm(
+        bytes calldata _updateFilm
+    ) external onlyStudio nonReentrant {
+        (
+            uint256 filmId_, 
+            uint256[] memory sharePercents_, 
+            address[] memory studioPayees_
+        ) = abi.decode(_updateFilm, (uint256, uint256[], address[]));
+
+        require(sharePercents_.length == studioPayees_.length, "updateSingleFilm: Invalid item length");
+
+        Film storage _filmInfo = filmInfo[filmId_];
+        _filmInfo.studioPayees = studioPayees_;   
+        _filmInfo.sharePercents = sharePercents_;   
+
+        updatedFilmIds.push(filmId_);
+
+        emit FilmSingleUpdated(filmId_, msg.sender);
     }
 
     /// @notice Approve a film from vote contract
@@ -159,12 +223,12 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
             uint256[] memory filmIds_,
             uint256[] memory watchPercents_
         ) = abi.decode(_filmData, (address, uint256[], uint256[]));
-        
+
         require(customer_ != address(0), "_setFinalFilm: Zero customer address");
         require(userInfo[customer_].amount > 0, "_setFinalFilm: Zero balance");
         require(filmIds_.length == watchPercents_.length, "_setFinalFilm: Invalid items length");
 
-        // Assgin the VAB token to actors based on share(%) and watch(%)
+        // Assgin the VAB token to payees based on share(%) and watch(%)
         for (uint256 i = 0; i < filmIds_.length; i++) {
             // Todo should check again with listing_approved or funding_approved
             if(filmInfo[filmIds_[i]].status == Status.LISTING_APPROVED) {       
@@ -173,21 +237,15 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
                 if(payout > 0 && userInfo[customer_].amount >= payout) {
                     userInfo[customer_].amount -= payout; 
 
-                    for(uint256 k = 0; k < filmInfo[filmIds_[i]].studioActors.length; k++) {
-                        userInfo[filmInfo[filmIds_[i]].studioActors[k]].amount += _getShareAmount(payout, filmIds_[i], k);
+                    for(uint256 k = 0; k < filmInfo[filmIds_[i]].studioPayees.length; k++) {
+                        userInfo[filmInfo[filmIds_[i]].studioPayees[k]].amount += _getShareAmount(payout, filmIds_[i], k);
                     }
 
                     finalFilmIds.push(filmIds_[i]);
+                    console.log("sol=>user amount::", userInfo[customer_].amount);
                 }                
             }
         }   
-
-        // Transfer withdraw to user if he asked
-        if(userInfo[customer_].withdrawAmount > 0) {
-            if(userInfo[customer_].withdrawAmount <= userInfo[customer_].amount) {
-                transferWithdraw(customer_);
-            }            
-        }
     }
 
     /// @notice Deposit VAB token by customer
@@ -209,7 +267,35 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         require(_amount > 0 && _amount <= userInfo[msg.sender].amount, "customerRequestWithdraw: Insufficient amount");
 
         userInfo[msg.sender].withdrawAmount = _amount;
+        // withdrawRequesters.push(msg.sender);
+
         emit CustomerRequestWithdrawed(msg.sender, address(PAYOUT_TOKEN), _amount);
+    }
+
+    /// @notice Approve pending-withdraw of given customers by Auditor
+    function approvePendingWithdraw(address[] memory _customers) external onlyAuditor nonReentrant {
+        require(_customers.length > 0, "approvePendingWithdraw: No customer");
+
+        // Transfer withdrawable amount to _customers
+        for(uint256 i; i < _customers.length; i++) {
+            if(userInfo[_customers[i]].withdrawAmount > 0) {
+                if(userInfo[_customers[i]].withdrawAmount <= userInfo[_customers[i]].amount) {
+                    transferWithdraw(_customers[i]);
+                }            
+            }
+        }
+    }
+
+    /// @notice Deny pending-withdraw of given customers by Auditor
+    function denyPendingWithdraw(address[] memory _customers) external onlyAuditor nonReentrant {
+        require(_customers.length > 0, "approvePendingWithdraw: No customer");
+
+        // Release withdrawable amount for _customers
+        for(uint256 i; i < _customers.length; i++) {
+            if(userInfo[_customers[i]].withdrawAmount > 0) {
+                userInfo[_customers[i]].withdrawAmount = 0;
+            }
+        }
     }
 
     /// @notice Transfer payment to user
@@ -221,20 +307,22 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
         userInfo[_to].amount -= payAmount;
         userInfo[_to].withdrawAmount = 0;
+        
+        // removeWithdrawRequester(registIndex);
 
         emit WithdrawTransferred(_to, address(PAYOUT_TOKEN), payAmount);
 
         flag_ = true;        
     }
 
-    /// @notice Check user balance in DAO if enough for rent
+    /// @notice Check user balance in DAO if enough for rent or not
     function checkUserBalance(address _user, uint256[] calldata _filmIds) public view returns(bool) {
         uint256 totalRentPrice = 0;
         for(uint256 i; i < _filmIds.length; i++) {
             totalRentPrice += filmInfo[_filmIds[i]].rentPrice;
         }        
 
-        if(userInfo[_user].amount >= totalRentPrice) return true;
+        if(userInfo[_user].amount > totalRentPrice) return true;
         return false;
     }
 
@@ -246,7 +334,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     /// @notice Get film item based on Id
     function getFilmById(uint256 _filmId) external view 
     returns (
-        address[] memory studioActors_, 
+        address[] memory studioPayees_, 
         uint256[] memory sharePercents_, 
         uint256 rentPrice_,
         uint256 startTime_,
@@ -254,7 +342,7 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         Status status_
     ) {
         Film storage _filmInfo = filmInfo[_filmId];
-        studioActors_ = _filmInfo.studioActors;
+        studioPayees_ = _filmInfo.studioPayees;
         sharePercents_ = _filmInfo.sharePercents;
         rentPrice_ = _filmInfo.rentPrice;
         startTime_ = _filmInfo.startTime;
@@ -280,6 +368,16 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         return x;
     }
 
+    
+    // function removeWithdrawRequester(uint256 index) private {
+    //     require(withdrawRequesters.length > index, "Out of bounds");
+    //     // move all elements to the left, starting from the `index + 1`
+    //     for (uint256 i = index; i < withdrawRequesters.length - 1; i++) {
+    //         withdrawRequesters[i] = withdrawRequesters[i+1];
+    //     }
+    //     withdrawRequesters.pop(); // delete the last item
+    // }
+
     /// @notice Get VAB amount of a user
     function getUserAmount(address _user) external view returns(uint256 amount_, uint256 withdrawAmount_) {
         amount_ = userInfo[_user].amount;
@@ -291,8 +389,13 @@ contract RentFilm is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         return proposalFilmIds;
     }    
 
-    /// @notice Get proposal film Ids updated
+    /// @notice Get updated proposal film Ids
     function getUpdatedFilmIds() external view returns(uint256[] memory) {
         return updatedFilmIds;
     }
+
+    // /// @notice Get customers array that request withdraw
+    // function getWithdrawRequesters() external view returns(address[] memory) {
+    //     return withdrawRequesters;
+    // }
 }
