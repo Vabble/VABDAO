@@ -4,7 +4,7 @@ const { CONFIG } = require('../scripts/utils');
 
 describe('Owner', function () {
   before(async function () {
-    this.RentFilmFactory = await ethers.getContractFactory('RentFilm');
+    this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
     this.MockERC20Factory = await ethers.getContractFactory('MockERC20');
     this.VoteFilmFactory = await ethers.getContractFactory('VoteFilm');
 
@@ -18,8 +18,8 @@ describe('Owner', function () {
     this.vabContract = await (await this.MockERC20Factory.deploy('Mock Token', 'VAB')).deployed();
     this.voteConract = await (await this.VoteFilmFactory.deploy()).deployed();
 
-    this.rentContract = await (
-      await this.RentFilmFactory.deploy(
+    this.DAOContract = await (
+      await this.VabbleDAOFactory.deploy(
         CONFIG.daoFeeAddress,
         this.vabContract.address,
         this.voteConract.address
@@ -30,11 +30,11 @@ describe('Owner', function () {
 
   describe('Checking ownership', function () {
     it('Transfer ownership', async function () {
-      expect(await this.rentContract.auditor()).to.be.equal(this.auditor.address);
+      expect(await this.DAOContract.auditor()).to.be.equal(this.auditor.address);
 
-      await this.rentContract.transferAuditor(this.newAuditor.address);
+      await this.DAOContract.transferAuditor(this.newAuditor.address);
       
-      expect(await this.rentContract.auditor()).to.be.equal(this.newAuditor.address);  
+      expect(await this.DAOContract.auditor()).to.be.equal(this.newAuditor.address);  
     });
   });
 });

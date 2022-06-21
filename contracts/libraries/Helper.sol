@@ -44,6 +44,23 @@ library Helper {
         require(success && (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::transferFrom: transferFrom failed");
     }
 
+    function safeTransferETH(address to, uint256 value) internal {
+        (bool success, ) = to.call{value: value}(new bytes(0));
+        require(success, "VabbleDAO::safeTransferETH: ETH transfer failed");
+    }
+
+    function safeTransferAsset(
+        address token,
+        address to,
+        uint256 value
+    ) internal {
+        if (token == address(0)) {
+            safeTransferETH(to, value);
+        } else {
+            safeTransfer(token, to, value);
+        }
+    }
+
     function safeTransferNFT(
         address _nft,
         address _from,

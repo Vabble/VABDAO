@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../libraries/Ownable.sol";
+import "../libraries/Helper.sol";
 import "hardhat/console.sol";
 
 contract StakingPool is Ownable, ReentrancyGuard {
@@ -62,7 +63,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     function addReward(uint256 _amount) external {
         require(_amount > 0 && _amount <= PAYOUT_TOKEN.balanceOf(msg.sender), 'addReward: Insufficient reward amount');
 
-        PAYOUT_TOKEN.transferFrom(msg.sender, address(this), _amount);
+        Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
         totalRewardAmount += _amount;
 
         emit RewardAdded(totalRewardAmount, _amount);
@@ -79,7 +80,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         require(msg.sender != address(0), "stakeToken: Zero staker address");
         require(_amount > 0 && PAYOUT_TOKEN.balanceOf(msg.sender) >= _amount, "stakeToken: Insufficient VAB token amount");
 
-        PAYOUT_TOKEN.transferFrom(msg.sender, address(this), _amount);
+        Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
 
         if(userInfo[msg.sender].stakeAmount == 0 && userInfo[msg.sender].withdrawableTime == 0) {
             stakerCount.increment();
@@ -101,8 +102,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         );
 
         // Todo should check if we consider reward amount here or not
-
-        PAYOUT_TOKEN.transfer(msg.sender, _amount);
+        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);
         userInfo[msg.sender].stakeAmount -= _amount;
 
         totalStakingAmount -= _amount;
@@ -122,7 +122,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         uint256 rewardAmount = userInfo[msg.sender].stakeAmount * rewardRate / 10000;
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
-        PAYOUT_TOKEN.transfer(msg.sender, rewardAmount);
+        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, rewardAmount);
 
         totalRewardAmount -= rewardAmount;
 

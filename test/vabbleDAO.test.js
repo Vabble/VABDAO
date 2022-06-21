@@ -12,13 +12,14 @@ const {
   getVoteData,
   getSignatures } = require('../scripts/utils');
   
-describe('RentFilm', function () {
+describe('VabbleDAO', function () {
   before(async function () {
-    this.RentFilmFactory = await ethers.getContractFactory('RentFilm');
+    this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
     // this.MockERC20Factory = await ethers.getContractFactory('MockERC20');
     this.VoteFilmFactory = await ethers.getContractFactory('VoteFilm');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
+    this.FilmBoardFactory = await ethers.getContractFactory('FilmBoard');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -43,24 +44,27 @@ describe('RentFilm', function () {
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy(
       CONFIG.vabToken, this.voteContract.address
-    )).deployed();   
+    )).deployed(); 
+    
+    this.filmBoardContract = await (await this.FilmBoardFactory.deploy()).deployed(); 
 
-    this.rentContract = await (
-      await this.RentFilmFactory.deploy(
+    this.DAOContract = await (
+      await this.VabbleDAOFactory.deploy(
         CONFIG.daoFeeAddress,
         this.vabToken.address,   
         this.voteContract.address,
         this.stakingContract.address,
-        this.uniHelperContract.address 
+        this.uniHelperContract.address,
+        CONFIG.usdcAdress 
       )
     ).deployed();   
 
-    expect(await this.rentContract.auditor()).to.be.equal(this.auditor.address);
+    expect(await this.DAOContract.auditor()).to.be.equal(this.auditor.address);
         
     // Auditor add studio1 in the studio whitelist
     await expect(
-      this.rentContract.addStudio(this.studio1.address)
-    ).to.emit(this.rentContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);        
+      this.DAOContract.addStudio(this.studio1.address)
+    ).to.emit(this.DAOContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);        
 
     // Transfering VAB token to users
     await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(1000), {from: this.auditor.address});
@@ -70,14 +74,14 @@ describe('RentFilm', function () {
     await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(1000000), {from: this.auditor.address});
 
     // Approve to transfer VAB token for each user
-    await this.vabToken.connect(this.customer1).approve(this.rentContract.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer2).approve(this.rentContract.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer3).approve(this.rentContract.address, getBigNumber(100000000));    
+    await this.vabToken.connect(this.customer1).approve(this.DAOContract.address, getBigNumber(100000000));
+    await this.vabToken.connect(this.customer2).approve(this.DAOContract.address, getBigNumber(100000000));
+    await this.vabToken.connect(this.customer3).approve(this.DAOContract.address, getBigNumber(100000000));    
     await this.vabToken.connect(this.customer1).approve(this.stakingContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer2).approve(this.stakingContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer3).approve(this.stakingContract.address, getBigNumber(100000000));
     // Approve to transfer VAB token for studio1
-    await this.vabToken.connect(this.studio1).approve(this.rentContract.address, getBigNumber(100000000));
+    await this.vabToken.connect(this.studio1).approve(this.DAOContract.address, getBigNumber(100000000));
     
     // Film infos with rentPrice
     this.films = [getBigNumber(100), getBigNumber(200), getBigNumber(300)];
@@ -90,21 +94,21 @@ describe('RentFilm', function () {
       const studioBalance = await this.vabToken.balanceOf(this.studio1.address)
       // console.log('====studioBalance::', studioBalance.toString());
       // Only Studio1 can propose films because auditor added to studioList
-      let tx = await this.rentContract.connect(this.studio1).createProposalFilms(this.films, {from: this.studio1.address})   
+      let tx = await this.DAOContract.connect(this.studio1).createProposalFilms(this.films, false, {from: this.studio1.address})   
       this.events = (await tx.wait()).events;
       // console.log('====events::', this.events);
 
-      expect(this.events[3].args[1]).to.be.equal(this.studio1.address)
-      const proposalIds = await this.rentContract.getProposalFilmIds();
+      expect(this.events[6].args[1]).to.be.equal(this.studio1.address)
+      const proposalIds = await this.DAOContract.getProposalFilmIds();
       expect(proposalIds.length).to.be.equal(this.films.length)
 
       // Studio2 can not propose films because studio2 is not studio
       await expect(
-        this.rentContract.connect(this.studio2).createProposalFilms(this.films, {from: this.studio2.address})
+        this.DAOContract.connect(this.studio2).createProposalFilms(this.films, true, {from: this.studio2.address})
       ).to.be.revertedWith('Ownable: caller is not the studio');
 
       // Get A proposal film information with id
-      const proposalFilm = await this.rentContract.getFilmById(proposalIds[0])
+      const proposalFilm = await this.DAOContract.getFilmById(proposalIds[0])
       expect(proposalFilm.studioPayees_).to.have.lengthOf(0)
       expect(proposalFilm.sharePercents_).to.have.lengthOf(0)
       expect(proposalFilm.rentPrice_).to.be.equal(this.films[0])
@@ -113,15 +117,15 @@ describe('RentFilm', function () {
       expect(proposalFilm.status_).to.be.equal(0)
 
       // Update actors and percents by only Studio
-      const Ids_0 = await this.rentContract.getUpdatedFilmIds();
+      const Ids_0 = await this.DAOContract.getUpdatedFilmIds();
       const updateData = [
         getByteFilmUpdate(proposalIds[0]), 
         getByteFilmUpdate(proposalIds[1]), 
         getByteFilmUpdate(proposalIds[2])
       ]
-      const up_tx = await this.rentContract.connect(this.studio1).updateMultiFilms(updateData, {from: this.studio1.address})
+      const up_tx = await this.DAOContract.connect(this.studio1).updateMultiFilms(updateData, {from: this.studio1.address})
       this.events = (await up_tx.wait()).events            
-      const Ids_1 = await this.rentContract.getUpdatedFilmIds();//again getting after update
+      const Ids_1 = await this.DAOContract.getUpdatedFilmIds();//again getting after update
       // console.log('=====Ids-1::', Ids_1)
       // console.log('=====events::', this.events)
       expect(this.events[0].args[1]).to.be.equal(this.studio1.address)
@@ -132,36 +136,36 @@ describe('RentFilm', function () {
   it('Should deposit and withdraw by customer', async function () {
     // User balance is 1000 and transfer amount is 5000. Insufficient amount!
     await expect(
-      this.rentContract.connect(this.customer1).customerDeopsit(getBigNumber(5000))
-    ).to.be.revertedWith('customerDeopsit: Insufficient amount');
+      this.DAOContract.connect(this.customer1).customerDeposit(getBigNumber(5000))
+    ).to.be.revertedWith('customerDeposit: Insufficient amount');
     
     // Event - CustomerDeposited
     await expect(
-      this.rentContract.connect(this.customer1).customerDeopsit(getBigNumber(100), {from: this.customer1.address})
+      this.DAOContract.connect(this.customer1).customerDeposit(getBigNumber(100), {from: this.customer1.address})
     )
-    .to.emit(this.rentContract, 'CustomerDeposited')
+    .to.emit(this.DAOContract, 'CustomerDeposited')
     .withArgs(this.customer1.address, this.vabToken.address, getBigNumber(100));    
 
-    await this.rentContract.connect(this.customer2).customerDeopsit(getBigNumber(200));
-    await this.rentContract.connect(this.customer3).customerDeopsit(getBigNumber(300));
+    await this.DAOContract.connect(this.customer2).customerDeposit(getBigNumber(200));
+    await this.DAOContract.connect(this.customer3).customerDeposit(getBigNumber(300));
     
     // Check user balance(amount) after deposit
-    let user1Amount = await this.rentContract.getUserAmount(this.customer1.address);
+    let user1Amount = await this.DAOContract.getUserAmount(this.customer1.address);
     expect(user1Amount.amount_).to.be.equal(getBigNumber(100))
 
     // Event - CustomerRequestWithdrawed
     await expect(
-      this.rentContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(50), {from: this.customer1.address})
+      this.DAOContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(50), {from: this.customer1.address})
     )
-    .to.emit(this.rentContract, 'CustomerRequestWithdrawed')
+    .to.emit(this.DAOContract, 'CustomerRequestWithdrawed')
     .withArgs(this.customer1.address, this.vabToken.address, getBigNumber(50));  
 
     await expect(
-      this.rentContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(150), {from: this.customer1.address})
+      this.DAOContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(150), {from: this.customer1.address})
     ).to.be.revertedWith('customerRequestWithdraw: Insufficient amount');
     
     // Check withdraw amount after send withraw request
-    user1Amount = await this.rentContract.getUserAmount(this.customer1.address);
+    user1Amount = await this.DAOContract.getUserAmount(this.customer1.address);
     expect(user1Amount.withdrawAmount_).to.be.equal(getBigNumber(50))
   });
 
@@ -169,7 +173,7 @@ describe('RentFilm', function () {
     // console.log('====voteContract::', this.voteContract.address);
     // console.log('====uniHelperContract::', this.uniHelperContract.address);
     // console.log('====stakingContract::', this.stakingContract.address);    
-    // console.log('====rentContract::', this.rentContract.address);
+    // console.log('====DAOContract::', this.DAOContract.address);
     // console.log('====factory::', CONFIG.uniswap.factory);
     // console.log('====router::', CONFIG.uniswap.router);
     // console.log('====usdcAdress::', CONFIG.usdcAdress);
@@ -177,20 +181,28 @@ describe('RentFilm', function () {
     // console.log('====deployer::', this.auditor.address);
 
     // 1. Create proposal for three films by studio
-    await this.rentContract.connect(this.studio1).createProposalFilms(this.films, {from: this.studio1.address})
+    await this.DAOContract.connect(this.studio1).createProposalFilms(this.films, false, {from: this.studio1.address})
 
     // 2. Deposit to contract(VAB amount : 100, 200, 300)
-    await this.rentContract.connect(this.customer1).customerDeopsit(getBigNumber(100), {from: this.customer1.address}) // 100 VAB
-    await this.rentContract.connect(this.customer2).customerDeopsit(getBigNumber(200), {from: this.customer2.address}) // 200 VAB
-    await this.rentContract.connect(this.customer3).customerDeopsit(getBigNumber(300), {from: this.customer3.address}) // 300 VAB
+    await this.DAOContract.connect(this.customer1).customerDeposit(getBigNumber(100), {from: this.customer1.address})
+    await this.DAOContract.connect(this.customer2).customerDeposit(getBigNumber(200), {from: this.customer2.address})
+    await this.DAOContract.connect(this.customer3).customerDeposit(getBigNumber(300), {from: this.customer3.address})
 
-    // 3. Auditor should setup rentFilm, stakingPool contract address to vote contract as soon as vote contract deployed
-    await this.voteContract.setting(this.rentContract.address, this.stakingContract.address);
-    expect(await this.voteContract.RENT_FILM()).to.be.equal(this.rentContract.address)
+    // 3. Auditor should setup VabbleDAO, stakingPool contract address to vote contract as soon as vote contract deployed
+    await this.voteContract.initializeVote(
+      this.DAOContract.address, 
+      this.stakingContract.address, 
+      this.filmBoardContract.address
+    );
+    expect(await this.voteContract.FILM_DAO()).to.be.equal(this.DAOContract.address)
 
     // 4. films approved by auditor
     // 4-1. initialize vote contract
-    await this.voteContract.setting(this.rentContract.address, this.stakingContract.address)
+    await this.voteContract.initializeVote(
+      this.DAOContract.address, 
+      this.stakingContract.address, 
+      this.filmBoardContract.address
+    )
     expect(await this.voteContract.isInitialized()).to.be.true
 
     // 4-2. staking by customer1, 2, 3
@@ -202,7 +214,7 @@ describe('RentFilm', function () {
     expect(await this.stakingContract.getStakeAmount(this.customer3.address)).to.be.equal(getBigNumber(300))
     
     // 4-3. Vote to proposal films from customer1, 2, 3
-    const proposalIds = await this.rentContract.getProposalFilmIds(); // 1, 2, 3
+    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2, 3
     const voteData = getVoteData(proposalIds)
     //=> In order to call voteToFilms(), first should pass 4-1, 4-2
     await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) 
@@ -216,33 +228,33 @@ describe('RentFilm', function () {
 
     // 4-4. Approve two films by calling the approveFilms() from Auditor
     const approveData = [proposalIds[0], proposalIds[1]]
-    await this.voteContract.approveFilms(approveData);// filmId = 1, 2
+    await this.voteContract.approveFilms(approveData, false);// filmId = 1, 2
     // console.log('=====approvedIDs', await this.voteContract.getApprovedFilmIds())
     const ids = await this.voteContract.getApprovedFilmIds()
     expect(ids.length).to.be.equal(approveData.length)
     
     // 5 Withdraw request(40 VAB) from customer1, 2, 3
-    await this.rentContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(40), {from: this.customer1.address});
-    await this.rentContract.connect(this.customer2).customerRequestWithdraw(getBigNumber(40), {from: this.customer2.address});
-    await this.rentContract.connect(this.customer3).customerRequestWithdraw(getBigNumber(40), {from: this.customer3.address});
+    await this.DAOContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(40), {from: this.customer1.address});
+    await this.DAOContract.connect(this.customer2).customerRequestWithdraw(getBigNumber(40), {from: this.customer2.address});
+    await this.DAOContract.connect(this.customer3).customerRequestWithdraw(getBigNumber(40), {from: this.customer3.address});
 
-    // 6. Auditor submit three audit actions(for customer1) with watched percent(20%, 15%, 30%) to rentFilm contract
+    // 6. Auditor submit three audit actions(for customer1) with watched percent(20%, 15%, 30%) to VabbleDAO contract
     // only two film 1,2 approved in 4-4 so film3 watch(30%) ignored
     const finalData = [getFinalFilm(this.customer1.address, proposalIds)]
-    let tx = await this.rentContract.setFinalFilms(finalData);
+    let tx = await this.DAOContract.setFinalFilms(finalData);
     this.events = (await tx.wait()).events
     // console.log('======events::', this.events[0].args)
     expect(this.events[0].args.filmIds[0]).to.be.equal(proposalIds[0]) // id = 1
     expect(this.events[0].args.filmIds[1]).to.be.equal(proposalIds[1]) // id = 2    
 
     // 6-1 Approve pending-withdraw requests for customer1 and Deny for customer3 by Auditor, not customer2
-    await this.rentContract.approvePendingWithdraw([this.customer1.address])
-    await this.rentContract.denyPendingWithdraw([this.customer3.address])
+    await this.DAOContract.approvePendingWithdraw([this.customer1.address])
+    await this.DAOContract.denyPendingWithdraw([this.customer3.address])
 
     // 7. Check remain customer1,2,3 balance(amount, withdrawAmount) after submit audit actions
-    let user1Amount = await this.rentContract.getUserAmount(this.customer1.address);
-    let user2Amount = await this.rentContract.getUserAmount(this.customer2.address);
-    let user3Amount = await this.rentContract.getUserAmount(this.customer3.address);
+    let user1Amount = await this.DAOContract.getUserAmount(this.customer1.address);
+    let user2Amount = await this.DAOContract.getUserAmount(this.customer2.address);
+    let user3Amount = await this.DAOContract.getUserAmount(this.customer3.address);
     // console.log('====last amount-1::', user1Amount.amount_+"=="+user1Amount.withdrawAmount_);
     // console.log('====last amount-2::', user2Amount.amount_+"=="+user2Amount.withdrawAmount_);
     // console.log('====last amount-3::', user3Amount.amount_+"=="+user3Amount.withdrawAmount_);

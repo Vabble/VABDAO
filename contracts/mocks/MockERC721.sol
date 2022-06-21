@@ -23,16 +23,16 @@ contract MockERC721 is ERC721Enumerable, Ownable {
      * @param _to address of the future owner of the token
      */
     function mintTo(address _to) public onlyOwner {
-        uint256 newTokenId = _getNextTokenId();
+        uint256 newTokenId = __getNextTokenId();
         _mint(_to, newTokenId);
-        _incrementTokenId();
+        __incrementTokenId();
     }
 
     function batchMintTo(address _to, uint256 _amount) public onlyOwner {
         for (uint256 ii = 0; ii < _amount; ii++) {
-            uint256 newTokenId = _getNextTokenId();
+            uint256 newTokenId = __getNextTokenId();
             _mint(_to, newTokenId);
-            _incrementTokenId();
+            __incrementTokenId();
         }
     }
 
@@ -40,14 +40,14 @@ contract MockERC721 is ERC721Enumerable, Ownable {
      * @dev calculates the next token ID based on value of _currentTokenId
      * @return uint256 for the next token ID
      */
-    function _getNextTokenId() private view returns (uint256) {
+    function __getNextTokenId() private view returns (uint256) {
         return _currentTokenId.add(1);
     }
 
     /**
      * @dev increments the value of _currentTokenId
      */
-    function _incrementTokenId() private {
+    function __incrementTokenId() private {
         _currentTokenId++;
     }
 

@@ -25,8 +25,9 @@ const TOKEN_TYPE = {
 
 const STATUS = {
   LISTED: 0,
-  RENTED: 1,
-  EXPIRED: 2
+  APPROVED_LISTING: 1,
+  APPROVED_FUNDING: 2,
+  APPROVED_WITHOUTVOTE: 3
 };
 
 ///=================== start==
