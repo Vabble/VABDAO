@@ -2,7 +2,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
   
-    await deploy('VoteFilm', {
+    await deploy('Vote', {
       from: deployer,
       args: [],
       log: true,
@@ -11,6 +11,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     });
   };
   
-  module.exports.id = 'deploy_vote_film'
-  module.exports.tags = ['VoteFilm'];
+  module.exports.id = 'deploy_vote'
+  module.exports.tags = ['Vote'];
   

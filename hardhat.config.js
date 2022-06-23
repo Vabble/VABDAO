@@ -58,19 +58,12 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      // hardfork: "london",
       allowUnlimitedContractSize: true,
-      // settings: {
-      //   optimizer: {
-      //     enabled: true,
-      //     runs: 9999,
-      //   },
-      // },
-      // evmVersion: "byzantium",
       chainId: chainIds.rinkeby,
       saveDeployments: true,
       forking: {
         url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
+        blockNumber: 10898384,
       },
       gasPrice: "auto",
       accounts: {
@@ -128,7 +121,7 @@ module.exports = {
     tests: "test"
   },
   mocha: {
-    timeout: 300000
+    timeout: 200e3
   },
   solidity: {
     compilers: [
@@ -139,7 +132,8 @@ module.exports = {
             enabled: true,
             runs: 2000,
           },
-        },
+        },        
+        // evmVersion: "byzantium",
       },
       {
         version: '0.8.1',
@@ -149,6 +143,7 @@ module.exports = {
             runs: 2000,
           },
         },
+        // evmVersion: "byzantium",
       },
     ],
   }

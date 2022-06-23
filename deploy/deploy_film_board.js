@@ -5,15 +5,16 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deployer } = await getNamedAccounts();
   const { CONFIG } = require('../scripts/utils');
   // this.mockVAB = await deployments.get('MockERC20');
+  this.VabbleDAO = await deployments.get('VabbleDAO');
   this.Vote = await deployments.get('Vote');
   this.StakingPool = await deployments.get('StakingPool');
   this.UniHelper = await deployments.get('UniHelper');
 
-  await deploy('VabbleDAO', {
+  await deploy('FilmBoard', {
     from: deployer,
     args: [
-      CONFIG.daoFeeAddress,
       CONFIG.vabToken,          // mockVAB
+      this.VabbleDAO.address,   // VabbleDAO contract
       this.Vote.address,        // Vote contract
       this.StakingPool.address, // StakingPool contract
       this.UniHelper.address,   // UniHelper contract
@@ -23,18 +24,8 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     deterministicDeployment: false,
     skipIfAlreadyDeployed: true,
   });
-
-  this.vabbleDAOContract = await deployments.get('VabbleDAO');
-  console.log("vote contract address==", this.Vote.address+"=="+this.vabbleDAOContract.address);
-  const VoteFactory = await ethers.getContractFactory('Vote');
-  const voteConract = await (await VoteFactory.deploy()).deployed();
-  await voteConract.initializeVote(
-    this.vabbleDAOContract.address,
-    this.StakingPool.address,
-    CONFIG.vabToken
-  )
 };
 
-module.exports.id = 'deploy_vabble_dao'
-module.exports.tags = ['VabbleDAO'];
-module.exports.dependencies = ['Vote', 'StakingPool', 'UniHelper'];
+module.exports.id = 'deploy_film_board'
+module.exports.tags = ['FilmBoard'];
+module.exports.dependencies = ['VabbleDAO', 'Vote', 'StakingPool', 'UniHelper'];

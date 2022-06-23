@@ -6,7 +6,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { CONFIG } = require('../scripts/utils');
 
   // this.mockVAB = await deployments.get('MockERC20');
-  this.Vote = await deployments.get('VoteFilm');
+  this.Vote = await deployments.get('Vote');
 
   await deploy('StakingPool', {
     from: deployer,
@@ -22,4 +22,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_staking_pool'
 module.exports.tags = ['StakingPool'];
-module.exports.dependencies = ['MockERC20', 'VoteFilm'];
+module.exports.dependencies = ['Vote'];

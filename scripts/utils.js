@@ -55,16 +55,23 @@ const FILM_DATA = {
   watchs: [r_number(), r_number(), r_number()],
   sWatchs: [2000, 1500, 3000], // 20% 15% 30%
   rentPrice: r_number(),
-  voteItem: [1, 1, 2], // 1=>yes, 2=>no, 3=> abstain
+  voteItem: [1, 1, 2, 3], // 1=>yes, 2=>no, 3=> abstain
 };
 
 function getByteFilm() {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
     [ "address[]", "uint256[]", "uint256" ], [FILM_DATA.actors, FILM_DATA.shares, FILM_DATA.rentPrice]
-  ); // '0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000004d2000000000000000000000000000000000000000000000000000000000000162e000000000000000000000000000000000000000000000000000000000000000b48656c6c6f20576f726c64000000000000000000000000000000000000000000'
-
+  );
   const uint8Arr = ethers.utils.arrayify(hexStr); // Uint8Array [ 18, 52 ]
   return ethers.utils.hexlify(uint8Arr);// '0x01020304'
+}
+
+function getProposalFilm(film) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "uint256", "uint256", "uint256", "bool" ], film
+  );
+  const uint8Arr = ethers.utils.arrayify(hexStr);
+  return ethers.utils.hexlify(uint8Arr);
 }
 
 function getByteFilmUpdate(filmId) {
@@ -90,7 +97,7 @@ function getVoteData(filmIds) {
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);
 }
-/// ============== end==
+/// ============== end ==============
 
 function r_address() {
   const wallet = ethers.Wallet.createRandom();
@@ -132,5 +139,6 @@ module.exports = {
   getByteFilmUpdate,
   getFinalFilm,
   getVoteData,
+  getProposalFilm,
   FILM
 };

@@ -5,8 +5,7 @@ const { CONFIG } = require('../scripts/utils');
 describe('Owner', function () {
   before(async function () {
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
-    this.MockERC20Factory = await ethers.getContractFactory('MockERC20');
-    this.VoteFilmFactory = await ethers.getContractFactory('VoteFilm');
+    this.VoteFactory = await ethers.getContractFactory('Vote');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -15,13 +14,12 @@ describe('Owner', function () {
 
   beforeEach(async function () {
     
-    this.vabContract = await (await this.MockERC20Factory.deploy('Mock Token', 'VAB')).deployed();
-    this.voteConract = await (await this.VoteFilmFactory.deploy()).deployed();
+    this.voteConract = await (await this.VoteFactory.deploy()).deployed();
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         CONFIG.daoFeeAddress,
-        this.vabContract.address,
+        CONFIG.vabToken,
         this.voteConract.address
       )
     ).deployed();   

@@ -7,6 +7,13 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library Helper {
+    enum Status {
+        LISTED,              // proposal created by studio
+        APPROVED_LISTING,    // approved for listing by vote from VAB holders(staker)
+        APPROVED_FUNDING,    // approved for funding by vote from VAB holders(staker)
+        APPROVED_WITHOUTVOTE // approved without community Vote
+    }
+
     enum TokenType {
         ERC20,
         ERC721,
@@ -28,7 +35,6 @@ library Helper {
         address to,
         uint256 value
     ) internal {
-        // bytes4(keccak256(bytes('transfer(address,uint256)')));
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::safeTransfer: transfer failed");
     }
@@ -39,7 +45,6 @@ library Helper {
         address to,
         uint256 value
     ) internal {
-        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::transferFrom: transferFrom failed");
     }

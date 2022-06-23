@@ -26,7 +26,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     IERC20 public immutable PAYOUT_TOKEN;// VAB token   
     address immutable public VOTE;       // vote contract address
-    uint256 public LOCK_PERIOD;          // lock period for staked VAB
+    uint256 public lockPeriod;           // lock period for staked VAB
     uint256 public rewardRate;           // 1% = 100, 100% = 10000
     uint256 public totalStakingAmount;   // 
     uint256 public totalRewardAmount;    // 
@@ -48,14 +48,15 @@ contract StakingPool is Ownable, ReentrancyGuard {
         PAYOUT_TOKEN = IERC20(_payoutToken);
         require(_voteContract != address(0), "_voteContract: ZERO address");
         VOTE = _voteContract;
-        LOCK_PERIOD = 30 days;
-        rewardRate = 1; // 0.01%
+
+        lockPeriod = 30 days;
+        rewardRate = 1; // 0.01% (1% = 100, 100%=10000)
     }
 
     /// @notice Update lock time(in second) by auditor
     function updateLockPeriod(uint256 _lockPeriod) external onlyAuditor {
         require(_lockPeriod > 0, "updateLockPeriod: not allow zero lock period");
-        LOCK_PERIOD = _lockPeriod;
+        lockPeriod = _lockPeriod;
         emit LockTimeUpdated(_lockPeriod);
     }
 
@@ -86,11 +87,11 @@ contract StakingPool is Ownable, ReentrancyGuard {
             stakerCount.increment();
         }
         userInfo[msg.sender].stakeAmount += _amount;
-        userInfo[msg.sender].withdrawableTime = block.timestamp + LOCK_PERIOD;
+        userInfo[msg.sender].withdrawableTime = block.timestamp + lockPeriod;
 
         totalStakingAmount += _amount;
 
-        emit TokenStaked(msg.sender, _amount, block.timestamp + LOCK_PERIOD);
+        emit TokenStaked(msg.sender, _amount, block.timestamp + lockPeriod);
     }
 
     /// @dev Allows user to unstake tokens after the correct time period has elapsed
@@ -118,7 +119,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
             block.timestamp >= userInfo[msg.sender].withdrawableTime, "withdrawReward: Token locked yet"
         );
 
-        // Todo should calculate rewardAmount
+        // Todo should calculate rewardAmount. again check
         uint256 rewardAmount = userInfo[msg.sender].stakeAmount * rewardRate / 10000;
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
