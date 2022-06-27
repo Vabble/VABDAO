@@ -110,7 +110,7 @@ contract Vote is Ownable, ReentrancyGuard {
             uint256[] memory voteInfos_
         ) = abi.decode(_voteData, (uint256[], uint256[]));
         
-        require(filmIds_.length == voteInfos_.length, "voteToFilm: Bad votes length");
+        require(filmIds_.length == voteInfos_.length, "voteToFilm: Bad voteInfos length");
 
         uint256[] memory votedFilmIds = new uint256[](filmIds_.length);
         uint256[] memory votedStatus = new uint256[](filmIds_.length);
@@ -126,7 +126,10 @@ contract Vote is Ownable, ReentrancyGuard {
     }
 
     function __voteToFilm(uint256 _filmId, uint256 _voteInfo) private returns(bool) {
-        require(!voteAttend[msg.sender][_filmId], "_voteToFilm: Already voted");        
+        require(!voteAttend[msg.sender][_filmId], "_voteToFilm: Already voted");    
+
+        Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId);
+        require(status == Helper.Status.LISTED, "Not listed");
 
         Proposal storage _proposal = proposal[_filmId];
         if(_proposal.voteCount == 0) {
@@ -157,6 +160,8 @@ contract Vote is Ownable, ReentrancyGuard {
         // so, staker cannot unstake his amount till 6/20
         uint256 withdrawableTime =  IStakingPool(STAKING_POOL).getWithdrawableTime(msg.sender);
         if (_proposal.voteStartTime + filmVotePeriod > withdrawableTime) {
+            console.log("sol=>updatedWithdrawTime in vote::", _proposal.voteStartTime + filmVotePeriod);
+            console.log("sol=>WithdrawTime in vote::", withdrawableTime, block.timestamp);
             IStakingPool(STAKING_POOL).updateWithdrawableTime(msg.sender, _proposal.voteStartTime + filmVotePeriod);
         }
 
@@ -164,11 +169,11 @@ contract Vote is Ownable, ReentrancyGuard {
     }
 
     /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by auditor
-    // if noFund is true, Approved for listing and if noFund is false, Approved for funding
+    // if isFund is true then Approved for funding, if isFund is false then Approved for listing
     function approveFilms(uint256[] memory _filmIds) external onlyAuditor {
         for (uint256 i; i < _filmIds.length; i++) {
             // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000, stakeAmount("ABSTAIN") is 500 in 10 days(votePeriod)
-            // In this case, Approved since 2000 > 1000 + 500
+            // In this case, Approved since 2000 > 1000 + 500 (it means ">50%")
             if(block.timestamp - proposal[_filmIds[i]].voteStartTime > filmVotePeriod) {
                 if(proposal[_filmIds[i]].stakeAmount_1 > proposal[_filmIds[i]].stakeAmount_2 + proposal[_filmIds[i]].stakeAmount_3) {                    
                     bool isFund = IVabbleDAO(VABBLE_DAO).isForFund(_filmIds[i]);

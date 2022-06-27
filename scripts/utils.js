@@ -7,8 +7,10 @@ const ZERO_ADDRESS = ethers.constants.AddressZero;
 const CONFIG = {
   daoFeeAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
-  usdcAdress: "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926",//usdc in rinkeby    
-  vabToken: "0x7e8a9cB60E99baF479FECCb4a29C33caaEeb1c52",  //vab in rinkeby
+  usdcAdress: "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926", // usdc in rinkeby    
+  daiAddress: "0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735", // dai in rinkeby
+  vabToken: "0x7e8a9cB60E99baF479FECCb4a29C33caaEeb1c52",   // vab in rinkeby
+  exmAddress: "0x6dB7315f4A296E47Eee37Ebb6871091dF5c2c40F", // exm in rinkeby
   uniswap: {//Mainnet, kovan, rinkeby ...
     factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
     router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -56,6 +58,11 @@ const FILM_DATA = {
   sWatchs: [2000, 1500, 3000], // 20% 15% 30%
   rentPrice: r_number(),
   voteItem: [1, 1, 2, 3], // 1=>yes, 2=>no, 3=> abstain
+
+  rentPrices : [getBigNumber(100), getBigNumber(200), getBigNumber(300), getBigNumber(400)],
+  fundPeriods : [getBigNumber(30 * 86400, 0), getBigNumber(30 * 86400, 0), getBigNumber(60 * 86400, 0), getBigNumber(10 * 86400, 0)],
+  onlyAllowVABs : [true, true, false, false],
+  raiseAmounts : [getBigNumber(0), getBigNumber(0), getBigNumber(30000), getBigNumber(30000)],
 };
 
 function getByteFilm() {
@@ -90,9 +97,9 @@ function getFinalFilm(customer, filmIds) {
   return ethers.utils.hexlify(uint8Arr);
 }
 
-function getVoteData(filmIds) {
+function getVoteData(filmIds, voteInfos) {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
-    [ "uint256[]", "uint256[]" ], [filmIds, FILM_DATA.voteItem]
+    [ "uint256[]", "uint256[]" ], [filmIds, voteInfos]
   );
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);

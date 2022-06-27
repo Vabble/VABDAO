@@ -18,6 +18,8 @@ interface IVabbleDAO {
         Helper.Status status_
     );
 
+    function getFilmStatusById(uint256 _filmId) external view returns (Helper.Status status_);
+
     function getUserAmount(address _user) external view returns(uint256 amount_);
 
     function getProposalFilmIds() external view returns(uint256[] memory);

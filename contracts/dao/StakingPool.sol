@@ -88,6 +88,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         }
         userInfo[msg.sender].stakeAmount += _amount;
         userInfo[msg.sender].withdrawableTime = block.timestamp + lockPeriod;
+        console.log("sol=>withdrawTime in staking::", userInfo[msg.sender].withdrawableTime, block.timestamp);
 
         totalStakingAmount += _amount;
 
@@ -98,6 +99,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     function unstakeToken(uint256 _amount) public nonReentrant {
         require(msg.sender != address(0), "unstakeToken: Zero staker address");
         require(userInfo[msg.sender].stakeAmount >= _amount, "unstakeToken: Insufficient stake token amount");
+        console.log("sol=>withdrawTime in unstaking::", userInfo[msg.sender].withdrawableTime);
         require(
             block.timestamp >= userInfo[msg.sender].withdrawableTime, "unstakeToken: Token locked yet"
         );

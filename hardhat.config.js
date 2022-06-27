@@ -63,7 +63,7 @@ module.exports = {
       saveDeployments: true,
       forking: {
         url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
-        blockNumber: 10898384,
+        blockNumber: 10908608,
       },
       gasPrice: "auto",
       accounts: {
@@ -130,7 +130,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 2000,
+            runs: 20000,
           },
         },        
         // evmVersion: "byzantium",
@@ -140,7 +140,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 2000,
+            runs: 20000,
           },
         },
         // evmVersion: "byzantium",

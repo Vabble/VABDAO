@@ -33,7 +33,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     event FundProcessed(uint256 filmId);
 
     struct UserRent {
-        uint256 vabAmount;          // current VAB amount in DAO
+        uint256 vabAmount;       // current VAB amount in DAO
         uint256 withdrawAmount;  // pending withdraw amount for a customer
     }
 
@@ -46,9 +46,9 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     struct Film {
         address[] studioPayees; // addresses who studio define to pay revenue
         uint256[] sharePercents;// percents(1% = 100) that studio defines to pay revenue for each payee
-        uint256 rentPrice;      // amount that a customer rents a film
+        uint256 rentPrice;      // VAB amount that a customer rents a film
         uint256 rentStartTime;  // time(block.timestamp) that a customer rents a film
-        uint256 raiseAmount;    // amount in cash studio are seeking to raise for the film. if 0, this film is not for funding
+        uint256 raiseAmount;    // USDC amount(in cash) studio are seeking to raise for the film. if 0, this film is not for funding
         uint256 fundPeriod;     // how many days(ex: 20 days) to keep the funding pool open
         uint256 fundStart;      // time(block.timestamp) that film approved for raising fund
         address studio;         // address of studio who is admin of film 
@@ -63,10 +63,10 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     address public immutable USDC_TOKEN;      // USDC token 
     address public DAOFee;                    // address for transferring DAO Fee
 
-    uint256 public proposalFeeAmount;         // amount($100) studio should pay when create a proposal
+    uint256 public proposalFeeAmount;         // USDC amount($100) studio should pay when create a proposal
     uint256 public fundFeePercent;            // percent(2% = 200) of fee on the amount raised.
-    uint256 public minDepositAmount;          // min amount($50) that a customer can deposit to a film approved for funding
-    uint256 public maxDepositAmount;          // max amount($5000) that a customer can deposit to a film approved for funding
+    uint256 public minDepositAmount;          // USDC min amount($50) that a customer can deposit to a film approved for funding
+    uint256 public maxDepositAmount;          // USDC max amount($5000) that a customer can deposit to a film approved for funding
     uint256 public lastfundProposalCreateTime;// funding proposal created time(block.timestamp)
 
     uint256[] private proposalFilmIds;    
@@ -78,8 +78,9 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     mapping(address => UserRent) public userRentInfo;
     
     // Todo Funding Raise from tokens
-    mapping(uint256 => uint256) public raiseAmountPerFilm;            //(filmId => raiseAmount)
-    mapping(uint256 => mapping(address => Asset[])) public assetInfo; //(filmId => (customer => Asset[asset, amount]))
+    // mapping(uint256 => uint256) public raiseAmountPerFilm;          // (filmId => raiseAmount)
+    mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
+    mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
 
     Counters.Counter public filmIds;          // filmId is from No.1
 
@@ -269,11 +270,8 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
         // Assgin the VAB token to payees based on share(%) and watch(%)
         for (uint256 i = 0; i < filmIds_.length; i++) {
-                // console.log("sol=>1", proposal[_filmIds[i]].stakeAmount_1);
-                // console.log("sol=>2", proposal[_filmIds[i]].stakeAmount_2 + proposal[_filmIds[i]].stakeAmount_3);
             // Todo should check again with APPROVED_LISTING
             if(filmInfo[filmIds_[i]].status == Helper.Status.APPROVED_LISTING) { 
-                console.log("sol=>0", filmIds_[i]);      
                 uint256 payout = __getPayoutFor(filmIds_[i], watchPercents_[i]);
                 if(payout > 0 && userRentInfo[customer_].vabAmount >= payout) {
                     userRentInfo[customer_].vabAmount -= payout; 
@@ -301,7 +299,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
             require(_token == address(PAYOUT_TOKEN), "depositToFilm: Allowed only VAB token");            
         } 
 
-        // case of ETH
+        // Return remain ETH to user back if case of ETH
         if(_token == address(0)) {
             require(msg.value >= _amount, "depositToFilm: Insufficient paid");
             if (msg.value > _amount) {
@@ -325,36 +323,52 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
     /// @notice Update/Add user fund amount
     function __assignToken(uint256 _filmId, address _token, uint256 _amount) private {
-        bool isNewToken = true;
+        bool isNewTokenPerUser = true;
+        bool isNewTokenPerFilm = true;
         Asset[] memory assetArr = assetInfo[_filmId][msg.sender];
-
         // update token amount
         for(uint256 i; i < assetArr.length; i++) {
             if(_token == assetArr[i].token) {
-                assetArr[i].amount = assetArr[i].amount + _amount;
-                isNewToken = false;
+                assetInfo[_filmId][msg.sender][i].amount += _amount;
+                isNewTokenPerUser = false;
             }
         }
         // add new token
-        if(isNewToken) {
+        if(isNewTokenPerUser) {
             assetInfo[_filmId][msg.sender].push(Asset({
                 token: _token,
                 amount: _amount 
             }));
         }
         
-        raiseAmountPerFilm[_filmId] += _amount;
+        Asset[] memory _assetPerFilm = assetPerFilm[_filmId];
+        for(uint256 i; i < _assetPerFilm.length; i++) {
+            if(_token == _assetPerFilm[i].token) {
+                assetPerFilm[_filmId][i].amount += _amount;
+                isNewTokenPerFilm = false;
+            }
+        }
+        if(isNewTokenPerFilm) {
+            assetPerFilm[_filmId].push(Asset({
+                token: _token,
+                amount: _amount 
+            }));
+        }
     }
     
     /// @notice Send 2% of fund to reward pool after fund period
     // Send the 2% of funds to reward pool in VAB if funding meet the raise amount
     function fundProcess(uint256 _filmId) external onlyStudio nonReentrant {
+        require(filmInfo[_filmId].studio == msg.sender, "fundProcess: Bad studio of this film");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "fundProcess: filmId not approved for funding");
         require(filmInfo[_filmId].fundPeriod < block.timestamp - filmInfo[_filmId].fundStart, "fundProcess: funding period");
-        require(raiseAmountPerFilm[_filmId] >= filmInfo[_filmId].raiseAmount, "fundProcess: fails to meet raise amount");
+
+        uint256 raiseAmountPerFilm = getRaiseAmountPerFilm(_filmId);
+        console.log("sol=>actural=expect::", raiseAmountPerFilm, filmInfo[_filmId].raiseAmount);
+        require(raiseAmountPerFilm >= filmInfo[_filmId].raiseAmount, "fundProcess: fails to meet raise amount");
                         
         // Todo send fundFeePercent(2%) to reward pool as VAB token and rest send to studio
-        Asset[] memory assetArr = assetInfo[_filmId][msg.sender];
+        Asset[] memory assetArr = assetPerFilm[_filmId];
         uint256 rewardSumAmount;
         uint256 rewardAmount;
         for(uint256 i; i < assetArr.length; i++) {                
@@ -362,10 +376,15 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
             if(address(PAYOUT_TOKEN) == assetArr[i].token) {
                 rewardSumAmount += rewardAmount;
             } else {
+                if(IERC20(assetArr[i].token).allowance(address(this), UNI_HELPER) == 0) {
+                    Helper.safeApprove(assetArr[i].token, UNI_HELPER, IERC20(assetArr[i].token).totalSupply());
+                }
                 bytes memory swapArgs = abi.encode(rewardAmount, assetArr[i].token, address(PAYOUT_TOKEN));
                 rewardSumAmount += IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             }
             assetArr[i].amount -= rewardAmount;
+            Helper.safeTransfer(assetArr[i].token, msg.sender, assetArr[i].amount);
+            assetArr[i].amount = 0;
         }
 
         if(rewardSumAmount > 0) {
@@ -380,7 +399,9 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     function withdrawFunding(uint256 _filmId) external nonReentrant {     
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "withdrawFunding: filmId not approved for funding");
         require(filmInfo[_filmId].fundPeriod < block.timestamp - filmInfo[_filmId].fundStart, "withdrawFunding: funding period");
-        require(raiseAmountPerFilm[_filmId] < filmInfo[_filmId].raiseAmount, "withdrawFunding: satisfied raise amount");
+
+        uint256 raiseAmountPerFilm = getRaiseAmountPerFilm(_filmId);
+        require(raiseAmountPerFilm > 0 && raiseAmountPerFilm < filmInfo[_filmId].raiseAmount, "withdrawFunding: satisfied raise amount");
 
         Asset[] memory assetArr = assetInfo[_filmId][msg.sender];
         for(uint256 i; i < assetArr.length; i++) {   
@@ -402,6 +423,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     function depositVAB(uint256 _amount) external nonReentrant returns(uint256) {
         require(msg.sender != address(0), "depositVAB: Zero user address");
         require(_amount > 0, "depositVAB: Zero amount");
+        require(_amount <= PAYOUT_TOKEN.balanceOf(msg.sender), "depositVAB: Insufficient VAB amount");
 
         Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
         userRentInfo[msg.sender].vabAmount += _amount;
@@ -413,7 +435,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
     /// @notice Pending Withdraw VAB token by customer
     function customerRequestWithdraw(uint256 _amount) external nonReentrant {
-        require(msg.sender != address(0), "customerRequestWithdraw: Invalid customer address");
+        require(msg.sender != address(0), "customerRequestWithdraw: Zero customer address");
         require(_amount > 0 && _amount <= userRentInfo[msg.sender].vabAmount, "customerRequestWithdraw: Insufficient VAB amount");
 
         userRentInfo[msg.sender].withdrawAmount = _amount;
@@ -534,21 +556,47 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
     /// @notice Check min & max amount for each token/ETH per film
     function __checkMinMaxAmount(uint256 _filmId, address _token, uint256 _amount) private view returns (bool) {
-        uint256 minDepositTokenAmount = IUniHelper(UNI_HELPER).expectedAmount(minDepositAmount, USDC_TOKEN, _token);
-        uint256 maxDepositTokenAmount = IUniHelper(UNI_HELPER).expectedAmount(maxDepositAmount, USDC_TOKEN, _token);
         uint256 userFundAmountPerFilm = __getUserFundAmountPerFilm(_filmId);
         uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, USDC_TOKEN);
-
-        if(_amount >= minDepositTokenAmount && fundAmount + userFundAmountPerFilm <= maxDepositTokenAmount) return true;
-        else return false;
+        if(_amount >= minDepositAmount && fundAmount + userFundAmountPerFilm <= maxDepositAmount) {
+            return true;
+        } else {
+            return false;
+        } 
     }
 
     /// @notice Get user fund amount in cash(usdc) for each token per film
-    function __getUserFundAmountPerFilm(uint256 _filmId) private view returns (uint256 amount_) {
+    function __getUserFundAmountPerFilm(uint256 _filmId) private view returns (uint256) {
+        uint256 amount_;
         Asset[] memory assetArr = assetInfo[_filmId][msg.sender];
         for(uint256 i; i < assetArr.length; i++) {
+            if(assetArr[i].amount == 0) continue;
+
+            if(assetArr[i].token == USDC_TOKEN) {
+                amount_ += assetArr[i].amount;
+                continue;
+            }
             amount_ += IUniHelper(UNI_HELPER).expectedAmount(assetArr[i].amount, assetArr[i].token, USDC_TOKEN);
         }
+
+        return amount_;
+    }
+
+    /// @notice Get fund amount in cash(usdc) per film
+    function getRaiseAmountPerFilm(uint256 _filmId) public view returns (uint256) {
+        uint256 amount_;
+        Asset[] memory assetArr = assetPerFilm[_filmId];
+        for(uint256 i; i < assetArr.length; i++) {
+            if(assetArr[i].amount == 0) continue;
+
+            if(assetArr[i].token == USDC_TOKEN) {
+                amount_ += assetArr[i].amount;
+                continue;
+            }
+            amount_ += IUniHelper(UNI_HELPER).expectedAmount(assetArr[i].amount, assetArr[i].token, USDC_TOKEN);
+        }
+
+        return amount_;
     }
 
     // =================== View functions =====================
@@ -587,6 +635,12 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         fundStart_ = _filmInfo.fundStart;
         studio_ = _filmInfo.studio;
         onlyAllowVAB_ = _filmInfo.onlyAllowVAB;
+        status_ = _filmInfo.status;
+    }
+
+    /// @notice Get film item based on Id
+    function getFilmStatusById(uint256 _filmId) external view returns (Helper.Status status_) {
+        Film storage _filmInfo = filmInfo[_filmId];
         status_ = _filmInfo.status;
     }
 

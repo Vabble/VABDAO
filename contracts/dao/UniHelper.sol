@@ -68,8 +68,7 @@ contract UniHelper {
 
     /// @notice check if special pool exist on uniswap
     function __checkPool(address[] memory _path) private view returns (address router_, address factory_) {        
-        address uniPool = IUniswapV2Factory(UNISWAP2_FACTORY).getPair(_path[0], _path[1]);   
-        
+        address uniPool = IUniswapV2Factory(UNISWAP2_FACTORY).getPair(_path[0], _path[1]);
         if(uniPool != address(0)) {
             return (UNISWAP2_ROUTER, UNISWAP2_FACTORY);
         } else {
@@ -90,7 +89,6 @@ contract UniHelper {
         path[0] = depositAsset;            
         if(path[0] == address(0)) path[0] = WETH;
         path[1] = incomingAsset;
-
         (router, ) = __checkPool(path);        
         require(router != address(0), "swapAsset: No Pool");
 
