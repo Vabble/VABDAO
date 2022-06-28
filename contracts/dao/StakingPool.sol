@@ -22,6 +22,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     struct UserInfo {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
+        uint256 rewardTime;// last staked time(here, means the time that staker withdrawable time)
     }
 
     IERC20 public immutable PAYOUT_TOKEN;// VAB token   
@@ -53,28 +54,15 @@ contract StakingPool is Ownable, ReentrancyGuard {
         rewardRate = 1; // 0.01% (1% = 100, 100%=10000)
     }
 
-    /// @notice Update lock time(in second) by auditor
-    function updateLockPeriod(uint256 _lockPeriod) external onlyAuditor {
-        require(_lockPeriod > 0, "updateLockPeriod: not allow zero lock period");
-        lockPeriod = _lockPeriod;
-        emit LockTimeUpdated(_lockPeriod);
-    }
-
     /// @notice Add reward token(VAB)
-    function addReward(uint256 _amount) external {
-        require(_amount > 0 && _amount <= PAYOUT_TOKEN.balanceOf(msg.sender), 'addReward: Insufficient reward amount');
+    function addRewardToPool(uint256 _amount) external {
+        require(_amount > 0 && _amount <= PAYOUT_TOKEN.balanceOf(msg.sender), 'addRewardToPool: Insufficient reward amount');
 
         Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
         totalRewardAmount += _amount;
 
         emit RewardAdded(totalRewardAmount, _amount);
-    }
-
-    /// @notice Update reward rate by auditor
-    function updateRewardRate(uint256 _rate) external onlyAuditor {
-        require(_rate > 0 && rewardRate != _rate, "updateRewardRate: not allow rate");
-        rewardRate = _rate;
-    }
+    }    
 
     /// @notice Staking VAB token by staker
     function stakeToken(uint256 _amount) public nonReentrant {
@@ -88,7 +76,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         }
         userInfo[msg.sender].stakeAmount += _amount;
         userInfo[msg.sender].withdrawableTime = block.timestamp + lockPeriod;
-        console.log("sol=>withdrawTime in staking::", userInfo[msg.sender].withdrawableTime, block.timestamp);
+        userInfo[msg.sender].rewardTime = block.timestamp;
 
         totalStakingAmount += _amount;
 
@@ -96,7 +84,8 @@ contract StakingPool is Ownable, ReentrancyGuard {
     }
 
     /// @dev Allows user to unstake tokens after the correct time period has elapsed
-    function unstakeToken(uint256 _amount) public nonReentrant {
+    function unstakeToken(uint256 _amount) external nonReentrant {
+
         require(msg.sender != address(0), "unstakeToken: Zero staker address");
         require(userInfo[msg.sender].stakeAmount >= _amount, "unstakeToken: Insufficient stake token amount");
         console.log("sol=>withdrawTime in unstaking::", userInfo[msg.sender].withdrawableTime);
@@ -104,8 +93,15 @@ contract StakingPool is Ownable, ReentrancyGuard {
             block.timestamp >= userInfo[msg.sender].withdrawableTime, "unstakeToken: Token locked yet"
         );
 
+        // first, withdraw reward
+        uint256 timePercent = (block.timestamp - userInfo[msg.sender].rewardTime) * 10000 / lockPeriod;
+        uint256 rewardAmount = userInfo[msg.sender].stakeAmount * timePercent * rewardRate / 10000 / 10000;
+        if(totalRewardAmount >= rewardAmount) {
+            __withdrawReward(rewardAmount);
+        }
+
         // Todo should check if we consider reward amount here or not
-        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);
+        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);        
         userInfo[msg.sender].stakeAmount -= _amount;
 
         totalStakingAmount -= _amount;
@@ -117,19 +113,41 @@ contract StakingPool is Ownable, ReentrancyGuard {
     function withdrawReward() external {
         require(msg.sender != address(0), "withdrawReward: Zero staker address");
         require(userInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
-        require(
-            block.timestamp >= userInfo[msg.sender].withdrawableTime, "withdrawReward: Token locked yet"
-        );
+        require(block.timestamp - userInfo[msg.sender].rewardTime > lockPeriod, "withdrawReward: lock period yet");
 
-        // Todo should calculate rewardAmount. again check
-        uint256 rewardAmount = userInfo[msg.sender].stakeAmount * rewardRate / 10000;
+        // Todo should calculate rewardAmount.
+        uint256 timePercent = (block.timestamp - userInfo[msg.sender].rewardTime) * 10000 / lockPeriod;
+        uint256 rewardAmount = userInfo[msg.sender].stakeAmount * timePercent * rewardRate / 10000 / 10000;
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
-        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, rewardAmount);
+        __withdrawReward(rewardAmount);
+    }
 
-        totalRewardAmount -= rewardAmount;
+    /// @dev Transfer reward amount
+    function __withdrawReward(uint256 _amount) private {
+        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);
+        userInfo[msg.sender].rewardTime = block.timestamp;
+        totalRewardAmount -= _amount;
 
-        emit RewardWithdraw(msg.sender, rewardAmount);
+        emit RewardWithdraw(msg.sender, _amount);
+    }
+
+    /// @notice Update lastStakedTime for a staker when vote
+    function updateWithdrawableTime(address _user, uint256 _time) external onlyVote {
+        userInfo[_user].withdrawableTime = _time;
+    }
+
+    /// @notice Update reward rate by auditor
+    function updateRewardRate(uint256 _rate) external onlyAuditor {
+        require(_rate > 0 && rewardRate != _rate && rewardRate < 10000, "updateRewardRate: not allow rate");
+        rewardRate = _rate;
+    }
+
+    /// @notice Update lock time(in second) by auditor
+    function updateLockPeriod(uint256 _lockPeriod) external onlyAuditor {
+        require(_lockPeriod > 0, "updateLockPeriod: not allow zero lock period");
+        lockPeriod = _lockPeriod;
+        emit LockTimeUpdated(_lockPeriod);
     }
 
     /// @notice Get staking amount for a staker
@@ -140,10 +158,5 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @notice Get withdrawableTime for a staker
     function getWithdrawableTime(address _user) external view returns(uint256 time_) {
         time_ = userInfo[_user].withdrawableTime;
-    }
-
-    /// @notice Update lastStakedTime for a staker when vote
-    function updateWithdrawableTime(address _user, uint256 _time) external onlyVote {
-        userInfo[_user].withdrawableTime = _time;
-    }
+    }    
 }

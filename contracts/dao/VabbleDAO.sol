@@ -523,10 +523,11 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
     /// @dev Helper to add reward to staking pool
     function addReward(uint256 _amount) public {
+        require(_amount > 0, "addReward: Zero amount"); 
         if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
             Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
-        }
-        IStakingPool(STAKING_POOL).addReward(_amount);
+        }        
+        IStakingPool(STAKING_POOL).addRewardToPool(_amount);
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool

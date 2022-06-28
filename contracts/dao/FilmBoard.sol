@@ -75,7 +75,7 @@ contract FilmBoard is Ownable, ReentrancyGuard {
     function createProposalFilmBoard(address _member) external nonReentrant {
         require(_member != address(0), "createProposalFilmBoard: Zero candidate address");     
         require(!isWhitelist(_member), "createProposalFilmBoard: Already film board member");                  
-        require(__isPaidFee(IVabbleDAO(VABBLE_DAO).proposalFeeAmount(), false), 'createProposalFilms: Not paid fee');     
+        require(__isPaidFee(), 'createProposalFilms: Not paid fee');     
 
         filmBoardCandidates.push(_member);
 
@@ -116,15 +116,17 @@ contract FilmBoard is Ownable, ReentrancyGuard {
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> this contract(FilmBoard) -> stakingPool.
-    function __isPaidFee(uint256 _proposalFeeAmount, bool _noVote) private returns(bool) {       
-        uint256 depositAmount = _proposalFeeAmount;
-        if(_noVote) depositAmount = _proposalFeeAmount * 2;
-
-        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(depositAmount, USDC_TOKEN, address(PAYOUT_TOKEN));
+    function __isPaidFee() private returns(bool) {       
+        uint256 feeAmount = IVabbleDAO(VABBLE_DAO).proposalFeeAmount();
+        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(feeAmount, USDC_TOKEN, address(PAYOUT_TOKEN));
            
         if(expectVABAmount > 0) {
             Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), expectVABAmount);
-            IVabbleDAO(VABBLE_DAO).addReward(expectVABAmount);
+            
+            if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
+                Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
+            }  
+            IStakingPool(STAKING_POOL).addRewardToPool(expectVABAmount);
             return true;
         } else {
             return false;

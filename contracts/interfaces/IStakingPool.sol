@@ -9,5 +9,5 @@ interface IStakingPool {
 
     function updateWithdrawableTime(address _user, uint256 _time) external;
 
-    function addReward(uint256 _amount) external;
+    function addRewardToPool(uint256 _amount) external;
 }
