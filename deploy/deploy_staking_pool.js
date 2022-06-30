@@ -5,7 +5,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deployer } = await getNamedAccounts();
   const { CONFIG } = require('../scripts/utils');
 
-  // this.mockVAB = await deployments.get('MockERC20');
   this.Vote = await deployments.get('Vote');
 
   await deploy('StakingPool', {

@@ -4,7 +4,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
   const { CONFIG } = require('../scripts/utils');
-  // this.mockVAB = await deployments.get('MockERC20');
+  
   this.Vote = await deployments.get('Vote');
   this.StakingPool = await deployments.get('StakingPool');
   this.UniHelper = await deployments.get('UniHelper');
@@ -22,17 +22,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     log: true,
     deterministicDeployment: false,
     skipIfAlreadyDeployed: true,
-  });
-
-  this.vabbleDAOContract = await deployments.get('VabbleDAO');
-  console.log("vote contract address==", this.Vote.address+"=="+this.vabbleDAOContract.address);
-  const VoteFactory = await ethers.getContractFactory('Vote');
-  const voteConract = await (await VoteFactory.deploy()).deployed();
-  await voteConract.initializeVote(
-    this.vabbleDAOContract.address,
-    this.StakingPool.address,
-    CONFIG.vabToken
-  )
+  });  
 };
 
 module.exports.id = 'deploy_vabble_dao'

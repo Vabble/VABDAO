@@ -17,7 +17,6 @@ contract FilmBoard is Ownable, ReentrancyGuard {
     event FilmBoardProposalCreated(address member);
     event FilmBoardMemberAdded(address member);
     event FilmBoardMemberRemoved(address member);
-    event ProposalFeeAmountUpdated(uint256 proposalFeeAmount);
     
     IERC20 public immutable PAYOUT_TOKEN;     // VAB token        
     address public immutable VOTE;            // Vote contract address

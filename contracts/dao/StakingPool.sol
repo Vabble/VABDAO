@@ -56,7 +56,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     /// @notice Add reward token(VAB)
     function addRewardToPool(uint256 _amount) external {
-        require(_amount > 0 && _amount <= PAYOUT_TOKEN.balanceOf(msg.sender), 'addRewardToPool: Insufficient reward amount');
+        require(_amount > 0, 'addRewardToPool: Zero amount');
 
         Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
         totalRewardAmount += _amount;
@@ -66,8 +66,8 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     /// @notice Staking VAB token by staker
     function stakeToken(uint256 _amount) public nonReentrant {
-        require(msg.sender != address(0), "stakeToken: Zero staker address");
-        require(_amount > 0 && PAYOUT_TOKEN.balanceOf(msg.sender) >= _amount, "stakeToken: Insufficient VAB token amount");
+        require(msg.sender != address(0), "stakeToken: Zero address");
+        require(_amount > 0, "stakeToken: Zero amount");
 
         Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
 

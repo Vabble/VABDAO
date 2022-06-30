@@ -217,7 +217,7 @@ describe('VabbleDAO', function () {
     // User balance is 1999800 and transfer amount is 2000000. Insufficient amount!
     await expect(
       this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(2000000), {from: this.customer1.address})
-    ).to.be.revertedWith('depositVAB: Insufficient VAB amount');
+    ).to.be.revertedWith('VabbleDAO::transferFrom: transferFrom failed');
 
     // Event - depositVAB
     await expect(
@@ -234,16 +234,16 @@ describe('VabbleDAO', function () {
     expect(user1Amount.vabAmount_).to.be.equal(getBigNumber(100))
     expect(user1Amount.withdrawAmount_).to.be.equal(getBigNumber(0))
 
-    // Event - CustomerWithdrawRequested
+    // Event - WithdrawPending
     await expect(
-      this.DAOContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(50), {from: this.customer1.address})
+      this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(50), {from: this.customer1.address})
     )
-    .to.emit(this.DAOContract, 'CustomerWithdrawRequested')
+    .to.emit(this.DAOContract, 'WithdrawPending')
     .withArgs(this.customer1.address, this.vabToken.address, getBigNumber(50));  
 
     await expect(
-      this.DAOContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(150), {from: this.customer1.address})
-    ).to.be.revertedWith('customerRequestWithdraw: Insufficient VAB amount');
+      this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(150), {from: this.customer1.address})
+    ).to.be.revertedWith('pendingWithdraw: Insufficient VAB amount');
     
     // Check withdraw amount after send withraw request
     user1Amount = await this.DAOContract.getUserRentInfo(this.customer1.address);
@@ -319,9 +319,9 @@ describe('VabbleDAO', function () {
     expect(ids.length).to.be.equal(approveData.length-1)
     
     // 5 Withdraw request(40 VAB) from customer1, 2, 3
-    await this.DAOContract.connect(this.customer1).customerRequestWithdraw(getBigNumber(40), {from: this.customer1.address});
-    await this.DAOContract.connect(this.customer2).customerRequestWithdraw(getBigNumber(40), {from: this.customer2.address});
-    await this.DAOContract.connect(this.customer3).customerRequestWithdraw(getBigNumber(40), {from: this.customer3.address});
+    await this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(40), {from: this.customer1.address});
+    await this.DAOContract.connect(this.customer2).pendingWithdraw(getBigNumber(40), {from: this.customer2.address});
+    await this.DAOContract.connect(this.customer3).pendingWithdraw(getBigNumber(40), {from: this.customer3.address});
 
     // 6. Auditor submit three audit actions(for customer1) with watched percent(20%, 15%, 30%) to VabbleDAO contract
     // only two film 1,2 approved in 4-4 so film3 watch(30%) ignored
@@ -418,7 +418,7 @@ describe('VabbleDAO', function () {
     tx = await this.DAOContract.connect(this.customer2).depositToFilm(
       ids[0], CONFIG.vabToken, depositAmount, {from: this.customer2.address}
     )
-    const raiseAmount_1 = await this.DAOContract.getRaiseAmountPerFilm(ids[0])
+    const raiseAmount_1 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])
     console.log("====raiseAmount_1::", raiseAmount_1.toString()) // 499248873
 
     // 6. Deposit to film Id(3) that not approved
@@ -444,7 +444,7 @@ describe('VabbleDAO', function () {
     // 8-1. Get total reward amount in the StakingPool
     const totalRewardAmount_0 = await this.stakingContract.totalRewardAmount()
     // console.log("====totalRewardAmount_0::", totalRewardAmount_0.toString())
-    const raiseAmount_2 = await this.DAOContract.getRaiseAmountPerFilm(ids[0])
+    const raiseAmount_2 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])
     if(raiseAmount_2 < raiseAmounts[0]) {
       await this.DAOContract.connect(this.customer2).depositToFilm(
         ids[0], CONFIG.vabToken, depositAmount, {from: this.customer1.address}
@@ -516,7 +516,7 @@ describe('VabbleDAO', function () {
       ids[0], CONFIG.exmAddress, depositAmount, {from: this.customer1.address}
     )
 
-    const raiseAmount_0 = await this.DAOContract.getRaiseAmountPerFilm(ids[0])    
+    const raiseAmount_0 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])    
     console.log("====raiseAmount_0::", raiseAmount_0.toString())  
 
     const customer1_1 = await this.EXM.balanceOf(this.customer1.address)
@@ -526,7 +526,7 @@ describe('VabbleDAO', function () {
     tx = await this.DAOContract.connect(this.customer2).depositToFilm(
       ids[0], CONFIG.exmAddress, depositAmount, {from: this.customer2.address}
     )
-    const raiseAmount_1 = await this.DAOContract.getRaiseAmountPerFilm(ids[0])  
+    const raiseAmount_1 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])  
     console.log("====raiseAmount_1::", raiseAmount_1.toString())  
 
     // => Increase next block timestamp
