@@ -25,8 +25,9 @@ contract StakingPool is Ownable, ReentrancyGuard {
         uint256 rewardTime;// last staked time(here, means the time that staker withdrawable time)
     }
 
-    IERC20 public immutable PAYOUT_TOKEN;// VAB token   
-    address immutable public VOTE;       // vote contract address
+    IERC20 private immutable PAYOUT_TOKEN;// VAB token   
+    address private immutable VOTE;       // vote contract address
+    
     uint256 public lockPeriod;           // lock period for staked VAB
     uint256 public rewardRate;           // 1% = 100, 100% = 10000
     uint256 public totalStakingAmount;   // 

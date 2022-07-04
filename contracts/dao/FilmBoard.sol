@@ -18,21 +18,20 @@ contract FilmBoard is Ownable, ReentrancyGuard {
     event FilmBoardMemberAdded(address member);
     event FilmBoardMemberRemoved(address member);
     
-    IERC20 public immutable PAYOUT_TOKEN;     // VAB token        
-    address public immutable VOTE;            // Vote contract address
-    address public immutable VABBLE_DAO;      // VabbleDAO contract address    
-    address public immutable STAKING_POOL;    // StakingPool contract address
-    address public immutable UNI_HELPER;      // UniHelper contract address
-    address public immutable USDC_TOKEN;      // USDC token 
+    IERC20 private immutable PAYOUT_TOKEN;     // VAB token        
+    address private immutable VOTE;            // Vote contract address
+    address private immutable VABBLE_DAO;      // VabbleDAO contract address    
+    address private immutable STAKING_POOL;    // StakingPool contract address
+    address private immutable UNI_HELPER;      // UniHelper contract address
+    address private immutable USDC_TOKEN;      // USDC token 
 
+    address public Agent;
     uint256 public maxAllowPeriod;            // max allowed period for removing filmBoard member    
 
-    address[] public filmBoardCandidates;     // filmBoard candidates and if isWhitelist is true, become filmBoard member
-    address[] public agentArray;              // agent list for replacing Auditor
+    address[] public filmBoardCandidates;     // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
 
-    mapping(address => bool) public filmBoardWhitelist; // (filmBoard member => true/false)
-    mapping(address => uint256) public lastVoteTime;    // (staker => block.timestamp)
-    mapping(address => bool) public agentList;          // (agent => true/false)
+    mapping(address => uint256) public isBoardWhitelist; // (filmBoard member => 0: no member, 1: candiate, 2: member)
+    mapping(address => uint256) public lastVoteTime;     // (staker => block.timestamp)
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -73,10 +72,11 @@ contract FilmBoard is Ownable, ReentrancyGuard {
     // Everyone(owned $100 of VAB) can create this proposal
     function createProposalFilmBoard(address _member) external nonReentrant {
         require(_member != address(0), "createProposalFilmBoard: Zero candidate address");     
-        require(!isWhitelist(_member), "createProposalFilmBoard: Already film board member");                  
+        require(isBoardWhitelist[_member] == 0, "createProposalFilmBoard: Already film board member or candidate");                  
         require(__isPaidFee(), 'createProposalFilms: Not paid fee');     
 
         filmBoardCandidates.push(_member);
+        isBoardWhitelist[_member] = 1;
 
         emit FilmBoardProposalCreated(_member);
     }
@@ -84,35 +84,25 @@ contract FilmBoard is Ownable, ReentrancyGuard {
     /// @notice Add a member to whitelist by Vote contract
     function addFilmBoardMember(address _member) external onlyVote nonReentrant {
         require(_member != address(0), "addFilmBoardMember: Zero candidate address");     
-        require(!isWhitelist(_member), "addFilmBoardMember: Already film board member");   
+        require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
 
-        filmBoardWhitelist[_member] = true;
+        isBoardWhitelist[_member] = 2;
 
         emit FilmBoardMemberAdded(_member);
     }
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
     function removeFilmBoardMember(address _member) external nonReentrant {
-        require(isWhitelist(_member), "removeFilmBoardMember: Not Film board member");
+        require(isBoardWhitelist[_member] == 2, "removeFilmBoardMember: Not Film board member");
         
         if(maxAllowPeriod < block.timestamp - lastVoteTime[_member]) {
             if(maxAllowPeriod > block.timestamp - IVabbleDAO(VABBLE_DAO).lastfundProposalCreateTime()) {
-                filmBoardWhitelist[_member] = false;
+                isBoardWhitelist[_member] = 0;
                 emit FilmBoardMemberRemoved(_member);
             }
         }
     }
-
-    /// @notice Check if a user is from whitelist
-    function isWhitelist(address _member) public view returns (bool) {
-        return filmBoardWhitelist[_member];
-    }
-
-    /// @notice Update last vote time
-    function updateLastVoteTime(address _member) external onlyVote {
-        lastVoteTime[_member] = block.timestamp;
-    }
-
+    
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> this contract(FilmBoard) -> stakingPool.
     function __isPaidFee() private returns(bool) {       
@@ -132,22 +122,22 @@ contract FilmBoard is Ownable, ReentrancyGuard {
         }
     }
 
-    //=================================
     /// @notice A staker create a proposal for replacing Auditor
     function createProposalReplaceAuditor(address _agent) external onlyAvailableStaker nonReentrant {
-        require(_agent != address(0), "createProposalReplaceAuditor: Zero agent address");
+        require(IStakingPool(STAKING_POOL).getStakeAmount(_agent) >= PAYOUT_TOKEN.totalSupply(), "Not available agent");
         require(auditor != _agent, "createProposalReplaceAuditor: Already Auditor address");        
-        require(!isAgent(_agent), "Already agent");
+        require(Agent == address(0), "Already agent");
 
-        agentList[_agent] = true;
-        agentArray.push(_agent);
+        Agent = _agent;
     }
 
-    function getAgentArray() external view returns (address[] memory) {
-        return agentArray;
-    }
+    /// @notice Make agent to Zero address
+    function releaseAgent() external onlyVote {
+        Agent = address(0);
+    }   
 
-    function isAgent(address _agent) public view returns (bool) {
-        return agentList[_agent];
+    /// @notice Update last vote time
+    function updateLastVoteTime(address _member) external onlyVote {
+        lastVoteTime[_member] = block.timestamp;
     }
 }

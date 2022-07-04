@@ -16,7 +16,6 @@ import "hardhat/console.sol";
 contract Vote is Ownable, ReentrancyGuard {
     
     event FilmsVoted(uint256[] indexed filmIds, uint256[] status, address voter);
-    event FilmVotePeriodUpdated(uint256 filmVotePeriod);
     event FilmIdsApproved(uint256[] filmIds, uint256[] approvedIds, address caller);
     event AuditorReplaced(address auditor);
 
@@ -36,16 +35,16 @@ contract Vote is Ownable, ReentrancyGuard {
         uint256 voteStartTime; // vote start time for an agent
     }
 
-    IERC20 public PAYOUT_TOKEN; // VAB token  
-    address public VABBLE_DAO;
-    address public STAKING_POOL;
-    address public FILM_BOARD;
+    IERC20 private PAYOUT_TOKEN; // VAB token  
+    address private VABBLE_DAO;
+    address private STAKING_POOL;
+    address private FILM_BOARD;
 
     bool public isInitialized;         // check if vote contract initialized or not
     uint256 public filmVotePeriod;     // film vote period
     uint256 public boardVotePeriod;    // filmBoard vote period
-    uint256 public boardVoteWeight;    // filmBoard member's vote weight
     uint256 public agentVotePeriod;    // vote period for replacing auditor
+    uint256 public boardVoteWeight;    // filmBoard member's vote weight
     uint256 public disputeGracePeriod; // grace period for replacing Auditor
     uint256[] private approvedFilmIds; // approved film ID list
 
@@ -56,7 +55,6 @@ contract Vote is Ownable, ReentrancyGuard {
     
     mapping(address => AgentProposal) public agentProposal;           // (agent => AgentProposal)
     mapping(address => mapping(address => bool)) public votedToAgent; // (staker => (agent => true/false)) 
-    // mapping(address => bool) public agentList;    
     
     modifier initialized() {
         require(isInitialized, "Need initialized!");
@@ -103,7 +101,7 @@ contract Vote is Ownable, ReentrancyGuard {
     }        
 
     /// @notice Vote to multi films from a VAB holder
-    function voteToFilms(bytes calldata _voteData) external onlyStaker initialized nonReentrant {
+    function voteToFilms(bytes calldata _voteData) public onlyStaker initialized nonReentrant {
         require(_voteData.length > 0, "voteToFilm: Bad items length");
         (
             uint256[] memory filmIds_, 
@@ -140,7 +138,7 @@ contract Vote is Ownable, ReentrancyGuard {
         uint256 stakingAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
 
         // If filme is for funding and voter is film board member, more weight(30%) per vote
-        if(IVabbleDAO(VABBLE_DAO).isForFund(_filmId) && IFilmBoard(FILM_BOARD).isWhitelist(msg.sender)) {
+        if(IVabbleDAO(VABBLE_DAO).isForFund(_filmId) && IFilmBoard(FILM_BOARD).isBoardWhitelist(msg.sender) == 2) {
             stakingAmount *= (boardVoteWeight + 10000) / 10000; // (3000+10000)/10000=1.3
         }        
 
@@ -160,8 +158,6 @@ contract Vote is Ownable, ReentrancyGuard {
         // so, staker cannot unstake his amount till 6/20
         uint256 withdrawableTime =  IStakingPool(STAKING_POOL).getWithdrawableTime(msg.sender);
         if (_proposal.voteStartTime + filmVotePeriod > withdrawableTime) {
-            console.log("sol=>updatedWithdrawTime in vote::", _proposal.voteStartTime + filmVotePeriod);
-            console.log("sol=>WithdrawTime in vote::", withdrawableTime, block.timestamp);
             IStakingPool(STAKING_POOL).updateWithdrawableTime(msg.sender, _proposal.voteStartTime + filmVotePeriod);
         }
 
@@ -174,66 +170,60 @@ contract Vote is Ownable, ReentrancyGuard {
         for (uint256 i; i < _filmIds.length; i++) {
             // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000, stakeAmount("ABSTAIN") is 500 in 10 days(votePeriod)
             // In this case, Approved since 2000 > 1000 + 500 (it means ">50%")
-            if(block.timestamp - proposal[_filmIds[i]].voteStartTime > filmVotePeriod) {
-                if(proposal[_filmIds[i]].stakeAmount_1 > proposal[_filmIds[i]].stakeAmount_2 + proposal[_filmIds[i]].stakeAmount_3) {                    
-                    bool isFund = IVabbleDAO(VABBLE_DAO).isForFund(_filmIds[i]);
-                    IVabbleDAO(VABBLE_DAO).approveFilm(_filmIds[i], isFund);
-                    approvedFilmIds.push(_filmIds[i]);
-                }
-            }        
+            if(proposal[_filmIds[i]].voteCount > 0) {
+                if(block.timestamp - proposal[_filmIds[i]].voteStartTime > filmVotePeriod) {
+                    if(proposal[_filmIds[i]].stakeAmount_1 > proposal[_filmIds[i]].stakeAmount_2 + proposal[_filmIds[i]].stakeAmount_3) {                    
+                        bool isFund = IVabbleDAO(VABBLE_DAO).isForFund(_filmIds[i]);
+                        IVabbleDAO(VABBLE_DAO).approveFilm(_filmIds[i], isFund);
+                        approvedFilmIds.push(_filmIds[i]);
+                    }
+                }        
+            }
         }        
 
         emit FilmIdsApproved(_filmIds, approvedFilmIds, msg.sender);
     }
 
-    /// @notice A staker vote to agents for replacing Auditor
+    /// @notice A staker vote to agent for replacing Auditor
     // _vote: 1,2,3 => Yes, No, Abstain
-    function voteToAgent(address _agent, uint256 _voteInfo) external onlyAvailableStaker nonReentrant {
-        require(!votedToAgent[msg.sender][_agent], "voteToAgent: Already voted");
-        require(msg.sender != address(0), "voteToAgent: Zero caller address");
-        require(IFilmBoard(FILM_BOARD).isAgent(_agent), "voteToAgent: Not agent address");
+    function voteToAgent(uint256 _voteInfo) public nonReentrant {
+        address agent = IFilmBoard(FILM_BOARD).Agent();
+        require(!votedToAgent[msg.sender][agent], "voteToAgent: Already voted");
 
-        AgentProposal storage _agentProposal = agentProposal[_agent];
-        if(_agentProposal.voteCount == 0) {
-            _agentProposal.voteStartTime = block.timestamp;
-        }
+        AgentProposal storage _agentProposal = agentProposal[agent];
+        if(_agentProposal.voteCount == 0) _agentProposal.voteStartTime = block.timestamp;
 
-        if(_voteInfo == 1) {
-            _agentProposal.yes += 1;
-        } else if(_voteInfo == 2) {
-            _agentProposal.no += 1;
-        } else {
-            _agentProposal.abtain += 1;
-        }
+        if(_voteInfo == 1) _agentProposal.yes += 1;
+        else if(_voteInfo == 2) _agentProposal.no += 1;
+        else _agentProposal.abtain += 1;
 
         _agentProposal.voteCount++;
-        votedToAgent[msg.sender][_agent] = true;
+        votedToAgent[msg.sender][agent] = true;
+        
+        IFilmBoard(FILM_BOARD).updateLastVoteTime(msg.sender);
     }
 
     /// @notice Replace Auditor based on vote result
     function replaceAuditor() external onlyAvailableStaker nonReentrant {
-        uint256 startTime;
-        AgentProposal storage _agentProposal;
+        address agent = IFilmBoard(FILM_BOARD).Agent();
+        AgentProposal storage _agentProposal = agentProposal[agent];
+        uint256 startTime = _agentProposal.voteStartTime;
+        require(agentVotePeriod < block.timestamp - startTime, "replaceAuditor: vote period yet");
+        require(_agentProposal.voteCount > 0, "replaceAuditor: No voter");
 
-        address[] memory agents = IFilmBoard(FILM_BOARD).getAgentArray();
-        for(uint256 i; i < agents.length; i++) {
-            _agentProposal = agentProposal[agents[i]];
-            startTime = _agentProposal.voteStartTime;
-            require(agentVotePeriod < block.timestamp - startTime);
-
-            if(IFilmBoard(FILM_BOARD).isAgent(agents[i]) && disputeGracePeriod < block.timestamp - startTime) {
-                if(_agentProposal.voteCount > 0 && _agentProposal.yes > _agentProposal.no + _agentProposal.abtain) {
-                    auditor = agents[i];
-                }                
-            }
+        if(disputeGracePeriod < block.timestamp - startTime) {
+            if(_agentProposal.yes > _agentProposal.no + _agentProposal.abtain) {
+                auditor = agent;
+                IFilmBoard(FILM_BOARD).releaseAgent();
+                emit AuditorReplaced(auditor);
+            }                
         }
-
-        emit AuditorReplaced(auditor);
     }
     // ================ Auditor governance by the Staker END =================
-    function voteToFilmBoard(address _candidate, uint256 _voteInfo) external onlyStaker nonReentrant {
+    
+    function voteToFilmBoard(address _candidate, uint256 _voteInfo) public onlyStaker nonReentrant {
+        require(IFilmBoard(FILM_BOARD).isBoardWhitelist(_candidate) == 1, "voteToFilmBoard: Not candidate");
         require(!boardVoteAttend[msg.sender][_candidate], "voteToFilmBoard: Already voted");        
-        require(!IFilmBoard(FILM_BOARD).isWhitelist(_candidate), "voteToFilmBoard: Already film board member");
 
         Proposal storage fbp = filmBoardProposal[_candidate];
         if(fbp.voteCount == 0) {
@@ -252,11 +242,15 @@ contract Vote is Ownable, ReentrancyGuard {
         }
 
         boardVoteAttend[msg.sender][_candidate] = true;
+
+        IFilmBoard(FILM_BOARD).updateLastVoteTime(msg.sender);
     }
     
     function addFilmBoard(address _member) external onlyStaker nonReentrant {
         Proposal storage fbp = filmBoardProposal[_member];
         require(block.timestamp - fbp.voteStartTime > boardVotePeriod, "addFilmBoard: vote period yet");
+        require(fbp.voteCount > 0, "addFilmBoard: No voter");
+        require(IFilmBoard(FILM_BOARD).isBoardWhitelist(_member) == 1, "addFilmBoard: Not candidate");
 
         if(fbp.stakeAmount_1 > fbp.stakeAmount_2 + fbp.stakeAmount_3) { 
             IFilmBoard(FILM_BOARD).addFilmBoardMember(_member);
@@ -264,10 +258,16 @@ contract Vote is Ownable, ReentrancyGuard {
     }
 
     /// @notice Update vote period by only auditor
-    function updateFilmVotePeriod(uint256 _filmVotePeriod) external onlyAuditor nonReentrant {
-        filmVotePeriod = _filmVotePeriod;
-
-        emit FilmVotePeriodUpdated(_filmVotePeriod);
+    function updateVotePeriod(
+        uint256 _filmVotePeriod, 
+        uint256 _boardVotePeriod, 
+        uint256 _agentVotePeriod,
+        uint256 _disputeGracePeriod
+    ) external onlyAuditor nonReentrant {
+        if(_filmVotePeriod > 0) filmVotePeriod = _filmVotePeriod;
+        if(_boardVotePeriod > 0) boardVotePeriod = _boardVotePeriod;
+        if(_agentVotePeriod > 0) agentVotePeriod = _agentVotePeriod;
+        if(_disputeGracePeriod > 0) disputeGracePeriod = _disputeGracePeriod;
     }
 
     /// @notice Get proposal film Ids

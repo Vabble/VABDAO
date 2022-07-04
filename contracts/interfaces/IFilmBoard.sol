@@ -7,12 +7,9 @@ interface IFilmBoard {
 
     function addFilmBoardMember(address _member) external;
 
-    function isWhitelist(address _member) external view returns (bool);
-
-    function filmBoardCandidates() external view returns (address[] memory);
+    function isBoardWhitelist(address _member) external view returns (uint256);
     
-    function isAgent(address _agent) external view returns (bool);
-    
-    function getAgentArray() external view returns (address[] memory);
+    function Agent() external view returns (address);
 
+    function releaseAgent() external;
 }
