@@ -29,7 +29,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     address private immutable VOTE;       // vote contract address
     
     uint256 public lockPeriod;           // lock period for staked VAB
-    uint256 public rewardRate;           // 1% = 100, 100% = 10000
+    uint256 public rewardRate;           // 1% = 10**4, 100% = 10**6
     uint256 public totalStakingAmount;   // 
     uint256 public totalRewardAmount;    // 
 
@@ -52,7 +52,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         VOTE = _voteContract;
 
         lockPeriod = 30 days;
-        rewardRate = 1; // 0.01% (1% = 100, 100%=10000)
+        rewardRate = 4; // 0.0004% (1% = 10**4, 100%=10**6)
     }
 
     /// @notice Add reward token(VAB)
@@ -95,8 +95,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         );
 
         // first, withdraw reward
-        uint256 timePercent = (block.timestamp - userInfo[msg.sender].rewardTime) * 10000 / lockPeriod;
-        uint256 rewardAmount = userInfo[msg.sender].stakeAmount * timePercent * rewardRate / 10000 / 10000;
+        uint256 rewardAmount = __calcRewardAmount();
         if(totalRewardAmount >= rewardAmount) {
             __withdrawReward(rewardAmount);
         }
@@ -116,12 +115,17 @@ contract StakingPool is Ownable, ReentrancyGuard {
         require(userInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
         require(block.timestamp - userInfo[msg.sender].rewardTime > lockPeriod, "withdrawReward: lock period yet");
 
-        // Todo should calculate rewardAmount.
-        uint256 timePercent = (block.timestamp - userInfo[msg.sender].rewardTime) * 10000 / lockPeriod;
-        uint256 rewardAmount = userInfo[msg.sender].stakeAmount * timePercent * rewardRate / 10000 / 10000;
+        uint256 rewardAmount = __calcRewardAmount();
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
         __withdrawReward(rewardAmount);
+    }
+
+    /// @dev Calculate reward amount
+    function __calcRewardAmount() private view returns (uint256 amount_) {
+        // Get time with accuracy(10**4) from after lockPeriod 
+        uint256 timeVal = (block.timestamp - userInfo[msg.sender].rewardTime) * 10**4 / lockPeriod;
+        amount_ = userInfo[msg.sender].stakeAmount * timeVal * rewardRate / 10**6 / 10**4;
     }
 
     /// @dev Transfer reward amount
@@ -140,7 +144,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     /// @notice Update reward rate by auditor
     function updateRewardRate(uint256 _rate) external onlyAuditor {
-        require(_rate > 0 && rewardRate != _rate && rewardRate < 10000, "updateRewardRate: not allow rate");
+        require(_rate > 0 && rewardRate != _rate, "updateRewardRate: not allow rate");
         rewardRate = _rate;
     }
 

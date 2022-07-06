@@ -183,7 +183,7 @@ describe('StakingPool', function () {
     const rewardRate = await this.stakingContract.rewardRate()
     const lockPeriod = await this.stakingContract.lockPeriod()
     const timePercent = (BigNumber.from(period_1).add(period_2).add(period_3)).mul(10000).div(lockPeriod);
-    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(10000).div(10000);
+    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(1000000).div(10000);
 
     const tx = await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
     this.events = (await tx.wait()).events
@@ -241,7 +241,7 @@ describe('StakingPool', function () {
     const arg = this.events[1].args
     console.log('====arg::', arg.rewardAmount.toString(), rewardRate.toString())
     expect(arg.staker).to.be.equal(this.customer1.address)
-    expect(arg.rewardAmount).to.be.equal(stakeAmount.mul(rewardRate).div(10000))//0.01 VAB
+    expect(arg.rewardAmount).to.be.equal(stakeAmount.mul(rewardRate).div(1000000))//0.01 VAB
 
     // Update rewardRate and Withdraw reward with new Rate
     const newRate = 10 // 1%=100, 0.1%=10
@@ -260,7 +260,7 @@ describe('StakingPool', function () {
     rewardRate = await this.stakingContract.rewardRate()
     const lockPeriod = await this.stakingContract.lockPeriod()
     const timePercent = BigNumber.from(period_2).mul(10000).div(lockPeriod);
-    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(10000).div(10000);
+    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(1000000).div(10000);
 
     const tx_new = await this.stakingContract.connect(this.customer1).withdrawReward({from: this.customer1.address})
     this.events = (await tx_new.wait()).events

@@ -55,7 +55,7 @@ const FILM_DATA = {
   actors: [r_address(), r_address(), r_address()],
   shares: [r_number(), r_number(), r_number()],
   watchs: [r_number(), r_number(), r_number()],
-  sWatchs: [2000, 1500, 3000], // 20% 15% 30%
+  sWatchs: [200000, 150000, 300000], // 20% 15% 30%
   rentPrice: r_number(),
   voteItem: [1, 1, 2, 3], // 1=>yes, 2=>no, 3=> abstain
 
@@ -111,8 +111,8 @@ function r_address() {
   return wallet.address;
 }
 
-function r_number() { // 100 ~ 10000
-  return Math.floor(Math.random() * 10000) + 100;
+function r_number() { // 10000 ~ 1000000
+  return Math.floor(Math.random() * 1000000) + 10000;
 }
 
 // Defaults to e18 using amount * 10^18

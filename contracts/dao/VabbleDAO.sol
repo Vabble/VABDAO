@@ -42,10 +42,10 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         uint256 amount;  // token amount
     }
 
-    // 1% = 100, 100% = 10000
+    // 1% = 10**4, 100% = 10**6
     struct Film {
         address[] studioPayees; // addresses who studio define to pay revenue
-        uint256[] sharePercents;// percents(1% = 100) that studio defines to pay revenue for each payee
+        uint256[] sharePercents;// percents(1% = 10**4) that studio defines to pay revenue for each payee
         uint256 rentPrice;      // VAB amount that a customer rents a film
         uint256 rentStartTime;  // time(block.timestamp) that a customer rents a film
         uint256 raiseAmount;    // USDC amount(in cash) studio are seeking to raise for the film. if 0, this film is not for funding
@@ -64,7 +64,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     address public DAOFee;                    // address for transferring DAO Fee
 
     uint256 public proposalFeeAmount;         // USDC amount($100) studio should pay when create a proposal
-    uint256 public fundFeePercent;            // percent(2% = 200) of fee on the amount raised.
+    uint256 public fundFeePercent;            // percent(2% = 20000) of fee on the amount raised.
     uint256 public minDepositAmount;          // USDC min amount($50) that a customer can deposit to a film approved for funding
     uint256 public maxDepositAmount;          // USDC max amount($5000) that a customer can deposit to a film approved for funding
     uint256 public lastfundProposalCreateTime;// funding proposal created time(block.timestamp)
@@ -87,7 +87,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     }
 
     modifier onlyAvailableStaker() {
-        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= PAYOUT_TOKEN.totalSupply(), "Not available staker");
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= PAYOUT_TOKEN.totalSupply()/2, "Not available staker");
         _;
     }
 
@@ -117,7 +117,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         proposalFeeAmount = 100 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $100)
         minDepositAmount = 50 * (10**IERC20Metadata(_usdcToken).decimals());   // amount in cash(usd dollar - $50)
         maxDepositAmount = 5000 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $5000)
-        fundFeePercent = 200;    // percent(2% == 200) 
+        fundFeePercent = 2*10**4;    // percent(2% == 20000) 
     }
 
     // ======================== Studio ==================================
@@ -264,7 +264,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         // Assgin the VAB token to payees based on share(%) and watch(%)
         for (uint256 i = 0; i < filmIds_.length; i++) {
             // Todo should check again with APPROVED_LISTING
-            if(filmInfo[filmIds_[i]].status == Helper.Status.APPROVED_LISTING) { 
+            if(filmInfo[filmIds_[i]].status == Helper.Status.APPROVED_LISTING || filmInfo[filmIds_[i]].status == Helper.Status.APPROVED_WITHOUTVOTE) { 
                 uint256 payout = __getPayoutFor(filmIds_[i], watchPercents_[i]);
                 if(payout > 0 && userRentInfo[customer_].vabAmount >= payout) {
                     userRentInfo[customer_].vabAmount -= payout; 
@@ -363,7 +363,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         uint256 rewardSumAmount;
         uint256 rewardAmount;
         for(uint256 i; i < assetArr.length; i++) {                
-            rewardAmount = assetArr[i].amount * fundFeePercent / 10000;
+            rewardAmount = assetArr[i].amount * fundFeePercent / 10**6;
             if(address(PAYOUT_TOKEN) == assetArr[i].token) {
                 rewardSumAmount += rewardAmount;
             } else {
@@ -474,7 +474,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         emit MinMaxDepositAmountUpdated(_minAmount, _maxAmount);
     }
 
-    /// @notice Update fundFeePercent(ex: 3% = 300) by Auditor
+    /// @notice Update fundFeePercent(ex: 3% = 30000) by Auditor
     function updateFundFeePercent(uint256 _fundFeePercent) external onlyAuditor nonReentrant {
         require(_fundFeePercent > 0, "updateFundFeePercent: Invalid fundFeePercent");        
         fundFeePercent = _fundFeePercent;
@@ -527,11 +527,11 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
 
     /// @notice Get payout amount based on watched percent for a film
     function __getPayoutFor(uint256 _filmId, uint256 _watchPercent) private view returns(uint256) {
-        return filmInfo[_filmId].rentPrice * _watchPercent / 10000;
+        return filmInfo[_filmId].rentPrice * _watchPercent / 10**6;
     }
 
     function __getShareAmount(uint256 _payout, uint256 _filmId, uint256 _k) private view returns(uint256) {
-        return _payout * filmInfo[_filmId].sharePercents[_k] / 10000;
+        return _payout * filmInfo[_filmId].sharePercents[_k] / 10**6;
     }
 
     /// @notice Check min & max amount for each token/ETH per film

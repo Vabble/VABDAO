@@ -39,7 +39,7 @@ contract FilmBoard is Ownable, ReentrancyGuard {
     }
 
     modifier onlyAvailableStaker() {
-        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= PAYOUT_TOKEN.totalSupply(), "Not available staker");
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= PAYOUT_TOKEN.totalSupply()/2, "Not available staker");
         _;
     }
 
@@ -64,8 +64,7 @@ contract FilmBoard is Ownable, ReentrancyGuard {
         require(_usdcToken != address(0), "_usdcToken: Zeor address");
         USDC_TOKEN = _usdcToken;
 
-        maxAllowPeriod = 90 days;      
-  
+        maxAllowPeriod = 90 days;        
     }
 
     /// @notice Create a proposal with the case to be added to film board where stakers can vote
@@ -124,7 +123,7 @@ contract FilmBoard is Ownable, ReentrancyGuard {
 
     /// @notice A staker create a proposal for replacing Auditor
     function createProposalReplaceAuditor(address _agent) external onlyAvailableStaker nonReentrant {
-        require(IStakingPool(STAKING_POOL).getStakeAmount(_agent) >= PAYOUT_TOKEN.totalSupply(), "Not available agent");
+        require(IStakingPool(STAKING_POOL).getStakeAmount(_agent) >= PAYOUT_TOKEN.totalSupply()/2, "Not available agent");
         require(auditor != _agent, "createProposalReplaceAuditor: Already Auditor address");        
         require(Agent == address(0), "Already agent");
 
@@ -139,5 +138,11 @@ contract FilmBoard is Ownable, ReentrancyGuard {
     /// @notice Update last vote time
     function updateLastVoteTime(address _member) external onlyVote {
         lastVoteTime[_member] = block.timestamp;
+    }
+
+    /// @notice Update maxAllowPeriod for replacing the Auditor
+    function updateMaxAllowPeriod(uint256 _period) external onlyAuditor {
+        require(_period > 0, "updateMaxAllowPeriod: Zero period");
+        maxAllowPeriod = _period;
     }
 }
