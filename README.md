@@ -31,7 +31,7 @@
   - Allow the VAB Holder to stop staking, and withdraw after the length of their last proposal vote as long as it's over the length of time for a proposal, plus the initial 30 days.
   - If the VAB Holder adds more VAB, it increases the lock on the whole balance for 30 days.
 - Staking Rewards
-  - The rewards should pay out 0.01% to the Staker of the available pool balance over a 30-day period.
+  - The rewards should pay out 0.0004% of the rewards pool per day. Example: Pool size is 100 million vab, then 400 VAB will be rewarded per day (or per block) to all of the stakers.
     - Only for film funding votes: 50% of the reward will be locked until the film is funded, and released based on film metrics.
     - Metrics:
       - Reward for correct vote: 0.0001% of the available pool balance. (_Note: The reason it's so low, because we want it to cost more for the proposal, than the reward for being able to game the rewards_)
