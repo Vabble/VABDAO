@@ -55,7 +55,7 @@ const FILM_DATA = {
   actors: [r_address(), r_address(), r_address()],
   shares: [r_number(), r_number(), r_number()],
   watchs: [r_number(), r_number(), r_number()],
-  sWatchs: [200000, 150000, 300000], // 20% 15% 30%
+  sWatchs: [getBigNumber(20, 8), getBigNumber(15, 8), getBigNumber(30, 8)], // 20% 15% 30%
   rentPrice: r_number(),
   voteItem: [1, 1, 2, 3], // 1=>yes, 2=>no, 3=> abstain
 
@@ -111,8 +111,8 @@ function r_address() {
   return wallet.address;
 }
 
-function r_number() { // 10000 ~ 1000000
-  return Math.floor(Math.random() * 1000000) + 10000;
+function r_number() { // 10^8 ~ 10^10
+  return Math.floor(Math.random() * getBigNumber(1,10)) + getBigNumber(1,8);
 }
 
 // Defaults to e18 using amount * 10^18
@@ -125,7 +125,7 @@ async function getSignatures(signers, hexCallData) {
   const ss = [];
   const vs = [];
 
-  for (const signer of signers) {
+  for(const signer of signers) {
     const flatSig = await signer.signMessage(ethers.utils.arrayify(ethers.utils.keccak256(hexCallData)));
     const splitSig = ethers.utils.splitSignature(flatSig);
     rs.push(splitSig.r);

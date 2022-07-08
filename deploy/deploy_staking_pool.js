@@ -3,16 +3,10 @@
 module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const { CONFIG } = require('../scripts/utils');
-
-  this.Vote = await deployments.get('Vote');
 
   await deploy('StakingPool', {
     from: deployer,
-    args: [
-      CONFIG.vabToken, // fee currency
-      this.Vote.address, // Vote contract
-    ],
+    args: [],
     log: true,
     deterministicDeployment: false,
     skipIfAlreadyDeployed: true,
@@ -21,4 +15,3 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_staking_pool'
 module.exports.tags = ['StakingPool'];
-module.exports.dependencies = ['Vote'];

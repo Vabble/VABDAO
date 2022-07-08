@@ -40,18 +40,22 @@ contract Vote is Ownable, ReentrancyGuard {
     address private VABBLE_DAO;
     address private STAKING_POOL;
     address private FILM_BOARD;
-
-    bool public isInitialized;         // check if vote contract initialized or not
+    
     uint256 public filmVotePeriod;     // film vote period
     uint256 public boardVotePeriod;    // filmBoard vote period
     uint256 public agentVotePeriod;    // vote period for replacing auditor
     uint256 public boardVoteWeight;    // filmBoard member's vote weight
     uint256 public disputeGracePeriod; // grace period for replacing Auditor
     uint256[] private approvedFilmIds; // approved film ID list
+    bool public isInitialized;         // check if contract initialized or not
 
     mapping(uint256 => Proposal) public proposal;                        // (filmId => Proposal)
     mapping(address => Proposal) public filmBoardProposal;               // (filmBoard candidate => Proposal)  
     mapping(address => mapping(uint256 => bool)) public voteAttend;      // (staker => (filmId => true/false))
+    // For extra reward
+    mapping(address => uint256[]) public filmIdsPerUser;                 // (staker => filmId[])
+    mapping(address => mapping(uint256 => uint256)) public voteStatusPerUser; // (staker => (filmId => voteInfo)) 1,2,3
+
     mapping(address => mapping(address => bool)) public boardVoteAttend; // (staker => (filmBoard candidate => true/false))    
     mapping(address => AgentProposal) public agentProposal;              // (agent => AgentProposal)
     mapping(address => mapping(address => bool)) public votedToAgent;    // (staker => (agent => true/false)) 
@@ -75,7 +79,7 @@ contract Vote is Ownable, ReentrancyGuard {
 
     constructor() {}
 
-    /// @notice Set VabbleDAO contract address and stakingPool address by only auditor
+    /// @notice Initialize Vote
     function initializeVote(
         address _vabbleDAO,
         address _stakingPool,
@@ -95,7 +99,7 @@ contract Vote is Ownable, ReentrancyGuard {
         filmVotePeriod = 10 days;   
         boardVotePeriod = 10 days;
         agentVotePeriod = 10 days;
-        boardVoteWeight = 3*10**5;       // 30% = 3*10**5, 10% = 10**5
+        boardVoteWeight = 30 * 1e8;       // 30%, 1% = 1e8
         disputeGracePeriod = 30 days;     
         isInitialized = true;
     }        
@@ -113,7 +117,7 @@ contract Vote is Ownable, ReentrancyGuard {
         uint256[] memory votedFilmIds = new uint256[](filmIds_.length);
         uint256[] memory votedStatus = new uint256[](filmIds_.length);
 
-        for (uint256 i = 0; i < filmIds_.length; i++) { 
+        for(uint256 i = 0; i < filmIds_.length; i++) { 
             if(__voteToFilm(filmIds_[i], voteInfos_[i])) {
                 votedFilmIds[i] = filmIds_[i];
                 votedStatus[i] = voteInfos_[i];
@@ -127,7 +131,7 @@ contract Vote is Ownable, ReentrancyGuard {
         require(!voteAttend[msg.sender][_filmId], "_voteToFilm: Already voted");    
 
         Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId);
-        require(status == Helper.Status.LISTED, "Not listed");
+        require(status == Helper.Status.LISTED, "Not listed");        
 
         Proposal storage _proposal = proposal[_filmId];
         if(_proposal.voteCount == 0) {
@@ -137,10 +141,15 @@ contract Vote is Ownable, ReentrancyGuard {
 
         uint256 stakingAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
 
-        // If filme is for funding and voter is film board member, more weight(30%) per vote
-        if(IVabbleDAO(VABBLE_DAO).isForFund(_filmId) && IFilmBoard(FILM_BOARD).isBoardWhitelist(msg.sender) == 2) {
-            stakingAmount *= (boardVoteWeight + 10**6) / 10**6; // (30+100)/100=1.3
-        }        
+        if(IVabbleDAO(VABBLE_DAO).isForFund(_filmId)) {
+            if(IFilmBoard(FILM_BOARD).isBoardWhitelist(msg.sender) == 2) {
+                // If filme is for funding and voter is film board member, more weight(30%) per vote
+                stakingAmount *= (boardVoteWeight + 1e10) / 1e10; // (30+100)/100=1.3
+            }
+            //For extra reward in funding film case
+            filmIdsPerUser[msg.sender].push(_filmId);
+            voteStatusPerUser[msg.sender][_filmId] = _voteInfo;
+        }
 
         if(_voteInfo == 1) {
             _proposal.stakeAmount_1 += stakingAmount;   // Yes
@@ -167,7 +176,7 @@ contract Vote is Ownable, ReentrancyGuard {
     /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by auditor
     // if isFund is true then Approved for funding, if isFund is false then Approved for listing
     function approveFilms(uint256[] memory _filmIds) external onlyAuditor {
-        for (uint256 i = 0; i < _filmIds.length; i++) {
+        for(uint256 i = 0; i < _filmIds.length; i++) {
             // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000, stakeAmount("ABSTAIN") is 500 in 10 days(votePeriod)
             // In this case, Approved since 2000 > 1000 + 500 (it means ">50%")
             if(proposal[_filmIds[i]].voteCount > 0) {
@@ -186,7 +195,7 @@ contract Vote is Ownable, ReentrancyGuard {
 
     /// @notice A staker vote to agent for replacing Auditor
     // _vote: 1,2,3 => Yes, No, Abstain
-    function voteToAgent(uint256 _voteInfo) public onlyAvailableStaker nonReentrant {
+    function voteToAgent(uint256 _voteInfo) public onlyAvailableStaker initialized nonReentrant {
         address agent = IFilmBoard(FILM_BOARD).Agent();
         require(!votedToAgent[msg.sender][agent], "voteToAgent: Already voted");
 
@@ -206,7 +215,7 @@ contract Vote is Ownable, ReentrancyGuard {
     }
 
     /// @notice Replace Auditor based on vote result
-    function replaceAuditor() external onlyAvailableStaker nonReentrant {
+    function replaceAuditor() external onlyAvailableStaker initialized nonReentrant {
         address agent = IFilmBoard(FILM_BOARD).Agent();
         AgentProposal storage _agentProposal = agentProposal[agent];
         uint256 startTime = _agentProposal.voteStartTime;
@@ -223,7 +232,7 @@ contract Vote is Ownable, ReentrancyGuard {
     }
     // ================ Auditor governance by the Staker END =================
     
-    function voteToFilmBoard(address _candidate, uint256 _voteInfo) public onlyStaker nonReentrant {
+    function voteToFilmBoard(address _candidate, uint256 _voteInfo) public onlyStaker initialized nonReentrant {
         require(IFilmBoard(FILM_BOARD).isBoardWhitelist(_candidate) == 1, "voteToFilmBoard: Not candidate");
         require(!boardVoteAttend[msg.sender][_candidate], "voteToFilmBoard: Already voted");        
 
@@ -275,5 +284,15 @@ contract Vote is Ownable, ReentrancyGuard {
     /// @notice Get proposal film Ids
     function getApprovedFilmIds() external view returns(uint256[] memory) {
         return approvedFilmIds;
+    }
+
+    /// @notice Get voteStatus per User
+    function getVoteStatusPerUser(address _staker, uint256 _filmId) external view returns(uint256) {
+        return voteStatusPerUser[_staker][_filmId];
+    }
+
+    /// @notice Get voteStatus per User
+    function getFilmIdsPerUser(address _staker) external view returns(uint256[] memory) {
+        return filmIdsPerUser[_staker];
     }
 }

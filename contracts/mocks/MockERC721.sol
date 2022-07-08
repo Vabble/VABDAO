@@ -29,7 +29,7 @@ contract MockERC721 is ERC721Enumerable, Ownable {
     }
 
     function batchMintTo(address _to, uint256 _amount) public onlyOwner {
-        for (uint256 ii = 0; ii < _amount; ii++) {
+        for(uint256 ii = 0; ii < _amount; ii++) {
             uint256 newTokenId = __getNextTokenId();
             _mint(_to, newTokenId);
             __incrementTokenId();

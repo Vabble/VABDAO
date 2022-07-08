@@ -31,9 +31,7 @@ describe('Vote', function () {
       CONFIG.uniswap.factory, CONFIG.uniswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy(
-      CONFIG.vabToken, this.voteContract.address
-    )).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
@@ -87,12 +85,12 @@ describe('Vote', function () {
 
   it('VoteToFilms', async function () {    
     // Transfering VAB token to user1, 2, 3 and studio1,2,3
-    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(1000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
 
     //=> voteToFilms()
     const proposalIds = [1, 2, 3, 4]
@@ -114,6 +112,13 @@ describe('Vote', function () {
       this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
     ).to.be.revertedWith('Not staker')
     
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )
     // Staking from customer1,2,3 for vote
     const stakeAmount = getBigNumber(200)
     await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
@@ -159,6 +164,13 @@ describe('Vote', function () {
     const customer1Balance = await this.vabToken.balanceOf(this.customer1.address)
     console.log("====customer1Balance::", customer1Balance.toString())
 
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )
     await this.stakingContract.connect(this.customer1).stakeToken(this.auditorBalance, {from: this.customer1.address})
     const tx = await this.voteContract.connect(this.customer1).voteToAgent(voteInfo[0], {from: this.customer1.address})
     this.events = (await tx.wait()).events

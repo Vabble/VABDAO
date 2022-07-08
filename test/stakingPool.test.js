@@ -31,9 +31,7 @@ describe('StakingPool', function () {
       CONFIG.uniswap.factory, CONFIG.uniswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy(
-      CONFIG.vabToken, this.voteContract.address
-    )).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
@@ -66,13 +64,13 @@ describe('StakingPool', function () {
     this.EXM = new ethers.Contract(CONFIG.exmAddress, JSON.stringify(ERC20), ethers.provider);
 
     // Transfering VAB token to user1, 2, 3
-    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(1000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
     // Transfering VAB token to studio1, 2, 3
-    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(1000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(1000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
 
     // Approve to transfer VAB token for each user, studio to DAO, StakingPool
     await this.vabToken.connect(this.customer1).approve(this.DAOContract.address, getBigNumber(100000000));
@@ -91,14 +89,21 @@ describe('StakingPool', function () {
     await this.vabToken.connect(this.studio2).approve(this.DAOContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio3).approve(this.DAOContract.address, getBigNumber(100000000));
 
-    await this.vabToken.connect(this.auditor).approve(this.stakingContract.address, getBigNumber(100000000));
+    await this.vabToken.connect(this.auditor).approve(this.stakingContract.address, getBigNumber(100000000));      
 
     this.rentPrices = [getBigNumber(100), getBigNumber(200), getBigNumber(300), getBigNumber(400)];
     this.fundPeriods = [getBigNumber(20 * 86400, 0), getBigNumber(30 * 86400, 0), getBigNumber(60 * 86400, 0), getBigNumber(10 * 86400, 0)];
     this.events = [];
   });
 
-  it('Staking and unstaking VAB token', async function () {        
+  it('Staking and unstaking VAB token', async function () {      
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )
     // Staking VAB token
     await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(100), {from: this.customer1.address})
     await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(150), {from: this.customer2.address})
@@ -106,22 +111,31 @@ describe('StakingPool', function () {
     expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
     expect(await this.stakingContract.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
     expect(await this.stakingContract.getStakeAmount(this.customer3.address)).to.be.equal(getBigNumber(300))
-
+    
+    console.log('===isInitialized::', await this.stakingContract.isInitialized())
     // unstaking VAB token
     await expect(
       this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
     ).to.be.revertedWith('unstakeToken: Token locked yet');
-    
+        
     // => Increase next block timestamp for only testing
     const period = 31 * 24 * 3600; // lockPeriod = 30 days
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
 
     await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+    console.log('===isInitialized::', 'ok')
     expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
   });
 
-  it('Staking and unstaking VAB token when voting', async function () {        
+  it('Staking and unstaking VAB token when voting', async function () {  
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )          
     // Staking VAB token
     const stakeAmount = getBigNumber(100)
     await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
@@ -183,7 +197,7 @@ describe('StakingPool', function () {
     const rewardRate = await this.stakingContract.rewardRate()
     const lockPeriod = await this.stakingContract.lockPeriod()
     const timePercent = (BigNumber.from(period_1).add(period_2).add(period_3)).mul(10000).div(lockPeriod);
-    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(1000000).div(10000);
+    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
 
     const tx = await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
     this.events = (await tx.wait()).events
@@ -197,8 +211,14 @@ describe('StakingPool', function () {
     expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
   });
 
-
   it('AddReward and WithdrawReward with VAB token', async function() {
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )    
     // Add reward from auditor
     const rewardAmount = getBigNumber(1000)
     await this.stakingContract.connect(this.auditor).addRewardToPool(rewardAmount, {from: this.auditor.address})
@@ -241,10 +261,10 @@ describe('StakingPool', function () {
     const arg = this.events[1].args
     console.log('====arg::', arg.rewardAmount.toString(), rewardRate.toString())
     expect(arg.staker).to.be.equal(this.customer1.address)
-    expect(arg.rewardAmount).to.be.equal(stakeAmount.mul(rewardRate).div(1000000))//0.01 VAB
+    expect(arg.rewardAmount).to.be.equal(stakeAmount.mul(rewardRate).div(getBigNumber(1,10)))//0.01 VAB
 
     // Update rewardRate and Withdraw reward with new Rate
-    const newRate = 10 // 1%=100, 0.1%=10
+    const newRate = getBigNumber(1, 5) // 1%=1e8, 0.001%
     await expect(
       this.stakingContract.connect(this.studio1).updateRewardRate(newRate, {from: this.studio1.address})
     ).to.be.revertedWith('Ownable: caller is not the auditor');
@@ -260,7 +280,7 @@ describe('StakingPool', function () {
     rewardRate = await this.stakingContract.rewardRate()
     const lockPeriod = await this.stakingContract.lockPeriod()
     const timePercent = BigNumber.from(period_2).mul(10000).div(lockPeriod);
-    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(1000000).div(10000);
+    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
 
     const tx_new = await this.stakingContract.connect(this.customer1).withdrawReward({from: this.customer1.address})
     this.events = (await tx_new.wait()).events

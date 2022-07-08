@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
+import "../interfaces/IVote.sol";
+import "../interfaces/IVabbleDAO.sol";
 import "hardhat/console.sol";
 
 contract StakingPool is Ownable, ReentrancyGuard {
@@ -25,13 +27,16 @@ contract StakingPool is Ownable, ReentrancyGuard {
         uint256 rewardTime;// last staked time(here, means the time that staker withdrawable time)
     }
 
-    IERC20 private immutable PAYOUT_TOKEN;// VAB token   
-    address private immutable VOTE;       // vote contract address
+    IERC20 private PAYOUT_TOKEN;   // VAB token   
+    address private VOTE;          // vote contract address
+    address private VABBLE_DAO;    // VabbleDAO contract address
     
     uint256 public lockPeriod;           // lock period for staked VAB
-    uint256 public rewardRate;           // 1% = 10**4, 100% = 10**6
+    uint256 public rewardRate;           // 1% = 1e8, 100% = 1e10
+    uint256 public extraRewardRate;      // 1% = 1e8, 100% = 1e10
     uint256 public totalStakingAmount;   // 
     uint256 public totalRewardAmount;    // 
+    bool public isInitialized;           // check if contract initialized or not
 
     mapping(address => UserInfo) public userInfo;
 
@@ -42,18 +47,27 @@ contract StakingPool is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor(
-        address _payoutToken,
-        address _voteContract
-    ) {
-        require(_payoutToken != address(0), "_payoutToken: Zero address");
+    constructor() {}
+
+    /// @notice Initialize Vote
+    function initializePool(
+        address _vabbleDAO,
+        address _voteContract,
+        address _payoutToken
+    ) external onlyAuditor {
+        require(!isInitialized, "initializePool: Already initialized");
+        require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "initializePool: Zero vabbleDAO address");
+        VABBLE_DAO = _vabbleDAO;
+        require(_voteContract != address(0) && Helper.isContract(_vabbleDAO), "initializePool: Zero voteContract address");
+        VOTE = _voteContract;                   
+        require(_payoutToken != address(0), "initializePool: Zero payoutToken address");
         PAYOUT_TOKEN = IERC20(_payoutToken);
-        require(_voteContract != address(0), "_voteContract: ZERO address");
-        VOTE = _voteContract;
 
         lockPeriod = 30 days;
-        rewardRate = 4; // 0.0004% (1% = 10**4, 100%=10**6)
-    }
+        rewardRate = 40000;    // 0.0004% (1% = 1e8, 100%=1e10)
+        extraRewardRate = 667; // 0.00000667% (1% = 1e8, 100%=1e10)
+        isInitialized = true;
+    }    
 
     /// @notice Add reward token(VAB)
     function addRewardToPool(uint256 _amount) external {
@@ -67,6 +81,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     /// @notice Staking VAB token by staker
     function stakeToken(uint256 _amount) public nonReentrant {
+        require(isInitialized, "stakeToken: Should be initialized");
         require(msg.sender != address(0), "stakeToken: Zero address");
         require(_amount > 0, "stakeToken: Zero amount");
 
@@ -86,10 +101,9 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     /// @dev Allows user to unstake tokens after the correct time period has elapsed
     function unstakeToken(uint256 _amount) external nonReentrant {
-
+        require(isInitialized, "unstakeToken: Should be initialized");
         require(msg.sender != address(0), "unstakeToken: Zero staker address");
         require(userInfo[msg.sender].stakeAmount >= _amount, "unstakeToken: Insufficient stake token amount");
-        console.log("sol=>withdrawTime in unstaking::", userInfo[msg.sender].withdrawableTime);
         require(
             block.timestamp >= userInfo[msg.sender].withdrawableTime, "unstakeToken: Token locked yet"
         );
@@ -100,17 +114,17 @@ contract StakingPool is Ownable, ReentrancyGuard {
             __withdrawReward(rewardAmount);
         }
 
+        // Next, unstake
         // Todo should check if we consider reward amount here or not
         Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);        
         userInfo[msg.sender].stakeAmount -= _amount;
-
         totalStakingAmount -= _amount;
 
         emit TokenUnstaked(msg.sender, _amount);
     }
 
     /// @notice Withdraw reward
-    function withdrawReward() external {
+    function withdrawReward() external nonReentrant {
         require(msg.sender != address(0), "withdrawReward: Zero staker address");
         require(userInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
         require(block.timestamp - userInfo[msg.sender].rewardTime > lockPeriod, "withdrawReward: lock period yet");
@@ -124,8 +138,19 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @dev Calculate reward amount
     function __calcRewardAmount() private view returns (uint256 amount_) {
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 timeVal = (block.timestamp - userInfo[msg.sender].rewardTime) * 10**4 / lockPeriod;
-        amount_ = userInfo[msg.sender].stakeAmount * timeVal * rewardRate / 10**6 / 10**4;
+        uint256 timeVal = (block.timestamp - userInfo[msg.sender].rewardTime) * 1e4 / lockPeriod;
+        amount_ = userInfo[msg.sender].stakeAmount * timeVal * rewardRate / 1e10 / 1e4;
+
+        // Calc extra reward amount for funding film vote
+        uint256[] memory filmIds = IVote(VOTE).getFilmIdsPerUser(msg.sender); 
+        for(uint256 i = 0; i < filmIds.length; i++) { 
+            uint256 voteStatus = IVote(VOTE).getVoteStatusPerUser(msg.sender, filmIds[i]);
+            bool isRaised = IVabbleDAO(VABBLE_DAO).isRaisedFullAmount(filmIds[i]);
+            if((voteStatus == 1 && isRaised) || (voteStatus == 2 && !isRaised)) { 
+                amount_ += totalRewardAmount * extraRewardRate / 1e10;       
+                console.log("sol=>extraRewardAmount::", amount_);
+            }
+        } 
     }
 
     /// @dev Transfer reward amount

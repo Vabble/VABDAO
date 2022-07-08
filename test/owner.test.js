@@ -29,9 +29,7 @@ describe('Ownerable', function () {
       CONFIG.uniswap.factory, CONFIG.uniswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy(
-      CONFIG.vabToken, this.voteContract.address
-    )).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
