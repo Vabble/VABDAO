@@ -9,7 +9,6 @@ interface IVabbleDAO {
         address[] memory studioPayees_, 
         uint256[] memory sharePercents_, 
         uint256 rentPrice_,
-        uint256 rentStartTime_,
         uint256 raiseAmount_,
         uint256 fundPeriod_,
         uint256 fundStart_,

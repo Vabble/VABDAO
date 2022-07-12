@@ -24,7 +24,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     struct UserInfo {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
-        uint256 rewardTime;// last staked time(here, means the time that staker withdrawable time)
+        uint256 stakeTime;       // last staked time(here, means the time that staker withdrawable time)
     }
 
     IERC20 private PAYOUT_TOKEN;   // VAB token   
@@ -92,7 +92,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         }
         userInfo[msg.sender].stakeAmount += _amount;
         userInfo[msg.sender].withdrawableTime = block.timestamp + lockPeriod;
-        userInfo[msg.sender].rewardTime = block.timestamp;
+        userInfo[msg.sender].stakeTime = block.timestamp;
 
         totalStakingAmount += _amount;
 
@@ -109,7 +109,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         );
 
         // first, withdraw reward
-        uint256 rewardAmount = __calcRewardAmount();
+        uint256 rewardAmount = __calcRewardAmount() + __calcExtraRewardAmount();
         if(totalRewardAmount >= rewardAmount) {
             __withdrawReward(rewardAmount);
         }
@@ -127,9 +127,9 @@ contract StakingPool is Ownable, ReentrancyGuard {
     function withdrawReward() external nonReentrant {
         require(msg.sender != address(0), "withdrawReward: Zero staker address");
         require(userInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
-        require(block.timestamp - userInfo[msg.sender].rewardTime > lockPeriod, "withdrawReward: lock period yet");
+        require(block.timestamp - userInfo[msg.sender].stakeTime > lockPeriod, "withdrawReward: lock period yet");
 
-        uint256 rewardAmount = __calcRewardAmount();
+        uint256 rewardAmount = __calcRewardAmount() + __calcExtraRewardAmount();
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
         __withdrawReward(rewardAmount);
@@ -138,17 +138,19 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @dev Calculate reward amount
     function __calcRewardAmount() private view returns (uint256 amount_) {
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 timeVal = (block.timestamp - userInfo[msg.sender].rewardTime) * 1e4 / lockPeriod;
+        uint256 timeVal = (block.timestamp - userInfo[msg.sender].stakeTime) * 1e4 / lockPeriod;
         amount_ = userInfo[msg.sender].stakeAmount * timeVal * rewardRate / 1e10 / 1e4;
+    }
 
+    /// @dev Calculate extra reward amount
+    function __calcExtraRewardAmount() private view returns (uint256 amount_) {
         // Calc extra reward amount for funding film vote
         uint256[] memory filmIds = IVote(VOTE).getFilmIdsPerUser(msg.sender); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
-            uint256 voteStatus = IVote(VOTE).getVoteStatusPerUser(msg.sender, filmIds[i]);
+            uint256 voteStatus = IVote(VOTE).getVoteStatusPerUser(msg.sender, filmIds[i]);    
             bool isRaised = IVabbleDAO(VABBLE_DAO).isRaisedFullAmount(filmIds[i]);
             if((voteStatus == 1 && isRaised) || (voteStatus == 2 && !isRaised)) { 
                 amount_ += totalRewardAmount * extraRewardRate / 1e10;       
-                console.log("sol=>extraRewardAmount::", amount_);
             }
         } 
     }
@@ -156,9 +158,11 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @dev Transfer reward amount
     function __withdrawReward(uint256 _amount) private {
         Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);
-        userInfo[msg.sender].rewardTime = block.timestamp;
+        userInfo[msg.sender].stakeTime = block.timestamp;
         totalRewardAmount -= _amount;
 
+        IVote(VOTE).removeFilmIdsPerUser(msg.sender);
+        
         emit RewardWithdraw(msg.sender, _amount);
     }
 

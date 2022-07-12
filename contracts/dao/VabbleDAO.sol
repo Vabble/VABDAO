@@ -47,7 +47,6 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         address[] studioPayees; // addresses who studio define to pay revenue
         uint256[] sharePercents;// percents(1% = 1e8) that studio defines to pay revenue for each payee
         uint256 rentPrice;      // VAB amount that a customer rents a film
-        uint256 rentStartTime;  // time(block.timestamp) that a customer rents a film
         uint256 raiseAmount;    // USDC amount(in cash) studio are seeking to raise for the film. if 0, this film is not for funding
         uint256 fundPeriod;     // how many days(ex: 20 days) to keep the funding pool open
         uint256 fundStart;      // time(block.timestamp) that film approved for raising fund
@@ -283,7 +282,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     }
 
     // =================== Funding(Launch Pad) START ===============================
-    /// @notice Deposit tokens/ETH to each film by customer
+    /// @notice Deposit tokens/ETH to only funding film by customer(investor)
     function depositToFilm(uint256 _filmId, address _token, uint256 _amount) external payable nonReentrant {
         require(msg.sender != address(0), "depositToFilm: Zero customer address");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "depositToFilm: filmId not approved for funding");
@@ -600,7 +599,6 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         address[] memory studioPayees_, 
         uint256[] memory sharePercents_, 
         uint256 rentPrice_,
-        uint256 rentStartTime_,
         uint256 raiseAmount_,
         uint256 fundPeriod_,
         uint256 fundStart_,
@@ -612,7 +610,6 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
         studioPayees_ = _filmInfo.studioPayees;
         sharePercents_ = _filmInfo.sharePercents;
         rentPrice_ = _filmInfo.rentPrice;
-        rentStartTime_ = _filmInfo.rentStartTime;
         raiseAmount_ = _filmInfo.raiseAmount;
         fundPeriod_ = _filmInfo.fundPeriod;
         fundStart_ = _filmInfo.fundStart;

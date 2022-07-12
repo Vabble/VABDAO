@@ -189,7 +189,6 @@ describe('VabbleDAO', function () {
   //   expect(proposalFilm.studioPayees_).to.have.lengthOf(0)
   //   expect(proposalFilm.sharePercents_).to.have.lengthOf(0)
   //   expect(proposalFilm.rentPrice_).to.be.equal(this.rentPrices[0])
-  //   expect(proposalFilm.rentStartTime_).to.be.equal(0)
   //   expect(proposalFilm.raiseAmount_).to.be.equal(raiseAmounts[0])
   //   expect(proposalFilm.fundPeriod_).to.be.equal(this.fundPeriods[0])
   //   expect(proposalFilm.fundStart_).to.be.equal(0)

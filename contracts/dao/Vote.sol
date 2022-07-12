@@ -291,8 +291,13 @@ contract Vote is Ownable, ReentrancyGuard {
         return voteStatusPerUser[_staker][_filmId];
     }
 
-    /// @notice Get voteStatus per User
+    /// @notice Get filmIds per User
     function getFilmIdsPerUser(address _staker) external view returns(uint256[] memory) {
         return filmIdsPerUser[_staker];
+    }
+
+    /// @notice Delete all filmIds per User
+    function removeFilmIdsPerUser(address _staker) external {
+        delete filmIdsPerUser[_staker];
     }
 }
