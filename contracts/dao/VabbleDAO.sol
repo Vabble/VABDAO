@@ -6,15 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
 import "hardhat/console.sol";
 
-contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
+contract VabbleDAO is Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
     
     event FilmsProposalCreated(uint256[] indexed filmIds, address studio);
@@ -78,7 +76,7 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
     mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
 
-    Counters.Counter public filmIds;          // filmId is from No.1
+    Counters.Counter public filmCount;          // filmId is from No.1
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -148,8 +146,8 @@ contract VabbleDAO is ERC721Holder, ERC1155Holder, Ownable, ReentrancyGuard {
             bool _onlyAllowVAB
         ) = abi.decode(_proposalFilm, (uint256, uint256, uint256, bool));
 
-        filmIds.increment();
-        uint256 filmId = filmIds.current();
+        filmCount.increment();
+        uint256 filmId = filmCount.current();
 
         Film storage _filmInfo = filmInfo[filmId];
         _filmInfo.rentPrice = _rentPrice;

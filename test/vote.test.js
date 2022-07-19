@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { BigNumber } = require('ethers');
-const ERC20 = require('../scripts/ERC20.json');
+const ERC20 = require('../data/ERC20.json');
 const { CONFIG, getBigNumber, getVoteData, getProposalFilm } = require('../scripts/utils');
 
 describe('Vote', function () {

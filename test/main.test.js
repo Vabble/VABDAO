@@ -3,4 +3,5 @@
 // require('./owner.test');
 // require('./vote.test');
 // require('./vabbleDAO.test');
-require('./stakingPool.test');
+// require('./stakingPool.test');
+require('./factoryNFT.test');

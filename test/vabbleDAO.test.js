@@ -2,7 +2,7 @@ const { expect, util } = require('chai');
 const { ethers, network } = require('hardhat');
 const { BigNumber } = require('ethers');
 const { utils } = require('ethers');
-const ERC20 = require('../scripts/ERC20.json');
+const ERC20 = require('../data/ERC20.json');
 const { CONFIG, getByteFilmUpdate, getFinalFilm, getBigNumber, getVoteData, getProposalFilm } = require('../scripts/utils');
   
 describe('VabbleDAO', function () {
