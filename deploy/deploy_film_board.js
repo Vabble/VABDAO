@@ -1,5 +1,3 @@
-// Defining bytecode and abi from original contract on mainnet to ensure bytecode matches and it produces the same pair code hash
-
 module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -25,17 +23,17 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     skipIfAlreadyDeployed: true,
   });
 
-  const VoteFactory = await ethers.getContractFactory('Vote');
-  const voteConract = await (await VoteFactory.deploy()).deployed();
-  this.BoardContract = await deployments.get('FilmBoard');
-  console.log("initializeVote==", this.BoardContract.address+"=="+this.VabbleDAO.address);
+  // const VoteFactory = await ethers.getContractFactory('Vote');
+  // const voteConract = await (await VoteFactory.deploy()).deployed();
+  // this.BoardContract = await deployments.get('FilmBoard');
+  // console.log("initializeVote==", this.BoardContract.address+"=="+this.VabbleDAO.address);
         
-  await voteConract.initializeVote(
-    this.VabbleDAO.address,
-    this.StakingPool.address,
-    this.BoardContract.address,
-    CONFIG.vabToken
-  )
+  // await voteConract.initializeVote(
+  //   this.VabbleDAO.address,
+  //   this.StakingPool.address,
+  //   this.BoardContract.address,
+  //   CONFIG.vabToken
+  // )
 };
 
 module.exports.id = 'deploy_film_board'
