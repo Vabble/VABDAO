@@ -3,16 +3,14 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deployer } = await getNamedAccounts();
   const { CONFIG } = require('../scripts/utils');
   
-  this.VabbleDAO = await deployments.get('VabbleDAO');
   this.Vote = await deployments.get('Vote');
   this.StakingPool = await deployments.get('StakingPool');
   this.UniHelper = await deployments.get('UniHelper');
 
-  await deploy('FilmBoard', {
+  await deploy('Property', {
     from: deployer,
     args: [
       CONFIG.vabToken,          // mockVAB
-      this.VabbleDAO.address,   // VabbleDAO contract
       this.Vote.address,        // Vote contract
       this.StakingPool.address, // StakingPool contract
       this.UniHelper.address,   // UniHelper contract
@@ -36,6 +34,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   // )
 };
 
-module.exports.id = 'deploy_film_board'
-module.exports.tags = ['FilmBoard'];
-module.exports.dependencies = ['VabbleDAO', 'Vote', 'StakingPool', 'UniHelper'];
+module.exports.id = 'deploy_property'
+module.exports.tags = ['Property'];
+module.exports.dependencies = ['Vote', 'StakingPool', 'UniHelper'];

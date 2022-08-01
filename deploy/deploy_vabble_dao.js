@@ -6,15 +6,16 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   this.Vote = await deployments.get('Vote');
   this.StakingPool = await deployments.get('StakingPool');
   this.UniHelper = await deployments.get('UniHelper');
+  this.Property = await deployments.get('Property');
 
   await deploy('VabbleDAO', {
     from: deployer,
     args: [
-      CONFIG.daoFeeAddress,
       CONFIG.vabToken,          // mockVAB
       this.Vote.address,        // Vote contract
       this.StakingPool.address, // StakingPool contract
       this.UniHelper.address,   // UniHelper contract
+      this.Property.address,    // Property contract
       CONFIG.usdcAdress
     ],
     log: true,
@@ -25,4 +26,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_vabble_dao'
 module.exports.tags = ['VabbleDAO'];
-module.exports.dependencies = ['Vote', 'StakingPool', 'UniHelper'];
+module.exports.dependencies = ['Vote', 'StakingPool', 'UniHelper', 'Property'];

@@ -23,17 +23,14 @@ interface IVabbleDAO {
 
     function getProposalFilmIds() external view returns(uint256[] memory);
 
-    // function getRaisedAmountPerFilm(uint256 _filmId) external view returns (uint256 amount_);
-
     function approveFilm(uint256 _filmId, bool _noFund) external;
 
     function isForFund(uint256 _filmId) external view returns (bool);
 
     function isRaisedFullAmount(uint256 _filmId) external view returns (bool);
 
-    function lastfundProposalCreateTime() external view returns(uint256);
+    function updateLastVoteTime(address _member) external;
 
-    function proposalFeeAmount() external view returns(uint256);
-
-    function addReward(uint256 _amount) external;
+    function addFilmBoardMember(address _member) external;
+    function isBoardWhitelist(address _member) external view returns (uint256);
 }

@@ -10,6 +10,7 @@ import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
+import "../interfaces/IProperty.sol";
 import "hardhat/console.sol";
 
 contract VabbleDAO is Ownable, ReentrancyGuard {
@@ -29,6 +30,10 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
     event FundFeePercentUpdated(uint256 fundFeePercent);
     event ProposalFeeAmountUpdated(uint256 proposalFeeAmount);
     event FundProcessed(uint256 filmId);
+    // filmboard    
+    event FilmBoardProposalCreated(address member);
+    event FilmBoardMemberAdded(address member);
+    event FilmBoardMemberRemoved(address member);
 
     struct UserRent {
         uint256 vabAmount;       // current VAB amount in DAO
@@ -40,7 +45,6 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         uint256 amount;  // token amount
     }
 
-    // 1% = 1e8, 100% = 1e10
     struct Film {
         address[] studioPayees; // addresses who studio define to pay revenue
         uint256[] sharePercents;// percents(1% = 1e8) that studio defines to pay revenue for each payee
@@ -57,25 +61,27 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
     address public immutable VOTE;            // Vote contract address
     address public immutable STAKING_POOL;    // StakingPool contract address
     address public immutable UNI_HELPER;      // UniHelper contract address
+    address public immutable DAO_PROPERTY;
     address public immutable USDC_TOKEN;      // USDC token 
-    address public DAOFee;                    // address for transferring DAO Fee
-
-    uint256 public proposalFeeAmount;         // USDC amount($100) studio should pay when create a proposal
-    uint256 public fundFeePercent;            // percent(2% = 2*1e8) of fee on the amount raised.
-    uint256 public minDepositAmount;          // USDC min amount($50) that a customer can deposit to a film approved for funding
-    uint256 public maxDepositAmount;          // USDC max amount($5000) that a customer can deposit to a film approved for funding
+    
     uint256 public lastfundProposalCreateTime;// funding proposal created time(block.timestamp)
 
     uint256[] private proposalFilmIds;    
     uint256[] private updatedFilmIds;    
     uint256[] private finalFilmIds;
 
+    address[] public filmBoardCandidates;     // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
+
+
     mapping(uint256 => Film) public filmInfo;             // Each film information(filmId => Film)
     mapping(address => uint256[]) public customerFilmIds; // Rented film IDs for a customer(customer => fimlId[])
     mapping(address => UserRent) public userRentInfo;
     mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
-
+    // filmboard
+    mapping(address => uint256) public isBoardWhitelist; // (filmBoard member => 0: no member, 1: candiate, 2: member)
+    mapping(address => uint256) public lastVoteTime;     // (staker => block.timestamp)
+    
     Counters.Counter public filmCount;          // filmId is from No.1
 
     modifier onlyVote() {
@@ -83,23 +89,16 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier onlyAvailableStaker() {
-        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= PAYOUT_TOKEN.totalSupply()/2, "Not available staker");
-        _;
-    }
-
     receive() external payable {}
 
     constructor(
-        address _daoFee,
         address _payoutToken,
         address _voteContract,
         address _stakingContract,
         address _uniHelperContract,
+        address _daoProperty,
         address _usdcToken
     ) {        
-        require(_daoFee != address(0), "_daoFee: Zero address");
-        DAOFee = _daoFee;
         require(_payoutToken != address(0), "_payoutToken: Zero address");
         PAYOUT_TOKEN = IERC20(_payoutToken);        
         require(_voteContract != address(0), "_voteContract: Zero address");
@@ -107,17 +106,14 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         require(_stakingContract != address(0), "_stakingContract: Zero address");
         STAKING_POOL = _stakingContract;
         require(_uniHelperContract != address(0), "_uniHelperContract: Zero address");
-        UNI_HELPER = _uniHelperContract;       
+        UNI_HELPER = _uniHelperContract;      
+        require(_daoProperty != address(0), "initializeVote: Zero filmBoard address");
+        DAO_PROPERTY = _daoProperty; 
         require(_usdcToken != address(0), "_usdcToken: Zeor address");
         USDC_TOKEN = _usdcToken;
-
-        proposalFeeAmount = 100 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $100)
-        minDepositAmount = 50 * (10**IERC20Metadata(_usdcToken).decimals());   // amount in cash(usd dollar - $50)
-        maxDepositAmount = 5000 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $5000)
-        fundFeePercent = 2 * 1e8;    // percent(2%) 
     }
 
-    // ======================== Studio ==================================
+    // ======================== Film proposal ==============================
     /// @notice Create a proposal with rentPrice and raise amount for multiple films by studio
     // if raiseAmount > 0 then it is for funding and if raiseAmount = 0 then it is for listing
     // Creator should pay VAB as fee
@@ -135,6 +131,24 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         emit FilmsProposalCreated(proposalFilmIds, msg.sender);        
     }
 
+    /// @notice Check if proposal fee transferred from studio to stakingPool
+    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> this contract(FilmBoard) -> stakingPool.
+    function __isPaidFee(bool _noVote) private returns(bool) {    
+        uint256 depositAmount = IProperty(DAO_PROPERTY).proposalFeeAmount();
+        if(_noVote) depositAmount = IProperty(DAO_PROPERTY).proposalFeeAmount() * 2;
+        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(depositAmount, USDC_TOKEN, address(PAYOUT_TOKEN));
+        
+        if(expectVABAmount > 0) {
+            Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), expectVABAmount);
+            if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
+                Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
+            }  
+            IStakingPool(STAKING_POOL).addRewardToPool(expectVABAmount);
+            return true;
+        } else {
+            return false;
+        }
+    } 
     /// @notice Create a Proposal for a film
     function __proposalFilm(
         bytes calldata _proposalFilm
@@ -234,7 +248,6 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
     function setFinalFilms(
         bytes[] calldata _finalFilms
     ) external onlyAuditor nonReentrant {
-
         require(_finalFilms.length > 0, "finalSetFilms: Bad items length");
         
         for(uint256 i = 0; i < _finalFilms.length; i++) {
@@ -277,6 +290,46 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
                 filmInfo[filmIds_[i]].status == Helper.Status.APPROVED_LISTING;
             }
         }   
+    }
+
+    // =================== FilmBoard proposal ====================
+    /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
+    function proposalFilmBoard(address _member) external nonReentrant {
+        require(_member != address(0), "proposalFilmBoard: Zero candidate address");     
+        require(isBoardWhitelist[_member] == 0, "proposalFilmBoard: Already film board member or candidate");                  
+        require(__isPaidFee(false), 'proposalFilmBoard: Not paid fee');     
+
+        filmBoardCandidates.push(_member);
+        isBoardWhitelist[_member] = 1;
+
+        emit FilmBoardProposalCreated(_member);
+    }
+
+    /// @notice Add a member to whitelist by Vote contract
+    function addFilmBoardMember(address _member) external onlyVote nonReentrant {
+        require(_member != address(0), "addFilmBoardMember: Zero candidate address");     
+        require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
+
+        isBoardWhitelist[_member] = 2;
+
+        emit FilmBoardMemberAdded(_member);
+    }
+
+    /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
+    function removeFilmBoardMember(address _member) external nonReentrant {
+        require(isBoardWhitelist[_member] == 2, "removeFilmBoardMember: Not Film board member");
+        
+        if(IProperty(DAO_PROPERTY).maxAllowPeriod() < block.timestamp - lastVoteTime[_member]) {
+            if(IProperty(DAO_PROPERTY).maxAllowPeriod() > block.timestamp - lastfundProposalCreateTime) {
+                isBoardWhitelist[_member] = 0;
+                emit FilmBoardMemberRemoved(_member);
+            }
+        }
+    }
+
+    /// @notice Update last vote time
+    function updateLastVoteTime(address _member) external onlyVote {
+        lastVoteTime[_member] = block.timestamp;
     }
 
     // =================== Funding(Launch Pad) START ===============================
@@ -360,7 +413,7 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         uint256 rewardSumAmount;
         uint256 rewardAmount;
         for(uint256 i = 0; i < assetArr.length; i++) {                
-            rewardAmount = assetArr[i].amount * fundFeePercent / 1e10;
+            rewardAmount = assetArr[i].amount * IProperty(DAO_PROPERTY).fundFeePercent() / 1e10;
             if(address(PAYOUT_TOKEN) == assetArr[i].token) {
                 rewardSumAmount += rewardAmount;
             } else {
@@ -375,7 +428,10 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         }
 
         if(rewardSumAmount > 0) {
-            addReward(rewardSumAmount);
+            if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
+                Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
+            }        
+            IStakingPool(STAKING_POOL).addRewardToPool(rewardSumAmount);
         }
 
         emit FundProcessed(_filmId);
@@ -469,66 +525,15 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
                 userRentInfo[_customers[i]].withdrawAmount = 0;
             }
         }
-    }    
-
-    /// @notice Update minDepositAmount and maxDepositAmount only by Auditor
-    function updateMinMaxDepositAmount(uint256 _minAmount, uint256 _maxAmount) external onlyAuditor nonReentrant {
-        require(_minAmount > 0 && _maxAmount > _minAmount, "updateMinMaxDepositAmount: Invalid amounts");        
-        minDepositAmount = _minAmount;
-        maxDepositAmount = _maxAmount;
-
-        emit MinMaxDepositAmountUpdated(_minAmount, _maxAmount);
-    }
-
-    /// @notice Update fundFeePercent(ex: 3% = 30000) by Auditor
-    function updateFundFeePercent(uint256 _fundFeePercent) external onlyAuditor nonReentrant {
-        require(_fundFeePercent > 0, "updateFundFeePercent: Invalid fundFeePercent");        
-        fundFeePercent = _fundFeePercent;
-
-        emit FundFeePercentUpdated(_fundFeePercent);
-    }
+    }  
 
     /// @notice Update fundPeriod only by studio that created the proposal
-    // _fundPeriod : value in second
     function updateFundPeriod(uint256 _filmId, uint256 _fundPeriod) external onlyStudio nonReentrant {
         require(msg.sender == filmInfo[_filmId].studio, "updatefundPeriod: Invalid film owner");
         require(_fundPeriod > 0, "updatefundPeriod: Invalid fundPeriod");        
         filmInfo[_filmId].fundPeriod = _fundPeriod;
 
         emit FundPeriodUpdated(_filmId, _fundPeriod);
-    }
-
-    /// @notice Update proposalFeeAmount by auditor
-    function updateProposalFeeAmount(uint256 _feeAmount) external onlyAuditor nonReentrant {
-        require(_feeAmount > 0, "updateProposalFeeAmount: Invalid feeAmount");        
-        proposalFeeAmount = _feeAmount;
-
-        emit ProposalFeeAmountUpdated(_feeAmount);
-    }
-
-    /// @dev Helper to add reward to staking pool
-    function addReward(uint256 _amount) public {
-        require(_amount > 0, "addReward: Zero amount"); 
-        if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
-            Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
-        }        
-        IStakingPool(STAKING_POOL).addRewardToPool(_amount);
-    }
-
-    /// @notice Check if proposal fee transferred from studio to stakingPool
-    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> this contract(DAO) -> stakingPool.
-    function __isPaidFee(bool _noVote) private returns (bool paid_) {       
-        uint256 depositAmount = proposalFeeAmount;
-        if(_noVote) depositAmount = proposalFeeAmount * 2;
-
-        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(depositAmount, USDC_TOKEN, address(PAYOUT_TOKEN));
-        if(expectVABAmount > 0) {
-            Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), expectVABAmount);
-            addReward(expectVABAmount);
-            paid_ = true;
-        } else {
-            paid_ = false;
-        }
     }    
 
     /// @notice Get payout amount based on watched percent for a film
@@ -544,7 +549,7 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
     function __checkMinMaxAmount(uint256 _filmId, address _token, uint256 _amount) private view returns (bool passed_) {
         uint256 userFundAmountPerFilm = __getUserFundAmountPerFilm(_filmId);
         uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, USDC_TOKEN);
-        if(_amount >= minDepositAmount && fundAmount + userFundAmountPerFilm <= maxDepositAmount) {
+        if(_amount >= IProperty(DAO_PROPERTY).minDepositAmount() && fundAmount + userFundAmountPerFilm <= IProperty(DAO_PROPERTY).maxDepositAmount()) {
             passed_ = true;
         } else {
             passed_ = false;

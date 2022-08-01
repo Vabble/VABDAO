@@ -9,6 +9,7 @@ import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IVote.sol";
 import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IProperty.sol";
 import "hardhat/console.sol";
 
 contract StakingPool is Ownable, ReentrancyGuard {
@@ -30,10 +31,8 @@ contract StakingPool is Ownable, ReentrancyGuard {
     IERC20 private PAYOUT_TOKEN;   // VAB token   
     address private VOTE;          // vote contract address
     address private VABBLE_DAO;    // VabbleDAO contract address
-    
-    uint256 public lockPeriod;           // lock period for staked VAB
-    uint256 public rewardRate;           // 1% = 1e8, 100% = 1e10
-    uint256 public extraRewardRate;      // 1% = 1e8, 100% = 1e10
+    address private DAO_PROPERTY;
+        
     uint256 public totalStakingAmount;   // 
     uint256 public totalRewardAmount;    // 
     bool public isInitialized;           // check if contract initialized or not
@@ -53,19 +52,19 @@ contract StakingPool is Ownable, ReentrancyGuard {
     function initializePool(
         address _vabbleDAO,
         address _voteContract,
+        address _daoProperty,
         address _payoutToken
     ) external onlyAuditor {
         require(!isInitialized, "initializePool: Already initialized");
-        require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "initializePool: Zero vabbleDAO address");
+        require(_vabbleDAO != address(0), "initializePool: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO;
-        require(_voteContract != address(0) && Helper.isContract(_vabbleDAO), "initializePool: Zero voteContract address");
-        VOTE = _voteContract;                   
+        require(_voteContract != address(0), "initializePool: Zero voteContract address");
+        VOTE = _voteContract;    
+        require(_daoProperty != address(0), "initializePool: Zero filmBoard address");
+        DAO_PROPERTY = _daoProperty;               
         require(_payoutToken != address(0), "initializePool: Zero payoutToken address");
         PAYOUT_TOKEN = IERC20(_payoutToken);
-
-        lockPeriod = 30 days;
-        rewardRate = 40000;    // 0.0004% (1% = 1e8, 100%=1e10)
-        extraRewardRate = 667; // 0.00000667% (1% = 1e8, 100%=1e10)
+        
         isInitialized = true;
     }    
 
@@ -91,12 +90,12 @@ contract StakingPool is Ownable, ReentrancyGuard {
             stakerCount.increment();
         }
         userInfo[msg.sender].stakeAmount += _amount;
-        userInfo[msg.sender].withdrawableTime = block.timestamp + lockPeriod;
+        userInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
         userInfo[msg.sender].stakeTime = block.timestamp;
 
         totalStakingAmount += _amount;
 
-        emit TokenStaked(msg.sender, _amount, block.timestamp + lockPeriod);
+        emit TokenStaked(msg.sender, _amount, block.timestamp + IProperty(DAO_PROPERTY).lockPeriod());
     }
 
     /// @dev Allows user to unstake tokens after the correct time period has elapsed
@@ -127,7 +126,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     function withdrawReward() external nonReentrant {
         require(msg.sender != address(0), "withdrawReward: Zero staker address");
         require(userInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
-        require(block.timestamp - userInfo[msg.sender].stakeTime > lockPeriod, "withdrawReward: lock period yet");
+        require(block.timestamp - userInfo[msg.sender].stakeTime > IProperty(DAO_PROPERTY).lockPeriod(), "withdrawReward: lock period yet");
 
         uint256 rewardAmount = __calcRewardAmount() + __calcExtraRewardAmount();
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
@@ -138,19 +137,18 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @dev Calculate reward amount
     function __calcRewardAmount() private view returns (uint256 amount_) {
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 timeVal = (block.timestamp - userInfo[msg.sender].stakeTime) * 1e4 / lockPeriod;
-        amount_ = userInfo[msg.sender].stakeAmount * timeVal * rewardRate / 1e10 / 1e4;
+        uint256 timeVal = (block.timestamp - userInfo[msg.sender].stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
+        amount_ = userInfo[msg.sender].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
     }
 
-    /// @dev Calculate extra reward amount
+    /// @dev Calculate extra reward amount for funding film vote
     function __calcExtraRewardAmount() private view returns (uint256 amount_) {
-        // Calc extra reward amount for funding film vote
         uint256[] memory filmIds = IVote(VOTE).getFilmIdsPerUser(msg.sender); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
             uint256 voteStatus = IVote(VOTE).getVoteStatusPerUser(msg.sender, filmIds[i]);    
             bool isRaised = IVabbleDAO(VABBLE_DAO).isRaisedFullAmount(filmIds[i]);
             if((voteStatus == 1 && isRaised) || (voteStatus == 2 && !isRaised)) { 
-                amount_ += totalRewardAmount * extraRewardRate / 1e10;       
+                amount_ += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
             }
         } 
     }
@@ -169,19 +167,6 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @notice Update lastStakedTime for a staker when vote
     function updateWithdrawableTime(address _user, uint256 _time) external onlyVote {
         userInfo[_user].withdrawableTime = _time;
-    }
-
-    /// @notice Update reward rate by auditor
-    function updateRewardRate(uint256 _rate) external onlyAuditor {
-        require(_rate > 0 && rewardRate != _rate, "updateRewardRate: not allow rate");
-        rewardRate = _rate;
-    }
-
-    /// @notice Update lock time(in second) by auditor
-    function updateLockPeriod(uint256 _lockPeriod) external onlyAuditor {
-        require(_lockPeriod > 0, "updateLockPeriod: not allow zero lock period");
-        lockPeriod = _lockPeriod;
-        emit LockTimeUpdated(_lockPeriod);
     }
 
     /// @notice Get staking amount for a staker

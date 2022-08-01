@@ -8,6 +8,8 @@ describe('FactoryNFT', function () {
   before(async function () {        
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
+    this.VoteFactory = await ethers.getContractFactory('Vote');
+    this.PropertyFactory = await ethers.getContractFactory('Property');
     this.NFTFactory = await ethers.getContractFactory('FactoryNFT');
 
     this.signers = await ethers.getSigners();
@@ -32,11 +34,24 @@ describe('FactoryNFT', function () {
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
 
+    this.voteContract = await (await this.VoteFactory.deploy()).deployed();
+
+    this.propertyContract = await (
+      await this.PropertyFactory.deploy(
+        CONFIG.vabToken,
+        this.voteContract.address,
+        this.stakingContract.address,
+        this.uniHelperContract.address,
+        CONFIG.usdcAdress
+      )
+    ).deployed();
+
     this.NFTContract = await (
       await this.NFTFactory.deploy(
         CONFIG.vabToken,
         this.stakingContract.address,
         this.uniHelperContract.address,
+        this.propertyContract.address,
         CONFIG.usdcAdress, 
         "Vabble NFT",
         "vnft"

@@ -8,7 +8,7 @@ describe('Ownerable', function () {
     this.VoteFactory = await ethers.getContractFactory('Vote');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
-    this.BoardFactory = await ethers.getContractFactory('FilmBoard');
+    this.PropertyFactory = await ethers.getContractFactory('Property');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -30,14 +30,24 @@ describe('Ownerable', function () {
     )).deployed();
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
+    
+    this.propertyContract = await (
+      await this.PropertyFactory.deploy(
+        CONFIG.vabToken,
+        this.voteContract.address,
+        this.stakingContract.address,
+        this.uniHelperContract.address,
+        CONFIG.usdcAdress
+      )
+    ).deployed();
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
-        CONFIG.daoFeeAddress,
         CONFIG.vabToken,   
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
+        this.propertyContract.address,
         CONFIG.usdcAdress 
       )
     ).deployed();    

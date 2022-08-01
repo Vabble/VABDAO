@@ -12,6 +12,7 @@ import "../libraries/Helper.sol";
 import "../libraries/Ownable.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
+import "../interfaces/IProperty.sol";
 import "hardhat/console.sol";
 
 contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
@@ -31,10 +32,11 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
     address private immutable STAKING_POOL;    // StakingPool contract address
     address private immutable UNI_HELPER;      // UniHelper contract address
     address private immutable USDC_TOKEN;      // USDC token 
+    address private immutable DAO_PROPERTY;
 
     Counters.Counter private nftCount;
     string public baseUri;                     // Base URI
-    uint256 public immutable MAX_FEE_PERCENT;  // 10%(1% = 1e8, 100% = 1e10)
+    
 
     mapping(uint256 => string) private tokenUriInfo; // (tokenId => tokenUri)    
     mapping(address => Mint) private mintInfo;       // (studio => Mint)
@@ -43,6 +45,7 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
         address _payoutToken,
         address _stakingContract,
         address _uniHelperContract,
+        address _daoProperty,
         address _usdcToken,
         string memory _name,
         string memory _symbol
@@ -52,11 +55,11 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
         require(_stakingContract != address(0), "_stakingContract: Zero address");
         STAKING_POOL = _stakingContract;
         require(_uniHelperContract != address(0), "_uniHelperContract: Zero address");
-        UNI_HELPER = _uniHelperContract;       
+        UNI_HELPER = _uniHelperContract;   
+        require(_daoProperty != address(0), "initializeVote: Zero filmBoard address");
+        DAO_PROPERTY = _daoProperty;    
         require(_usdcToken != address(0), "_usdcToken: Zeor address");
         USDC_TOKEN = _usdcToken;
-
-        MAX_FEE_PERCENT = 1e9;
     }
 
     /// @notice Set baseURI by Auditor.
@@ -66,7 +69,8 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
 
     /// @notice Set mint info by Studio
     function setMintInfo(uint256 _amount, uint256 _price, uint256 _percent) external onlyStudio nonReentrant {
-        require(_amount > 0 && _price > 0 && _percent > 0 && _percent <= MAX_FEE_PERCENT, "setMint: Zero value");
+        require(_amount > 0 && _price > 0 && _percent > 0, "setMint: Zero value");        
+        require(_percent <= IProperty(DAO_PROPERTY).maxMintFeePercent(), "setMint: over max mint fee");
 
         Mint storage _mintInfo = mintInfo[msg.sender];
         _mintInfo.maxMintAmount = _amount; // 100
@@ -179,21 +183,6 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
         // If there is a baseURI but no tokenURI, concatenate the tokenID to the baseURI.
         return string(abi.encodePacked(baseUri, _tokenId.toString()));
     }
-    // function tokenURI_test(uint256 tokenId) public pure returns (string memory) {
-    //     string[17] memory parts;
-    //     parts[0] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base { fill: white; font-family: serif; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="10" y="20" class="base">';
-
-    //     parts[1] = Strings.toString(tokenId);
-
-    //     parts[2] = '</text></svg>';
-
-    //     string memory output = string(abi.encodePacked(parts[0], parts[1], parts[2]));
-
-    //     string memory json = Base64.encode(bytes(string(abi.encodePacked('{"name": "Badge #', Strings.toString(tokenId), '", "description": "A concise Hardhat tutorial Badge NFT with on-chain SVG images like look.", "image": "data:image/svg+xml;base64,', Base64.encode(bytes(output)), '"}'))));
-    //     output = string(abi.encodePacked('data:application/json;base64,', json));
-
-    //     return output;
-    // }
 
     /// @notice Return total minited NFT count
     function totalSupply() public view returns (uint256) {
