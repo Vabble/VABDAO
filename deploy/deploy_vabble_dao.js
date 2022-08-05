@@ -20,7 +20,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     ],
     log: true,
     deterministicDeployment: false,
-    skipIfAlreadyDeployed: true,
+    skipIfAlreadyDeployed: false,
   });  
 };
 

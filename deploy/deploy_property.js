@@ -18,20 +18,8 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     ],
     log: true,
     deterministicDeployment: false,
-    skipIfAlreadyDeployed: true,
+    skipIfAlreadyDeployed: false,
   });
-
-  // const VoteFactory = await ethers.getContractFactory('Vote');
-  // const voteConract = await (await VoteFactory.deploy()).deployed();
-  // this.BoardContract = await deployments.get('FilmBoard');
-  // console.log("initializeVote==", this.BoardContract.address+"=="+this.VabbleDAO.address);
-        
-  // await voteConract.initializeVote(
-  //   this.VabbleDAO.address,
-  //   this.StakingPool.address,
-  //   this.BoardContract.address,
-  //   CONFIG.vabToken
-  // )
 };
 
 module.exports.id = 'deploy_property'

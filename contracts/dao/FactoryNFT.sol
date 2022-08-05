@@ -4,7 +4,6 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -31,16 +30,17 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
     IERC20 private immutable PAYOUT_TOKEN;     // VAB token      
     address private immutable STAKING_POOL;    // StakingPool contract address
     address private immutable UNI_HELPER;      // UniHelper contract address
+    address private immutable DAO_PROPERTY;    // Property contract address
     address private immutable USDC_TOKEN;      // USDC token 
-    address private immutable DAO_PROPERTY;
 
     Counters.Counter private nftCount;
-    string public baseUri;                     // Base URI
-    
+    string public baseUri;                     // Base URI    
 
     mapping(uint256 => string) private tokenUriInfo; // (tokenId => tokenUri)    
     mapping(address => Mint) private mintInfo;       // (studio => Mint)
     
+    receive() external payable {}
+
     constructor(
         address _payoutToken,
         address _stakingContract,
@@ -56,9 +56,9 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
         STAKING_POOL = _stakingContract;
         require(_uniHelperContract != address(0), "_uniHelperContract: Zero address");
         UNI_HELPER = _uniHelperContract;   
-        require(_daoProperty != address(0), "initializeVote: Zero filmBoard address");
+        require(_daoProperty != address(0), "_daoProperty: Zero address");
         DAO_PROPERTY = _daoProperty;    
-        require(_usdcToken != address(0), "_usdcToken: Zeor address");
+        require(_usdcToken != address(0), "_usdcToken: Zero address");
         USDC_TOKEN = _usdcToken;
     }
 
@@ -91,9 +91,8 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
         require(maxMintAmount > 0, "batchMintTo: should set mint info by studio");
         require(maxMintAmount >= _mintAmount + currentMintedAmount, "batchMintTo: exceed mint amount");
 
-        uint256 totalPrice = mintInfo[_studio].mintPrice * _mintAmount;        
-        uint256 expectAmount = IUniHelper(UNI_HELPER).expectedAmount(totalPrice, USDC_TOKEN, _payToken);
-        console.log("sol=>amount::", totalPrice, expectAmount);
+        uint256 totalMintPrice = mintInfo[_studio].mintPrice * _mintAmount;        
+        uint256 expectAmount = IUniHelper(UNI_HELPER).expectedAmount(totalMintPrice, USDC_TOKEN, _payToken);
         
         // Return remain ETH to user back if case of ETH
         // Transfer Asset from buyer to this contract
@@ -126,7 +125,7 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
         emit BatchMinted(_studio, _to, _mintAmount, revenueAmount);
     }
 
-    /// @dev Add fee amount to rewardPool after swap from uniswap
+    /// @dev Add fee amount to rewardPool after swap from uniswap if not VAB token
     function __addReward(uint256 _feeAmount, address _payToken) private {
         if(_payToken == address(0)) {
             Helper.safeTransferETH(UNI_HELPER, _feeAmount);

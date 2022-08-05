@@ -2,7 +2,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
@@ -58,7 +57,6 @@ contract Vote is Ownable, ReentrancyGuard {
     mapping(address => mapping(address => bool)) public boardVoteAttend; // (staker => (filmBoard candidate => true/false))    
     mapping(address => AgentProposal) public agentProposal;              // (agent => AgentProposal)
     mapping(address => mapping(address => bool)) public votedToAgent;    // (staker => (agent => true/false)) 
-
     mapping(uint256 => mapping(uint256 => PropertyProposal)) public propertyProposal;        // (flag => (property => PropertyProposal))
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) public votedToProperty; // (flag => (staker => (property => true/false)))
     // For extra reward
@@ -72,7 +70,6 @@ contract Vote is Ownable, ReentrancyGuard {
 
     /// @notice Allow to vote for only staker(stakingAmount > 0)
     modifier onlyStaker() {
-        require(msg.sender != address(0), "Staker Zero address");
         require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) > 0, "Not staker");
         _;
     }
@@ -188,8 +185,7 @@ contract Vote is Ownable, ReentrancyGuard {
         emit FilmIdsApproved(_filmIds, approvedFilmIds, msg.sender);
     }
 
-    /// @notice Stakers vote to agent for replacing Auditor
-    // _vote: 1,2,3 => Yes, No, Abstain
+    /// @notice Stakers vote(1,2,3 => Yes, No, Abstain) to agent for replacing Auditor
     function voteToAgent(uint256 _voteInfo, uint256 _agentIndex) public onlyStaker nonReentrant {
         address agent = IProperty(DAO_PROPERTY).getAgent(_agentIndex);        
         require(agent != address(0), "voteToAgent: invalid index or no proposal");
@@ -233,7 +229,6 @@ contract Vote is Ownable, ReentrancyGuard {
         }
         IProperty(DAO_PROPERTY).removeAgent(_agentIndex);
     }
-    // ================ Auditor governance by the Staker END =================
     
     function voteToFilmBoard(address _candidate, uint256 _voteInfo) public onlyStaker nonReentrant {
         require(IVabbleDAO(VABBLE_DAO).isBoardWhitelist(_candidate) == 1, "voteToFilmBoard: Not candidate");
@@ -271,8 +266,7 @@ contract Vote is Ownable, ReentrancyGuard {
         }         
     }
 
-    /// @notice Stakers vote to proposal for updating properties(filmVotePeriod, rewardRate, ...)
-    // _voteInfo: 1,2,3 => Yes, No, Abstain
+    /// @notice Stakers vote(1,2,3 => Yes, No, Abstain) to proposal for updating properties(filmVotePeriod, rewardRate, ...)
     function voteToProperty(uint256 _voteInfo, uint256 _propertyIndex, uint256 _flag) public onlyStaker nonReentrant {
         uint256 propertyVal = IProperty(DAO_PROPERTY).getProperty(_propertyIndex, _flag);
         require(propertyVal > 0, "voteToProperty: no proposal");

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../libraries/Ownable.sol";
@@ -132,7 +131,7 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
-    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> this contract(FilmBoard) -> stakingPool.
+    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
     function __isPaidFee(bool _noVote) private returns(bool) {    
         uint256 depositAmount = IProperty(DAO_PROPERTY).proposalFeeAmount();
         if(_noVote) depositAmount = IProperty(DAO_PROPERTY).proposalFeeAmount() * 2;

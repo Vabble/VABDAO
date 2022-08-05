@@ -7,7 +7,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     args: [],
     log: true,
     deterministicDeployment: false,
-    skipIfAlreadyDeployed: true,
+    skipIfAlreadyDeployed: false,
   });
 };
 

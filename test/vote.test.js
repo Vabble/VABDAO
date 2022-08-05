@@ -90,184 +90,184 @@ describe('Vote', function () {
     this.voteInfo = [1, 2, 3] // yes, no, abstain
   });
 
-  // it('VoteToFilms', async function () {    
-  //   // Transfering VAB token to user1, 2, 3 and studio1,2,3
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
+  it('VoteToFilms', async function () {    
+    // Transfering VAB token to user1, 2, 3 and studio1,2,3
+    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
 
-  //   //=> voteToFilms()
-  //   const proposalIds = [1, 2, 3, 4]
-  //   const voteInfos = [1, 1, 2, 3];
-  //   const voteData = getVoteData(proposalIds, voteInfos)
-  //   await expect(
-  //     this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
-  //   ).to.be.revertedWith('function call to a non-contract account')
+    //=> voteToFilms()
+    const proposalIds = [1, 2, 3, 4]
+    const voteInfos = [1, 1, 2, 3];
+    const voteData = getVoteData(proposalIds, voteInfos)
+    await expect(
+      this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
+    ).to.be.revertedWith('function call to a non-contract account')
 
-  //   // Initialize Vote contract
-  //   await this.voteContract.connect(this.auditor).initializeVote(
-  //     this.DAOContract.address,
-  //     this.stakingContract.address,
-  //     this.propertyContract.address,
-  //     this.vabToken.address
-  //   )
+    // Initialize Vote contract
+    await this.voteContract.connect(this.auditor).initializeVote(
+      this.DAOContract.address,
+      this.stakingContract.address,
+      this.propertyContract.address,
+      this.vabToken.address
+    )
 
-  //   await expect(
-  //     this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
-  //   ).to.be.revertedWith('Not staker')
+    await expect(
+      this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
+    ).to.be.revertedWith('Not staker')
     
-  //   // Initialize StakingPool
-  //   await this.stakingContract.connect(this.auditor).initializePool(
-  //     this.DAOContract.address,
-  //     this.voteContract.address,
-  //     this.propertyContract.address,
-  //     this.vabToken.address,
-  //     {from: this.auditor.address}
-  //   )
-  //   // Staking from customer1,2,3 for vote
-  //   const stakeAmount = getBigNumber(200)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-  //   await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.propertyContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )
+    // Staking from customer1,2,3 for vote
+    const stakeAmount = getBigNumber(200)
+    await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
        
-  //   // Deposit to contract(VAB amount : 100, 200, 300)
-  //   await this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
-  //   await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200), {from: this.customer2.address})
-  //   await this.DAOContract.connect(this.customer3).depositVAB(getBigNumber(300), {from: this.customer3.address})
+    // Deposit to contract(VAB amount : 100, 200, 300)
+    await this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
+    await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200), {from: this.customer2.address})
+    await this.DAOContract.connect(this.customer3).depositVAB(getBigNumber(300), {from: this.customer3.address})
 
-  //   // Create proposal for four films by studio
-  //   const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
-  //   const onlyAllowVABs = [true, true, false, false];
-  //   const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
-  //   const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
-  //   const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2]]
-  //   const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3]]
-  //   this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
-  //   await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
+    // Create proposal for four films by studio
+    const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
+    const onlyAllowVABs = [true, true, false, false];
+    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
+    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
+    const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2]]
+    const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3]]
+    this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
+    await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
     
-  //   await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) //1,1,2,3
-  //   await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address}) //1,1,2,3
-  //   await this.voteContract.connect(this.customer3).voteToFilms(voteData, {from: this.customer3.address}) //1,1,2,3    
-  // });
+    await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) //1,1,2,3
+    await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address}) //1,1,2,3
+    await this.voteContract.connect(this.customer3).voteToFilms(voteData, {from: this.customer3.address}) //1,1,2,3    
+  });
 
-  // it('VoteToAgent', async function () {    
-  //   // Initialize StakingPool
-  //   await this.stakingContract.connect(this.auditor).initializePool(
-  //     this.DAOContract.address,
-  //     this.voteContract.address,
-  //     this.propertyContract.address,
-  //     this.vabToken.address,
-  //     {from: this.auditor.address}
-  //   )    
-  //   const stakeAmount = getBigNumber(200)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-  //   await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
+  it('VoteToAgent', async function () {    
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.propertyContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )    
+    const stakeAmount = getBigNumber(200)
+    await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
 
-  //   // Initialize Vote contract
-  //   await this.voteContract.connect(this.auditor).initializeVote(
-  //     this.DAOContract.address,
-  //     this.stakingContract.address,
-  //     this.propertyContract.address,
-  //     this.vabToken.address
-  //   )
+    // Initialize Vote contract
+    await this.voteContract.connect(this.auditor).initializeVote(
+      this.DAOContract.address,
+      this.stakingContract.address,
+      this.propertyContract.address,
+      this.vabToken.address
+    )
     
-  //   // Call voteToAgent before create the proposal
-  //   await expect(
-  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, {from: this.customer2.address})
-  //   ).to.be.revertedWith('voteToAgent: invalid index or no proposal')
+    // Call voteToAgent before create the proposal
+    await expect(
+      this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, {from: this.customer2.address})
+    ).to.be.revertedWith('voteToAgent: invalid index or no proposal')
 
-  //   // Create proposal for Auditor
-  //   await this.propertyContract.connect(this.customer1).proposalAuditor(this.auditorAgent1.address, {from: this.customer1.address});
-  //   await this.propertyContract.connect(this.customer2).proposalAuditor(this.auditorAgent2.address, {from: this.customer2.address});
+    // Create proposal for Auditor
+    await this.propertyContract.connect(this.customer1).proposalAuditor(this.auditorAgent1.address, {from: this.customer1.address});
+    await this.propertyContract.connect(this.customer2).proposalAuditor(this.auditorAgent2.address, {from: this.customer2.address});
 
-  //   const customer1Balance = await this.vabToken.balanceOf(this.customer1.address)
-  //   console.log("====customer1Balance::", customer1Balance.toString())
+    const customer1Balance = await this.vabToken.balanceOf(this.customer1.address)
+    console.log("====customer1Balance::", customer1Balance.toString())
        
-  //   // Call voteToAgent with index=3(avaliable index: 0, 1)
-  //   await expect(
-  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, {from: this.customer2.address})
-  //   ).to.be.revertedWith('voteToAgent: invalid index or no proposal')
+    // Call voteToAgent with index=3(avaliable index: 0, 1)
+    await expect(
+      this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, {from: this.customer2.address})
+    ).to.be.revertedWith('voteToAgent: invalid index or no proposal')
 
-  //   await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, {from: this.customer2.address});
-  //   await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, {from: this.customer3.address});
+    await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, {from: this.customer2.address});
+    await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, {from: this.customer3.address});
 
-  //   let tx = await this.voteContract.connect(this.customer1).voteToAgent(this.voteInfo[0], 0, {from: this.customer1.address})
-  //   this.events = (await tx.wait()).events
-  //   // console.log("====events::", this.events)
-  //   const arg = this.events[0].args
-  //   expect(this.customer1.address).to.be.equal(arg.voter)
-  //   expect(this.voteInfo[0]).to.be.equal(arg.voteInfo)
+    let tx = await this.voteContract.connect(this.customer1).voteToAgent(this.voteInfo[0], 0, {from: this.customer1.address})
+    this.events = (await tx.wait()).events
+    // console.log("====events::", this.events)
+    const arg = this.events[0].args
+    expect(this.customer1.address).to.be.equal(arg.voter)
+    expect(this.voteInfo[0]).to.be.equal(arg.voteInfo)
     
-  //   // Call voteToAgent again
-  //   await expect(
-  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[1], 0, {from: this.customer2.address})
-  //   ).to.be.revertedWith('voteToAgent: Already voted')
+    // Call voteToAgent again
+    await expect(
+      this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[1], 0, {from: this.customer2.address})
+    ).to.be.revertedWith('voteToAgent: Already voted')
 
-  //   // replaceAuditor
-  //   await expect(
-  //     this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
-  //   ).to.be.revertedWith('replaceAuditor: vote period yet')
+    // replaceAuditor
+    await expect(
+      this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
+    ).to.be.revertedWith('replaceAuditor: vote period yet')
 
-  //   const defaultAgentVotePeriod = 10 * 86400; // 10 days
-  //   const agentVotePeriod = await this.propertyContract.agentVotePeriod();
-  //   expect(agentVotePeriod).to.be.equal(defaultAgentVotePeriod)
+    const defaultAgentVotePeriod = 10 * 86400; // 10 days
+    const agentVotePeriod = await this.propertyContract.agentVotePeriod();
+    expect(agentVotePeriod).to.be.equal(defaultAgentVotePeriod)
 
-  //   const defaultDisputeGracePeriod = 30 * 86400; // 30 days
-  //   const disputeGracePeriod = await this.propertyContract.disputeGracePeriod();
-  //   expect(disputeGracePeriod).to.be.equal(defaultDisputeGracePeriod)
+    const defaultDisputeGracePeriod = 30 * 86400; // 30 days
+    const disputeGracePeriod = await this.propertyContract.disputeGracePeriod();
+    expect(disputeGracePeriod).to.be.equal(defaultDisputeGracePeriod)
 
-  //   // => Increase next block timestamp
-  //   network.provider.send('evm_increaseTime', [defaultAgentVotePeriod]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp
+    network.provider.send('evm_increaseTime', [defaultAgentVotePeriod]);
+    await network.provider.send('evm_mine');
 
-  //   await expect(
-  //     this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
-  //   ).to.be.revertedWith('replaceAuditor: dispute grace period yet')
+    await expect(
+      this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
+    ).to.be.revertedWith('replaceAuditor: dispute grace period yet')
 
-  //   // => Increase next block timestamp
-  //   network.provider.send('evm_increaseTime', [defaultDisputeGracePeriod]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp
+    network.provider.send('evm_increaseTime', [defaultDisputeGracePeriod]);
+    await network.provider.send('evm_mine');
 
-  //   await this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
+    await this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
 
-  //   const agent1 = await this.propertyContract.getAgent(0); 
-  //   expect(agent1).to.be.equal(this.auditorAgent2.address)
-  //   const agent2 = await this.propertyContract.getAgent(1);    
-  //   expect(agent2).to.be.equal(CONFIG.addressZero) 
+    const agent1 = await this.propertyContract.getAgent(0); 
+    expect(agent1).to.be.equal(this.auditorAgent2.address)
+    const agent2 = await this.propertyContract.getAgent(1);    
+    expect(agent2).to.be.equal(CONFIG.addressZero) 
 
 
 
-  //   // Transfer staking amount(over 75m)
-  //   const transferAmount = getBigNumber(500000000) // 50m
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer1.address, transferAmount, {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer2.address, transferAmount, {from: this.auditor.address});
+    // Transfer staking amount(over 75m)
+    const transferAmount = getBigNumber(500000000) // 50m
+    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, transferAmount, {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, transferAmount, {from: this.auditor.address});
 
-  //   // Staking
-  //   await this.stakingContract.connect(this.customer1).stakeToken(transferAmount, {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(transferAmount, {from: this.customer2.address})
+    // Staking
+    await this.stakingContract.connect(this.customer1).stakeToken(transferAmount, {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeToken(transferAmount, {from: this.customer2.address})
 
-  //   // Vote to auditorAgent2 address(index=0)
-  //   await this.voteContract.connect(this.customer1).voteToAgent(this.voteInfo[0], 0, {from: this.customer1.address});
-  //   await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, {from: this.customer2.address});
-  //   await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, {from: this.customer3.address});
+    // Vote to auditorAgent2 address(index=0)
+    await this.voteContract.connect(this.customer1).voteToAgent(this.voteInfo[0], 0, {from: this.customer1.address});
+    await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, {from: this.customer2.address});
+    await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, {from: this.customer3.address});
 
-  //   // => Increase next block timestamp
-  //   network.provider.send('evm_increaseTime', [defaultDisputeGracePeriod]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp
+    network.provider.send('evm_increaseTime', [defaultDisputeGracePeriod]);
+    await network.provider.send('evm_mine');
 
-  //   // replaceAuditor
-  //   await this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
+    // replaceAuditor
+    await this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
 
-  //   const agent1_1 = await this.propertyContract.getAgent(0); 
-  //   console.log("====agent1_1", agent1_1)
+    const agent1_1 = await this.propertyContract.getAgent(0); 
+    console.log("====agent1_1", agent1_1)
     
-  //   const new_auditor = await this.voteContract.auditor(); 
-  //   console.log("====new_auditor", new_auditor, this.auditorAgent2.address)
-  // });
+    const new_auditor = await this.voteContract.auditor(); 
+    console.log("====new_auditor", new_auditor, this.auditorAgent2.address)
+  });
 
   it('voteToProperty', async function () {    
     // Transfering VAB token to user1, 2, 3 and studio1,2,3

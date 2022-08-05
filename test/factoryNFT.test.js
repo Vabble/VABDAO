@@ -35,7 +35,7 @@ describe('FactoryNFT', function () {
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
 
     this.voteContract = await (await this.VoteFactory.deploy()).deployed();
-
+      
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
         CONFIG.vabToken,

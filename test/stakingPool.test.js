@@ -98,122 +98,122 @@ describe('StakingPool', function () {
     this.events = [];
   });
 
-  // it('Staking and unstaking VAB token', async function () {      
-  //   // Initialize StakingPool
-  //   await this.stakingContract.connect(this.auditor).initializePool(
-  //     this.DAOContract.address,
-  //     this.voteContract.address,
-  //     this.propertyContract.address,
-  //     this.vabToken.address,
-  //     {from: this.auditor.address}
-  //   )
-  //   // Staking VAB token
-  //   await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(100), {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(150), {from: this.customer2.address})
-  //   await this.stakingContract.connect(this.customer3).stakeToken(getBigNumber(300), {from: this.customer3.address})
-  //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
-  //   expect(await this.stakingContract.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
-  //   expect(await this.stakingContract.getStakeAmount(this.customer3.address)).to.be.equal(getBigNumber(300))
+  it('Staking and unstaking VAB token', async function () {      
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.propertyContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )
+    // Staking VAB token
+    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(100), {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(150), {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer3).stakeToken(getBigNumber(300), {from: this.customer3.address})
+    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
+    expect(await this.stakingContract.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
+    expect(await this.stakingContract.getStakeAmount(this.customer3.address)).to.be.equal(getBigNumber(300))
     
-  //   console.log('===isInitialized::', await this.stakingContract.isInitialized())
-  //   // unstaking VAB token
-  //   await expect(
-  //     this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeToken: Token locked yet');
+    console.log('===isInitialized::', await this.stakingContract.isInitialized())
+    // unstaking VAB token
+    await expect(
+      this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+    ).to.be.revertedWith('unstakeToken: Token locked yet');
         
-  //   // => Increase next block timestamp for only testing
-  //   const period = 31 * 24 * 3600; // lockPeriod = 30 days
-  //   network.provider.send('evm_increaseTime', [period]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const period = 31 * 24 * 3600; // lockPeriod = 30 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
 
-  //   await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   console.log('===isInitialized::', 'ok')
-  //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
-  // });
+    await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+    console.log('===isInitialized::', 'ok')
+    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
+  });
 
-  // it('Staking and unstaking VAB token when voting', async function () {  
-  //   // Initialize StakingPool
-  //   await this.stakingContract.connect(this.auditor).initializePool(
-  //     this.DAOContract.address,
-  //     this.voteContract.address,      
-  //     this.propertyContract.address,
-  //     this.vabToken.address,
-  //     {from: this.auditor.address}
-  //   )          
-  //   // Staking VAB token
-  //   const stakeAmount = getBigNumber(100)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-  //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
+  it('Staking and unstaking VAB token when voting', async function () {  
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,      
+      this.propertyContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )          
+    // Staking VAB token
+    const stakeAmount = getBigNumber(100)
+    await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
+    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
 
-  //   let w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
-  //   console.log("=====w-t after staking::", w_t.toString())
-  //   // Create proposal for 2 films by studio    
-  //   const raiseAmounts = [getBigNumber(0), getBigNumber(3000, 6)];
-  //   const onlyAllowVABs = [true, false];
-  //   const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
-  //   const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
-  //   this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2)]    
-  //   await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
+    let w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
+    console.log("=====w-t after staking::", w_t.toString())
+    // Create proposal for 2 films by studio    
+    const raiseAmounts = [getBigNumber(0), getBigNumber(3000, 6)];
+    const onlyAllowVABs = [true, false];
+    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
+    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
+    this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2)]    
+    await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
     
-  //   // initialize vote contract
-  //   await this.voteContract.connect(this.auditor).initializeVote(
-  //     this.DAOContract.address, 
-  //     this.stakingContract.address, 
-  //     this.propertyContract.address,
-  //     CONFIG.vabToken,
-  //     {from: this.auditor.address}
-  //   );
-  //   expect(await this.voteContract.isInitialized()).to.be.true
+    // initialize vote contract
+    await this.voteContract.connect(this.auditor).initializeVote(
+      this.DAOContract.address, 
+      this.stakingContract.address, 
+      this.propertyContract.address,
+      CONFIG.vabToken,
+      {from: this.auditor.address}
+    );
+    expect(await this.voteContract.isInitialized()).to.be.true
     
-  //   // => Increase next block timestamp for only testing
-  //   const period_1 = 25 * 24 * 3600; // 25 days
-  //   network.provider.send('evm_increaseTime', [period_1]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const period_1 = 25 * 24 * 3600; // 25 days
+    network.provider.send('evm_increaseTime', [period_1]);
+    await network.provider.send('evm_mine');
 
-  //   await expect(
-  //     this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeToken: Token locked yet');
+    await expect(
+      this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+    ).to.be.revertedWith('unstakeToken: Token locked yet');
     
-  //   // customer1 vote to films
-  //   const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2
-  //   const voteInfos = [1, 1];
-  //   const voteData = getVoteData(proposalIds, voteInfos)
-  //   await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
+    // customer1 vote to films
+    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2
+    const voteInfos = [1, 1];
+    const voteData = getVoteData(proposalIds, voteInfos)
+    await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
 
-  //   // => Increase next block timestamp for only testing
-  //   const period_2 = 9 * 24 * 3600; // 9 days
-  //   network.provider.send('evm_increaseTime', [period_2]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const period_2 = 9 * 24 * 3600; // 9 days
+    network.provider.send('evm_increaseTime', [period_2]);
+    await network.provider.send('evm_mine');
 
     
-  //   // w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
-  //   // console.log("=====w-t after 34 days::", w_t.toString())
+    // w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
+    // console.log("=====w-t after 34 days::", w_t.toString())
 
-  //   await expect(
-  //     this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeToken: Token locked yet');
+    await expect(
+      this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+    ).to.be.revertedWith('unstakeToken: Token locked yet');
 
-  //   // => Increase next block timestamp
-  //   const period_3 = 20 * 24 * 3600; // 20 days
-  //   network.provider.send('evm_increaseTime', [period_3]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp
+    const period_3 = 20 * 24 * 3600; // 20 days
+    network.provider.send('evm_increaseTime', [period_3]);
+    await network.provider.send('evm_mine');
 
-  //   const rewardRate = await this.propertyContract.rewardRate()
-  //   const lockPeriod = await this.propertyContract.lockPeriod()
-  //   const timePercent = (BigNumber.from(period_1).add(period_2).add(period_3)).mul(10000).div(lockPeriod);
-  //   const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
+    const rewardRate = await this.propertyContract.rewardRate()
+    const lockPeriod = await this.propertyContract.lockPeriod()
+    const timePercent = (BigNumber.from(period_1).add(period_2).add(period_3)).mul(10000).div(lockPeriod);
+    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
 
-  //   const tx = await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   this.events = (await tx.wait()).events
-  //   const arg_reward = this.events[1].args
-  //   const arg_unstake = this.events[3].args    
-  //   expect(arg_reward.staker).to.be.equal(this.customer1.address)
-  //   console.log('====arg_reward.rewardAmount::', arg_reward.rewardAmount.toString(), expectRewardAmount.toString())//0.018000000000000000
-  //   expect(arg_reward.rewardAmount).to.be.equal(expectRewardAmount)
-  //   expect(arg_unstake.unstaker).to.be.equal(this.customer1.address)
-  //   expect(arg_unstake.unStakeAmount).to.be.equal(getBigNumber(70))
-  //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
-  // });
+    const tx = await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+    this.events = (await tx.wait()).events
+    const arg_reward = this.events[1].args
+    const arg_unstake = this.events[3].args    
+    expect(arg_reward.staker).to.be.equal(this.customer1.address)
+    console.log('====arg_reward.rewardAmount::', arg_reward.rewardAmount.toString(), expectRewardAmount.toString())//0.018000000000000000
+    expect(arg_reward.rewardAmount).to.be.equal(expectRewardAmount)
+    expect(arg_unstake.unstaker).to.be.equal(this.customer1.address)
+    expect(arg_unstake.unStakeAmount).to.be.equal(getBigNumber(70))
+    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
+  });
 
   it('AddReward and WithdrawReward with VAB token', async function() {
     // Initialize StakingPool
@@ -282,139 +282,139 @@ describe('StakingPool', function () {
     expect(arg_new.rewardAmount).to.be.equal(expectRewardAmount)//0.01 VAB
   });
 
-  // it('withdraw rewards VAB token when voting for funding films', async function () {  
-  //   // Initialize StakingPool
-  //   await this.stakingContract.connect(this.auditor).initializePool(
-  //     this.DAOContract.address,
-  //     this.voteContract.address,
-  //     this.propertyContract.address,
-  //     this.vabToken.address,
-  //     {from: this.auditor.address}
-  //   )          
-  //   // initialize vote contract
-  //   await this.voteContract.connect(this.auditor).initializeVote(
-  //     this.DAOContract.address, 
-  //     this.stakingContract.address, 
-  //     this.propertyContract.address,
-  //     CONFIG.vabToken,
-  //     {from: this.auditor.address}
-  //   );
-  //   expect(await this.voteContract.isInitialized()).to.be.true
+  it('withdraw rewards VAB token when voting for funding films', async function () {  
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.propertyContract.address,
+      this.vabToken.address,
+      {from: this.auditor.address}
+    )          
+    // initialize vote contract
+    await this.voteContract.connect(this.auditor).initializeVote(
+      this.DAOContract.address, 
+      this.stakingContract.address, 
+      this.propertyContract.address,
+      CONFIG.vabToken,
+      {from: this.auditor.address}
+    );
+    expect(await this.voteContract.isInitialized()).to.be.true
 
-  //   // Staking VAB token
-  //   // lockPeriod = 30 days as default
-  //   const stakeAmount = getBigNumber(1000)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-  //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(1000))
+    // Staking VAB token
+    // lockPeriod = 30 days as default
+    const stakeAmount = getBigNumber(1000)
+    await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
+    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(1000))
 
-  //   // WithdrawableTime after staking
-  //   let w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
-  //   let _t = BigNumber.from(w_t).div(86400)
-  //   console.log("=====WithdrawableTime after staking::", _t.toString())
+    // WithdrawableTime after staking
+    let w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
+    let _t = BigNumber.from(w_t).div(86400)
+    console.log("=====WithdrawableTime after staking::", _t.toString())
 
-  //   // Create proposal for 2 funding films by studio    
-  //   const raiseAmounts = [getBigNumber(100, 6), getBigNumber(3000, 6)];
-  //   const onlyAllowVABs = [true, false];
-  //   const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
-  //   const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
-  //   this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2)]    
-  //   await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
+    // Create proposal for 2 funding films by studio    
+    const raiseAmounts = [getBigNumber(100, 6), getBigNumber(3000, 6)];
+    const onlyAllowVABs = [true, false];
+    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
+    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
+    this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2)]    
+    await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
 
-  //   // => Increase next block timestamp
-  //   const period_0 = 5 * 24 * 3600; // 5 days
-  //   network.provider.send('evm_increaseTime', [period_0]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp
+    const period_0 = 5 * 24 * 3600; // 5 days
+    network.provider.send('evm_increaseTime', [period_0]);
+    await network.provider.send('evm_mine');
 
-  //   // customer1,2 vote to films after 5 days 
-  //   // filmVotePeriod = 10 days as default
-  //   // Example: withdrawTime is 6/15 and voteStartTime is 6/10, votePeriod is 10 days => withdrawTime is sum(6/20)
-  //   // so, staker cannot unstake his amount till 6/20
-  //   const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2
-  //   const voteInfos = [1, 1];
-  //   const voteData = getVoteData(proposalIds, voteInfos)
-  //   await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
-  //   await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address})
+    // customer1,2 vote to films after 5 days 
+    // filmVotePeriod = 10 days as default
+    // Example: withdrawTime is 6/15 and voteStartTime is 6/10, votePeriod is 10 days => withdrawTime is sum(6/20)
+    // so, staker cannot unstake his amount till 6/20
+    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2
+    const voteInfos = [1, 1];
+    const voteData = getVoteData(proposalIds, voteInfos)
+    await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
+    await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address})
     
-  //   // WithdrawableTime after vote
-  //   w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
-  //   _t = BigNumber.from(w_t).div(86400)
-  //   console.log("=====WithdrawableTime after vote::", _t.toString())
+    // WithdrawableTime after vote
+    w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
+    _t = BigNumber.from(w_t).div(86400)
+    console.log("=====WithdrawableTime after vote::", _t.toString())
 
-  //   // => Increase next block timestamp
-  //   const period_1 = 25 * 24 * 3600; // 25 days
-  //   network.provider.send('evm_increaseTime', [period_1]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp
+    const period_1 = 25 * 24 * 3600; // 25 days
+    network.provider.send('evm_increaseTime', [period_1]);
+    await network.provider.send('evm_mine');
 
-  //   // Approve films 1,2
-  //   const approveData = [proposalIds[0], proposalIds[1]]
-  //   await this.voteContract.approveFilms(approveData);// filmId = 1, 2 ,3
-  //   const ids = await this.voteContract.getApprovedFilmIds() // 1, 2
-  //   expect(ids.length).to.be.equal(approveData.length)
+    // Approve films 1,2
+    const approveData = [proposalIds[0], proposalIds[1]]
+    await this.voteContract.approveFilms(approveData);// filmId = 1, 2 ,3
+    const ids = await this.voteContract.getApprovedFilmIds() // 1, 2
+    expect(ids.length).to.be.equal(approveData.length)
 
-  //   // Deposit to funding films from customer3(investor)
-  //   const depositAmount = getBigNumber(100000)
-  //   await this.DAOContract.connect(this.customer3).depositToFilm(
-  //     proposalIds[0], CONFIG.vabToken, depositAmount, {from: this.customer3.address}
-  //   )
+    // Deposit to funding films from customer3(investor)
+    const depositAmount = getBigNumber(100000)
+    await this.DAOContract.connect(this.customer3).depositToFilm(
+      proposalIds[0], CONFIG.vabToken, depositAmount, {from: this.customer3.address}
+    )
 
-  //   // => Increase next block timestamp
-  //   const period_3 = 20 * 24 * 3600; // 20 days
-  //   network.provider.send('evm_increaseTime', [period_3]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp
+    const period_3 = 20 * 24 * 3600; // 20 days
+    network.provider.send('evm_increaseTime', [period_3]);
+    await network.provider.send('evm_mine');
 
-  //   const rewardRate = await this.propertyContract.rewardRate()
-  //   const lockPeriod = await this.propertyContract.lockPeriod()
-  //   const timePercent = (BigNumber.from(period_1).add(period_0).add(period_3)).mul(10000).div(lockPeriod);
-  //   const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
+    const rewardRate = await this.propertyContract.rewardRate()
+    const lockPeriod = await this.propertyContract.lockPeriod()
+    const timePercent = (BigNumber.from(period_1).add(period_0).add(period_3)).mul(10000).div(lockPeriod);
+    const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
 
-  //   const totalRewardAmount = await this.stakingContract.totalRewardAmount()
-  //   const extraRewardRate = await this.propertyContract.extraRewardRate();  
-  //   const extraExpectRewardAmount = BigNumber.from(totalRewardAmount).mul(extraRewardRate).div(getBigNumber(1,10));
+    const totalRewardAmount = await this.stakingContract.totalRewardAmount()
+    const extraRewardRate = await this.propertyContract.extraRewardRate();  
+    const extraExpectRewardAmount = BigNumber.from(totalRewardAmount).mul(extraRewardRate).div(getBigNumber(1,10));
     
-  //   const raisingAmount = await this.DAOContract.getRaisedAmountPerFilm(proposalIds[0])
-  //   const {
-  //     studioPayees_,
-  //     sharePercents_,
-  //     rentPrice_,
-  //     raiseAmount_,
-  //     fundPeriod_,
-  //     fundStart_,
-  //     studio_,
-  //     onlyAllowVAB_,
-  //     status_
-  //   } = await this.DAOContract.getFilmById(proposalIds[0])
-  //   const isRaised = await this.DAOContract.isRaisedFullAmount(proposalIds[0])
+    const raisingAmount = await this.DAOContract.getRaisedAmountPerFilm(proposalIds[0])
+    const {
+      studioPayees_,
+      sharePercents_,
+      rentPrice_,
+      raiseAmount_,
+      fundPeriod_,
+      fundStart_,
+      studio_,
+      onlyAllowVAB_,
+      status_
+    } = await this.DAOContract.getFilmById(proposalIds[0])
+    const isRaised = await this.DAOContract.isRaisedFullAmount(proposalIds[0])
 
-  //   // Check user balance before withdrawReward    
-  //   let customer1V_1 = await this.vabToken.balanceOf(this.customer1.address)
-  //   console.log('===customer1V before withdraw::', customer1V_1.toString())
+    // Check user balance before withdrawReward    
+    let customer1V_1 = await this.vabToken.balanceOf(this.customer1.address)
+    console.log('===customer1V before withdraw::', customer1V_1.toString())
 
-  //   const tx = await this.stakingContract.connect(this.customer1).withdrawReward({from: this.customer1.address})
-  //   this.events = (await tx.wait()).events
-  //   const arg_reward = this.events[1].args
-  //   // console.log('test-1', arg_reward)
-  //   expect(arg_reward.staker).to.be.equal(this.customer1.address)
-  //   console.log('====arg_reward=reward, expect, total, isRaise, raiseAmount, raisedAmount::', 
-  //   arg_reward.rewardAmount.toString(), //      7271109466218059
-  //   expectRewardAmount.toString(),      //      6666400000000000 
-  //   extraExpectRewardAmount.toString(), //       604709466218059
-  //   totalRewardAmount.toString(),       //9066108938801491315813
-  //   isRaised,                           // true
-  //   raiseAmount_.toString(),            //100000000
-  //   raisingAmount.toString()            //499248873
-  //   )
+    const tx = await this.stakingContract.connect(this.customer1).withdrawReward({from: this.customer1.address})
+    this.events = (await tx.wait()).events
+    const arg_reward = this.events[1].args
+    // console.log('test-1', arg_reward)
+    expect(arg_reward.staker).to.be.equal(this.customer1.address)
+    console.log('====arg_reward=reward, expect, total, isRaise, raiseAmount, raisedAmount::', 
+    arg_reward.rewardAmount.toString(), //      7271109466218059
+    expectRewardAmount.toString(),      //      6666400000000000 
+    extraExpectRewardAmount.toString(), //       604709466218059
+    totalRewardAmount.toString(),       //9066108938801491315813
+    isRaised,                           // true
+    raiseAmount_.toString(),            //100000000
+    raisingAmount.toString()            //499248873
+    )
     
-  //   expect(arg_reward.rewardAmount).to.be.equal(BigNumber.from(expectRewardAmount).add(extraExpectRewardAmount))
-  //   expect(arg_reward.staker).to.be.equal(this.customer1.address)
+    expect(arg_reward.rewardAmount).to.be.equal(BigNumber.from(expectRewardAmount).add(extraExpectRewardAmount))
+    expect(arg_reward.staker).to.be.equal(this.customer1.address)
 
-  //   // Check user balance before withdrawReward    
-  //   const customer1V_2 = await this.vabToken.balanceOf(this.customer1.address)
-  //   console.log('===customer1V after withdraw::', customer1V_2.toString())
-  //   expect(customer1V_2).to.be.equal(BigNumber.from(customer1V_1).add(arg_reward.rewardAmount))
+    // Check user balance before withdrawReward    
+    const customer1V_2 = await this.vabToken.balanceOf(this.customer1.address)
+    console.log('===customer1V after withdraw::', customer1V_2.toString())
+    expect(customer1V_2).to.be.equal(BigNumber.from(customer1V_1).add(arg_reward.rewardAmount))
     
-  //   // =========== check filmIdsPerUser
-  //   const ids_arr = await this.voteContract.getFilmIdsPerUser(this.customer1.address)
-  //   console.log('===ids_arr::', ids_arr.length)
-  // });
+    // =========== check filmIdsPerUser
+    const ids_arr = await this.voteContract.getFilmIdsPerUser(this.customer1.address)
+    console.log('===ids_arr::', ids_arr.length)
+  });
 });

@@ -5,12 +5,10 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
-import "../interfaces/IVabbleDAO.sol";
 import "hardhat/console.sol";
 
 contract Property is Ownable, ReentrancyGuard {
@@ -23,30 +21,29 @@ contract Property is Ownable, ReentrancyGuard {
     address private immutable USDC_TOKEN;     // USDC token 
 
     // Vote
-    uint256 public filmVotePeriod;            // film vote period - 0
-    uint256 public boardVotePeriod;           // filmBoard vote period - 1
-    uint256 public boardVoteWeight;           // filmBoard member's vote weight - 2
-    uint256 public agentVotePeriod;           // vote period for replacing auditor - 3
-    uint256 public disputeGracePeriod;        // grace period for replacing Auditor - 4
-    uint256 public propertyVotePeriod;        // vote period for updating properties - 5
+    uint256 public filmVotePeriod;            // 0 - film vote period
+    uint256 public boardVotePeriod;           // 1 - filmBoard vote period
+    uint256 public boardVoteWeight;           // 2 - filmBoard member's vote weight
+    uint256 public agentVotePeriod;           // 3 - vote period for replacing auditor
+    uint256 public disputeGracePeriod;        // 4 - grace period for replacing Auditor
+    uint256 public propertyVotePeriod;        // 5 - vote period for updating properties
     // StakingPool
-    uint256 public lockPeriod;                // lock period for staked VAB - 6
-    uint256 public rewardRate;                // 1% = 1e8, 100% = 1e10 - 7
-    uint256 public extraRewardRate;           // 1% = 1e8, 100% = 1e10 - 8
+    uint256 public lockPeriod;                // 6 - lock period for staked VAB
+    uint256 public rewardRate;                // 7 - 1% = 1e8, 100% = 1e10
+    uint256 public extraRewardRate;           // 8 - 1% = 1e8, 100% = 1e10
     // FilmBoard
-    uint256 public maxAllowPeriod;            // max allowed period for removing filmBoard member - 9
+    uint256 public maxAllowPeriod;            // 9 - max allowed period for removing filmBoard member
     // VabbleDAO
-    uint256 public proposalFeeAmount;         // USDC amount($100) studio should pay when create a proposal - 10
-    uint256 public fundFeePercent;            // percent(2% = 2*1e8) of fee on the amount raised. - 11
-    uint256 public minDepositAmount;          // USDC min amount($50) that a customer can deposit to a film approved for funding - 12
-    uint256 public maxDepositAmount;          // USDC max amount($5000) that a customer can deposit to a film approved for funding - 13
+    uint256 public proposalFeeAmount;         // 10 - USDC amount($100) studio should pay when create a proposal
+    uint256 public fundFeePercent;            // 11 - percent(2% = 2*1e8) of fee on the amount raised
+    uint256 public minDepositAmount;          // 12 - USDC min amount($50) that a customer can deposit to a film approved for funding
+    uint256 public maxDepositAmount;          // 13 - USDC max amount($5000) that a customer can deposit to a film approved for funding
     // FactoryNFT
-    uint256 public maxMintFeePercent;         // 10%(1% = 1e8, 100% = 1e10) - 14    
+    uint256 public maxMintFeePercent;         // 14 - 10%(1% = 1e8, 100% = 1e10)
 
     uint256 public availableVABAmount;        // vab amount for replacing the auditor
 
-    address[] public agents;
-
+    address[] private agents;
     uint256[] private filmVotePeriodList;       
     uint256[] private boardVotePeriodList;      
     uint256[] private boardVoteWeightList;      
@@ -126,6 +123,10 @@ contract Property is Ownable, ReentrancyGuard {
         }
     }
 
+    function getAgentList() public view returns (address[] memory) {
+        return agents;
+    }
+
     /// @notice Remove agent address from array
     function removeAgent(uint256 _index) external onlyVote {        
         agents[_index] = agents[agents.length - 1];
@@ -133,7 +134,7 @@ contract Property is Ownable, ReentrancyGuard {
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
-    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> this contract(FilmBoard) -> stakingPool.
+    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
     function __isPaidFee() private returns(bool) {    
         uint256 depositAmount = proposalFeeAmount;
         uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(depositAmount, USDC_TOKEN, address(PAYOUT_TOKEN));
@@ -149,7 +150,7 @@ contract Property is Ownable, ReentrancyGuard {
         }
     }  
 
-    /// ========= proposals for properties
+    /// @notice proposals for properties
     function proposalProperty(uint256 _property, uint256 _flag) public nonReentrant {
         require(_property > 0, "proposalProperty: Zero period");
         require(__isPaidFee(), 'proposalProperty: Not paid fee');

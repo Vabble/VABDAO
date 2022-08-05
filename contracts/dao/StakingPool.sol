@@ -2,7 +2,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../libraries/Ownable.sol";
@@ -22,7 +21,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     event RewardWithdraw(address staker, uint256 rewardAmount);
     event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount);
 
-    struct UserInfo {
+    struct Stake {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
         uint256 stakeTime;       // last staked time(here, means the time that staker withdrawable time)
@@ -37,7 +36,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     uint256 public totalRewardAmount;    // 
     bool public isInitialized;           // check if contract initialized or not
 
-    mapping(address => UserInfo) public userInfo;
+    mapping(address => Stake) public stakeInfo;
 
     Counters.Counter public stakerCount;   // count of stakers is from No.1
 
@@ -86,12 +85,12 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
         Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
 
-        if(userInfo[msg.sender].stakeAmount == 0 && userInfo[msg.sender].withdrawableTime == 0) {
+        if(stakeInfo[msg.sender].stakeAmount == 0 && stakeInfo[msg.sender].withdrawableTime == 0) {
             stakerCount.increment();
         }
-        userInfo[msg.sender].stakeAmount += _amount;
-        userInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
-        userInfo[msg.sender].stakeTime = block.timestamp;
+        stakeInfo[msg.sender].stakeAmount += _amount;
+        stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+        stakeInfo[msg.sender].stakeTime = block.timestamp;
 
         totalStakingAmount += _amount;
 
@@ -102,9 +101,9 @@ contract StakingPool is Ownable, ReentrancyGuard {
     function unstakeToken(uint256 _amount) external nonReentrant {
         require(isInitialized, "unstakeToken: Should be initialized");
         require(msg.sender != address(0), "unstakeToken: Zero staker address");
-        require(userInfo[msg.sender].stakeAmount >= _amount, "unstakeToken: Insufficient stake token amount");
+        require(stakeInfo[msg.sender].stakeAmount >= _amount, "unstakeToken: Insufficient stake token amount");
         require(
-            block.timestamp >= userInfo[msg.sender].withdrawableTime, "unstakeToken: Token locked yet"
+            block.timestamp >= stakeInfo[msg.sender].withdrawableTime, "unstakeToken: Token locked yet"
         );
 
         // first, withdraw reward
@@ -116,7 +115,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         // Next, unstake
         // Todo should check if we consider reward amount here or not
         Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);        
-        userInfo[msg.sender].stakeAmount -= _amount;
+        stakeInfo[msg.sender].stakeAmount -= _amount;
         totalStakingAmount -= _amount;
 
         emit TokenUnstaked(msg.sender, _amount);
@@ -125,8 +124,8 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @notice Withdraw reward
     function withdrawReward() external nonReentrant {
         require(msg.sender != address(0), "withdrawReward: Zero staker address");
-        require(userInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
-        require(block.timestamp - userInfo[msg.sender].stakeTime > IProperty(DAO_PROPERTY).lockPeriod(), "withdrawReward: lock period yet");
+        require(stakeInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
+        require(block.timestamp - stakeInfo[msg.sender].stakeTime > IProperty(DAO_PROPERTY).lockPeriod(), "withdrawReward: lock period yet");
 
         uint256 rewardAmount = __calcRewardAmount() + __calcExtraRewardAmount();
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
@@ -137,8 +136,8 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @dev Calculate reward amount
     function __calcRewardAmount() private view returns (uint256 amount_) {
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 timeVal = (block.timestamp - userInfo[msg.sender].stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
-        amount_ = userInfo[msg.sender].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
+        uint256 timeVal = (block.timestamp - stakeInfo[msg.sender].stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
+        amount_ = stakeInfo[msg.sender].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
     }
 
     /// @dev Calculate extra reward amount for funding film vote
@@ -156,7 +155,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
     /// @dev Transfer reward amount
     function __withdrawReward(uint256 _amount) private {
         Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);
-        userInfo[msg.sender].stakeTime = block.timestamp;
+        stakeInfo[msg.sender].stakeTime = block.timestamp;
         totalRewardAmount -= _amount;
 
         IVote(VOTE).removeFilmIdsPerUser(msg.sender);
@@ -166,16 +165,16 @@ contract StakingPool is Ownable, ReentrancyGuard {
 
     /// @notice Update lastStakedTime for a staker when vote
     function updateWithdrawableTime(address _user, uint256 _time) external onlyVote {
-        userInfo[_user].withdrawableTime = _time;
+        stakeInfo[_user].withdrawableTime = _time;
     }
 
     /// @notice Get staking amount for a staker
     function getStakeAmount(address _user) external view returns(uint256 amount_) {
-        amount_ = userInfo[_user].stakeAmount;
+        amount_ = stakeInfo[_user].stakeAmount;
     }
 
     /// @notice Get withdrawableTime for a staker
     function getWithdrawableTime(address _user) external view returns(uint256 time_) {
-        time_ = userInfo[_user].withdrawableTime;
+        time_ = stakeInfo[_user].withdrawableTime;
     }    
 }
