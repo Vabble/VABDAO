@@ -24,6 +24,18 @@
 - A customer can rent a film for 72 hours.
 - If enough VAB (governance token) is in the customer's DAO account then Vabble payment gateway service will process some logic, if not enough funds, then the streaming service will reject and alert user about unavailable VAB.
 
+## Subscription
+For a user to rent films, they need to have an active subscription. They need to pay $10 per month (This needs to be adjustable)
+If user pays with ETH/USDT/USDC:
+  60% of the funds will need to get converted to VAB via the uniswap router.
+  40% of the funds will be converted to USDC (If not already USDC) and sent to the vabble wallet address.
+
+If user pay's with VAB:
+  They only should be required to pay 40% of the subscription payment will be converted to USDC and sent to the vabble address.
+    Example: If the subscription is $10, then $4 of VAB will be required for an active subscription for a month.
+
+Users should be able to use an NFT to unlock subscription promotions. Example: 3 months of the subscription free for any NFT in a collection.
+
 ## Staking -
 - Vab holders must be staking to receive voting rights.
 - In order to vote, the VAB Holder has to be staking.
