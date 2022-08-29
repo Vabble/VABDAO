@@ -19,7 +19,7 @@
 
 
 ## Diagram flow
-![image](https://user-images.githubusercontent.com/44410798/172245583-e01f3d29-46f1-4fda-864c-4a52d4e190bc.png)
+![Vabble Payment Flow)](https://user-images.githubusercontent.com/44410798/187103988-67494194-3887-4bcc-a7f6-1eb3efa79b07.png)
 
 - A customer can rent a film for 72 hours.
 - If enough VAB (governance token) is in the customer's DAO account then Vabble payment gateway service will process some logic, if not enough funds, then the streaming service will reject and alert user about unavailable VAB.
