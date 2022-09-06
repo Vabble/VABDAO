@@ -38,10 +38,12 @@ contract Property is Ownable, ReentrancyGuard {
     uint256 public fundFeePercent;            // 11 - percent(2% = 2*1e8) of fee on the amount raised
     uint256 public minDepositAmount;          // 12 - USDC min amount($50) that a customer can deposit to a film approved for funding
     uint256 public maxDepositAmount;          // 13 - USDC max amount($5000) that a customer can deposit to a film approved for funding
+    uint256 public subscriptionAmount;        // 15 - user need to have an active subscription(pay $10 per month) for rent films.
     // FactoryNFT
     uint256 public maxMintFeePercent;         // 14 - 10%(1% = 1e8, 100% = 1e10)
 
     uint256 public availableVABAmount;        // vab amount for replacing the auditor
+    
 
     address[] private agents;
     uint256[] private filmVotePeriodList;       
@@ -59,6 +61,7 @@ contract Property is Ownable, ReentrancyGuard {
     uint256[] private minDepositAmountList;
     uint256[] private maxDepositAmountList;
     uint256[] private maxMintFeePercentList;
+    uint256[] private subscriptionAmountList;    
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -102,7 +105,8 @@ contract Property is Ownable, ReentrancyGuard {
         fundFeePercent = 2 * 1e8;    // percent(2%) 
         availableVABAmount = 75 * 1e7 * (10**IERC20Metadata(_payoutToken).decimals()); // 75M
         
-        maxMintFeePercent = 1e9;  // 10%
+        maxMintFeePercent = 1e9;   // 10%
+        subscriptionAmount = 10 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $10)
     }
 
     /// ========= proposals for replacing auditor
@@ -186,7 +190,7 @@ contract Property is Ownable, ReentrancyGuard {
             require(maxAllowPeriod != _property, "proposalProperty: Already maxAllowPeriod");
             maxAllowPeriodList.push(_property);
         } else if(_flag == 10) {
-            require(proposalFeeAmount != _property, "proposalProperty: Already maxAllowPeriod");
+            require(proposalFeeAmount != _property, "proposalProperty: Already proposalFeeAmount");
             proposalFeeAmountList.push(_property);
         } else if(_flag == 11) {
             require(fundFeePercent != _property, "proposalProperty: Already fundFeePercent");
@@ -200,7 +204,10 @@ contract Property is Ownable, ReentrancyGuard {
         } else if(_flag == 14) {
             require(maxMintFeePercent != _property, "proposalProperty: Already maxMintFeePercent");
             maxMintFeePercentList.push(_property);
-        }
+        } else if(_flag == 15) {
+            require(subscriptionAmount != _property, "proposalProperty: Already subscriptionAmount");
+            subscriptionAmountList.push(_property);
+        }        
     }
 
     function getProperty(uint256 _index, uint256 _flag) external view returns (uint256 property_) {    
@@ -249,7 +256,10 @@ contract Property is Ownable, ReentrancyGuard {
         } else if(_flag == 14) {
             if(maxMintFeePercentList.length > 0 && maxMintFeePercentList.length > _index) property_ = maxMintFeePercentList[_index];
             else property_ = 0;
-        }
+        } else if(_flag == 15) {
+            if(subscriptionAmountList.length > 0 && subscriptionAmountList.length > _index) property_ = subscriptionAmountList[_index];
+            else property_ = 0;
+        }         
     }
 
     function updateProperty(uint256 _index, uint256 _flag) external onlyVote {
@@ -298,7 +308,10 @@ contract Property is Ownable, ReentrancyGuard {
         } else if(_flag == 14) {
             maxMintFeePercent = maxMintFeePercentList[_index];
             emit PropertyUpdated(maxMintFeePercent, _flag);        
-        }
+        } else if(_flag == 15) {
+            subscriptionAmount = subscriptionAmountList[_index];
+            emit PropertyUpdated(subscriptionAmount, _flag);        
+        } 
     }
 
     function removeProperty(uint256 _index, uint256 _flag) external onlyVote {       
@@ -347,7 +360,10 @@ contract Property is Ownable, ReentrancyGuard {
         } else if(_flag == 14) {
             maxMintFeePercentList[_index] = maxMintFeePercentList[maxMintFeePercentList.length - 1];
             maxMintFeePercentList.pop();
-        }
+        } else if(_flag == 15) {
+            subscriptionAmountList[_index] = subscriptionAmountList[subscriptionAmountList.length - 1];
+            subscriptionAmountList.pop();
+        }                
     }
 
     /// @dev get a property list in a vote
@@ -382,6 +398,8 @@ contract Property is Ownable, ReentrancyGuard {
             _list = maxDepositAmountList;
         } else if(_flag == 14) {
             _list = maxMintFeePercentList;
-        }
+        } else if(_flag == 15) {
+            _list = subscriptionAmountList;
+        }               
     }
 }

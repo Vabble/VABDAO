@@ -11,8 +11,11 @@ import "hardhat/console.sol";
 contract UniHelper {
         
     address private immutable UNISWAP2_ROUTER;
-    address private immutable UNISWAP2_FACTORY;
+    address private immutable UNISWAP2_FACTORY;    
+    address private immutable SUSHI_FACTORY;
+    address private immutable SUSHI_ROUTER;
     address private immutable WETH;
+    IERC20 private constant ETH_ADDRESS = IERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     /// @dev Provides a standard implementation for transferring assets between
     /// the msg.sender and the helper, by wrapping the action.
@@ -38,12 +41,18 @@ contract UniHelper {
 
     constructor(
         address _uniswap2Factory,
-        address _uniswap2Router
+        address _uniswap2Router,
+        address _sushiswapFactory,
+        address _sushiswapRouter
     ) {
-        require(_uniswap2Factory != address(0), "UniHelper: _uniswap2Factory zero address");
+        require(_uniswap2Factory != address(0), "UniHelper: _uniswap2Factory must not be zero address");
         UNISWAP2_FACTORY = _uniswap2Factory;
-        require(_uniswap2Router != address(0), "UniHelper: _uniswap2Router zero address");
-        UNISWAP2_ROUTER = _uniswap2Router;     
+        require(_uniswap2Router != address(0), "UniHelper: _uniswap2Router must not be zero address");
+        UNISWAP2_ROUTER = _uniswap2Router;
+        require(_sushiswapFactory != address(0), "UniHelper: _sushiswapFactory must not be zero address");
+        SUSHI_FACTORY = _sushiswapFactory;    
+        require(_sushiswapRouter != address(0), "UniHelper: _sushiswapRouter must not be zero address");
+        SUSHI_ROUTER = _sushiswapRouter;  
         WETH = IUniswapV2Router(_uniswap2Router).WETH(); 
     }
 
@@ -53,24 +62,31 @@ contract UniHelper {
         address _depositAsset, 
         address _incomingAsset
     ) external view returns (uint256 amount_) {        
-        address uni_router;
+        address router;
         address[] memory path = new address[](2);
         path[0] = _depositAsset;
         if(path[0] == address(0)) path[0] = WETH;
         path[1] = _incomingAsset;
+        if(path[1] == address(0)) path[1] = WETH;
+        
+        (router, ) = __checkPool(path);        
+        require(router != address(0), "expectedAmount: No Pool");
 
-        (uni_router, ) = __checkPool(path);        
-        require(uni_router != address(0), "expectedAmount: No Pool");
-
-        amount_ = IUniswapV2Router(uni_router).getAmountsOut(_depositAmount, path)[1];
+        amount_ = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
     }
 
     /// @notice check if special pool exist on uniswap
     function __checkPool(address[] memory _path) private view returns (address router_, address factory_) {        
         address uniPool = IUniswapV2Factory(UNISWAP2_FACTORY).getPair(_path[0], _path[1]);
-        if(uniPool != address(0)) {
+        address sushiPool = IUniswapV2Factory(SUSHI_FACTORY).getPair(_path[0], _path[1]);
+
+        if(uniPool == address(0) && sushiPool != address(0)) {
+            return (SUSHI_ROUTER, SUSHI_FACTORY);
+        } else if(uniPool != address(0) && sushiPool == address(0)) {
             return (UNISWAP2_ROUTER, UNISWAP2_FACTORY);
-        } else {
+        } else if(uniPool != address(0) && sushiPool != address(0)) {
+            return (UNISWAP2_ROUTER, UNISWAP2_FACTORY);
+        } else if(uniPool == address(0) && sushiPool == address(0)) {
             return (address(0), address(0));
         }
     }
@@ -88,6 +104,8 @@ contract UniHelper {
         path[0] = depositAsset;            
         if(path[0] == address(0)) path[0] = WETH;
         path[1] = incomingAsset;
+        if(path[1] == address(0)) path[1] = WETH;
+
         (router, ) = __checkPool(path);        
         require(router != address(0), "swapAsset: No Pool");
 
@@ -126,13 +144,8 @@ contract UniHelper {
         address _router,
         address[] memory _path
     ) public payable returns (uint256[] memory amounts_) {
+        require(address(this).balance >= _depositAmount, "swapETHToToken: Insufficient paid");
 
-        if(_path[0] == WETH) {
-            require(msg.value >= _depositAmount, "swapETHToToken: Insufficient paid");
-            if (msg.value > _depositAmount) {
-                Helper.safeTransferETH(msg.sender, msg.value - _depositAmount);
-            }
-        }
         amounts_ = IUniswapV2Router(_router).swapExactETHForTokens{value: address(this).balance}(
             _expectedAmount,
             _path,
@@ -172,5 +185,15 @@ contract UniHelper {
     /// @notice Gets the `UNISWAP2_FACTORY` variable
     function getUniswapFactory() external view returns (address factory_) {
         factory_ = UNISWAP2_FACTORY;
+    }
+
+    /// @notice Gets the `SUSHI_FACTORY` variable
+    function getSushiFactory() external view returns (address factory_) {
+        return SUSHI_FACTORY;
+    }
+
+    /// @notice Gets the `SUSHI_ROUTER` variable
+    function getSushiRouter() external view returns (address router_) {
+        return SUSHI_ROUTER;
     }
 }

@@ -29,7 +29,7 @@ describe('FactoryNFT', function () {
     this.EXM = new ethers.Contract(CONFIG.exmAddress, JSON.stringify(ERC20), ethers.provider);
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.uniswap.factory, CONFIG.uniswap.router
+      CONFIG.uniswap.factory, CONFIG.uniswap.router, CONFIG.sushiswapRinkeby.factory, CONFIG.sushiswapRinkeby.router
     )).deployed();
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 

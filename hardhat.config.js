@@ -63,7 +63,7 @@ module.exports = {
       saveDeployments: true,
       forking: {
         url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
-        blockNumber: 10908608,
+        blockNumber: 11328709,
       },
       gasPrice: "auto",
       accounts: {
@@ -78,6 +78,18 @@ module.exports = {
       chainId: chainIds.mainnet,
       live: false,
       saveDeployments: true
+    },
+    goerli: {
+      url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
+      accounts: {
+        mnemonic,
+      },
+      chainId: chainIds.goerli,
+      live: false,
+      saveDeployments: true,
+      tags: ["staging"],
+      gasPrice: 5000000000,
+      gasMultiplier: 2,
     },
     rinkeby: {
       url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,

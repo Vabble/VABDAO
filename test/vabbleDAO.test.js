@@ -32,7 +32,7 @@ describe('VabbleDAO', function () {
     this.voteContract = await (await this.VoteFactory.deploy()).deployed();
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.uniswap.factory, CONFIG.uniswap.router
+      CONFIG.uniswap.factory, CONFIG.uniswap.router, CONFIG.sushiswapRinkeby.factory, CONFIG.sushiswapRinkeby.router
     )).deployed();
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 

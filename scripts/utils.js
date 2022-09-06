@@ -5,7 +5,7 @@ const { BigNumber } = ethers;
 
 const ZERO_ADDRESS = ethers.constants.AddressZero;
 const CONFIG = {
-  daoFeeAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
+  daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
   usdcAdress: "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926", // usdc in rinkeby    
   daiAddress: "0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735", // dai in rinkeby
@@ -14,6 +14,14 @@ const CONFIG = {
   uniswap: {//Mainnet, kovan, rinkeby ...
     factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
     router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+  },
+  sushiswapMain: {//Mainnet
+    factory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
+    router: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+  },
+  sushiswapRinkeby: {//Rinkeby
+    factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+    router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
   },
   expire_period: 72 * 3600, // 72 hours
   grace_period: 30 * 24 * 3600, // 30 days
@@ -64,6 +72,29 @@ const FILM_DATA = {
   onlyAllowVABs : [true, true, false, false],
   raiseAmounts : [getBigNumber(0), getBigNumber(0), getBigNumber(30000), getBigNumber(30000)],
 };
+
+const NFTs = {
+  addressList: [
+    getAddress('0xf64638d60f06eb348d9d7430ade069dec9a5750b'),// erc-721
+    getAddress('0x88b48f654c30e99bc2e4a1559b4dcf1ad93fa656'),// erc-1155
+  ],
+  periodList: [1, 3],
+  tokenIdList: [
+    '1185',
+    '80080221229116283490468250292365070954995884570106478997872246018186124722178',// name of opensea: "search input"
+    // '80080221229116283490468250292365070954995884570106478997872246017086613094401',// name of opensea: "cart buttons"
+    // '80080221229116283490468250292365070954995884570106478997872246015987101466634', // name of opensea: "bookmark"
+  ],
+  tokenTypeList: [1, 2] // 1=>ERC-721, 2=>ERC-1155
+}
+// make offer in opensea
+// 0xf5de760f2e916647fd766b4ad9e85ff943ce3a2b
+// 1769864
+// ERC-721, Rinkeby
+
+function getAddress(val) {
+  return ethers.utils.getAddress(val);
+}
 
 function getByteFilm() {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
@@ -147,5 +178,6 @@ module.exports = {
   getFinalFilm,
   getVoteData,
   getProposalFilm,
-  FILM
+  FILM,
+  NFTs
 };

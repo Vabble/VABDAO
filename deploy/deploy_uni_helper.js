@@ -7,7 +7,9 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     from: deployer,
     args: [
       CONFIG.uniswap.factory,
-      CONFIG.uniswap.router
+      CONFIG.uniswap.router,
+      CONFIG.sushiswapRinkeby.factory,
+      CONFIG.sushiswapRinkeby.router
     ],
     log: true,
     deterministicDeployment: false,

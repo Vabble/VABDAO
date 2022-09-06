@@ -154,6 +154,7 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
         newTokenId_ = __getNextTokenId();
         _safeMint(_to, newTokenId_);
         __setTokenURI(newTokenId_, _tokenUri);
+
         mintInfo[_studio].mintedAmount += 1;
     }
 
