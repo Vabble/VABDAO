@@ -35,22 +35,21 @@ If user pay's with VAB:
     Example: If the subscription is $10, then $4 of VAB will be required for an active subscription for a month.
 
 Users should be able to use an NFT to unlock subscription promotions. Example: 3 months of the subscription free for any NFT in a collection.
+
 There are two types of NFTs.
 
 1. Subscription NFTs. -- These are NFTs we will mint by either our own contract or via opensea. Users will need these subscription NFTs in their wallets so we can verify on chain that they own them. If we verify they own the subscription NFT, their subscription to the SVOD will activate for 3 months. 6 months or 1 year depending on what NFT they own.
 
-A. Created by Vabble on Opensea or own our own contract.
-B. Verify Ownership On Chain.
-C. Activate Subscription depending on what NFT they own.
-
----------------------------------------------------------------------
+ - Created by Vabble on Opensea or own our own contract.
+ - Verify Ownership On Chain.
+ - Activate Subscription depending on what NFT they own.
 
 2. NFT Gated Content -- Studios will be able to activate NFT gated content so users will require a specific NFT to to watch specific content. These NFTs will not come from Vabble but from the studios. They could be minted on Opensea, Rarible and even on different chains such as Ethereum or Ploygon. We will need to verify users own these NFTs on chain like we did with subscription NFTs. Once we can verify they own the NFT created by the studio, they can watch that specific content.
 
-A. Studios create NFT via Opensea, etc.
-B. Studios select NFT gated content for their uploads
-C. We verify User owns NFT on chain
-D. We allow user to watch content if verification successful 
+ - Studios create NFT via Opensea, etc.
+ - Studios select NFT gated content for their uploads
+ - We verify User owns NFT on chain
+ - We allow user to watch content if verification successful 
 
 ## Staking -
 - Vab holders must be staking to receive voting rights.
