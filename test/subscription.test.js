@@ -120,131 +120,131 @@ describe('Subscription', function () {
 
   });
 
-  // it('0. Subscription by token', async function () {
-  //   const period = 1;
-  //   //================= VAB token
-  //   await expect(
-  //     this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, period, {from: this.customer1.address})
-  //   ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-  //     this.customer1.address, 
-  //     this.vabToken.address, 
-  //     period
-  //   );    
-  //   // const {time_, period_} = await this.SubContract.getSubscriptionInfo(this.customer1.address)
-  //   // console.log('====time, period::', time_.toString(), period_.toString())
+  it('0. Subscription by token', async function () {
+    const period = 1;
+    //================= VAB token
+    await expect(
+      this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, period, {from: this.customer1.address})
+    ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
+      this.customer1.address, 
+      this.vabToken.address, 
+      period
+    );    
+    // const {time_, period_} = await this.SubContract.getSubscriptionInfo(this.customer1.address)
+    // console.log('====time, period::', time_.toString(), period_.toString())
 
-  //   const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})    
-  //   expect(isActived).to.be.true;  
+    const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})    
+    expect(isActived).to.be.true;  
     
-  //   // => Increase next block timestamp for only testing
-  //   const increseTime = 40 * 24 * 3600; // 40 days
-  //   network.provider.send('evm_increaseTime', [increseTime]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const increseTime = 40 * 24 * 3600; // 40 days
+    network.provider.send('evm_increaseTime', [increseTime]);
+    await network.provider.send('evm_mine');
             
-  //   expect(await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})).to.be.false;  
+    expect(await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})).to.be.false;  
 
-  //   //================ EXM token
-  //   await expect(
-  //     this.SubContract.connect(this.customer2).activeSubscription(this.EXM.address, period, {from: this.customer2.address})
-  //   ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-  //     this.customer2.address, 
-  //     this.EXM.address, 
-  //     period
-  //   );
+    //================ EXM token
+    await expect(
+      this.SubContract.connect(this.customer2).activeSubscription(this.EXM.address, period, {from: this.customer2.address})
+    ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
+      this.customer2.address, 
+      this.EXM.address, 
+      period
+    );
 
-  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;
 
-  //   // => Increase next block timestamp for only testing
-  //   network.provider.send('evm_increaseTime', [increseTime]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    network.provider.send('evm_increaseTime', [increseTime]);
+    await network.provider.send('evm_mine');
             
-  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.false;  
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.false;  
 
-  //   //================ ETH
-  //   const period2 = 2
-  //   const payEth = ethers.utils.parseEther('0.01')
-  //   await expect(
-  //     this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
-  //   ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-  //     this.customer2.address, 
-  //     CONFIG.addressZero, 
-  //     period2
-  //   );
+    //================ ETH
+    const period2 = 2
+    const payEth = ethers.utils.parseEther('0.01')
+    await expect(
+      this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
+    ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
+      this.customer2.address, 
+      CONFIG.addressZero, 
+      period2
+    );
 
-  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;  
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;  
     
-  //   // => Increase next block timestamp for only testing
-  //   network.provider.send('evm_increaseTime', [increseTime]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    network.provider.send('evm_increaseTime', [increseTime]);
+    await network.provider.send('evm_mine');
             
-  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;  
-  // });
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;  
+  });
 
-  // it('1. Subscription NFTs', async function () {
+  it('1. Subscription NFTs', async function () {
 
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[0])).to.be.false;  
+    expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[0])).to.be.false;  
 
-  //   // Register NFT addresses by Auditor 
-  //   await expect(
-  //     this.SubContract.connect(this.auditor).registerNFTs(NFTs.addressList, NFTs.periodList, {from: this.auditor.address})
-  //   ).to.emit(this.SubContract, 'NFTsRegistered').withArgs(NFTs.addressList);   
+    // Register NFT addresses by Auditor 
+    await expect(
+      this.SubContract.connect(this.auditor).registerNFTs(NFTs.addressList, NFTs.periodList, {from: this.auditor.address})
+    ).to.emit(this.SubContract, 'NFTsRegistered').withArgs(NFTs.addressList);   
 
-  //   expect((await this.SubContract.getRegisteredNFTList()).length).to.be.equal(NFTs.addressList.length)
-  //   expect(await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})).to.be.false; 
+    expect((await this.SubContract.getRegisteredNFTList()).length).to.be.equal(NFTs.addressList.length)
+    expect(await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})).to.be.false; 
 
-  //   // Active subscription by NFT for renting the films
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[1])).to.be.true;  
-  //   await expect(
-  //     this.SubContract.connect(this.customer1).activeNFTSubscription(
-  //       NFTs.addressList[1], 
-  //       NFTs.tokenIdList[1], 
-  //       NFTs.tokenTypeList[1], 
-  //       {from: this.customer1.address}
-  //     )
-  //   ).to.be.revertedWith('NFTSubscription: No erc1155-nft balance');
+    // Active subscription by NFT for renting the films
+    expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[1])).to.be.true;  
+    await expect(
+      this.SubContract.connect(this.customer1).activeNFTSubscription(
+        NFTs.addressList[1], 
+        NFTs.tokenIdList[1], 
+        NFTs.tokenTypeList[1], 
+        {from: this.customer1.address}
+      )
+    ).to.be.revertedWith('NFTSubscription: No erc1155-nft balance');
     
-  //   // Active with Auditor(because I(auditor) owned nft-NFTs.addressList[0]=ERC721)
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[0])).to.be.true;  
-  //   await expect(
-  //     this.SubContract.connect(this.auditor).activeNFTSubscription(
-  //       NFTs.addressList[0], 
-  //       NFTs.tokenIdList[0], 
-  //       NFTs.tokenTypeList[0], 
-  //       {from: this.auditor.address}
-  //     )
-  //   ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
-  //     this.auditor.address, 
-  //     NFTs.addressList[0], 
-  //     NFTs.tokenIdList[0], 
-  //     NFTs.tokenTypeList[0]
-  //   );      
-  //   expect(await this.SubContract.connect(this.auditor).isActivedSubscription({from: this.auditor.address})).to.be.true; 
+    // Active with Auditor(because I(auditor) owned nft-NFTs.addressList[0]=ERC721)
+    expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[0])).to.be.true;  
+    await expect(
+      this.SubContract.connect(this.auditor).activeNFTSubscription(
+        NFTs.addressList[0], 
+        NFTs.tokenIdList[0], 
+        NFTs.tokenTypeList[0], 
+        {from: this.auditor.address}
+      )
+    ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
+      this.auditor.address, 
+      NFTs.addressList[0], 
+      NFTs.tokenIdList[0], 
+      NFTs.tokenTypeList[0]
+    );      
+    expect(await this.SubContract.connect(this.auditor).isActivedSubscription({from: this.auditor.address})).to.be.true; 
 
-  //   // => Increase next block timestamp for only testing
-  //   const increseTime = 40 * 24 * 3600; // 40 days
-  //   network.provider.send('evm_increaseTime', [increseTime]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const increseTime = 40 * 24 * 3600; // 40 days
+    network.provider.send('evm_increaseTime', [increseTime]);
+    await network.provider.send('evm_mine');
 
-  //   // Active with Auditor(because I(auditor) owned nft-NFTs.addressList[1]=ERC1155)
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[1])).to.be.true;  
-  //   await expect(
-  //     this.SubContract.connect(this.auditor).activeNFTSubscription(
-  //       NFTs.addressList[1], 
-  //       NFTs.tokenIdList[1], 
-  //       NFTs.tokenTypeList[1], 
-  //       {from: this.auditor.address}
-  //     )
-  //   ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
-  //     this.auditor.address, 
-  //     NFTs.addressList[1], 
-  //     NFTs.tokenIdList[1], 
-  //     NFTs.tokenTypeList[1]
-  //   );      
-  //   expect(await this.SubContract.connect(this.auditor).isActivedSubscription({from: this.auditor.address})).to.be.true; 
+    // Active with Auditor(because I(auditor) owned nft-NFTs.addressList[1]=ERC1155)
+    expect(await this.SubContract.isRegisteredNFT(NFTs.addressList[1])).to.be.true;  
+    await expect(
+      this.SubContract.connect(this.auditor).activeNFTSubscription(
+        NFTs.addressList[1], 
+        NFTs.tokenIdList[1], 
+        NFTs.tokenTypeList[1], 
+        {from: this.auditor.address}
+      )
+    ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
+      this.auditor.address, 
+      NFTs.addressList[1], 
+      NFTs.tokenIdList[1], 
+      NFTs.tokenTypeList[1]
+    );      
+    expect(await this.SubContract.connect(this.auditor).isActivedSubscription({from: this.auditor.address})).to.be.true; 
 
-  //   // activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType)
-  //   // SubscriptionNFTActivated(msg.sender, _nft, _tokenId, _tokenType)
-  // });
+    // activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType)
+    // SubscriptionNFTActivated(msg.sender, _nft, _tokenId, _tokenType)
+  });
 
   it('2. NFT Gated Content', async function () {
     await this.DAOContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})
