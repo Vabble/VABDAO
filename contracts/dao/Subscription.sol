@@ -173,14 +173,9 @@ contract Subscription is Ownable, ReentrancyGuard {
         require(isRegisteredNFT(_nft) && !isUsedNFT[_nft][_tokenId], "NFTSubscription: Used or Unregistered nft");
 
         // TODO Verify Ownership On Chain.
-        if(_tokenType == 1) {
-            console.log("sol=>erc-721 address::", _nft, _tokenId, msg.sender);
-            console.log("sol=>erc-721 owner::", IERC721(_nft).ownerOf(_tokenId));
-            console.log("sol=>erc-721 balance::", IERC721(_nft).balanceOf(msg.sender));
-            
+        if(_tokenType == 1) {        
             require(IERC721(_nft).ownerOf(_tokenId) == msg.sender, "NFTSubscription: Not erc721-nft owner");
         } else if(_tokenType == 2) {
-            console.log("sol=>erc-1155 address::", _nft, _tokenId, _tokenType);
             require(IERC1155(_nft).balanceOf(msg.sender, _tokenId) > 0, "NFTSubscription: No erc1155-nft balance");
         }
 
@@ -233,38 +228,28 @@ contract Subscription is Ownable, ReentrancyGuard {
     }
 
     /// @notice active
-    function isActivatedGatedContent(uint256[] memory _filmIds) external view returns (uint256[] memory activedFilmIds_) {        
-        require(_filmIds.length > 0, "isActivatedGatedContent: Bad item length");  
+    function isActivatedGatedContent(uint256 _filmId) external view returns (bool isActive_) {        
         
+        require(isGatedFilmId[_filmId], "isActivatedGatedContent: Not registered");
+
         address _nft;
         uint256 _tokenId;
         uint256 _tokenType;
-        uint256 index;
-        for(uint256 i = 0; i < _filmIds.length; i++) {    
-            if(!isGatedFilmId[_filmIds[i]]) continue;
-            
-            bool isOwn;
-            for(uint256 k = 0; k < gatedNFTs[_filmIds[i]].length; k++) {
-                _nft = gatedNFTs[_filmIds[i]][k].nftAddr;
-                _tokenId = gatedNFTs[_filmIds[i]][k].tokenId;
-                _tokenType = gatedNFTs[_filmIds[i]][k].tokenType;
+        for(uint256 k = 0; k < gatedNFTs[_filmId].length; k++) {
+            _nft = gatedNFTs[_filmId][k].nftAddr;
+            _tokenId = gatedNFTs[_filmId][k].tokenId;
+            _tokenType = gatedNFTs[_filmId][k].tokenType;
 
-                if(_tokenType == 1) {
-                    if(IERC721(_nft).ownerOf(_tokenId) == msg.sender) {
-                        isOwn = true;
-                        break;
-                    }
-                } else {
-                    if(IERC1155(_nft).balanceOf(msg.sender, _tokenId) > 0) {
-                        isOwn = true;
-                        break;
-                    }
+            if(_tokenType == 1) {
+                if(IERC721(_nft).ownerOf(_tokenId) == msg.sender) {
+                    isActive_ = true;
+                    break;
                 }
-            }
-
-            if(isOwn) {
-                activedFilmIds_[index] = _filmIds[i];
-                index++;
+            } else {
+                if(IERC1155(_nft).balanceOf(msg.sender, _tokenId) > 0) {
+                    isActive_ = true;
+                    break;
+                }
             }
         }
     }

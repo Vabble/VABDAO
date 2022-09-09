@@ -135,6 +135,14 @@ function getVoteData(filmIds, voteInfos) {
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);
 }
+
+function getUploadGateContent(filmId, nftAddresses, tokenIds, tokenTypes) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "uint256", "address[]", "uint256[]", "uint256[]" ], [filmId, nftAddresses, tokenIds, tokenTypes]
+  );
+  const uint8Arr = ethers.utils.arrayify(hexStr);
+  return ethers.utils.hexlify(uint8Arr);
+}
 /// ============== end ==============
 
 function r_address() {
@@ -179,5 +187,6 @@ module.exports = {
   getVoteData,
   getProposalFilm,
   FILM,
-  NFTs
+  NFTs,
+  getUploadGateContent
 };
