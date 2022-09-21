@@ -47,22 +47,22 @@ interface IUniswapV2Router {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 
-    function swapTokensForExactTokens(
-        uint256 amountOut,
-        uint256 amountInMax,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external returns (uint256[] memory amounts);
+    // function swapTokensForExactTokens(
+    //     uint256 amountOut,
+    //     uint256 amountInMax,
+    //     address[] calldata path,
+    //     address to,
+    //     uint256 deadline
+    // ) external returns (uint256[] memory amounts);
 
-    function swapExactETHForTokens(
+    function swapExactETHForTokens( // in=>eth out=>token
         uint256 amountOutMin,
         address[] calldata path,
         address to,
         uint256 deadline
     ) external payable returns (uint256[] memory amounts);
 
-    function swapTokensForExactETH(
+    function swapTokensForExactETH( // in=>token out=>eth
         uint256 amountOut,
         uint256 amountInMax,
         address[] calldata path,
@@ -70,7 +70,7 @@ interface IUniswapV2Router {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 
-    function swapExactTokensForETH(
+    function swapExactTokensForETH( // in=>token out=>eth
         uint256 amountIn,
         uint256 amountOutMin,
         address[] calldata path,
@@ -78,7 +78,7 @@ interface IUniswapV2Router {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
     
-    function swapETHForExactTokens(
+    function swapETHForExactTokens( // in=>eth out=>token
         uint256 amountOut,
         address[] calldata path,
         address to,

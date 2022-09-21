@@ -8,8 +8,6 @@ require("hardhat-contract-sizer");
 require("hardhat-gas-reporter")
 require('dotenv').config();
 
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
 
@@ -18,12 +16,15 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
 const alchemy_key = process.env.ALCHEMY_KEY;
-const etherScan_api_key = process.env.ETHERSCAN_API_KEY;
+const etherScan_api_key = process.env.ETHER_SCAN_API_KEY;
+const bscScan_api_key = process.env.BSC_SCAN_API_KEY;
+const polyScan_api_key = process.env.POLYGON_SCAN_API_KEY;
+const avaxScan_api_key = process.env.AVAX_SCAN_API_KEY;
+
 const mnemonic = process.env.MNEMONIC;
 const coinmarketcap_api_key = process.env.COINMARKETCAP_API_KEY;
+
 const chainIds = {
   ganache: 1337,
   goerli: 5,
@@ -32,15 +33,17 @@ const chainIds = {
   mainnet: 1,
   rinkeby: 4,
   ropsten: 3,
-  bscTest: 97,
-  bscMain: 56
+  bscTest: 97,   // BSC testnet
+  bscMain: 56,   // BSC mainnet
+  mumbai: 80001, // Polygon testnet
+  matic: 137,    // Polygon mainnet
+  fuji: 43113,   // Avalance testnet
+  avax: 43114,   // Avalance mainnet
 };
-if (!mnemonic || !alchemy_key || !etherScan_api_key) {
+if (!mnemonic || !alchemy_key) {
   throw new Error("Please set your data in a .env file");
 }
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
+
 module.exports = {
   defaultNetwork: 'hardhat',
   gasReporter: {
@@ -70,7 +73,8 @@ module.exports = {
         mnemonic,
       },
     },
-    mainnet: {
+    // Ethereum mainnet
+    mainnet: { 
       url: `https://eth-mainnet.alchemyapi.io/v2/${alchemy_key}`,
       accounts: {
         mnemonic,
@@ -79,7 +83,8 @@ module.exports = {
       live: false,
       saveDeployments: true
     },
-    goerli: {
+    // Ethereum testnet(Goerli)
+    goerli: { 
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
       accounts: {
         mnemonic,
@@ -91,7 +96,8 @@ module.exports = {
       gasPrice: 5000000000,
       gasMultiplier: 2,
     },
-    rinkeby: {
+    // Ethereum testnet(Rinkeby)
+    rinkeby: { 
       url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
       accounts: {
         mnemonic,
@@ -103,7 +109,8 @@ module.exports = {
       gasPrice: 5000000000,
       gasMultiplier: 2,
     },
-    bscTest: {
+    // BSC testnet
+    bscTest: { 
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: chainIds.bscTest,
       accounts: {
@@ -113,7 +120,8 @@ module.exports = {
       saveDeployments: true,
       gasMultiplier: 2,
     },
-    bscMain: {
+    // BSC mainnet
+    bscMain: { 
       url: "https://bsc-dataseed.binance.org/",
       chainId: chainIds.bscMain,
       accounts: {
@@ -121,10 +129,55 @@ module.exports = {
       },
       live: true,
       saveDeployments: true
-    }
+    },
+    // Polygon testnet
+    mumbai: { 
+      url: "https://rpc-mumbai.maticvigil.com",
+      chainId: chainIds.mumbai,
+      accounts: {
+        mnemonic,
+      },
+      live: false,
+      saveDeployments: true,
+      gasPrice: 22500000000,
+      gasMultiplier: 2,
+    },
+    // Polygon mainnet
+    matic: { 
+      url: "https://polygon-rpc.com",
+      chainId: chainIds.matic,
+      accounts: {
+        mnemonic,
+      },
+      live: true,
+      saveDeployments: true
+    },
+    // Avalance testnet(Fuji: C-Chain)
+    fuji: { 
+      url: "https://api.avax-test.network/ext/C/rpc",
+      gasPrice: 225000000000,
+      chainId: chainIds.fuji,
+      accounts: {
+        mnemonic,
+      },
+    },
+    // Avalance mainnet
+    avax: { 
+      url: "https://api.avax.network/ext/bc/C/rpc",
+      gasPrice: 225000000000,
+      chainId: chainIds.avax,
+      accounts: {
+        mnemonic,
+      },
+      live: true,
+      saveDeployments: true
+    },
   },
   etherscan: {
-    apiKey: etherScan_api_key
+    // apiKey: etherScan_api_key
+    // apiKey: bscScan_api_key    
+    apiKey: polyScan_api_key
+    // apiKey: avaxScan_api_key 
   },
   paths: {
     deploy: "deploy",

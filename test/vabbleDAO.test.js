@@ -25,36 +25,37 @@ describe('VabbleDAO', function () {
   });
 
   beforeEach(async function () {    
-    this.vabToken = new ethers.Contract(CONFIG.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.DAI = new ethers.Contract(CONFIG.daiAddress, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.DAI = new ethers.Contract(CONFIG.rinkeby.daiAddress, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
     this.voteContract = await (await this.VoteFactory.deploy()).deployed();
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.uniswap.factory, CONFIG.uniswap.router, CONFIG.sushiswapRinkeby.factory, CONFIG.sushiswapRinkeby.router
+      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
     )).deployed();
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
-        CONFIG.vabToken,
+        this.vabToken.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        CONFIG.usdcAdress
+        this.USDC.address
       )
     ).deployed();
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
-        CONFIG.vabToken,   
+        this.vabToken.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
-        CONFIG.usdcAdress 
+        this.USDC.address 
       )
     ).deployed();
 
@@ -221,12 +222,12 @@ describe('VabbleDAO-test-2', function () {
   it('Should deposit and withdraw by customer', async function () {
     const customer1V = await this.vabToken.balanceOf(this.customer1.address)
     console.log('==test-1::', customer1V.toString())
-    // User balance is 1999800 and transfer amount is 2000000. Insufficient amount!
-    await expect(
-      this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(10000000), {from: this.customer1.address})
-    ).to.be.revertedWith('VabbleDAO::transferFrom: transferFrom failed');
+    // // User balance is 1999800 and transfer amount is 2000000. Insufficient amount!
+    // await expect(
+    //   this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(1000000), {from: this.customer1.address})
+    // ).to.be.revertedWith('VabbleDAO::transferFrom: transferFrom failed');
 
-    console.log('==test-2::')
+    // console.log('==test-2::')
     // Event - depositVAB
     await expect(
       this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
@@ -262,15 +263,6 @@ describe('VabbleDAO-test-2', function () {
 
 describe('VabbleDAO-test-3', function () {
   it('approve_listing logic with only VAB', async function () {
-    // console.log('====voteContract::', this.voteContract.address);
-    // console.log('====uniHelperContract::', this.uniHelperContract.address);
-    // console.log('====stakingContract::', this.stakingContract.address);    
-    // console.log('====DAOContract::', this.DAOContract.address);
-    // console.log('====factory::', CONFIG.uniswap.factory);
-    // console.log('====router::', CONFIG.uniswap.router);
-    // console.log('====usdcAdress::', CONFIG.usdcAdress);
-    // console.log('====vabToken::', this.vabToken.address);
-    // console.log('====deployer::', this.auditor.address);
     
     const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
     const onlyAllowVABs = [true, true, false, false];
@@ -291,7 +283,7 @@ describe('VabbleDAO-test-3', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      CONFIG.vabToken,
+      this.vabToken.address,
       {from: this.auditor.address}
     );
     expect(await this.voteContract.isInitialized()).to.be.true
@@ -303,7 +295,7 @@ describe('VabbleDAO-test-3', function () {
         this.DAOContract.address, 
         this.stakingContract.address, 
         this.propertyContract.address,
-        CONFIG.vabToken,
+        this.vabToken.address,
         {from: this.auditor.address}
       )
     ).to.be.revertedWith('initializeVote: Already initialized vote');
@@ -385,7 +377,7 @@ describe('VabbleDAO-test-4', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      CONFIG.vabToken,
+      this.vabToken.address,
       {from: this.auditor.address}
     );
 
@@ -416,12 +408,12 @@ describe('VabbleDAO-test-4', function () {
 
     const depositAmount = getBigNumber(100000)
     let tx = await this.DAOContract.connect(this.customer1).depositToFilm(
-      ids[0], CONFIG.vabToken, depositAmount, {from: this.customer1.address}
+      ids[0], this.vabToken.address, depositAmount, {from: this.customer1.address}
     )
     this.events = (await tx.wait()).events
     let args = this.events[2].args
     expect(args.customer).to.be.equal(this.customer1.address)
-    expect(args.token).to.be.equal(CONFIG.vabToken)
+    expect(args.token).to.be.equal(this.vabToken.address)
     expect(args.amount).to.be.equal(depositAmount)
     expect(args.filmId).to.be.equal(ids[0])
 
@@ -430,7 +422,7 @@ describe('VabbleDAO-test-4', function () {
     
     // 5-2. Id(1) from customer2
     tx = await this.DAOContract.connect(this.customer2).depositToFilm(
-      ids[0], CONFIG.vabToken, depositAmount, {from: this.customer2.address}
+      ids[0], this.vabToken.address, depositAmount, {from: this.customer2.address}
     )
     const raiseAmount_1 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])
     console.log("====raiseAmount_1::", raiseAmount_1.toString()) // 499248873
@@ -438,7 +430,7 @@ describe('VabbleDAO-test-4', function () {
     // 6. Deposit to film Id(3) that not approved
     await expect(
       this.DAOContract.connect(this.customer3).depositToFilm(
-        proposalIds[2], CONFIG.vabToken, depositAmount, {from: this.customer3.address}
+        proposalIds[2], this.vabToken.address, depositAmount, {from: this.customer3.address}
       )
     ).to.be.revertedWith('depositToFilm: filmId not approved for funding');
 
@@ -450,7 +442,7 @@ describe('VabbleDAO-test-4', function () {
 
     await expect(
       this.DAOContract.connect(this.customer2).depositToFilm(
-        proposalIds[1], CONFIG.vabToken, depositAmount, {from: this.customer2.address}
+        proposalIds[1], this.vabToken.address, depositAmount, {from: this.customer2.address}
       )
     ).to.be.revertedWith('depositToFilm: passed funding period');
     
@@ -461,7 +453,7 @@ describe('VabbleDAO-test-4', function () {
     const raiseAmount_2 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])
     if(raiseAmount_2 < raiseAmounts[0]) {
       await this.DAOContract.connect(this.customer2).depositToFilm(
-        ids[0], CONFIG.vabToken, depositAmount, {from: this.customer1.address}
+        ids[0], this.vabToken.address, depositAmount, {from: this.customer1.address}
       )
     }
     console.log("====raiseAmount_2::", raiseAmount_2.toString()) // 106855775
@@ -497,7 +489,7 @@ describe('VabbleDAO-test-5', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      CONFIG.vabToken,
+      this.vabToken.address,
       {from: this.auditor.address}
     );
 
@@ -527,7 +519,7 @@ describe('VabbleDAO-test-5', function () {
     const customer1_0 = await this.EXM.balanceOf(this.customer1.address)
     const depositAmount = getBigNumber(600)
     await this.DAOContract.connect(this.customer1).depositToFilm(
-      ids[0], CONFIG.exmAddress, depositAmount, {from: this.customer1.address}
+      ids[0], this.EXM.address, depositAmount, {from: this.customer1.address}
     )
 
     const raiseAmount_0 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])    
@@ -538,7 +530,7 @@ describe('VabbleDAO-test-5', function () {
     
     // 5-2. Id(1) from customer2
     tx = await this.DAOContract.connect(this.customer2).depositToFilm(
-      ids[0], CONFIG.exmAddress, depositAmount, {from: this.customer2.address}
+      ids[0], this.EXM.address, depositAmount, {from: this.customer2.address}
     )
     const raiseAmount_1 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])  
     console.log("====raiseAmount_1::", raiseAmount_1.toString())  

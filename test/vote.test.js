@@ -25,43 +25,42 @@ describe('Vote', function () {
   });
 
   beforeEach(async function () {
-    
+    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+
     this.voteContract = await (await this.VoteFactory.deploy()).deployed();
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.uniswap.factory, CONFIG.uniswap.router, CONFIG.sushiswapRinkeby.factory, CONFIG.sushiswapRinkeby.router
+      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
     )).deployed();
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
-        CONFIG.vabToken,
+        this.vabToken.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        CONFIG.usdcAdress
+        this.USDC.address
       )
     ).deployed();
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
-        CONFIG.vabToken,   
+        this.vabToken.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
-        CONFIG.usdcAdress 
+        this.USDC.address
       )
     ).deployed();    
 
     // Add studio1, studio2 to studio list by Auditor
     await this.DAOContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})  
     await this.DAOContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})  
-    
-    this.vabToken = new ethers.Contract(CONFIG.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.exmAddress, JSON.stringify(ERC20), ethers.provider);
-
     
     this.auditorBalance = await this.vabToken.balanceOf(this.auditor.address) // 145M
     // console.log("====auditorBalance::", this.auditorBalance.toString())    

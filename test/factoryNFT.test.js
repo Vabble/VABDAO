@@ -24,12 +24,13 @@ describe('FactoryNFT', function () {
   });
 
   beforeEach(async function () {
-    this.vabToken = new ethers.Contract(CONFIG.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.DAI = new ethers.Contract(CONFIG.daiAddress, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.DAI = new ethers.Contract(CONFIG.rinkeby.daiAddress, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.uniswap.factory, CONFIG.uniswap.router, CONFIG.sushiswapRinkeby.factory, CONFIG.sushiswapRinkeby.router
+      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
     )).deployed();
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
@@ -38,21 +39,21 @@ describe('FactoryNFT', function () {
       
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
-        CONFIG.vabToken,
+        this.vabToken.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        CONFIG.usdcAdress
+        this.USDC.address
       )
     ).deployed();
 
     this.NFTContract = await (
       await this.NFTFactory.deploy(
-        CONFIG.vabToken,
+        this.vabToken.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
-        CONFIG.usdcAdress, 
+        this.USDC.address, 
         "Vabble NFT",
         "vnft"
       )
@@ -67,7 +68,6 @@ describe('FactoryNFT', function () {
     await this.vabToken.connect(this.customer1).approve(this.NFTContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer2).approve(this.NFTContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer3).approve(this.NFTContract.address, getBigNumber(100000000));   
-   
 
     // Confirm auditor
     expect(await this.NFTContract.auditor()).to.be.equal(this.auditor.address);

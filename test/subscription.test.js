@@ -22,45 +22,46 @@ describe('Subscription', function () {
   });
 
   beforeEach(async function () {
-    this.vabToken = new ethers.Contract(CONFIG.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
     this.voteContract = await (await this.VoteFactory.deploy()).deployed();
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.uniswap.factory, CONFIG.uniswap.router, CONFIG.sushiswapRinkeby.factory, CONFIG.sushiswapRinkeby.router
+      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
     )).deployed();
 
     this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
-        CONFIG.vabToken,
+        this.vabToken.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        CONFIG.usdcAdress
+        this.USDC.address
       )
     ).deployed();
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
-        CONFIG.vabToken,   
+        this.vabToken.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
-        CONFIG.usdcAdress 
+        this.USDC.address 
       )
     ).deployed();    
 
     this.SubContract = await (
       await this.SubscriptionFactory.deploy(
-        CONFIG.vabToken,   
+        this.vabToken.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
         this.DAOContract.address,
-        CONFIG.usdcAdress,
+        this.USDC.address,
         CONFIG.daoWalletAddress
       )
     ).deployed();    
@@ -286,7 +287,7 @@ describe('Subscription', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      CONFIG.vabToken,
+      this.vabToken.address,
       {from: this.auditor.address}
     );
     expect(await this.voteContract.isInitialized()).to.be.true

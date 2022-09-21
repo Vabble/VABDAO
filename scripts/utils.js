@@ -3,26 +3,66 @@ const ethers = require('ethers');
 const crypto = require('crypto');
 const { BigNumber } = ethers;
 
+const NETWORK = 'mumbai';
 const ZERO_ADDRESS = ethers.constants.AddressZero;
 const CONFIG = {
   daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
-  usdcAdress: "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926", // usdc in rinkeby    
-  daiAddress: "0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735", // dai in rinkeby
-  vabToken: "0x7e8a9cB60E99baF479FECCb4a29C33caaEeb1c52",   // vab in rinkeby
-  exmAddress: "0x6dB7315f4A296E47Eee37Ebb6871091dF5c2c40F", // exm in rinkeby
-  uniswap: {//Mainnet, kovan, rinkeby ...
-    factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-    router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+  ethereum: {
+    usdcAdress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",    
+    vabToken: "",
+    uniswap: { //Mainnet, kovan, rinkeby ...
+      factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+    },
+    sushiswap: { // Mainnet
+      factory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
+      router: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+    },
   },
-  sushiswapMain: {//Mainnet
-    factory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
-    router: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+  rinkeby: {
+    usdcAdress: "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926", // usdc in rinkeby    
+    daiAddress: "0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735", // dai in rinkeby
+    vabToken: "0x7e8a9cB60E99baF479FECCb4a29C33caaEeb1c52",   // vab in rinkeby
+    exmAddress: "0x6dB7315f4A296E47Eee37Ebb6871091dF5c2c40F", // exm in rinkeby
+    uniswap: { //Mainnet, kovan, rinkeby ...
+      factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+    },
+    sushiswap: { // Ethereum testnet(Rinkeby/Kovan/../), Polygon(all), Avalance(all), Arbitrum(Mainnet)
+      factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+    },
   },
-  sushiswapRinkeby: {//Rinkeby
-    factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
-    router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+  polygon: {
+    usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    vabToken: "",
+    uniswap: { // Mainnet, Mumbai
+      factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
+      router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
+    },
+    sushiswap: { // Mainnet, Mumbai
+      factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+    },
   },
+  mumbai: {
+    usdcAdress: "0xe6b8a5CF854791412c1f6EFC7CAf629f5Df1c747",
+    daiAddress: "0xd393b1E02dA9831Ff419e22eA105aAe4c47E1253",
+    vabToken: "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32",
+    exmAddress: "",
+    uniswap: { // Mainnet, Mumbai
+      factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
+      router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
+    },
+    sushiswap: { // Mainnet, Mumbai
+      factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+    }, 
+  },
+  uniswapV3: { // All(Ethereum, Polygon, Avalance... and testnets)
+    router: '0xE592427A0AEce92De3Edee1F18E0157C05861564'
+  },  
   expire_period: 72 * 3600, // 72 hours
   grace_period: 30 * 24 * 3600, // 30 days
 };
@@ -175,6 +215,7 @@ async function getSignatures(signers, hexCallData) {
 }
 
 module.exports = {
+  NETWORK,
   ZERO_ADDRESS,
   CONFIG,
   TOKEN_TYPE,

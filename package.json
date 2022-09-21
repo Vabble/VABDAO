@@ -19,6 +19,8 @@
     "bscTest:verify": "hardhat --network bscTest etherscan-verify --solc-input",
     "bscMain:deploy": "hardhat --network bscMain deploy",
     "bscMain:verify": "hardhat --network bscMain etherscan-verify --solc-input",
+    "mumbai:deploy": "hardhat --network mumbai deploy",
+    "mumbai:verify": "hardhat --network mumbai etherscan-verify --solc-input",
     "prettier": "prettier --write scripts/**/*.js && prettier --write test/**/*.js && prettier --write contracts/**/*.sol"
   },
   "keywords": [],

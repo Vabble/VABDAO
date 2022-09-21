@@ -1,15 +1,37 @@
 module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const { CONFIG } = require('../scripts/utils');
+  const { CONFIG, NETWORK } = require('../scripts/utils');
+
+  if(NETWORK == 'mumbai') {
+    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
+    this.uniswapRouter = CONFIG.mumbai.uniswap.router
+    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
+    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
+  } else if(NETWORK == 'rinkeby') {
+    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
+    this.uniswapRouter = CONFIG.mumbai.uniswap.router
+    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
+    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
+  } else if(NETWORK == 'ethereum') {
+    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
+    this.uniswapRouter = CONFIG.mumbai.uniswap.router
+    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
+    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
+  } else if(NETWORK == 'polygon') {
+    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
+    this.uniswapRouter = CONFIG.mumbai.uniswap.router
+    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
+    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
+  }
 
   await deploy('UniHelper', {
     from: deployer,
     args: [
-      CONFIG.uniswap.factory,
-      CONFIG.uniswap.router,
-      CONFIG.sushiswapRinkeby.factory,
-      CONFIG.sushiswapRinkeby.router
+      this.uniswapFactory,
+      this.uniswapRouter,
+      this.sushiswapFactory,
+      this.sushiswapRouter
     ],
     log: true,
     deterministicDeployment: false,

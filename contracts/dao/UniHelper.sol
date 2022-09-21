@@ -15,7 +15,6 @@ contract UniHelper {
     address private immutable SUSHI_FACTORY;
     address private immutable SUSHI_ROUTER;
     address private immutable WETH;
-    IERC20 private constant ETH_ADDRESS = IERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     /// @dev Provides a standard implementation for transferring assets between
     /// the msg.sender and the helper, by wrapping the action.
