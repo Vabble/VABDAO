@@ -105,6 +105,11 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
             Helper.safeTransferFrom(_payToken, msg.sender, address(this), expectAmount);
         }                
 
+        // Approve VAB token to StakingPool contract
+        if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
+            Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
+        } 
+
         // Add VAB token to rewardPool after swap feeAmount(2%) from UniswapV2
         uint256 feeAmount = expectAmount * mintInfo[_studio].feePercent / 1e10;       
         if(_payToken == address(PAYOUT_TOKEN)) {
@@ -135,13 +140,9 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
             }
         }         
         bytes memory swapArgs = abi.encode(_feeAmount, _payToken, address(PAYOUT_TOKEN));
-        uint256 feeVABAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
+        uint256 feeVABAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);        
 
         // Transfer it(VAB token) to rewardPool
-        if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
-            Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
-        } 
-
         IStakingPool(STAKING_POOL).addRewardToPool(feeVABAmount);
     }
 
