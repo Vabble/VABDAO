@@ -5,16 +5,17 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
+import "../interfaces/IOwnablee.sol";
 import "hardhat/console.sol";
 
-contract Property is Ownable, ReentrancyGuard {
+contract Property is ReentrancyGuard {
     event PropertyUpdated(uint256 property, uint256 flag);
     
-    IERC20 private immutable PAYOUT_TOKEN;    // VAB token        
+    IERC20 private immutable PAYOUT_TOKEN;    // VAB token       
+    address private immutable OWNABLE;         // Ownablee contract address 
     address private immutable VOTE;           // Vote contract address
     address private immutable STAKING_POOL;   // StakingPool contract address
     address private immutable UNI_HELPER;     // UniHelper contract address
@@ -70,6 +71,7 @@ contract Property is Ownable, ReentrancyGuard {
 
     constructor(
         address _payoutToken,
+        address _ownableContract,
         address _voteContract,
         address _stakingContract,
         address _uniHelperContract,
@@ -77,6 +79,8 @@ contract Property is Ownable, ReentrancyGuard {
     ) {
         require(_payoutToken != address(0), "payoutToken: Zero address");
         PAYOUT_TOKEN = IERC20(_payoutToken);    
+        require(_ownableContract != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownableContract;  
         require(_voteContract != address(0), "voteContract: Zero address");
         VOTE = _voteContract;
         require(_stakingContract != address(0), "stakingContract: Zero address");
@@ -113,7 +117,7 @@ contract Property is Ownable, ReentrancyGuard {
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
     function proposalAuditor(address _agent) external nonReentrant {
         require(_agent != address(0), "proposalAuditor: Zero address");                
-        require(auditor != _agent, "proposalAuditor: Already Auditor address");                
+        require(IOwnablee(OWNABLE).auditor() != _agent, "proposalAuditor: Already Auditor address");                
         require(__isPaidFee(), 'proposalAuditor: Not paid fee');
 
         agents.push(_agent);

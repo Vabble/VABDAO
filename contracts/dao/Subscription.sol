@@ -6,14 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IProperty.sol";
+import "../interfaces/IOwnablee.sol";
 import "hardhat/console.sol";
 
-contract Subscription is Ownable, ReentrancyGuard {
+contract Subscription is ReentrancyGuard {
     
     event SubscriptionActivated(address customer, address token, uint256 period);
     event NFTsRegistered(address[] nfts);
@@ -21,12 +21,14 @@ contract Subscription is Ownable, ReentrancyGuard {
     event GatedContentRegistered(address studio, uint256[] filmIds);
     event VABWalletChanged(address wallet);
 
-    IERC20 public immutable PAYOUT_TOKEN;          // VAB token        
-    address private immutable VABBLE_DAO;          // VabbleDAO contract
-    address private immutable UNI_HELPER;          // UniHelper contract
-    address private immutable DAO_PROPERTY;        // Property contract
-    address private immutable USDC_TOKEN;          // USDC token
-    address public VAB_WALLET;                     // Vabble wallet
+    IERC20 public immutable PAYOUT_TOKEN;   // VAB token      
+    address private immutable OWNABLE;      // Ownablee contract address  
+    address private immutable VABBLE_DAO;   // VabbleDAO contract
+    address private immutable UNI_HELPER;   // UniHelper contract
+    address private immutable DAO_PROPERTY; // Property contract
+    address private immutable USDC_TOKEN;   // USDC token
+    address public VAB_WALLET;              // Vabble wallet
+
     uint256 public constant PERIOD_UNIT = 30 days; // 30 days
 
     address[] public registeredNFTs;            // nfts registered for subscription by Auditor
@@ -51,10 +53,21 @@ contract Subscription is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isGatedNFT;  // (filmId => (nft => (tokenId => true/false)))
     mapping(uint256 => bool) public isGatedFilmId;                            // (filmId => true/false)
 
+    modifier onlyAuditor() {
+        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+        _;
+    }
+
+    modifier onlyStudio() {
+        require(IOwnablee(OWNABLE).isStudio(msg.sender), "caller is not the studio");
+        _;
+    }
+    
     receive() external payable {}
 
     constructor(
         address _payoutToken,
+        address _ownableContract,
         address _uniHelperContract,
         address _daoProperty,
         address _vabbleDAO,
@@ -63,6 +76,8 @@ contract Subscription is Ownable, ReentrancyGuard {
     ) {        
         require(_payoutToken != address(0), "payoutToken: Zero address");
         PAYOUT_TOKEN = IERC20(_payoutToken); 
+        require(_ownableContract != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownableContract;  
         require(_uniHelperContract != address(0), "uniHelperContract: Zero address");
         UNI_HELPER = _uniHelperContract;      
         require(_daoProperty != address(0), "initializeVote: Zero filmBoard address");

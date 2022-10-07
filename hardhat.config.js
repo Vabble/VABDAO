@@ -62,16 +62,20 @@ module.exports = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      chainId: chainIds.rinkeby,
+      chainId: chainIds.mumbai,
       saveDeployments: true,
       forking: {
-        url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
+        // url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
         // blockNumber: 11328709,
+        url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`
       },
-      gasPrice: "auto",
       accounts: {
         mnemonic,
-      },
+      },      
+      // gasPrice: 22500000000,
+      gasMultiplier: 2,
+      // throwOnTransactionFailures: true,
+      // blockGasLimit: 1245000000 
     },
     // Ethereum mainnet
     mainnet: { 

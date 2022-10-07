@@ -12,6 +12,7 @@ describe('VabbleDAO', function () {
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.PropertyFactory = await ethers.getContractFactory('Property');
+    this.OwnableFactory = await ethers.getContractFactory('Ownablee');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -25,22 +26,28 @@ describe('VabbleDAO', function () {
   });
 
   beforeEach(async function () {    
-    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.DAI = new ethers.Contract(CONFIG.rinkeby.daiAddress, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
-    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.voteContract = await (await this.VoteFactory.deploy()).deployed();
+    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
+      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed(); 
+
+    this.voteContract = await (await this.VoteFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed();
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -51,6 +58,7 @@ describe('VabbleDAO', function () {
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -59,13 +67,13 @@ describe('VabbleDAO', function () {
       )
     ).deployed();
 
-    expect(await this.DAOContract.auditor()).to.be.equal(this.auditor.address);
+    expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
         
     // Auditor add studio1, studio3 in the studio whitelist, not studio2
     await expect(
-      this.DAOContract.addStudio(this.studio1.address)
-    ).to.emit(this.DAOContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);    
-    await this.DAOContract.connect(this.auditor).addStudio(this.studio3.address, {from: this.auditor.address})  
+      this.ownableContract.addStudio(this.studio1.address)
+    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);    
+    await this.ownableContract.connect(this.auditor).addStudio(this.studio3.address, {from: this.auditor.address})  
     // ====== VAB
     // Transfering VAB token to user1, 2, 3
     await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(500000), {from: this.auditor.address});
@@ -88,29 +96,6 @@ describe('VabbleDAO', function () {
     await this.vabToken.connect(this.studio1).approve(this.DAOContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio2).approve(this.DAOContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio3).approve(this.DAOContract.address, getBigNumber(100000000));
-
-    // ====== DAI
-    // Transfering DAI token to user1, 2, 3
-    await this.DAI.connect(this.auditor).transfer(this.customer1.address, getBigNumber(100000), {from: this.auditor.address});
-    await this.DAI.connect(this.auditor).transfer(this.customer2.address, getBigNumber(100000), {from: this.auditor.address});
-    await this.DAI.connect(this.auditor).transfer(this.customer3.address, getBigNumber(100000), {from: this.auditor.address});
-    // Transfering DAI token to studio1, 2, 3
-    await this.DAI.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.DAI.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.DAI.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
-
-    // Approve to transfer DAI token for each user, studio to DAO, StakingPool
-    await this.DAI.connect(this.customer1).approve(this.DAOContract.address, getBigNumber(100000000));
-    await this.DAI.connect(this.customer2).approve(this.DAOContract.address, getBigNumber(100000000));
-    await this.DAI.connect(this.customer3).approve(this.DAOContract.address, getBigNumber(100000000));   
-
-    await this.DAI.connect(this.customer1).approve(this.stakingContract.address, getBigNumber(100000000));
-    await this.DAI.connect(this.customer2).approve(this.stakingContract.address, getBigNumber(100000000));
-    await this.DAI.connect(this.customer3).approve(this.stakingContract.address, getBigNumber(100000000));
-
-    await this.DAI.connect(this.studio1).approve(this.DAOContract.address, getBigNumber(100000000));
-    await this.DAI.connect(this.studio2).approve(this.DAOContract.address, getBigNumber(100000000));
-    await this.DAI.connect(this.studio3).approve(this.DAOContract.address, getBigNumber(100000000));
 
     // ====== EXM
     // Transfering EXM token to user1, 2, 3
@@ -140,7 +125,6 @@ describe('VabbleDAO', function () {
       this.DAOContract.address,
       this.voteContract.address,
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )  
     // Staking VAB token
@@ -184,7 +168,7 @@ describe('VabbleDAO-test-1', function () {
     // Studio2 can not propose films because studio2 is not studio
     await expect(
       this.DAOContract.connect(this.studio2).createProposalFilms(this.filmPropsoal, true, {from: this.studio2.address})
-    ).to.be.revertedWith('Ownable: caller is not the studio');
+    ).to.be.revertedWith('caller is not the studio');
 
     // Get A proposal film information with id
     const proposalFilm = await this.DAOContract.getFilmById(proposalIds_1[0])
@@ -283,7 +267,6 @@ describe('VabbleDAO-test-3', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     );
     expect(await this.voteContract.isInitialized()).to.be.true
@@ -295,7 +278,6 @@ describe('VabbleDAO-test-3', function () {
         this.DAOContract.address, 
         this.stakingContract.address, 
         this.propertyContract.address,
-        this.vabToken.address,
         {from: this.auditor.address}
       )
     ).to.be.revertedWith('initializeVote: Already initialized vote');
@@ -377,7 +359,6 @@ describe('VabbleDAO-test-4', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     );
 
@@ -489,7 +470,6 @@ describe('VabbleDAO-test-5', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     );
 
@@ -550,7 +530,7 @@ describe('VabbleDAO-test-5', function () {
     tx = await this.DAOContract.connect(this.studio1).fundProcess(ids[0], {from: this.studio1.address})
     this.events = (await tx.wait()).events
     // console.log("====events::", this.events)  
-    args = this.events[14].args
+    args = this.events[13].args
     expect(args.filmId).to.be.equal(ids[0])
 
     // 8-3. Check changed reward amount in the StakingPool

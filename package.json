@@ -8,6 +8,7 @@
     "compile": "npx hardhat compile",
     "test": "hardhat test test/main.test.js --network hardhat",
     "test:rinkeby": "hardhat test test/main.test.js --network rinkeby",
+    "test:mumbai": "hardhat test test/main.test.js --network mumbai",
     "fork:rinkeby": "hardhat node --fork https://eth-rinkeby.alchemyapi.io/v2/khT7j5E7O7LBI-Vf53jsKg9epwhAk2uh",
     "mainnet:deploy": "hardhat --network mainnet deploy",
     "mainnet:verify": "hardhat --network mainnet etherscan-verify --solc-input",

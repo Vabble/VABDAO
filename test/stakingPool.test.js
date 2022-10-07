@@ -11,6 +11,7 @@ describe('StakingPool', function () {
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.PropertyFactory = await ethers.getContractFactory('Property');
+    this.OwnableFactory = await ethers.getContractFactory('Ownablee');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -24,22 +25,29 @@ describe('StakingPool', function () {
   });
 
   beforeEach(async function () {
-    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.DAI = new ethers.Contract(CONFIG.rinkeby.daiAddress, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
-    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.DAI = new ethers.Contract(CONFIG.mumbai.daiAddress, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.voteContract = await (await this.VoteFactory.deploy()).deployed();
+    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
 
-    this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
+    this.voteContract = await (await this.VoteFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
-    
+    this.uniHelperContract = await (await this.UniHelperFactory.deploy(
+      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
+    )).deployed();
+
+    this.stakingContract = await (await this.StakingPoolFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed(); 
+        
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -50,6 +58,7 @@ describe('StakingPool', function () {
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -59,8 +68,8 @@ describe('StakingPool', function () {
     ).deployed();    
 
     // Add studio1, studio2 to studio list by Auditor
-    await this.DAOContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})  
-    await this.DAOContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})  
+    await this.ownableContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})  
+    await this.ownableContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})  
 
     // Transfering VAB token to user1, 2, 3
     await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
@@ -104,7 +113,6 @@ describe('StakingPool', function () {
       this.DAOContract.address,
       this.voteContract.address,
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )
     // Staking VAB token
@@ -137,7 +145,6 @@ describe('StakingPool', function () {
       this.DAOContract.address,
       this.voteContract.address,      
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )          
     // Staking VAB token
@@ -160,7 +167,6 @@ describe('StakingPool', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     );
     expect(await this.voteContract.isInitialized()).to.be.true
@@ -221,7 +227,6 @@ describe('StakingPool', function () {
       this.DAOContract.address,
       this.voteContract.address,
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )    
     // Add reward from auditor
@@ -288,7 +293,6 @@ describe('StakingPool', function () {
       this.DAOContract.address,
       this.voteContract.address,
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )          
     // initialize vote contract
@@ -296,7 +300,6 @@ describe('StakingPool', function () {
       this.DAOContract.address, 
       this.stakingContract.address, 
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     );
     expect(await this.voteContract.isInitialized()).to.be.true

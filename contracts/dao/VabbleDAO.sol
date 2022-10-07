@@ -5,14 +5,14 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
+import "../interfaces/IOwnablee.sol";
 import "hardhat/console.sol";
 
-contract VabbleDAO is Ownable, ReentrancyGuard {
+contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
     
     event FilmsProposalCreated(uint256[] indexed filmIds, address studio);
@@ -56,6 +56,7 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
     }
 
     IERC20 public immutable PAYOUT_TOKEN;     // VAB token        
+    address public immutable OWNABLE;        // Ownablee contract address
     address public immutable VOTE;            // Vote contract address
     address public immutable STAKING_POOL;    // StakingPool contract address
     address public immutable UNI_HELPER;      // UniHelper contract address
@@ -87,10 +88,21 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         _;
     }
 
+    modifier onlyAuditor() {
+        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+        _;
+    }
+    
+    modifier onlyStudio() {
+        require(IOwnablee(OWNABLE).isStudio(msg.sender), "caller is not the studio");
+        _;
+    }
+
     receive() external payable {}
 
     constructor(
         address _payoutToken,
+        address _ownableContract,
         address _voteContract,
         address _stakingContract,
         address _uniHelperContract,
@@ -98,7 +110,9 @@ contract VabbleDAO is Ownable, ReentrancyGuard {
         address _usdcToken
     ) {        
         require(_payoutToken != address(0), "payoutToken: Zero address");
-        PAYOUT_TOKEN = IERC20(_payoutToken);        
+        PAYOUT_TOKEN = IERC20(_payoutToken);    
+        require(_ownableContract != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownableContract;     
         require(_voteContract != address(0), "voteContract: Zero address");
         VOTE = _voteContract;
         require(_stakingContract != address(0), "stakingContract: Zero address");

@@ -3,8 +3,9 @@ const { ethers } = require('hardhat');
 const { CONFIG } = require('../scripts/utils');
 const ERC20 = require('../data/ERC20.json');
 
-describe('Ownerable', function () {
+describe('Ownablee', function () {
   before(async function () {
+    this.OwnableFactory = await ethers.getContractFactory('Ownablee');
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
     this.VoteFactory = await ethers.getContractFactory('Vote');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
@@ -23,20 +24,27 @@ describe('Ownerable', function () {
   });
 
   beforeEach(async function () {
-    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.voteContract = await (await this.VoteFactory.deploy()).deployed();
+    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
 
-    this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
+    this.voteContract = await (await this.VoteFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
+    this.uniHelperContract = await (await this.UniHelperFactory.deploy(
+      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
+    )).deployed();
+
+    this.stakingContract = await (await this.StakingPoolFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed(); 
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -47,6 +55,7 @@ describe('Ownerable', function () {
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -59,21 +68,21 @@ describe('Ownerable', function () {
 
   it('Transfer ownership and Add studio', async function () {
     // Auditor is contract deployer
-    expect(await this.DAOContract.auditor()).to.be.equal(this.auditor.address);
+    expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
 
     // Check if studio1 is studio
-    expect(await this.DAOContract.isStudio(this.studio1.address)).to.be.false;  
+    expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.false;  
     
     // Add studio1 address to studio list
-    await this.DAOContract.addStudio(this.studio1.address);
+    await this.ownableContract.addStudio(this.studio1.address);
     
     // Check if studio1 is studio after add studio1 to studiolist
-    expect(await this.DAOContract.isStudio(this.studio1.address)).to.be.true;  
+    expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.true;  
 
     // Transfer auditor to new address
-    await this.DAOContract.transferAuditor(this.newAuditor.address);
+    await this.ownableContract.transferAuditor(this.newAuditor.address);
     
-    expect(await this.DAOContract.auditor()).to.be.equal(this.newAuditor.address);  
+    expect(await this.ownableContract.auditor()).to.be.equal(this.newAuditor.address);  
           
   });
 });

@@ -8,13 +8,13 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../libraries/Helper.sol";
-import "../libraries/Ownable.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
+import "../interfaces/IOwnablee.sol";
 import "hardhat/console.sol";
 
-contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
+contract FactoryNFT is ERC721, ReentrancyGuard {
     using Counters for Counters.Counter;
     using Strings for uint256;
 
@@ -28,6 +28,7 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
     }
 
     IERC20 private immutable PAYOUT_TOKEN;     // VAB token      
+    address private immutable OWNABLE;         // Ownablee contract address
     address private immutable STAKING_POOL;    // StakingPool contract address
     address private immutable UNI_HELPER;      // UniHelper contract address
     address private immutable DAO_PROPERTY;    // Property contract address
@@ -38,27 +39,40 @@ contract FactoryNFT is Ownable, ERC721, ReentrancyGuard {
 
     mapping(uint256 => string) private tokenUriInfo; // (tokenId => tokenUri)    
     mapping(address => Mint) private mintInfo;       // (studio => Mint)
-    
+
+    modifier onlyAuditor() {
+        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+        _;
+    }
+
+    modifier onlyStudio() {
+        require(IOwnablee(OWNABLE).isStudio(msg.sender), "caller is not the studio");
+        _;
+    }
+
     receive() external payable {}
 
     constructor(
         address _payoutToken,
+        address _ownableContract,
         address _stakingContract,
         address _uniHelperContract,
         address _daoProperty,
         address _usdcToken,
         string memory _name,
         string memory _symbol
-    ) ERC721(_name, _symbol) {
-        require(_payoutToken != address(0), "_payoutToken: Zero address");
+    ) ERC721(_name, _symbol) {        
+        require(_payoutToken != address(0), "payoutToken: Zero address");
         PAYOUT_TOKEN = IERC20(_payoutToken);        
-        require(_stakingContract != address(0), "_stakingContract: Zero address");
+        require(_ownableContract != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownableContract;  
+        require(_stakingContract != address(0), "stakingContract: Zero address");
         STAKING_POOL = _stakingContract;
-        require(_uniHelperContract != address(0), "_uniHelperContract: Zero address");
+        require(_uniHelperContract != address(0), "uniHelperContract: Zero address");
         UNI_HELPER = _uniHelperContract;   
-        require(_daoProperty != address(0), "_daoProperty: Zero address");
+        require(_daoProperty != address(0), "daoProperty: Zero address");
         DAO_PROPERTY = _daoProperty;    
-        require(_usdcToken != address(0), "_usdcToken: Zero address");
+        require(_usdcToken != address(0), "usdcToken: Zero address");
         USDC_TOKEN = _usdcToken;
     }
 

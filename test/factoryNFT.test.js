@@ -11,6 +11,7 @@ describe('FactoryNFT', function () {
     this.VoteFactory = await ethers.getContractFactory('Vote');
     this.PropertyFactory = await ethers.getContractFactory('Property');
     this.NFTFactory = await ethers.getContractFactory('FactoryNFT');
+    this.OwnableFactory = await ethers.getContractFactory('Ownablee');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -24,22 +25,28 @@ describe('FactoryNFT', function () {
   });
 
   beforeEach(async function () {
-    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.DAI = new ethers.Contract(CONFIG.rinkeby.daiAddress, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
-    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+
+    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
+      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed(); 
 
-    this.voteContract = await (await this.VoteFactory.deploy()).deployed();
+    this.voteContract = await (await this.VoteFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed();
       
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -50,6 +57,7 @@ describe('FactoryNFT', function () {
     this.NFTContract = await (
       await this.NFTFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
@@ -70,13 +78,13 @@ describe('FactoryNFT', function () {
     await this.vabToken.connect(this.customer3).approve(this.NFTContract.address, getBigNumber(100000000));   
 
     // Confirm auditor
-    expect(await this.NFTContract.auditor()).to.be.equal(this.auditor.address);
+    expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
         
     // Auditor add studio1, 2 in the studio whitelist
     await expect(
-      this.NFTContract.addStudio(this.studio1.address)
-    ).to.emit(this.NFTContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address); 
-    await this.NFTContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})
+      this.ownableContract.addStudio(this.studio1.address)
+    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address); 
+    await this.ownableContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})
   });
 
   it("Should has the correct name and symbol ", async function () {
@@ -87,7 +95,7 @@ describe('FactoryNFT', function () {
   it('Should be setup baseURI by Auditor and mintInfo by studio ', async function () {
     await expect(
         this.NFTContract.connect(this.studio1).setBaseURI('https://ipfs.io/ipfs/', {from: this.studio1.address})
-    ).to.be.revertedWith('Ownable: caller is not the auditor');
+    ).to.be.revertedWith('caller is not the auditor');
 
     await this.NFTContract.setBaseURI('https://ipfs.io/ipfs/')
 

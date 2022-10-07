@@ -7,13 +7,14 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   this.StakingPool = await deployments.get('StakingPool');
   this.UniHelper = await deployments.get('UniHelper');
   this.Property = await deployments.get('Property');
-
+  this.Ownablee = await deployments.get('Ownablee');
+  
   if(NETWORK == 'mumbai') {
     this.vabToken = CONFIG.mumbai.vabToken
     this.usdc = CONFIG.mumbai.usdcAdress
   } else if(NETWORK == 'rinkeby') {
-    this.vabToken = CONFIG.rinkeby.vabToken
-    this.usdc = CONFIG.rinkeby.usdcAdress
+    this.vabToken = CONFIG.mumbai.vabToken
+    this.usdc = CONFIG.mumbai.usdcAdress
   } else if(NETWORK == 'ethereum') {
     this.vabToken = CONFIG.ethereum.vabToken
     this.usdc = CONFIG.ethereum.usdcAdress
@@ -26,6 +27,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     from: deployer,
     args: [
       this.vabToken,            // mockVAB
+      this.Ownablee.address,
       this.Vote.address,        // Vote contract
       this.StakingPool.address, // StakingPool contract
       this.UniHelper.address,   // UniHelper contract
@@ -40,4 +42,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_vabble_dao'
 module.exports.tags = ['VabbleDAO'];
-module.exports.dependencies = ['Vote', 'StakingPool', 'UniHelper', 'Property'];
+module.exports.dependencies = ['Ownablee', 'Vote', 'StakingPool', 'UniHelper', 'Property'];

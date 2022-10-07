@@ -6,13 +6,14 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   this.StakingPool = await deployments.get('StakingPool');
   this.UniHelper = await deployments.get('UniHelper');
   this.Property = await deployments.get('Property');
+  this.Ownablee = await deployments.get('Ownablee');
 
   if(NETWORK == 'mumbai') {
     this.vabToken = CONFIG.mumbai.vabToken
     this.usdc = CONFIG.mumbai.usdcAdress
   } else if(NETWORK == 'rinkeby') {
-    this.vabToken = CONFIG.rinkeby.vabToken
-    this.usdc = CONFIG.rinkeby.usdcAdress
+    this.vabToken = CONFIG.mumbai.vabToken
+    this.usdc = CONFIG.mumbai.usdcAdress
   } else if(NETWORK == 'ethereum') {
     this.vabToken = CONFIG.ethereum.vabToken
     this.usdc = CONFIG.ethereum.usdcAdress
@@ -25,6 +26,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     from: deployer,
     args: [
       this.vabToken,
+      this.Ownablee.address,
       this.StakingPool.address,
       this.UniHelper.address,
       this.Property.address,
@@ -40,4 +42,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_factory_nft'
 module.exports.tags = ['FactoryNFT'];
-module.exports.dependencies = ['StakingPool', 'UniHelper', 'Property'];
+module.exports.dependencies = ['Ownablee', 'StakingPool', 'UniHelper', 'Property'];

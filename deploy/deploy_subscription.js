@@ -6,13 +6,14 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   this.UniHelper = await deployments.get('UniHelper');
   this.Property = await deployments.get('Property');
   this.VabbleDAO = await deployments.get('VabbleDAO');
+  this.Ownablee = await deployments.get('Ownablee');
 
   if(NETWORK == 'mumbai') {
     this.vabToken = CONFIG.mumbai.vabToken
     this.usdc = CONFIG.mumbai.usdcAdress
   } else if(NETWORK == 'rinkeby') {
-    this.vabToken = CONFIG.rinkeby.vabToken
-    this.usdc = CONFIG.rinkeby.usdcAdress
+    this.vabToken = CONFIG.mumbai.vabToken
+    this.usdc = CONFIG.mumbai.usdcAdress
   } else if(NETWORK == 'ethereum') {
     this.vabToken = CONFIG.ethereum.vabToken
     this.usdc = CONFIG.ethereum.usdcAdress
@@ -25,6 +26,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     from: deployer,
     args: [
       this.vabToken,            // mockVAB
+      this.Ownablee.address,
       this.UniHelper.address,   // UniHelper contract
       this.Property.address,    // Property contract
       this.VabbleDAO.address,   // VabbleDAO contract
@@ -39,4 +41,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_subscription'
 module.exports.tags = ['Subscription'];
-module.exports.dependencies = ['UniHelper', 'Property', 'VabbleDAO'];
+module.exports.dependencies = ['Ownablee', 'UniHelper', 'Property', 'VabbleDAO'];

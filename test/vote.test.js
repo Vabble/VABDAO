@@ -11,6 +11,7 @@ describe('Vote', function () {
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.PropertyFactory = await ethers.getContractFactory('Property');
+    this.OwnableFactory = await ethers.getContractFactory('Ownablee');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -25,21 +26,28 @@ describe('Vote', function () {
   });
 
   beforeEach(async function () {
-    this.vabToken = new ethers.Contract(CONFIG.rinkeby.vabToken, JSON.stringify(ERC20), ethers.provider);
-    this.EXM = new ethers.Contract(CONFIG.rinkeby.exmAddress, JSON.stringify(ERC20), ethers.provider);
-    this.USDC = new ethers.Contract(CONFIG.rinkeby.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+    this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+    this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
+    this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.voteContract = await (await this.VoteFactory.deploy()).deployed();
+    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
-      CONFIG.rinkeby.uniswap.factory, CONFIG.rinkeby.uniswap.router, CONFIG.rinkeby.sushiswap.factory, CONFIG.rinkeby.sushiswap.router
+      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy()).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed(); 
+
+    this.voteContract = await (await this.VoteFactory.deploy(
+      this.vabToken.address, this.ownableContract.address
+    )).deployed();
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -50,6 +58,7 @@ describe('Vote', function () {
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.vabToken.address,
+        this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
@@ -59,8 +68,9 @@ describe('Vote', function () {
     ).deployed();    
 
     // Add studio1, studio2 to studio list by Auditor
-    await this.DAOContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})  
-    await this.DAOContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})  
+    await this.ownableContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})  
+    await this.ownableContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})  
+    await this.ownableContract.connect(this.auditor).setupVote(this.voteContract.address, {from: this.auditor.address})  
     
     this.auditorBalance = await this.vabToken.balanceOf(this.auditor.address) // 145M
     // console.log("====auditorBalance::", this.auditorBalance.toString())    
@@ -111,7 +121,6 @@ describe('Vote', function () {
       this.DAOContract.address,
       this.stakingContract.address,
       this.propertyContract.address,
-      this.vabToken.address
     )
 
     await expect(
@@ -123,7 +132,6 @@ describe('Vote', function () {
       this.DAOContract.address,
       this.voteContract.address,
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )
     // Staking from customer1,2,3 for vote
@@ -158,7 +166,6 @@ describe('Vote', function () {
       this.DAOContract.address,
       this.voteContract.address,
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )    
     const stakeAmount = getBigNumber(200)
@@ -171,7 +178,6 @@ describe('Vote', function () {
       this.DAOContract.address,
       this.stakingContract.address,
       this.propertyContract.address,
-      this.vabToken.address
     )
     
     // Call voteToAgent before create the proposal
@@ -264,7 +270,7 @@ describe('Vote', function () {
     const agent1_1 = await this.propertyContract.getAgent(0); 
     console.log("====agent1_1", agent1_1)
     
-    const new_auditor = await this.voteContract.auditor(); 
+    const new_auditor = await this.ownableContract.auditor(); 
     console.log("====new_auditor", new_auditor, this.auditorAgent2.address)
   });
 
@@ -282,7 +288,6 @@ describe('Vote', function () {
       this.DAOContract.address,
       this.voteContract.address,
       this.propertyContract.address,
-      this.vabToken.address,
       {from: this.auditor.address}
     )    
 
@@ -296,7 +301,6 @@ describe('Vote', function () {
       this.DAOContract.address,
       this.stakingContract.address,
       this.propertyContract.address,
-      this.vabToken.address
     )
         
     let flag = 0;

@@ -47,10 +47,10 @@ const CONFIG = {
     },
   },
   mumbai: {
-    usdcAdress: "0xe6b8a5CF854791412c1f6EFC7CAf629f5Df1c747",
-    daiAddress: "0xd393b1E02dA9831Ff419e22eA105aAe4c47E1253",
+    usdcAdress: "0xe11A86849d99F524cAC3E7A0Ec1241828e332C62",
+    daiAddress: "0x001B3B4d0F3714Ca98ba10F6042DaEbF0B1B7b6F",
     vabToken: "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32",
-    exmAddress: "",
+    exmAddress: "0x53BeF80E0EBE5A89dfb67782b12435aBeB943754",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
@@ -114,18 +114,32 @@ const FILM_DATA = {
 };
 
 const NFTs = {
-  addressList: [
-    getAddress('0xf64638d60f06eb348d9d7430ade069dec9a5750b'),// erc-721
-    getAddress('0x88b48f654c30e99bc2e4a1559b4dcf1ad93fa656'),// erc-1155
-  ],
-  periodList: [1, 3],
-  tokenIdList: [
-    '1185',
-    '80080221229116283490468250292365070954995884570106478997872246018186124722178',// name of opensea: "search input"
-    // '80080221229116283490468250292365070954995884570106478997872246017086613094401',// name of opensea: "cart buttons"
-    // '80080221229116283490468250292365070954995884570106478997872246015987101466634', // name of opensea: "bookmark"
-  ],
-  tokenTypeList: [1, 2] // 1=>ERC-721, 2=>ERC-1155
+  rinkeby: {
+    addressList: [
+      getAddress('0xf64638d60f06eb348d9d7430ade069dec9a5750b'),// erc-721
+      getAddress('0x88b48f654c30e99bc2e4a1559b4dcf1ad93fa656'),// erc-1155
+    ],
+    periodList: [1, 3],
+    tokenIdList: [
+      '1185',
+      '80080221229116283490468250292365070954995884570106478997872246018186124722178',// name of opensea: "search input"
+      // '80080221229116283490468250292365070954995884570106478997872246017086613094401',// name of opensea: "cart buttons"
+      // '80080221229116283490468250292365070954995884570106478997872246015987101466634', // name of opensea: "bookmark"
+    ],
+    tokenTypeList: [1, 2] // 1=>ERC-721, 2=>ERC-1155
+  },
+  mumbai: {
+    addressList: [
+      getAddress('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),// erc-721 from Uniswap V3 Positions NFT-V1 
+      getAddress('0xA07e45A987F19E25176c877d98388878622623FA'),// erc-1155 from https://faucet.polygon.technology/
+    ],
+    periodList: [1, 3],
+    tokenIdList: [
+      '5528',
+      '123',// Test ERC1155
+    ],
+    tokenTypeList: [1, 2] // 1=>ERC-721, 2=>ERC-1155
+  },
 }
 // make offer in opensea
 // 0xf5de760f2e916647fd766b4ad9e85ff943ce3a2b

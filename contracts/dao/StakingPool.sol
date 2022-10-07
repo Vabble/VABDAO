@@ -4,14 +4,14 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "../libraries/Ownable.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IVote.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
+import "../interfaces/IOwnablee.sol";
 import "hardhat/console.sol";
 
-contract StakingPool is Ownable, ReentrancyGuard {
+contract StakingPool is ReentrancyGuard {
     
     using Counters for Counters.Counter;
 
@@ -27,10 +27,11 @@ contract StakingPool is Ownable, ReentrancyGuard {
         uint256 stakeTime;       // last staked time(here, means the time that staker withdrawable time)
     }
 
-    IERC20 private PAYOUT_TOKEN;   // VAB token   
-    address private VOTE;          // vote contract address
-    address private VABBLE_DAO;    // VabbleDAO contract address
-    address private DAO_PROPERTY;
+    IERC20 private PAYOUT_TOKEN;           // VAB token   
+    address private immutable OWNABLE;     // Ownablee contract address
+    address private VOTE;                  // vote contract address
+    address private VABBLE_DAO;            // VabbleDAO contract address
+    address private DAO_PROPERTY;          // Property contract address
         
     uint256 public totalStakingAmount;   // 
     uint256 public totalRewardAmount;    // 
@@ -45,14 +46,25 @@ contract StakingPool is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor() {}
+    modifier onlyAuditor() {
+        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+        _;
+    }
+    constructor(        
+        address _payoutToken,
+        address _ownableContract
+    ) {
+        require(_payoutToken != address(0), "payoutToken: Zero address");
+        PAYOUT_TOKEN = IERC20(_payoutToken);
+        require(_ownableContract != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownableContract;  
+    }
 
     /// @notice Initialize Vote
     function initializePool(
         address _vabbleDAO,
         address _voteContract,
-        address _daoProperty,
-        address _payoutToken
+        address _daoProperty
     ) external onlyAuditor {
         require(!isInitialized, "initializePool: Already initialized");
         require(_vabbleDAO != address(0), "initializePool: Zero vabbleDAO address");
@@ -61,9 +73,7 @@ contract StakingPool is Ownable, ReentrancyGuard {
         VOTE = _voteContract;    
         require(_daoProperty != address(0), "initializePool: Zero filmBoard address");
         DAO_PROPERTY = _daoProperty;               
-        require(_payoutToken != address(0), "initializePool: Zero payoutToken address");
-        PAYOUT_TOKEN = IERC20(_payoutToken);
-        
+                
         isInitialized = true;
     }    
 
