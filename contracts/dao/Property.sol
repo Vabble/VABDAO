@@ -14,12 +14,21 @@ import "hardhat/console.sol";
 contract Property is ReentrancyGuard {
     event PropertyUpdated(uint256 property, uint256 flag);
     
+    struct RewardProposal {
+        string title;          // proposal title
+        string description;    // proposal description
+    }
+
     IERC20 private immutable PAYOUT_TOKEN;    // VAB token       
     address private immutable OWNABLE;         // Ownablee contract address 
     address private immutable VOTE;           // Vote contract address
     address private immutable STAKING_POOL;   // StakingPool contract address
     address private immutable UNI_HELPER;     // UniHelper contract address
     address private immutable USDC_TOKEN;     // USDC token 
+
+    address public DAO_FUND_REWARD;                               // address for sending the DAO rewards fund
+    mapping(address => uint256) public isRewardWhitelist;         //(rewardAddress => 0: no member, 1: candiate, 2: already member)    
+    mapping(address => RewardProposal) public rewardProposalInfo; //(rewardAddress => RewardProposal)
 
     // Vote
     uint256 public filmVotePeriod;            // 0 - film vote period
@@ -69,6 +78,11 @@ contract Property is ReentrancyGuard {
         _;
     }
 
+    modifier onlyStaker() {
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) > 0, "Not staker");
+        _;
+    }
+
     constructor(
         address _payoutToken,
         address _ownableContract,
@@ -115,7 +129,7 @@ contract Property is ReentrancyGuard {
 
     /// ========= proposals for replacing auditor
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
-    function proposalAuditor(address _agent) external nonReentrant {
+    function proposalAuditor(address _agent) external onlyStaker nonReentrant {
         require(_agent != address(0), "proposalAuditor: Zero address");                
         require(IOwnablee(OWNABLE).auditor() != _agent, "proposalAuditor: Already Auditor address");                
         require(__isPaidFee(), 'proposalAuditor: Not paid fee');
@@ -158,8 +172,40 @@ contract Property is ReentrancyGuard {
         }
     }  
 
+    // =================== DAO fund rewards proposal ====================
+    function proposalRewardFund(
+        address _rewardAddress,
+        string memory _title,
+        string memory _description
+    ) external onlyStaker nonReentrant {
+        require(_rewardAddress != address(0), "proposalRewardFund: Zero candidate address");     
+        require(isRewardWhitelist[_rewardAddress] == 0, "proposalRewardFund: Already created proposal by this address");
+
+        isRewardWhitelist[_rewardAddress] = 1;
+
+        RewardProposal storage _proposal = rewardProposalInfo[_rewardAddress];
+        _proposal.title = _title;
+        _proposal.description = _description;
+    }
+
+    /// @notice Set DAO_FUND_REWARD by Vote contract
+    function setRewardAddress(address _rewardAddress) external onlyVote nonReentrant {
+        isRewardWhitelist[_rewardAddress] = 2;
+        DAO_FUND_REWARD = _rewardAddress;
+    }
+
+    /// @notice Get reward fund proposal title and description
+    function getRewardProposalInfo(address _rewardAddress) external view returns (string memory, string memory) {
+        RewardProposal storage _proposal = rewardProposalInfo[_rewardAddress];
+        string memory title_ = _proposal.title;
+        string memory desc_ = _proposal.description;        
+
+        return (title_, desc_);
+    }
+    
+    // ===================properties proposal ====================
     /// @notice proposals for properties
-    function proposalProperty(uint256 _property, uint256 _flag) public nonReentrant {
+    function proposalProperty(uint256 _property, uint256 _flag) public onlyStaker nonReentrant {
         require(_property > 0, "proposalProperty: Zero period");
         require(__isPaidFee(), 'proposalProperty: Not paid fee');
 

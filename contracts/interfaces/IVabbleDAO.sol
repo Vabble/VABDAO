@@ -32,5 +32,8 @@ interface IVabbleDAO {
     function updateLastVoteTime(address _member) external;
 
     function addFilmBoardMember(address _member) external;
+
     function isBoardWhitelist(address _member) external view returns (uint256);
+
+    function withdrawAllFund() external;
 }

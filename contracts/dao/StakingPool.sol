@@ -71,9 +71,9 @@ contract StakingPool is ReentrancyGuard {
         VABBLE_DAO = _vabbleDAO;
         require(_voteContract != address(0), "initializePool: Zero voteContract address");
         VOTE = _voteContract;    
-        require(_daoProperty != address(0), "initializePool: Zero filmBoard address");
-        DAO_PROPERTY = _daoProperty;               
-                
+        require(_daoProperty != address(0), "initializePool: Zero propertyContract address");
+        DAO_PROPERTY = _daoProperty;            
+
         isInitialized = true;
     }    
 
@@ -171,6 +171,38 @@ contract StakingPool is ReentrancyGuard {
         IVote(VOTE).removeFilmIdsPerUser(msg.sender);
         
         emit RewardWithdraw(msg.sender, _amount);
+    }
+
+    /// @notice Transfer DAO rewards fund to new contract or something
+    function withdrawAllReward() public onlyAuditor {
+        address rewardAddress = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
+        require(rewardAddress != address(0), 'withdrawAllReward: Zero address');
+        require(totalRewardAmount > 0, 'withdrawAllReward: Zero balance');
+        
+        uint256 amount = totalRewardAmount;
+        Helper.safeTransfer(address(PAYOUT_TOKEN), rewardAddress, totalRewardAmount);
+        totalRewardAmount = 0;
+        
+        emit RewardWithdraw(rewardAddress, amount);
+    }
+
+    /// @notice Transfer DAO all fund to new contract or something
+    function withdrawAllFund() public onlyAuditor {
+        address rewardAddress = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
+        require(rewardAddress != address(0), 'withdrawAllFund: Zero address');
+
+        uint256 totalPayoutAmount = PAYOUT_TOKEN.balanceOf(address(this));
+        require(totalPayoutAmount > 0, 'withdrawAllFund: Zero balance');
+        
+        Helper.safeTransfer(address(PAYOUT_TOKEN), rewardAddress, totalPayoutAmount);
+        totalRewardAmount = 0;
+
+        if(PAYOUT_TOKEN.balanceOf(address(VABBLE_DAO)) > 0) {
+            // Already approved payoutToken for stakingPool in vabbleDAO, so don't need approve again.
+            Helper.safeTransferFrom(address(PAYOUT_TOKEN), VABBLE_DAO, rewardAddress, PAYOUT_TOKEN.balanceOf(address(VABBLE_DAO)));
+        }
+        
+        emit RewardWithdraw(rewardAddress, totalPayoutAmount);
     }
 
     /// @notice Update lastStakedTime for a staker when vote

@@ -56,7 +56,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     IERC20 public immutable PAYOUT_TOKEN;     // VAB token        
-    address public immutable OWNABLE;        // Ownablee contract address
+    address public immutable OWNABLE;         // Ownablee contract address
     address public immutable VOTE;            // Vote contract address
     address public immutable STAKING_POOL;    // StakingPool contract address
     address public immutable UNI_HELPER;      // UniHelper contract address
@@ -69,8 +69,8 @@ contract VabbleDAO is ReentrancyGuard {
     uint256[] private updatedFilmIds;    
     uint256[] private finalFilmIds;
 
-    address[] public filmBoardCandidates;     // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
-
+    address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
+    address[] private filmBoardMembers;      // filmBoard members
 
     mapping(uint256 => Film) public filmInfo;             // Each film information(filmId => Film)
     // mapping(address => uint256[]) public customerFilmIds; // Rented film IDs for a customer(customer => fimlId[])
@@ -78,7 +78,7 @@ contract VabbleDAO is ReentrancyGuard {
     mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
     // filmboard
-    mapping(address => uint256) public isBoardWhitelist; // (filmBoard member => 0: no member, 1: candiate, 2: member)
+    mapping(address => uint256) public isBoardWhitelist; // (filmBoard member => 0: no member, 1: candiate, 2: already member)
     mapping(address => uint256) public lastVoteTime;     // (staker => block.timestamp)
     
     Counters.Counter public filmCount;          // filmId is from No.1
@@ -87,12 +87,10 @@ contract VabbleDAO is ReentrancyGuard {
         require(msg.sender == VOTE, "caller is not the vote contract");
         _;
     }
-
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
         _;
-    }
-    
+    }    
     modifier onlyStudio() {
         require(IOwnablee(OWNABLE).isStudio(msg.sender), "caller is not the studio");
         _;
@@ -292,32 +290,50 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmBoardProposalCreated(_member);
     }
 
+    /// @notice Get film board candidates
+    function getFilmBoardItems(bool _candidateOrMember) external view returns (address[] memory) {
+        if(_candidateOrMember) return filmBoardCandidates;
+        else return filmBoardMembers;
+    }
+
     /// @notice Add a member to whitelist by Vote contract
     function addFilmBoardMember(address _member) external onlyVote nonReentrant {
         require(_member != address(0), "addFilmBoardMember: Zero candidate address");     
         require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
 
+        filmBoardMembers.push(_member);
         isBoardWhitelist[_member] = 2;
-
+        
+        for(uint256 i = 0; i < filmBoardCandidates.length; i++) {
+            if(_member == filmBoardCandidates[i]) {
+                filmBoardCandidates[i] = filmBoardCandidates[filmBoardCandidates.length - 1];
+                filmBoardCandidates.pop();
+            }
+        }
         emit FilmBoardMemberAdded(_member);
     }
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
     function removeFilmBoardMember(address _member) external nonReentrant {
-        require(isBoardWhitelist[_member] == 2, "removeFilmBoardMember: Not Film board member");
-        
-        if(IProperty(DAO_PROPERTY).maxAllowPeriod() < block.timestamp - lastVoteTime[_member]) {
-            if(IProperty(DAO_PROPERTY).maxAllowPeriod() > block.timestamp - lastfundProposalCreateTime) {
-                isBoardWhitelist[_member] = 0;
-                emit FilmBoardMemberRemoved(_member);
+        require(isBoardWhitelist[_member] == 2, "removeFilmBoardMember: Not Film board member");        
+        require(IProperty(DAO_PROPERTY).maxAllowPeriod() < block.timestamp - lastVoteTime[_member], 'maxAllowPeriod');
+        require(IProperty(DAO_PROPERTY).maxAllowPeriod() > block.timestamp - lastfundProposalCreateTime, 'lastfundProposalCreateTime');
+
+        isBoardWhitelist[_member] = 0;
+    
+        for(uint256 i = 0; i < filmBoardMembers.length; i++) {
+            if(_member == filmBoardMembers[i]) {
+                filmBoardMembers[i] = filmBoardMembers[filmBoardMembers.length - 1];
+                filmBoardMembers.pop();
             }
         }
+        emit FilmBoardMemberRemoved(_member);
     }
 
     /// @notice Update last vote time
     function updateLastVoteTime(address _member) external onlyVote {
         lastVoteTime[_member] = block.timestamp;
-    }
+    }    
 
     // =================== Funding(Launch Pad) START ===============================
     /// @notice Deposit tokens/ETH to only funding film by customer(investor)
@@ -386,8 +402,7 @@ contract VabbleDAO is ReentrancyGuard {
         }
     }
     
-    /// @notice Send 2% of fund to reward pool after fund period
-    // Send the 2% of funds to reward pool in VAB if funding meet the raise amount
+    /// @notice Send the 2% of funds to reward pool in VAB if funding meet the raise amount after fund period
     function fundProcess(uint256 _filmId) external onlyStudio nonReentrant {
         require(filmInfo[_filmId].studio == msg.sender, "fundProcess: Bad studio of this film");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "fundProcess: filmId not approved for funding");
@@ -517,7 +532,8 @@ contract VabbleDAO is ReentrancyGuard {
     /// @notice Update fundPeriod only by studio that created the proposal
     function updateFundPeriod(uint256 _filmId, uint256 _fundPeriod) external onlyStudio nonReentrant {
         require(msg.sender == filmInfo[_filmId].studio, "updatefundPeriod: Invalid film owner");
-        require(_fundPeriod > 0, "updatefundPeriod: Invalid fundPeriod");        
+        require(_fundPeriod > 0, "updatefundPeriod: Invalid fundPeriod");   
+
         filmInfo[_filmId].fundPeriod = _fundPeriod;
 
         emit FundPeriodUpdated(_filmId, _fundPeriod);

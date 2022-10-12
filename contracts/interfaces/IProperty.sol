@@ -26,4 +26,8 @@ interface IProperty {
     function getProperty(uint256 _propertyIndex, uint256 _flag) external view returns (uint256 property_);
     function updateProperty(uint256 _propertyIndex, uint256 _flag) external;
     function removeProperty(uint256 _propertyIndex, uint256 _flag) external;
+    
+    function setRewardAddress(address _rewardAddress) external;    
+    function isRewardWhitelist(address _rewardAddress) external view returns (uint256);
+    function DAO_FUND_REWARD() external view returns (address);
 }

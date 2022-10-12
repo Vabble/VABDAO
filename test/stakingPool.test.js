@@ -398,14 +398,15 @@ describe('StakingPool', function () {
     const arg_reward = this.events[1].args
     // console.log('test-1', arg_reward)
     expect(arg_reward.staker).to.be.equal(this.customer1.address)
+    
     console.log('====arg_reward=reward, expect, total, isRaise, raiseAmount, raisedAmount::', 
-    arg_reward.rewardAmount.toString(), //      7271109466218059
-    expectRewardAmount.toString(),      //      6666400000000000 
-    extraExpectRewardAmount.toString(), //       604709466218059
-    totalRewardAmount.toString(),       //9066108938801491315813
-    isRaised,                           // true
-    raiseAmount_.toString(),            //100000000
-    raisingAmount.toString()            //499248873
+      arg_reward.rewardAmount.toString(), //      7271109466218059
+      expectRewardAmount.toString(),      //      6666400000000000 
+      extraExpectRewardAmount.toString(), //       604709466218059
+      totalRewardAmount.toString(),       //9066108938801491315813
+      isRaised,                           // true
+      raiseAmount_.toString(),            //100000000
+      raisingAmount.toString()            //499248873
     )
     
     expect(arg_reward.rewardAmount).to.be.equal(BigNumber.from(expectRewardAmount).add(extraExpectRewardAmount))

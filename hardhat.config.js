@@ -202,17 +202,6 @@ module.exports = {
             runs: 200,
           },
         },        
-        // evmVersion: "byzantium",
-      },
-      {
-        version: '0.8.1',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-        // evmVersion: "byzantium",
       },
     ],
   }
