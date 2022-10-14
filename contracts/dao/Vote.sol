@@ -313,7 +313,7 @@ contract Vote is ReentrancyGuard {
         require(IProperty(DAO_PROPERTY).isRewardWhitelist(_rewardAddress) == 1, "setRewardAddress: Not candidate");
 
         Voting storage rav = rewardAddressVoting[_rewardAddress];
-        require(block.timestamp - rav.voteStartTime > IProperty(DAO_PROPERTY).boardVotePeriod(), "setRewardAddress: vote period yet");
+        require(block.timestamp - rav.voteStartTime > IProperty(DAO_PROPERTY).rewardVotePeriod(), "setRewardAddress: vote period yet");
         require(rav.voteCount > 0, "addRewardAddress: No voter");
 
         if(rav.stakeAmount_1 > rav.stakeAmount_2 + rav.stakeAmount_3) { 

@@ -551,7 +551,7 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @dev Check min & max amount for each token/ETH per film
     function __checkMinMaxAmount(uint256 _filmId, address _token, uint256 _amount) private view returns (bool passed_) {
-        uint256 userFundAmountPerFilm = __getUserFundAmountPerFilm(_filmId);
+        uint256 userFundAmountPerFilm = getUserFundAmountPerFilm(msg.sender, _filmId);
         uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, USDC_TOKEN);
         if(_amount >= IProperty(DAO_PROPERTY).minDepositAmount() && fundAmount + userFundAmountPerFilm <= IProperty(DAO_PROPERTY).maxDepositAmount()) {
             passed_ = true;
@@ -560,9 +560,9 @@ contract VabbleDAO is ReentrancyGuard {
         } 
     }
 
-    /// @dev Get user fund amount in cash(usdc) for each token per film
-    function __getUserFundAmountPerFilm(uint256 _filmId) private view returns (uint256 amount_) {
-        Asset[] memory assetArr = assetInfo[_filmId][msg.sender];
+    /// @notice Get user fund amount in cash(usdc) for each token per film
+    function getUserFundAmountPerFilm(address _customer, uint256 _filmId) public view returns (uint256 amount_) {
+        Asset[] memory assetArr = assetInfo[_filmId][_customer];
         for(uint256 i = 0; i < assetArr.length; i++) {
             if(assetArr[i].amount == 0) continue;
 

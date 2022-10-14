@@ -117,7 +117,7 @@ contract StakingPool is ReentrancyGuard {
         );
 
         // first, withdraw reward
-        uint256 rewardAmount = __calcRewardAmount() + __calcExtraRewardAmount();
+        uint256 rewardAmount = calcRewardAmount(msg.sender);
         if(totalRewardAmount >= rewardAmount) {
             __withdrawReward(rewardAmount);
         }
@@ -137,29 +137,29 @@ contract StakingPool is ReentrancyGuard {
         require(stakeInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
         require(block.timestamp - stakeInfo[msg.sender].stakeTime > IProperty(DAO_PROPERTY).lockPeriod(), "withdrawReward: lock period yet");
 
-        uint256 rewardAmount = __calcRewardAmount() + __calcExtraRewardAmount();
+        uint256 rewardAmount = calcRewardAmount(msg.sender);
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
         __withdrawReward(rewardAmount);
     }
 
-    /// @dev Calculate reward amount
-    function __calcRewardAmount() private view returns (uint256 amount_) {
+    /// @notice Calculate reward amount and extra reward amount for funding film vote
+    function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 timeVal = (block.timestamp - stakeInfo[msg.sender].stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
-        amount_ = stakeInfo[msg.sender].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
-    }
+        uint256 timeVal = (block.timestamp - stakeInfo[_customer].stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
+        uint256 rewardAmount = stakeInfo[_customer].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
 
-    /// @dev Calculate extra reward amount for funding film vote
-    function __calcExtraRewardAmount() private view returns (uint256 amount_) {
-        uint256[] memory filmIds = IVote(VOTE).getFilmIdsPerUser(msg.sender); 
+        uint256 extraRewardAmount;
+        uint256[] memory filmIds = IVote(VOTE).getFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
-            uint256 voteStatus = IVote(VOTE).getVoteStatusPerUser(msg.sender, filmIds[i]);    
+            uint256 voteStatus = IVote(VOTE).getVoteStatusPerUser(_customer, filmIds[i]);    
             bool isRaised = IVabbleDAO(VABBLE_DAO).isRaisedFullAmount(filmIds[i]);
             if((voteStatus == 1 && isRaised) || (voteStatus == 2 && !isRaised)) { 
-                amount_ += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
+                extraRewardAmount += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
             }
         } 
+
+        amount_ = rewardAmount + extraRewardAmount;
     }
 
     /// @dev Transfer reward amount

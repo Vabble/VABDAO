@@ -468,7 +468,7 @@ describe('Vote', function () {
     ).to.be.revertedWith('setRewardAddress: vote period yet')
 
     // => Increase next block timestamp
-    const defaultAgentVotePeriod = 10 * 86400; // 10 days
+    const defaultAgentVotePeriod = 31 * 86400; // 31 days
     network.provider.send('evm_increaseTime', [defaultAgentVotePeriod]);
     await network.provider.send('evm_mine');
 
@@ -479,10 +479,11 @@ describe('Vote', function () {
     rewardAddress = await this.propertyContract.DAO_FUND_REWARD(); 
     expect(rewardAddress).to.be.equal(this.reward.address)
 
-    let totalRewardBalance = await this.vabToken.balanceOf(this.stakingContract.address)//600 000000000000000000
-    let totalRewardAmount = await this.stakingContract.totalRewardAmount()// 0
-    console.log("====totalRewardAmount-1::", totalRewardAmount.toString(), totalRewardBalance.toString())
-
+    let totalRewardBalance = await this.vabToken.balanceOf(this.stakingContract.address)
+    let totalRewardAmountBefore = await this.stakingContract.totalRewardAmount()
+    console.log("====totalRewardAmount-1::", totalRewardAmountBefore.toString(), totalRewardBalance.toString())
+      // 9900 695134061569016881
+      //10500 695134061569016881
     const item = await this.propertyContract.getRewardProposalInfo(this.reward.address)
     console.log("====item.title::", item)
     expect(title).to.be.equal(item[0])
@@ -495,36 +496,26 @@ describe('Vote', function () {
 
     await expect(
       this.stakingContract.connect(this.auditor).withdrawAllReward({from: this.auditor.address})
-    ).to.be.revertedWith('withdrawAllReward: Zero balance');
-
-    const rewardAmount = getBigNumber(2000)
-    await this.stakingContract.connect(this.customer3).addRewardToPool(rewardAmount, {from: this.customer3.address})
-    totalRewardBalance = await this.vabToken.balanceOf(this.stakingContract.address)
-    totalRewardAmount = await this.stakingContract.totalRewardAmount()
-    console.log("====totalRewardAmount-2::", totalRewardAmount.toString(), totalRewardBalance.toString())
-
-    await expect(
-      this.stakingContract.connect(this.auditor).withdrawAllReward({from: this.auditor.address})
-    ).to.emit(this.stakingContract, 'RewardWithdraw').withArgs(rewardAddress, totalRewardAmount); 
+    ).to.emit(this.stakingContract, 'RewardWithdraw').withArgs(rewardAddress, totalRewardAmountBefore); 
     
     let remainBalance = await this.vabToken.balanceOf(this.stakingContract.address)
     const movedBalance = await this.vabToken.balanceOf(rewardAddress)
     totalRewardAmount = await this.stakingContract.totalRewardAmount()
     console.log("====total-3::", remainBalance.toString(), movedBalance.toString(), totalRewardAmount.toString())
     
-    expect(remainBalance).to.be.equal(stakeAmount.mul(3))
-    expect(movedBalance).to.be.equal(rewardAmount)
+    expect(remainBalance).to.be.equal(totalRewardBalance.sub(totalRewardAmountBefore))
+    expect(movedBalance).to.be.equal(totalRewardAmountBefore)
     expect(totalRewardAmount).to.be.equal(0)
 
     // ===== Withdraw all fund from stakingPool to rewardAddres passed in vote
-    remainBalance = await this.vabToken.balanceOf(this.stakingContract.address)
+    const currentBalance = await this.vabToken.balanceOf(this.stakingContract.address)
     await expect(
       this.stakingContract.connect(this.auditor).withdrawAllFund({from: this.auditor.address})
-    ).to.emit(this.stakingContract, 'RewardWithdraw').withArgs(rewardAddress, remainBalance); 
+    ).to.emit(this.stakingContract, 'RewardWithdraw').withArgs(rewardAddress, currentBalance); 
     
     remainBalance = await this.vabToken.balanceOf(this.stakingContract.address)
     newAddrBalance = await this.vabToken.balanceOf(rewardAddress)
     expect(remainBalance).to.be.equal(0)
-    expect(newAddrBalance).to.be.equal(stakeAmount.mul(3).add(rewardAmount))
+    expect(newAddrBalance).to.be.equal(totalRewardAmountBefore.add(currentBalance))
   });
 });

@@ -19,6 +19,7 @@ interface IProperty {
     function maxMintFeePercent() external view returns (uint256);     // 14
     function subscriptionAmount() external view returns (uint256);    // 15    
     function availableVABAmount() external view returns (uint256);
+    function rewardVotePeriod() external view returns (uint256);       // **
     
     function getAgent(uint256 _agentIndex) external view returns (address agent_);
     function removeAgent(uint256 _index) external;

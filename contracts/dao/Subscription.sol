@@ -95,22 +95,13 @@ contract Subscription is ReentrancyGuard {
     function activeSubscription(address _token, uint256 _period) external payable nonReentrant {        
         require(!isActivedSubscription(), "activeSubscription: Already actived");  
         
-        uint256 scriptAmount = getSubscriptionAmount(_period);
-        uint256 expectAmount;
+        uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
         if(_token == address(0)) {
-            expectAmount = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
             require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
             if (msg.value > expectAmount) {
                 Helper.safeTransferETH(msg.sender, msg.value - expectAmount);
             }
         } else {
-            if(_token == address(PAYOUT_TOKEN)) {
-                expectAmount = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, USDC_TOKEN, _token);
-            } else if(_token == USDC_TOKEN) {
-                expectAmount = scriptAmount;
-            } else {            
-                expectAmount = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
-            }
             Helper.safeTransferFrom(_token, msg.sender, address(this), expectAmount); 
 
             // Approve token to send from this contract to UNI_HELPER contract
@@ -159,6 +150,21 @@ contract Subscription is ReentrancyGuard {
         subscription.period = _period;
 
         emit SubscriptionActivated(msg.sender, _token, _period);
+    }
+
+    /// @notice Expected token amount that user should pay for activing the subscription
+    function getExpectedSubscriptionAmount(address _token, uint256 _period) public view returns(uint256 expectAmount_) {
+        require(_period > 0, "getExpectedSubscriptionAmount: Zero period");
+
+        uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
+        if(_token == address(PAYOUT_TOKEN)) {
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, USDC_TOKEN, _token);
+        } else if(_token == USDC_TOKEN) {
+            expectAmount_ = scriptAmount;
+        } else {            
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
+            // if(_token == address(0)) _token is ETH/Matic...
+        }
     }
 
     // ============= 1. Subscription NFTs. ===========
@@ -324,12 +330,4 @@ contract Subscription is ReentrancyGuard {
     function getGatedFilmIdList() public view returns (uint256[] memory) {
         return gatedFilmIds;
     }    
-
-    function getSubscriptionAmount(uint256 _period) public view returns(uint256 amount_) {
-        require(_period > 0, "getSubscriptionAmount: Zero period");
-
-        uint256 scriptAmount = IProperty(DAO_PROPERTY).subscriptionAmount();
-        // TODO We will calculate the amount based on period(1, 3, 6, 12 month)
-        amount_ = _period * scriptAmount;
-    }
 }
