@@ -100,19 +100,6 @@ module.exports = {
       gasPrice: 5000000000,
       gasMultiplier: 2,
     },
-    // Ethereum testnet(Rinkeby)
-    rinkeby: { 
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemy_key}`,
-      accounts: {
-        mnemonic,
-      },
-      chainId: chainIds.rinkeby,
-      live: false,
-      saveDeployments: true,
-      tags: ["staging"],
-      gasPrice: 5000000000,
-      gasMultiplier: 2,
-    },
     // BSC testnet
     bscTest: { 
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
