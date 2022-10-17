@@ -145,6 +145,8 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Calculate reward amount and extra reward amount for funding film vote
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
+        require(stakeInfo[_customer].stakeAmount > 0, "calcRewardAmount: Not staker");
+        
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 timeVal = (block.timestamp - stakeInfo[_customer].stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
         uint256 rewardAmount = stakeInfo[_customer].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
