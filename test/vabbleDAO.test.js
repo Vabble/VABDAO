@@ -70,10 +70,8 @@ describe('VabbleDAO', function () {
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
         
     // Auditor add studio1, studio3 in the studio whitelist, not studio2
-    await expect(
-      this.ownableContract.addStudio(this.studio1.address)
-    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);    
-    await this.ownableContract.connect(this.auditor).addStudio(this.studio3.address, {from: this.auditor.address})  
+    const studioList = [this.studio1.address, this.studio3.address]
+    await this.ownableContract.connect(this.auditor).addStudio(studioList, {from: this.auditor.address})  
     // ====== VAB
     // Transfering VAB token to user1, 2, 3
     await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(500000), {from: this.auditor.address});
@@ -150,19 +148,19 @@ describe('VabbleDAO-test-1', function () {
     const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2]]
     const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3]]
     this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
-
+    // console.log("====filmProposal", this.filmPropsoal)
     const studioBalance = await this.vabToken.balanceOf(this.studio1.address)
     // console.log('====studioBalance::', studioBalance.toString());
     // Only Studio1 can propose films because auditor added to studioList
     let tx = await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})   
     this.events = (await tx.wait()).events;
     expect(this.events[6].args[1]).to.be.equal(this.studio1.address)
-    const proposalIds_1 = await this.DAOContract.getProposalFilmIds();
+    const proposalIds_1 = await this.DAOContract.getFilmIds(1);
     expect(proposalIds_1.length).to.be.equal(this.filmPropsoal.length)
 
     tx = await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})   
     this.events = (await tx.wait()).events;
-    const proposalIds_2 = await this.DAOContract.getProposalFilmIds();
+    const proposalIds_2 = await this.DAOContract.getFilmIds(1);
     expect(proposalIds_2.length).to.be.equal(this.filmPropsoal.length + proposalIds_1.length)
 
     // Studio2 can not propose films because studio2 is not studio
@@ -189,13 +187,14 @@ describe('VabbleDAO-test-1', function () {
       getByteFilmUpdate(proposalIds_1[2])
     ]
     await this.DAOContract.connect(this.studio3).updateMultiFilms(updateData, {from: this.studio3.address})
-    const Ids_0 = await this.DAOContract.getUpdatedFilmIds(); // 0 ids
+    const Ids_0 = await this.DAOContract.getFilmIds(2); // 0 ids
     expect(Ids_0.length).to.be.equal(0) // 0 because studio3 didn't submit proposal
 
+    // console.log("====updateData", updateData)
     const up_tx = await this.DAOContract.connect(this.studio1).updateMultiFilms(updateData, {from: this.studio1.address})
     this.events = (await up_tx.wait()).events    
     
-    const Ids_1 = await this.DAOContract.getUpdatedFilmIds();//again getting after update = 3 ids
+    const Ids_1 = await this.DAOContract.getFilmIds(2);//again getting after update = 3 ids
     // console.log('=====events::', this.events)
     expect(this.events[0].args[1]).to.be.equal(this.studio1.address)
     expect(Ids_1.length).to.be.equal(updateData.length)
@@ -205,13 +204,12 @@ describe('VabbleDAO-test-1', function () {
 describe('VabbleDAO-test-2', function () {
   it('Should deposit and withdraw by customer', async function () {
     const customer1V = await this.vabToken.balanceOf(this.customer1.address)
-    console.log('==test-1::', customer1V.toString())
+    
     // // User balance is 1999800 and transfer amount is 2000000. Insufficient amount!
     // await expect(
     //   this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(1000000), {from: this.customer1.address})
     // ).to.be.revertedWith('VabbleDAO::transferFrom: transferFrom failed');
 
-    // console.log('==test-2::')
     // Event - depositVAB
     await expect(
       this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
@@ -219,14 +217,13 @@ describe('VabbleDAO-test-2', function () {
     .to.emit(this.DAOContract, 'VABDeposited')
     .withArgs(this.customer1.address, getBigNumber(100));    
 
-    console.log('==test-3::')
     await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200));
     await this.DAOContract.connect(this.customer3).depositVAB(getBigNumber(300));
   
     // Check user balance(amount) after deposit
-    let user1Amount = await this.DAOContract.getUserRentInfo(this.customer1.address);
-    expect(user1Amount.vabAmount_).to.be.equal(getBigNumber(100))
-    expect(user1Amount.withdrawAmount_).to.be.equal(getBigNumber(0))
+    let user1Amount = await this.DAOContract.userRentInfo(this.customer1.address);
+    expect(user1Amount.vabAmount).to.be.equal(getBigNumber(100))
+    expect(user1Amount.withdrawAmount).to.be.equal(getBigNumber(0))
 
     // Event - WithdrawPending
     await expect(
@@ -240,14 +237,16 @@ describe('VabbleDAO-test-2', function () {
     ).to.be.revertedWith('pendingWithdraw: Insufficient VAB amount');
     
     // Check withdraw amount after send withraw request
-    user1Amount = await this.DAOContract.getUserRentInfo(this.customer1.address);
-    expect(user1Amount.withdrawAmount_).to.be.equal(getBigNumber(50))
+    user1Amount = await this.DAOContract.userRentInfo(this.customer1.address);
+    expect(user1Amount.withdrawAmount).to.be.equal(getBigNumber(50))
   });
 })
 
 describe('VabbleDAO-test-3', function () {
   it('approve_listing logic with only VAB', async function () {
-    
+    const finalData_1 = [getFinalFilm("0xcbaa16FDE7799A68CB468a81e45CbCd557B8AfaA", [1, 2, 3])]    
+    // console.log("====finalData_1", finalData_1)
+
     const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
     const onlyAllowVABs = [true, true, false, false];
     const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
@@ -283,9 +282,10 @@ describe('VabbleDAO-test-3', function () {
     ).to.be.revertedWith('initializeVote: Already initialized vote');
     
     // 4-3. Vote to proposal films from customer1, 2, 3
-    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2, 3, 4
+    const proposalIds = await this.DAOContract.getFilmIds(1); // 1, 2, 3, 4
     const voteInfos = [1, 1, 2, 3];
     const voteData = getVoteData(proposalIds, voteInfos)
+    // console.log("====voteData", voteData)
     //=> In order to call voteToFilms(), first should pass 4-1, 4-2
     await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) //1,1,2,3
     await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address}) //1,1,2,3
@@ -295,6 +295,9 @@ describe('VabbleDAO-test-3', function () {
     const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
+    
+    // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+    await this.propertyContract.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
 
     // 4-4. Approve two films by calling the approveFilms() from Auditor
     const approveData = [proposalIds[0], proposalIds[1], proposalIds[2]]
@@ -309,7 +312,7 @@ describe('VabbleDAO-test-3', function () {
 
     // 6. Auditor submit three audit actions(for customer1) with watched percent(20%, 15%, 30%) to VabbleDAO contract
     // only two film 1,2 approved in 4-4 so film3 watch(30%) ignored   
-    const finalData = [getFinalFilm(this.customer1.address, approveData)]
+    const finalData = [getFinalFilm(this.customer1.address, approveData)]    
     let tx = await this.DAOContract.setFinalFilms(finalData);
     this.events = (await tx.wait()).events
     // console.log('======events::', this.events[0].args)
@@ -321,20 +324,19 @@ describe('VabbleDAO-test-3', function () {
     await this.DAOContract.denyPendingWithdraw([this.customer3.address])
 
     // 7. Check remain customer1,2,3 balance(amount, withdrawAmount) after submit audit actions
-    let user1Amount = await this.DAOContract.getUserRentInfo(this.customer1.address);
-    let user2Amount = await this.DAOContract.getUserRentInfo(this.customer2.address);
-    let user3Amount = await this.DAOContract.getUserRentInfo(this.customer3.address);
+    let user1Amount = await this.DAOContract.userRentInfo(this.customer1.address);
+    let user2Amount = await this.DAOContract.userRentInfo(this.customer2.address);
+    let user3Amount = await this.DAOContract.userRentInfo(this.customer3.address);
     // For customer1, film1 :   100(user balance) - 20(watched %) * 100(rentPrice) = 80(remain amount)
     // For customer1, film2 :   80(remain amount) - 15(watched %) * 200(rentPrice) = 50(remain amount)
     // For customer1, withdraw: 50(remain amount) - 40(withdraw) = 10(remain amount)    
     
-console.log('===test-1', user1Amount.toString())
-    expect(user1Amount.vabAmount_).to.be.equal(getBigNumber(10));
-    expect(user1Amount.withdrawAmount_).to.be.equal(getBigNumber(0))
-    expect(user2Amount.vabAmount_).to.be.equal(getBigNumber(200)); // same deposit amount as auditor didn't submit actions
-    expect(user2Amount.withdrawAmount_).to.be.equal(getBigNumber(40)) // same withdraw amount as auditor didn't approve
-    expect(user3Amount.vabAmount_).to.be.equal(getBigNumber(300)); // same deposit amount as auditor didn't submit actions
-    expect(user3Amount.withdrawAmount_).to.be.equal(getBigNumber(0)) // 0 as auditor deny pending withdraw request
+    expect(user1Amount.vabAmount).to.be.equal(getBigNumber(10));
+    expect(user1Amount.withdrawAmount).to.be.equal(getBigNumber(0))
+    expect(user2Amount.vabAmount).to.be.equal(getBigNumber(200)); // same deposit amount as auditor didn't submit actions
+    expect(user2Amount.withdrawAmount).to.be.equal(getBigNumber(40)) // same withdraw amount as auditor didn't approve
+    expect(user3Amount.vabAmount).to.be.equal(getBigNumber(300)); // same deposit amount as auditor didn't submit actions
+    expect(user3Amount.withdrawAmount).to.be.equal(getBigNumber(0)) // 0 as auditor deny pending withdraw request
   });
 })
 
@@ -364,7 +366,7 @@ describe('VabbleDAO-test-4', function () {
 
     // 4. films approved by auditor        
     // 4-2. Vote to proposal films(1,2,3,4) from customer1, 2, 3
-    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2, 3, 4
+    const proposalIds = await this.DAOContract.getFilmIds(1); // 1, 2, 3, 4
     const voteInfos = [1, 1, 2, 3];
     const voteData = getVoteData(proposalIds, voteInfos)
     //=> In order to call voteToFilms(), first should pass 4-1, 4-2
@@ -377,6 +379,9 @@ describe('VabbleDAO-test-4', function () {
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
 
+    // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+    await this.propertyContract.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
+
     // 4-4. Approve two films by calling the approveFilms() from Auditor
     const approveData = [proposalIds[0], proposalIds[1], proposalIds[2]]
     await this.voteContract.approveFilms(approveData);// filmId = 1, 2 ,3
@@ -386,6 +391,10 @@ describe('VabbleDAO-test-4', function () {
     // 5. Deposit to film 
     // 5-1. Id(1) from customer1
     const customer1_0 = await this.vabToken.balanceOf(this.customer1.address)
+
+    // Get current deposited amount to film
+    const dAmount = await this.DAOContract.getUserFundAmountPerFilm(this.customer1.address, ids[0]);
+    console.log('=====test-1', dAmount.toString())
 
     const depositAmount = getBigNumber(100000)
     let tx = await this.DAOContract.connect(this.customer1).depositToFilm(
@@ -475,7 +484,7 @@ describe('VabbleDAO-test-5', function () {
 
     // 4. films approved by auditor        
     // 4-2. Vote to proposal films(1,2,3,4) from customer1, 2, 3
-    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2, 3, 4
+    const proposalIds = await this.DAOContract.getFilmIds(1); // 1, 2, 3, 4
     const voteInfos = [1, 1, 2, 3];
     const voteData = getVoteData(proposalIds, voteInfos)
     await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) //1,1,2,3
@@ -487,6 +496,9 @@ describe('VabbleDAO-test-5', function () {
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
 
+    // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+    await this.propertyContract.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
+
     // 4-4. Approve two films by calling the approveFilms() from Auditor
     const approveData = [proposalIds[0], proposalIds[1], proposalIds[2], proposalIds[3]]
     await this.voteContract.approveFilms(approveData);// filmId = 1, 2 ,3, 4
@@ -497,7 +509,7 @@ describe('VabbleDAO-test-5', function () {
     // 5. Deposit to film 
     // 5-1. Id(1) from customer1
     const customer1_0 = await this.EXM.balanceOf(this.customer1.address)
-    const depositAmount = getBigNumber(600)
+    const depositAmount = getBigNumber(2000) //30 090270812437311936 600 
     await this.DAOContract.connect(this.customer1).depositToFilm(
       ids[0], this.EXM.address, depositAmount, {from: this.customer1.address}
     )
@@ -505,7 +517,8 @@ describe('VabbleDAO-test-5', function () {
     const raiseAmount_0 = await this.DAOContract.getRaisedAmountPerFilm(ids[0])    
     console.log("====raiseAmount_0::", raiseAmount_0.toString())  
 
-    const customer1_1 = await this.EXM.balanceOf(this.customer1.address)
+    const customer1_1 = await this.EXM.balanceOf(this.customer1.address) 
+    console.log("====customer1_1::", customer1_0.toString(), customer1_1.toString())  
     expect(BigNumber.from(customer1_0.toString()).sub(BigNumber.from(customer1_1.toString()))).to.be.equal(depositAmount)
     
     // 5-2. Id(1) from customer2

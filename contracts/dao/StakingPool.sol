@@ -66,7 +66,6 @@ contract StakingPool is ReentrancyGuard {
         address _voteContract,
         address _daoProperty
     ) external onlyAuditor {
-        require(!isInitialized, "initializePool: Already initialized");
         require(_vabbleDAO != address(0), "initializePool: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO;
         require(_voteContract != address(0), "initializePool: Zero voteContract address");
@@ -128,6 +127,8 @@ contract StakingPool is ReentrancyGuard {
         stakeInfo[msg.sender].stakeAmount -= _amount;
         totalStakingAmount -= _amount;
 
+        if(stakeInfo[msg.sender].stakeAmount == 0) stakerCount.decrement();
+
         emit TokenUnstaked(msg.sender, _amount);
     }
 
@@ -152,9 +153,9 @@ contract StakingPool is ReentrancyGuard {
         uint256 rewardAmount = stakeInfo[_customer].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
 
         uint256 extraRewardAmount;
-        uint256[] memory filmIds = IVote(VOTE).getFilmIdsPerUser(_customer); 
+        uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
-            uint256 voteStatus = IVote(VOTE).getVoteStatusPerUser(_customer, filmIds[i]);    
+            uint256 voteStatus = IVote(VOTE).getFundingIdVoteStatusPerUser(_customer, filmIds[i]);    
             bool isRaised = IVabbleDAO(VABBLE_DAO).isRaisedFullAmount(filmIds[i]);
             if((voteStatus == 1 && isRaised) || (voteStatus == 2 && !isRaised)) { 
                 extraRewardAmount += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
@@ -170,7 +171,7 @@ contract StakingPool is ReentrancyGuard {
         stakeInfo[msg.sender].stakeTime = block.timestamp;
         totalRewardAmount -= _amount;
 
-        IVote(VOTE).removeFilmIdsPerUser(msg.sender);
+        IVote(VOTE).removeFundingFilmIdsPerUser(msg.sender);
         
         emit RewardWithdraw(msg.sender, _amount);
     }
@@ -215,6 +216,19 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Get staking amount for a staker
     function getStakeAmount(address _user) external view returns(uint256 amount_) {
         amount_ = stakeInfo[_user].stakeAmount;
+    }
+
+    /// @notice Get limit staker count for votting
+    function getLimitCount() external view returns(uint256 count_) {
+        uint256 limitPercent = IProperty(DAO_PROPERTY).minStakerCountPercent();
+        uint256 minVoteCount = IProperty(DAO_PROPERTY).minVoteCount();
+        
+        uint256 limitStakerCount = stakerCount.current() * limitPercent / 1e10;
+        if(limitStakerCount <= minVoteCount) {
+            count_ = minVoteCount;
+        } else {
+            count_ = limitStakerCount;
+        }
     }
 
     /// @notice Get withdrawableTime for a staker

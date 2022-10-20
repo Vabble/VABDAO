@@ -51,9 +51,12 @@ const CONFIG = {
     daiAddress: "0x001B3B4d0F3714Ca98ba10F6042DaEbF0B1B7b6F",
     vabToken: "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32",
     exmAddress: "0x53BeF80E0EBE5A89dfb67782b12435aBeB943754",
+    wmatic: "0x1fE108421Bc27B98aD52ae78dD8A3D7aB4199A00",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
+      // factory: '0xc35dadb65012ec5796536bd9864ed8773abc74c4',
+      // router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
     },
     sushiswap: { // Mainnet, Mumbai
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',

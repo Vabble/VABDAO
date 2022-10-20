@@ -74,7 +74,8 @@ describe('Ownablee', function () {
     expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.false;  
     
     // Add studio1 address to studio list
-    await this.ownableContract.addStudio(this.studio1.address);
+    const studioList = [this.studio1.address, this.studio2.address]
+    await this.ownableContract.addStudio(studioList);
     
     // Check if studio1 is studio after add studio1 to studiolist
     expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.true;  

@@ -21,7 +21,7 @@ contract Subscription is ReentrancyGuard {
     event GatedContentRegistered(address studio, uint256[] filmIds);
     event VABWalletChanged(address wallet);
 
-    IERC20 public immutable PAYOUT_TOKEN;   // VAB token      
+    IERC20 private immutable PAYOUT_TOKEN;   // VAB token      
     address private immutable OWNABLE;      // Ownablee contract address  
     address private immutable VABBLE_DAO;   // VabbleDAO contract
     address private immutable UNI_HELPER;   // UniHelper contract
@@ -29,10 +29,10 @@ contract Subscription is ReentrancyGuard {
     address private immutable USDC_TOKEN;   // USDC token
     address public VAB_WALLET;              // Vabble wallet
 
-    uint256 public constant PERIOD_UNIT = 30 days; // 30 days
+    uint256 private constant PERIOD_UNIT = 30 days; // 30 days
 
-    address[] public registeredNFTs;            // nfts registered for subscription by Auditor
-    uint256[] public gatedFilmIds;              // filmIds added by Studio for gated content
+    address[] private registeredNFTs;            // nfts registered for subscription by Auditor
+    uint256[] private gatedFilmIds;              // filmIds added by Studio for gated content
 
     struct UserSubscription {
         uint256 time;             // current timestamp
@@ -93,7 +93,7 @@ contract Subscription is ReentrancyGuard {
     // ============= 0. Subscription by token. ===========
     /// @notice active subscription(pay $10 monthly as ETH/USDC/USDT/VAB...) for renting the films
     function activeSubscription(address _token, uint256 _period) external payable nonReentrant {        
-        require(!isActivedSubscription(), "activeSubscription: Already actived");  
+        require(!isActivedSubscription(msg.sender), "activeSubscription: Already actived");  
         
         uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
         if(_token == address(0)) {
@@ -190,7 +190,7 @@ contract Subscription is ReentrancyGuard {
     /// @param _tokenId: if ERC721 then nft token Id, if ERC1155 then nft Id(ex: cate=0, gold=1...)
     /// @param _tokenType: 1 => ERC721, 2 => ERC1155
     function activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType) external nonReentrant {        
-        require(!isActivedSubscription(), "NFTSubscription: Already actived");  
+        require(!isActivedSubscription(msg.sender), "NFTSubscription: Already actived");  
         require(isRegisteredNFT(_nft) && !isUsedNFT[_nft][_tokenId], "NFTSubscription: Used or Unregistered nft");
 
         // TODO Verify Ownership On Chain.
@@ -295,8 +295,8 @@ contract Subscription is ReentrancyGuard {
     } 
 
     /// @notice Check if subscription period 
-    function isActivedSubscription() public view returns(bool active_) {
-        UserSubscription storage subscription = subscriptionInfo[msg.sender];        
+    function isActivedSubscription(address _customer) public view returns(bool active_) {
+        UserSubscription storage subscription = subscriptionInfo[_customer];        
 
         if(subscription.time + PERIOD_UNIT * subscription.period > block.timestamp) active_ = true;
         else active_ = false;
@@ -309,22 +309,11 @@ contract Subscription is ReentrancyGuard {
         if(periodPerNFT[_nft] > 0) register_ = true;
         else register_ = false;
     }
-    
-    /// @notice Get user active status
-    function getSubscriptionInfo(address _customer) external view returns(uint256 time_, uint256 period_) {
-        time_ = subscriptionInfo[_customer].time;
-        period_ = subscriptionInfo[_customer].period;
-    } 
 
     /// @notice Get registered nft list
     function getRegisteredNFTList() public view returns (address[] memory) {
         return registeredNFTs;
-    }  
-
-    // /// @notice Get gated nft data per filmId
-    // function getGatedNFTList(uint256 _filmId) public view returns (address[] memory addr_, uint256[] memory id_, uint256[] memory type_) {
-    //     addr_ = gatedNFTs[_filmId];
-    // }
+    } 
     
     /// @notice Get gated content(film) list
     function getGatedFilmIdList() public view returns (uint256[] memory) {

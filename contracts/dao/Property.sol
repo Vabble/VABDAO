@@ -49,6 +49,9 @@ contract Property is ReentrancyGuard {
     // FactoryNFT
     uint256 public maxMintFeePercent;    // 12 - 10%(1% = 1e8, 100% = 1e10)
 
+    uint256 public minVoteCount;         // 13 - 5 ppl
+    uint256 public minStakerCountPercent;// 14 - percent(5% = 5*1e8)
+
     uint256 public availableVABAmount;   // vab amount for replacing the auditor    
     uint256 public boardVotePeriod;      // filmBoard vote period
     uint256 public boardVoteWeight;      // filmBoard member's vote weight
@@ -70,6 +73,8 @@ contract Property is ReentrancyGuard {
     uint256[] private minDepositAmountList;
     uint256[] private maxDepositAmountList;
     uint256[] private maxMintFeePercentList;
+    uint256[] private minVoteCountList;    
+    uint256[] private minStakerCountPercentList;        
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -127,6 +132,8 @@ contract Property is ReentrancyGuard {
         
         maxMintFeePercent = 1e9;   // 10%
         subscriptionAmount = 10 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $10)
+        minVoteCount = 5;
+        minStakerCountPercent = 5 * 1e8; // 5%(1% = 1e8, 100%=1e10)
     }
 
     /// =================== proposals for replacing auditor ==============
@@ -215,6 +222,7 @@ contract Property is ReentrancyGuard {
     /// @notice proposals for properties
     function proposalProperty(uint256 _property, uint256 _flag) public onlyStaker nonReentrant {
         require(_property > 0, "proposalProperty: Zero period");
+        require(_flag >= 0 && _flag < 15, "proposalProperty: Invalid flag");
         require(__isPaidFee(proposalFeeAmount), 'proposalProperty: Not paid fee');
 
         if(_flag == 0) {
@@ -256,10 +264,18 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 12) {
             require(maxMintFeePercent != _property, "proposalProperty: Already maxMintFeePercent");
             maxMintFeePercentList.push(_property);
-        }        
+        } else if(_flag == 13) {
+            require(minVoteCount != _property, "proposalProperty: Already minVoteCount");
+            minVoteCountList.push(_property);
+        } else if(_flag == 14) {
+            require(minStakerCountPercent != _property, "proposalProperty: Already minStakerCountPercent");
+            minStakerCountPercentList.push(_property);
+        }                        
     }
 
-    function getProperty(uint256 _index, uint256 _flag) external view returns (uint256 property_) {    
+    function getProperty(uint256 _index, uint256 _flag) external view returns (uint256 property_) { 
+        require(_flag >= 0 && _flag < 15, "getProperty: Invalid flag");   
+        
         if(_flag == 0) {
             if(filmVotePeriodList.length > 0 && filmVotePeriodList.length > _index) property_ = filmVotePeriodList[_index];
             else property_ = 0;
@@ -299,10 +315,18 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 12) {
             if(maxMintFeePercentList.length > 0 && maxMintFeePercentList.length > _index) property_ = maxMintFeePercentList[_index];
             else property_ = 0;
-        }         
+        } else if(_flag == 13) {
+            if(minVoteCountList.length > 0 && minVoteCountList.length > _index) property_ = minVoteCountList[_index];
+            else property_ = 0;
+        } else if(_flag == 14) {
+            if(minStakerCountPercentList.length > 0 && minStakerCountPercentList.length > _index) property_ = minStakerCountPercentList[_index];
+            else property_ = 0;
+        }                         
     }
 
     function updateProperty(uint256 _index, uint256 _flag) external onlyVote {
+        require(_flag >= 0 && _flag < 15, "updateProperty: Invalid flag");   
+
         if(_flag == 0) {
             filmVotePeriod = filmVotePeriodList[_index];
             emit PropertyUpdated(filmVotePeriod, _flag);
@@ -342,10 +366,18 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 12) {
             maxMintFeePercent = maxMintFeePercentList[_index];
             emit PropertyUpdated(maxMintFeePercent, _flag);     
-        } 
+        } else if(_flag == 13) {
+            minVoteCount = minVoteCountList[_index];
+            emit PropertyUpdated(minVoteCount, _flag);     
+        } else if(_flag == 14) {
+            minStakerCountPercent = minStakerCountPercentList[_index];
+            emit PropertyUpdated(minStakerCountPercent, _flag);     
+        }                 
     }
 
-    function removeProperty(uint256 _index, uint256 _flag) external onlyVote {       
+    function removeProperty(uint256 _index, uint256 _flag) external onlyVote {   
+        require(_flag >= 0 && _flag < 15, "removeProperty: Invalid flag");   
+
         if(_flag == 0) {  
             filmVotePeriodList[_index] = filmVotePeriodList[filmVotePeriodList.length - 1];
             filmVotePeriodList.pop();
@@ -385,37 +417,65 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 12) {
             maxMintFeePercentList[_index] = maxMintFeePercentList[maxMintFeePercentList.length - 1];
             maxMintFeePercentList.pop();
-        }                
+        } else if(_flag == 13) {
+            minVoteCountList[_index] = minVoteCountList[minVoteCountList.length - 1];
+            minVoteCountList.pop();
+        } else if(_flag == 14) {
+            minStakerCountPercentList[_index] = minStakerCountPercentList[minStakerCountPercentList.length - 1];
+            minStakerCountPercentList.pop();
+        }                                
     }
 
-    /// @dev get a property list in a vote
+    /// @notice get a property list in a vote
     function getPeriodList(uint256 _flag) public view returns (uint256[] memory _list) {
-        if(_flag == 0) {
-            _list = filmVotePeriodList;
-        } else if(_flag == 1) {
-            _list = agentVotePeriodList;
-        } else if(_flag == 2) {
-            _list = disputeGracePeriodList;
-        } else if(_flag == 3) {
-            _list = propertyVotePeriodList;
-        } else if(_flag == 4) {
-            _list = lockPeriodList;
-        } else if(_flag == 5) {
-            _list = rewardRateList;
-        } else if(_flag == 6) {
-            _list = extraRewardRateList;
-        } else if(_flag == 7) {
-            _list = maxAllowPeriodList;
-        } else if(_flag == 8) {
-            _list = proposalFeeAmountList;
-        } else if(_flag == 9) {
-            _list = fundFeePercentList;
-        } else if(_flag == 10) {
-            _list = minDepositAmountList;
-        } else if(_flag == 11) {
-            _list = maxDepositAmountList;
-        } else if(_flag == 12) {
-            _list = maxMintFeePercentList;
-        }               
+        if(_flag == 0) _list = filmVotePeriodList;
+        else if(_flag == 1) _list = agentVotePeriodList;
+        else if(_flag == 2) _list = disputeGracePeriodList;
+        else if(_flag == 3) _list = propertyVotePeriodList;
+        else if(_flag == 4) _list = lockPeriodList;
+        else if(_flag == 5) _list = rewardRateList;
+        else if(_flag == 6) _list = extraRewardRateList;
+        else if(_flag == 7) _list = maxAllowPeriodList;
+        else if(_flag == 8) _list = proposalFeeAmountList;
+        else if(_flag == 9) _list = fundFeePercentList;
+        else if(_flag == 10) _list = minDepositAmountList;
+        else if(_flag == 11) _list = maxDepositAmountList;
+        else if(_flag == 12) _list = maxMintFeePercentList;
+        else if(_flag == 13) _list = minVoteCountList;        
+        else if(_flag == 14) _list = minStakerCountPercentList;             
     }
+
+    /// @dev Update the property value for only testing in the testnet
+    // we won't deploy this function in the mainnet
+    function updatePropertyForTesting(uint256 _value, uint256 _flag) external onlyAuditor {
+        require(_value > 0, "test: Zero value");
+
+        if(_flag == 0) filmVotePeriod = _value;
+        else if(_flag == 1) agentVotePeriod = _value;
+        else if(_flag == 2) disputeGracePeriod = _value;
+        else if(_flag == 3) propertyVotePeriod = _value;
+        else if(_flag == 4) lockPeriod = _value;
+        else if(_flag == 5) rewardRate = _value;
+        else if(_flag == 6) extraRewardRate = _value;
+        else if(_flag == 7) maxAllowPeriod = _value;
+        else if(_flag == 8) proposalFeeAmount = _value;
+        else if(_flag == 9) fundFeePercent = _value;
+        else if(_flag == 10) minDepositAmount = _value;
+        else if(_flag == 11) maxDepositAmount = _value;
+        else if(_flag == 12) maxMintFeePercent = _value;
+        else if(_flag == 13) availableVABAmount = _value;
+        else if(_flag == 14) boardVotePeriod = _value;
+        else if(_flag == 15) boardVoteWeight = _value;
+        else if(_flag == 16) rewardVotePeriod = _value;
+        else if(_flag == 17) subscriptionAmount = _value;
+        else if(_flag == 18) minVoteCount = _value;        
+        else if(_flag == 19) minStakerCountPercent = _value;                
+    }
+
+    /// @dev Update the rewardAddress for only testing in the testnet
+    function updateRewardAddressForTesting(address _rewardAddress) external onlyAuditor {
+        require(_rewardAddress != address(0), "test: Zero address");
+        DAO_FUND_REWARD = _rewardAddress;            
+    }
+        
 }

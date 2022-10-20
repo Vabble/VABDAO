@@ -74,6 +74,25 @@ contract UniHelper {
         amount_ = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
     }
 
+    /// @notice Get incoming token amount from deposit token and amount
+    function expectedAmountIn(
+        uint256 _depositAmount,
+        address _depositAsset, 
+        address _incomingAsset
+    ) external view returns (uint256 amount_) {        
+        address router;
+        address[] memory path = new address[](2);
+        path[0] = _incomingAsset;
+        if(path[0] == address(0)) path[0] = WETH;
+        path[1] = _depositAsset;
+        if(path[1] == address(0)) path[1] = WETH;
+        
+        (router, ) = __checkPool(path);        
+        require(router != address(0), "expectedAmount: No Pool");
+
+        amount_ = IUniswapV2Router(router).getAmountsIn(_depositAmount, path)[0];
+    }
+
     /// @notice check if special pool exist on uniswap
     function __checkPool(address[] memory _path) private view returns (address router_, address factory_) {        
         address uniPool = IUniswapV2Factory(UNISWAP2_FACTORY).getPair(_path[0], _path[1]);

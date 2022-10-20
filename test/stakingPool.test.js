@@ -68,8 +68,8 @@ describe('StakingPool', function () {
     ).deployed();    
 
     // Add studio1, studio2 to studio list by Auditor
-    await this.ownableContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})  
-    await this.ownableContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})  
+    const studioList = [this.studio1.address, this.studio2.address]
+    await this.ownableContract.connect(this.auditor).addStudio(studioList, {from: this.auditor.address})  
 
     // Transfering VAB token to user1, 2, 3
     await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
@@ -181,7 +181,7 @@ describe('StakingPool', function () {
     ).to.be.revertedWith('unstakeToken: Token locked yet');
     
     // customer1 vote to films
-    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2
+    const proposalIds = await this.DAOContract.getFilmIds(1); // 1, 2
     const voteInfos = [1, 1];
     const voteData = getVoteData(proposalIds, voteInfos)
     await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
@@ -333,7 +333,7 @@ describe('StakingPool', function () {
     // filmVotePeriod = 10 days as default
     // Example: withdrawTime is 6/15 and voteStartTime is 6/10, votePeriod is 10 days => withdrawTime is sum(6/20)
     // so, staker cannot unstake his amount till 6/20
-    const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2
+    const proposalIds = await this.DAOContract.getFilmIds(1); // 1, 2
     const voteInfos = [1, 1];
     const voteData = getVoteData(proposalIds, voteInfos)
     await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address})
@@ -348,6 +348,9 @@ describe('StakingPool', function () {
     const period_1 = 25 * 24 * 3600; // 25 days
     network.provider.send('evm_increaseTime', [period_1]);
     await network.provider.send('evm_mine');
+
+    // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+    await this.propertyContract.connect(this.auditor).updatePropertyForTesting(2, 18, {from: this.auditor.address})
 
     // Approve films 1,2
     const approveData = [proposalIds[0], proposalIds[1]]
@@ -418,7 +421,7 @@ describe('StakingPool', function () {
     expect(customer1V_2).to.be.equal(BigNumber.from(customer1V_1).add(arg_reward.rewardAmount))
     
     // =========== check filmIdsPerUser
-    const ids_arr = await this.voteContract.getFilmIdsPerUser(this.customer1.address)
+    const ids_arr = await this.voteContract.getFundingFilmIdsPerUser(this.customer1.address)
     console.log('===ids_arr::', ids_arr.length)
   });
 });

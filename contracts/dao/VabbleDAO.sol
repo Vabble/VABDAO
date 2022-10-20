@@ -72,8 +72,7 @@ contract VabbleDAO is ReentrancyGuard {
     address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
     address[] private filmBoardMembers;      // filmBoard members
 
-    mapping(uint256 => Film) public filmInfo;             // Each film information(filmId => Film)
-    // mapping(address => uint256[]) public customerFilmIds; // Rented film IDs for a customer(customer => fimlId[])
+    mapping(uint256 => Film) private filmInfo;             // Each film information(filmId => Film)
     mapping(address => UserRent) public userRentInfo;
     mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
@@ -290,7 +289,7 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmBoardProposalCreated(_member);
     }
 
-    /// @notice Get film board candidates
+    /// @notice Get film board candidates/members
     function getFilmBoardItems(bool _candidateOrMember) external view returns (address[] memory) {
         if(_candidateOrMember) return filmBoardCandidates;
         else return filmBoardMembers;
@@ -336,7 +335,7 @@ contract VabbleDAO is ReentrancyGuard {
     }    
 
     // =================== Funding(Launch Pad) START ===============================
-    /// @notice Deposit tokens/ETH to only funding film by customer(investor)
+    /// @notice Deposit tokens/ETH($50 ~ $5000 per address for a film) to only funding film by customer(investor)
     function depositToFilm(uint256 _filmId, address _token, uint256 _amount) external payable nonReentrant {
         require(msg.sender != address(0), "depositToFilm: Zero customer address");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "depositToFilm: filmId not approved for funding");
@@ -345,7 +344,8 @@ contract VabbleDAO is ReentrancyGuard {
         if(filmInfo[_filmId].onlyAllowVAB) {
             require(_token == address(PAYOUT_TOKEN), "depositToFilm: Allowed only VAB token");            
         } 
-
+        require(__checkMinMaxAmount(_filmId, _token, _amount), "depositToFilm: Invalid amount");
+        
         // Return remain ETH to user back if case of ETH
         if(_token == address(0)) {
             require(msg.value >= _amount, "depositToFilm: Insufficient paid");
@@ -353,19 +353,13 @@ contract VabbleDAO is ReentrancyGuard {
                 Helper.safeTransferETH(msg.sender, msg.value - _amount);
             }
         }
+        
+        if(_token != address(0)) {
+            Helper.safeTransferFrom(_token, msg.sender, address(this), _amount);
+        }            
+        __assignToken(_filmId, _token, _amount);
 
-        if(__checkMinMaxAmount(_filmId, _token, _amount)) {
-            if(_token != address(0)) {
-                Helper.safeTransferFrom(_token, msg.sender, address(this), _amount);
-            }            
-            __assignToken(_filmId, _token, _amount);
-
-            emit DepositedTokenToFilm(msg.sender, _token, _amount, _filmId);
-        } else {
-            if(_token == address(0)) {
-                Helper.safeTransferETH(msg.sender, _amount);
-            }
-        }
+        emit DepositedTokenToFilm(msg.sender, _token, _amount, _filmId);
     }    
 
     /// @dev Update/Add user fund amount
@@ -552,8 +546,9 @@ contract VabbleDAO is ReentrancyGuard {
     /// @dev Check min & max amount for each token/ETH per film
     function __checkMinMaxAmount(uint256 _filmId, address _token, uint256 _amount) private view returns (bool passed_) {
         uint256 userFundAmountPerFilm = getUserFundAmountPerFilm(msg.sender, _filmId);
-        uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, USDC_TOKEN);
-        if(_amount >= IProperty(DAO_PROPERTY).minDepositAmount() && fundAmount + userFundAmountPerFilm <= IProperty(DAO_PROPERTY).maxDepositAmount()) {
+        uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, USDC_TOKEN);    
+        uint256 amountOfUser = userFundAmountPerFilm + fundAmount;
+        if(amountOfUser >= IProperty(DAO_PROPERTY).minDepositAmount() && amountOfUser <= IProperty(DAO_PROPERTY).maxDepositAmount()) {
             passed_ = true;
         } else {
             passed_ = false;
@@ -635,20 +630,11 @@ contract VabbleDAO is ReentrancyGuard {
         if(filmInfo[_filmId].raiseAmount > 0) isFund_ = true;
         else isFund_ = false;
     }
-    
-    /// @notice Get VAB amount of a user
-    function getUserRentInfo(address _user) external view returns(uint256 vabAmount_, uint256 withdrawAmount_) {
-        vabAmount_ = userRentInfo[_user].vabAmount;
-        withdrawAmount_ = userRentInfo[_user].withdrawAmount;
-    }
 
-    /// @notice Get proposal film Ids
-    function getProposalFilmIds() external view returns(uint256[] memory) {
-        return proposalFilmIds;
-    }   
-
-    /// @notice Get updated proposal film Ids
-    function getUpdatedFilmIds() external view returns(uint256[] memory) {
-        return updatedFilmIds;
-    }
+    /// @notice Get proposal/updated/final film Ids
+    function getFilmIds(uint256 _flag) external view returns(uint256[] memory) {
+        if(_flag == 1) return proposalFilmIds;
+        else if(_flag == 2) return updatedFilmIds;
+        else return finalFilmIds;
+    }  
 }

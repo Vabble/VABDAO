@@ -79,10 +79,10 @@ describe('Subscription', function () {
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
         
     // Auditor add studio1, studio2 in the studio whitelist
+    const studioList = [this.studio1.address, this.studio2.address]
     await expect(
-      this.ownableContract.addStudio(this.studio1.address)
-    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);    
-    await this.ownableContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})
+      this.ownableContract.addStudio(studioList)
+    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(studioList);    
 
     // ====== VAB
     // Transfering VAB token to user1, 2
@@ -132,19 +132,19 @@ describe('Subscription', function () {
   });
 
   it('0. Subscription by token', async function () {
-    const period = 1;
+    const periodVal = 1;
     //================= VAB token
     await expect(
-      this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, period, {from: this.customer1.address})
+      this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
     ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
       this.customer1.address, 
       this.vabToken.address, 
-      period
+      periodVal
     );    
-    // const {time_, period_} = await this.SubContract.getSubscriptionInfo(this.customer1.address)
-    // console.log('====time, period::', time_.toString(), period_.toString())
+    const {time, period} = await this.SubContract.subscriptionInfo(this.customer1.address)
+    console.log('====time, period::', time.toString(), period.toString())
 
-    const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})    
+    const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})    
     expect(isActived).to.be.true;  
     console.log('====test-1')
     // => Increase next block timestamp for only testing
@@ -152,7 +152,7 @@ describe('Subscription', function () {
     network.provider.send('evm_increaseTime', [increseTime]);
     await network.provider.send('evm_mine');
             
-    expect(await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})).to.be.false;  
+    expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.false;  
 
     //================ EXM token
     await expect(
@@ -163,13 +163,13 @@ describe('Subscription', function () {
       period
     );
 
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;
 
     // => Increase next block timestamp for only testing
     network.provider.send('evm_increaseTime', [increseTime]);
     await network.provider.send('evm_mine');
             
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.false;  
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.false;  
 
     console.log('====test-2')
 
@@ -185,155 +185,155 @@ describe('Subscription', function () {
     );
 
     console.log('====test-3')
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;  
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
     
     // => Increase next block timestamp for only testing
     network.provider.send('evm_increaseTime', [increseTime]);
     await network.provider.send('evm_mine');
             
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription({from: this.customer2.address})).to.be.true;  
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
   });
 
-  // it('1. Subscription NFTs', async function () {
+  it('1. Subscription NFTs', async function () {
 
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[0])).to.be.false;  
+    expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[0])).to.be.false;  
 
-  //   // Register NFT addresses by Auditor 
-  //   await expect(
-  //     this.SubContract.connect(this.auditor).registerNFTs(NFTs.mumbai.addressList, NFTs.mumbai.periodList, {from: this.auditor.address})
-  //   ).to.emit(this.SubContract, 'NFTsRegistered').withArgs(NFTs.mumbai.addressList);   
+    // Register NFT addresses by Auditor 
+    await expect(
+      this.SubContract.connect(this.auditor).registerNFTs(NFTs.mumbai.addressList, NFTs.mumbai.periodList, {from: this.auditor.address})
+    ).to.emit(this.SubContract, 'NFTsRegistered').withArgs(NFTs.mumbai.addressList);   
 
-  //   expect((await this.SubContract.getRegisteredNFTList()).length).to.be.equal(NFTs.mumbai.addressList.length)
-  //   expect(await this.SubContract.connect(this.customer1).isActivedSubscription({from: this.customer1.address})).to.be.false; 
+    expect((await this.SubContract.getRegisteredNFTList()).length).to.be.equal(NFTs.mumbai.addressList.length)
+    expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.false; 
 
-  //   // Active subscription by NFT for renting the films
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[1])).to.be.true;  
-  //   await expect(
-  //     this.SubContract.connect(this.customer1).activeNFTSubscription(
-  //       NFTs.mumbai.addressList[1], 
-  //       NFTs.mumbai.tokenIdList[1], 
-  //       NFTs.mumbai.tokenTypeList[1], 
-  //       {from: this.customer1.address}
-  //     )
-  //   ).to.be.revertedWith('NFTSubscription: No erc1155-nft balance');
+    // Active subscription by NFT for renting the films
+    expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[1])).to.be.true;  
+    await expect(
+      this.SubContract.connect(this.customer1).activeNFTSubscription(
+        NFTs.mumbai.addressList[1], 
+        NFTs.mumbai.tokenIdList[1], 
+        NFTs.mumbai.tokenTypeList[1], 
+        {from: this.customer1.address}
+      )
+    ).to.be.revertedWith('NFTSubscription: No erc1155-nft balance');
     
-  //   // Active with Auditor(because I(auditor) owned nft-NFTs.mumbai.addressList[0]=ERC721)
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[0])).to.be.true;  
-  //   await expect(
-  //     this.SubContract.connect(this.auditor).activeNFTSubscription(
-  //       NFTs.mumbai.addressList[0], 
-  //       NFTs.mumbai.tokenIdList[0], 
-  //       NFTs.mumbai.tokenTypeList[0], 
-  //       {from: this.auditor.address}
-  //     )
-  //   ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
-  //     this.auditor.address, 
-  //     NFTs.mumbai.addressList[0], 
-  //     NFTs.mumbai.tokenIdList[0], 
-  //     NFTs.mumbai.tokenTypeList[0]
-  //   );      
-  //   expect(await this.SubContract.connect(this.auditor).isActivedSubscription({from: this.auditor.address})).to.be.true; 
+    // Active with Auditor(because I(auditor) owned nft-NFTs.mumbai.addressList[0]=ERC721)
+    expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[0])).to.be.true;  
+    await expect(
+      this.SubContract.connect(this.auditor).activeNFTSubscription(
+        NFTs.mumbai.addressList[0], 
+        NFTs.mumbai.tokenIdList[0], 
+        NFTs.mumbai.tokenTypeList[0], 
+        {from: this.auditor.address}
+      )
+    ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
+      this.auditor.address, 
+      NFTs.mumbai.addressList[0], 
+      NFTs.mumbai.tokenIdList[0], 
+      NFTs.mumbai.tokenTypeList[0]
+    );      
+    expect(await this.SubContract.connect(this.auditor).isActivedSubscription(this.auditor.address, {from: this.auditor.address})).to.be.true; 
 
-  //   // => Increase next block timestamp for only testing
-  //   const increseTime = 40 * 24 * 3600; // 40 days
-  //   network.provider.send('evm_increaseTime', [increseTime]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const increseTime = 40 * 24 * 3600; // 40 days
+    network.provider.send('evm_increaseTime', [increseTime]);
+    await network.provider.send('evm_mine');
 
-  //   // Active with Auditor(because I(auditor) owned nft-NFTs.mumbai.addressList[1]=ERC1155)
-  //   expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[1])).to.be.true;  
-  //   await expect(
-  //     this.SubContract.connect(this.auditor).activeNFTSubscription(
-  //       NFTs.mumbai.addressList[1], 
-  //       NFTs.mumbai.tokenIdList[1], 
-  //       NFTs.mumbai.tokenTypeList[1], 
-  //       {from: this.auditor.address}
-  //     )
-  //   ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
-  //     this.auditor.address, 
-  //     NFTs.mumbai.addressList[1], 
-  //     NFTs.mumbai.tokenIdList[1], 
-  //     NFTs.mumbai.tokenTypeList[1]
-  //   );      
-  //   expect(await this.SubContract.connect(this.auditor).isActivedSubscription({from: this.auditor.address})).to.be.true; 
+    // Active with Auditor(because I(auditor) owned nft-NFTs.mumbai.addressList[1]=ERC1155)
+    expect(await this.SubContract.isRegisteredNFT(NFTs.mumbai.addressList[1])).to.be.true;  
+    await expect(
+      this.SubContract.connect(this.auditor).activeNFTSubscription(
+        NFTs.mumbai.addressList[1], 
+        NFTs.mumbai.tokenIdList[1], 
+        NFTs.mumbai.tokenTypeList[1], 
+        {from: this.auditor.address}
+      )
+    ).to.emit(this.SubContract, 'SubscriptionNFTActivated').withArgs(
+      this.auditor.address, 
+      NFTs.mumbai.addressList[1], 
+      NFTs.mumbai.tokenIdList[1], 
+      NFTs.mumbai.tokenTypeList[1]
+    );      
+    expect(await this.SubContract.connect(this.auditor).isActivedSubscription(this.auditor.address, {from: this.auditor.address})).to.be.true; 
 
-  //   // activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType)
-  //   // SubscriptionNFTActivated(msg.sender, _nft, _tokenId, _tokenType)
-  // });
+    // activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType)
+    // SubscriptionNFTActivated(msg.sender, _nft, _tokenId, _tokenType)
+  });
 
-  // it('2. NFT Gated Content', async function () {
-  //   expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.true;  
+  it('2. NFT Gated Content', async function () {
+    expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.true;  
 
-  //   // Initialize StakingPool
-  //   await this.stakingContract.connect(this.auditor).initializePool(
-  //     this.DAOContract.address,
-  //     this.voteContract.address,
-  //     this.propertyContract.address,
-  //     {from: this.auditor.address}
-  //   )  
-  //   // Staking VAB token
-  //   await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(100), {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(150), {from: this.customer2.address})
-  //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
-  //   expect(await this.stakingContract.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
+    // Initialize StakingPool
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.propertyContract.address,
+      {from: this.auditor.address}
+    )  
+    // Staking VAB token
+    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(100), {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(150), {from: this.customer2.address})
+    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
+    expect(await this.stakingContract.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
     
-  //   const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
-  //   const onlyAllowVABs = [true, true, false, false];
-  //   const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
-  //   const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
-  //   const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2]]
-  //   const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3]]
-  //   this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
+    const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
+    const onlyAllowVABs = [true, true, false, false];
+    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
+    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
+    const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2]]
+    const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3]]
+    this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
     
-  //   // 1. Create proposal for four films by studio
-  //   await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
+    // 1. Create proposal for four films by studio
+    await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
     
-  //   // 2. Deposit to contract(VAB amount : 100, 200)
-  //   await this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
-  //   await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200), {from: this.customer2.address})
+    // 2. Deposit to contract(VAB amount : 100, 200)
+    await this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
+    await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200), {from: this.customer2.address})
     
-  //   // 3. Auditor should initialize when vote contract deployed
-  //   await this.voteContract.connect(this.auditor).initializeVote(
-  //     this.DAOContract.address, 
-  //     this.stakingContract.address, 
-  //     this.propertyContract.address,
-  //     {from: this.auditor.address}
-  //   );
-  //   expect(await this.voteContract.isInitialized()).to.be.true
+    // 3. Auditor should initialize when vote contract deployed
+    await this.voteContract.connect(this.auditor).initializeVote(
+      this.DAOContract.address, 
+      this.stakingContract.address, 
+      this.propertyContract.address,
+      {from: this.auditor.address}
+    );
+    expect(await this.voteContract.isInitialized()).to.be.true
 
-  //   // 4. films approved by auditor    
-  //   const proposalIds = await this.DAOContract.getProposalFilmIds(); // 1, 2, 3, 4
-  //   const voteInfos = [1, 1, 1, 3];
-  //   const voteData = getVoteData(proposalIds, voteInfos)
-  //   await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) //1,1,1,3
-  //   await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address}) //1,1,1,3
+    // 4. films approved by auditor    
+    const proposalIds = await this.DAOContract.getFilmIds(1); // 1, 2, 3, 4
+    const voteInfos = [1, 1, 1, 3];
+    const voteData = getVoteData(proposalIds, voteInfos)
+    await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) //1,1,1,3
+    await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address}) //1,1,1,3
 
-  //   // => Increase next block timestamp for only testing
-  //   const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
-  //   network.provider.send('evm_increaseTime', [period]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
 
-  //   // 5. Approve two films by calling the approveFilms() from Auditor
-  //   const approveData = [proposalIds[0], proposalIds[1], proposalIds[2]]
-  //   await this.voteContract.approveFilms(approveData);// filmId = 1, 2 ,3
-  //   const approved_ids = await this.voteContract.getApprovedFilmIds() // 1, 2, 3
-  //   expect(approved_ids.length).to.be.equal(approveData.length)
+    // 5. Approve two films by calling the approveFilms() from Auditor
+    const approveData = [proposalIds[0], proposalIds[1], proposalIds[2]]
+    await this.voteContract.approveFilms(approveData);// filmId = 1, 2 ,3
+    const approved_ids = await this.voteContract.getApprovedFilmIds() // 1, 2, 3
+    expect(approved_ids.length).to.be.equal(approveData.length)
 
-  //   // 6. Register gated content
-  //   const contentData1 = getUploadGateContent(approved_ids[0], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
-  //   const contentData2 = getUploadGateContent(approved_ids[1], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
-  //   const contentData3 = getUploadGateContent(approved_ids[2], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
-  //   const tx1 = await this.SubContract.connect(this.studio1).registerGatedContent(
-  //     [contentData1, contentData2, contentData3]
-  //   )
-  //   const events = (await tx1.wait()).events
-  //   let args = events[0].args
-  //   const res_studio = args.studio
-  //   const res_ids = args.filmIds
-  //   console.log('===args::', res_studio, JSON.stringify(res_ids))
+    // 6. Register gated content
+    const contentData1 = getUploadGateContent(approved_ids[0], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
+    const contentData2 = getUploadGateContent(approved_ids[1], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
+    const contentData3 = getUploadGateContent(approved_ids[2], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
+    const tx1 = await this.SubContract.connect(this.studio1).registerGatedContent(
+      [contentData1, contentData2, contentData3]
+    )
+    const events = (await tx1.wait()).events
+    let args = events[0].args
+    const res_studio = args.studio
+    const res_ids = args.filmIds
+    console.log('===args::', res_studio, JSON.stringify(res_ids))
 
-  //   const tx2 = await this.SubContract.connect(this.customer1).isActivatedGatedContent(1, {from: this.customer1.address})    
-  //   console.log('===tx2::', tx2)
-  //   const tx3 = await this.SubContract.connect(this.auditor).isActivatedGatedContent(1, {from: this.auditor.address})    
-  //   console.log('===tx3::', tx3)
-  // });
+    const tx2 = await this.SubContract.connect(this.customer1).isActivatedGatedContent(1, {from: this.customer1.address})    
+    console.log('===tx2::', tx2)
+    const tx3 = await this.SubContract.connect(this.auditor).isActivatedGatedContent(1, {from: this.auditor.address})    
+    console.log('===tx3::', tx3)
+  });
 });

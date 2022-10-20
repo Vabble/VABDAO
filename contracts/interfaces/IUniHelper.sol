@@ -10,5 +10,11 @@ interface IUniHelper {
         address _incomingAsset
     ) external view returns (uint256 amount_);
 
+    function expectedAmountIn(
+        uint256 _depositAmount,
+        address _depositAsset, 
+        address _incomingAsset
+    ) external view returns (uint256 amount_);
+
     function swapAsset(bytes calldata _swapArgs) external returns (uint256 amount_);
 }

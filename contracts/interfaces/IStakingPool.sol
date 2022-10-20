@@ -10,4 +10,6 @@ interface IStakingPool {
     function updateWithdrawableTime(address _user, uint256 _time) external;
 
     function addRewardToPool(uint256 _amount) external;
+    
+    function getLimitCount() external view returns(uint256 count_);
 }

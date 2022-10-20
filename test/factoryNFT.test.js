@@ -80,11 +80,11 @@ describe('FactoryNFT', function () {
     // Confirm auditor
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
         
-    // Auditor add studio1, 2 in the studio whitelist
+    // Auditor add studio1, 2 in the studio whitelist    
+    const studioList = [this.studio1.address, this.studio2.address]
     await expect(
-      this.ownableContract.addStudio(this.studio1.address)
-    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address); 
-    await this.ownableContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})
+      this.ownableContract.addStudio(studioList)
+    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(studioList); 
   });
 
   it("Should has the correct name and symbol ", async function () {

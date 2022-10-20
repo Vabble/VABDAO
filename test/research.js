@@ -75,7 +75,7 @@ describe('VabbleDAO', function () {
                                                       //100000001452399989048000
     // Auditor add studio1 in the studio whitelist
     await expect(
-      this.ownableContract.addStudio(this.studio1.address)
+      this.ownableContract.addStudio([this.studio1.address])
     ).to.emit(this.ownableContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);    
       
 
@@ -109,7 +109,7 @@ describe('VabbleDAO', function () {
     const tx = await this.DAOContract.connect(this.studio1).createProposalFilms(filmPropsoal, false, {from: this.studio1.address})   
     const events = (await tx.wait()).events;
     expect(events[6].args[1]).to.be.equal(this.studio1.address)
-    const proposalIds = await this.DAOContract.getProposalFilmIds();
+    const proposalIds = await this.DAOContract.getFilmIds(1);
     expect(proposalIds.length).to.be.equal(filmPropsoal.length)
 
   });  

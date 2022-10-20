@@ -69,8 +69,8 @@ describe('Vote', function () {
     ).deployed();    
 
     // Add studio1, studio2 to studio list by Auditor
-    await this.ownableContract.connect(this.auditor).addStudio(this.studio1.address, {from: this.auditor.address})  
-    await this.ownableContract.connect(this.auditor).addStudio(this.studio2.address, {from: this.auditor.address})  
+    const studioList = [this.studio1.address, this.studio2.address]
+    await this.ownableContract.connect(this.auditor).addStudio(studioList, {from: this.auditor.address})  
 
     await this.ownableContract.connect(this.auditor).setupVote(this.voteContract.address, {from: this.auditor.address})  
     
@@ -462,6 +462,9 @@ describe('Vote', function () {
       )
     ).to.be.revertedWith('voteToRewardAddress: Already voted')
 
+    // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+    await this.propertyContract.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
+    
     // setDAORewardAddress
     await expect(
       this.voteContract.connect(this.customer2).setDAORewardAddress(this.reward.address, {from: this.customer2.address})

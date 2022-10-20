@@ -4,8 +4,8 @@ pragma solidity ^0.8.4;
 
 contract Ownablee {
     
-    event StudioAdded(address indexed _setter, address indexed _studio);
-    event StudioRemoved(address indexed _setter, address indexed _studio);
+    event StudioAdded(address[] studioList);
+    event StudioRemoved(address[] studioList);
 
     address public auditor;
     address private VOTE;                // vote contract address
@@ -45,16 +45,26 @@ contract Ownablee {
         auditor = _newAuditor;
     }
 
-    function addStudio(address _studio) external onlyAuditor {
-        require(!studioInfo[_studio], "addStudio: Already studio");
-        studioInfo[_studio] = true;
-        emit StudioAdded(msg.sender, _studio);
+    function addStudio(address[] memory _studioList) external onlyAuditor {
+        require(_studioList.length > 0, "addStudio: zero studio list");
+
+        for(uint256 i = 0; i < _studioList.length; i++) { 
+            require(!studioInfo[_studioList[i]], "addStudio: Already studio");
+            studioInfo[_studioList[i]] = true;
+        }
+        
+        emit StudioAdded(_studioList);
     }
 
-    function removeStudio(address _studio) external onlyAuditor {
-        require(studioInfo[_studio], "removeStudio: No studio");
-        studioInfo[_studio] = false;
-        emit StudioRemoved(msg.sender, _studio);
+    function removeStudio(address[] memory _studioList) external onlyAuditor {
+        require(_studioList.length > 0, "addStudio: zero studio list");
+
+        for(uint256 i = 0; i < _studioList.length; i++) { 
+            require(studioInfo[_studioList[i]], "removeStudio: No studio");
+            studioInfo[_studioList[i]] = false;
+        }
+        
+        emit StudioRemoved(_studioList);
     }
 
     function isStudio(address _studio) external view returns (bool) {
