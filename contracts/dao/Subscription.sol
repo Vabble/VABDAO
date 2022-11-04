@@ -181,7 +181,6 @@ contract Subscription is ReentrancyGuard {
             }            
             periodPerNFT[_nfts[i]] = _periods[i];
         }
-
         emit NFTsRegistered(registeredNFTs);
     }
 
@@ -244,7 +243,6 @@ contract Subscription is ReentrancyGuard {
             gatedFilmIds.push(filmId);            
             isGatedFilmId[filmId] = true;
         }   
-
         emit GatedContentRegistered(msg.sender, gatedFilmIds);
     }
 

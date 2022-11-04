@@ -9,7 +9,12 @@ interface IStakingPool {
 
     function updateWithdrawableTime(address _user, uint256 _time) external;
 
+    function updateVoteCount(address _user) external;
+
     function addRewardToPool(uint256 _amount) external;
     
     function getLimitCount() external view returns(uint256 count_);
+       
+    function lastfundProposalCreateTime() external view returns(uint256);
+    function updateLastfundProposalCreateTime(uint256 _time) external;
 }

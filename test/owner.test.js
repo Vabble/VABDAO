@@ -83,7 +83,33 @@ describe('Ownablee', function () {
     // Transfer auditor to new address
     await this.ownableContract.transferAuditor(this.newAuditor.address);
     
-    expect(await this.ownableContract.auditor()).to.be.equal(this.newAuditor.address);  
-          
+    expect(await this.ownableContract.auditor()).to.be.equal(this.newAuditor.address);            
+  });
+
+  it('Test of addDepositAsset', async function () {
+    // Add deposit asset
+    const assetList = [CONFIG.addressZero, CONFIG.mumbai.usdcAdress, CONFIG.mumbai.vabToken, CONFIG.mumbai.daiAddress, CONFIG.mumbai.exmAddress]
+    await this.ownableContract.addDepositAsset(assetList);
+    
+    // Check if assetList added as deposit asset
+    expect(await this.ownableContract.isDepositAsset(assetList[0])).to.be.true;  
+    expect(await this.ownableContract.isDepositAsset(assetList[1])).to.be.true;    
+    expect(await this.ownableContract.isDepositAsset(assetList[2])).to.be.true;  
+    expect(await this.ownableContract.isDepositAsset(assetList[3])).to.be.true;
+    let depositAssets = await this.ownableContract.getDepositAssetList();
+    expect(depositAssets.length).to.be.equal(assetList.length);      
+    
+    // Remove deposit asset
+    const removeList = [CONFIG.addressZero, CONFIG.mumbai.usdcAdress]
+    await this.ownableContract.removeDepositAsset(removeList);
+    // Check if assetList added as deposit asset
+    depositAssets = await this.ownableContract.getDepositAssetList();
+    expect(depositAssets.length).to.be.equal(assetList.length - removeList.length);
+
+    console.log('=====asset list-0::', depositAssets[0], depositAssets[1], depositAssets[2])
+    expect(depositAssets[0]).to.be.equal(CONFIG.mumbai.exmAddress);  
+    expect(depositAssets[1]).to.be.equal(CONFIG.mumbai.daiAddress);  
+    expect(depositAssets[2]).to.be.equal(CONFIG.mumbai.vabToken);  
+    
   });
 });

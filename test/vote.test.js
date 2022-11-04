@@ -23,7 +23,11 @@ describe('Vote', function () {
     this.customer3 = this.signers[7];
     this.auditorAgent1 = this.signers[8];   
     this.auditorAgent2 = this.signers[9];   
-    this.reward = this.signers[10];   
+    this.reward = this.signers[10];  
+    this.customer4 = this.signers[11];
+    this.customer5 = this.signers[12];
+    this.customer6 = this.signers[13];
+    this.customer7 = this.signers[14]; 
   });
 
   beforeEach(async function () {
@@ -85,6 +89,10 @@ describe('Vote', function () {
     await this.vabToken.connect(this.customer1).approve(this.stakingContract.address, this.auditorBalance);
     await this.vabToken.connect(this.customer2).approve(this.stakingContract.address, this.auditorBalance);
     await this.vabToken.connect(this.customer3).approve(this.stakingContract.address, this.auditorBalance);
+    await this.vabToken.connect(this.customer4).approve(this.stakingContract.address, this.auditorBalance);
+    await this.vabToken.connect(this.customer5).approve(this.stakingContract.address, this.auditorBalance);
+    await this.vabToken.connect(this.customer6).approve(this.stakingContract.address, this.auditorBalance);
+    await this.vabToken.connect(this.customer7).approve(this.stakingContract.address, this.auditorBalance);
 
     await this.vabToken.connect(this.customer1).approve(this.propertyContract.address, this.auditorBalance);
     await this.vabToken.connect(this.customer2).approve(this.propertyContract.address, this.auditorBalance);
@@ -170,11 +178,26 @@ describe('Vote', function () {
   //     this.propertyContract.address,
   //     {from: this.auditor.address}
   //   )    
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer4.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer5.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer6.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer7.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
+        
   //   const stakeAmount = getBigNumber(200)
   //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
   //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
   //   await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
-
+  //   await this.stakingContract.connect(this.customer4).stakeToken(stakeAmount, {from: this.customer4.address})
+  //   await this.stakingContract.connect(this.customer5).stakeToken(stakeAmount, {from: this.customer5.address})
+  //   await this.stakingContract.connect(this.customer6).stakeToken(stakeAmount, {from: this.customer6.address})
+  //   await this.stakingContract.connect(this.customer7).stakeToken(stakeAmount, {from: this.customer7.address})
+    
   //   // Initialize Vote contract
   //   await this.voteContract.connect(this.auditor).initializeVote(
   //     this.DAOContract.address,
@@ -184,7 +207,7 @@ describe('Vote', function () {
     
   //   // Call voteToAgent before create the proposal
   //   await expect(
-  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, {from: this.customer2.address})
+  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, 0, {from: this.customer2.address})
   //   ).to.be.revertedWith('voteToAgent: invalid index or no proposal')
 
   //   // Create proposal for Auditor
@@ -196,22 +219,26 @@ describe('Vote', function () {
        
   //   // Call voteToAgent with index=3(avaliable index: 0, 1)
   //   await expect(
-  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, {from: this.customer2.address})
+  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 3, 0, {from: this.customer2.address})
   //   ).to.be.revertedWith('voteToAgent: invalid index or no proposal')
 
-  //   await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, {from: this.customer2.address});
-  //   await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, {from: this.customer3.address});
+  //   await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, 0, {from: this.customer2.address});
+  //   await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, 0, {from: this.customer3.address});
+  //   await this.voteContract.connect(this.customer4).voteToAgent(this.voteInfo[1], 0, 0, {from: this.customer4.address});
+  //   await this.voteContract.connect(this.customer5).voteToAgent(this.voteInfo[1], 0, 0, {from: this.customer5.address});
+  //   await this.voteContract.connect(this.customer6).voteToAgent(this.voteInfo[2], 0, 0, {from: this.customer6.address});
+  //   await this.voteContract.connect(this.customer7).voteToAgent(this.voteInfo[2], 0, 0, {from: this.customer7.address});
 
-  //   let tx = await this.voteContract.connect(this.customer1).voteToAgent(this.voteInfo[0], 0, {from: this.customer1.address})
+  //   let tx = await this.voteContract.connect(this.customer1).voteToAgent(this.voteInfo[0], 0, 0, {from: this.customer1.address})
   //   this.events = (await tx.wait()).events
   //   // console.log("====events::", this.events)
   //   const arg = this.events[0].args
   //   expect(this.customer1.address).to.be.equal(arg.voter)
   //   expect(this.voteInfo[0]).to.be.equal(arg.voteInfo)
-    
+
   //   // Call voteToAgent again
   //   await expect(
-  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[1], 0, {from: this.customer2.address})
+  //     this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[1], 0, 0, {from: this.customer2.address})
   //   ).to.be.revertedWith('voteToAgent: Already voted')
 
   //   // replaceAuditor
@@ -220,36 +247,35 @@ describe('Vote', function () {
   //   ).to.be.revertedWith('replaceAuditor: vote period yet')
 
   //   const defaultAgentVotePeriod = 10 * 86400; // 10 days
-  //   const agentVotePeriod = await this.propertyContract.agentVotePeriod();
-  //   expect(agentVotePeriod).to.be.equal(defaultAgentVotePeriod)
+  //   expect(await this.propertyContract.agentVotePeriod()).to.be.equal(defaultAgentVotePeriod)
 
   //   const defaultDisputeGracePeriod = 30 * 86400; // 30 days
-  //   const disputeGracePeriod = await this.propertyContract.disputeGracePeriod();
-  //   expect(disputeGracePeriod).to.be.equal(defaultDisputeGracePeriod)
-
-  //   // => Increase next block timestamp
-  //   network.provider.send('evm_increaseTime', [defaultAgentVotePeriod]);
-  //   await network.provider.send('evm_mine');
-
-  //   await expect(
-  //     this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
-  //   ).to.be.revertedWith('replaceAuditor: dispute grace period yet')
+  //   expect(await this.propertyContract.disputeGracePeriod()).to.be.equal(defaultDisputeGracePeriod)
 
   //   // => Increase next block timestamp
   //   network.provider.send('evm_increaseTime', [defaultDisputeGracePeriod]);
   //   await network.provider.send('evm_mine');
 
+  //   await expect(
+  //     this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
+  //   ).to.be.revertedWith('replaceAuditor: dispute vote period yet')
+
+  //   // => Increase next block timestamp
+  //   network.provider.send('evm_increaseTime', [11 * 86400]); // 11 day
+  //   await network.provider.send('evm_mine');
+
   //   await this.voteContract.connect(this.customer2).replaceAuditor(0, {from: this.customer2.address})
 
+  //   const agentArr = await this.propertyContract.getAgentList();
+  //   console.log("====test-00", agentArr.length)
   //   const agent1 = await this.propertyContract.getAgent(0); 
   //   expect(agent1).to.be.equal(this.auditorAgent2.address)
   //   const agent2 = await this.propertyContract.getAgent(1);    
   //   expect(agent2).to.be.equal(CONFIG.addressZero) 
 
-
-
+  //   console.log("====test-5")
   //   // Transfer staking amount(over 75m)
-  //   const transferAmount = getBigNumber(500000000) // 50m
+  //   const transferAmount = getBigNumber(80000000) // 80m
   //   await this.vabToken.connect(this.auditor).transfer(this.customer1.address, transferAmount, {from: this.auditor.address});
   //   await this.vabToken.connect(this.auditor).transfer(this.customer2.address, transferAmount, {from: this.auditor.address});
 
@@ -257,13 +283,18 @@ describe('Vote', function () {
   //   await this.stakingContract.connect(this.customer1).stakeToken(transferAmount, {from: this.customer1.address})
   //   await this.stakingContract.connect(this.customer2).stakeToken(transferAmount, {from: this.customer2.address})
 
+  //   console.log("====test-4")
   //   // Vote to auditorAgent2 address(index=0)
-  //   await this.voteContract.connect(this.customer1).voteToAgent(this.voteInfo[0], 0, {from: this.customer1.address});
-  //   await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, {from: this.customer2.address});
-  //   await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, {from: this.customer3.address});
+  //   await this.voteContract.connect(this.customer2).voteToAgent(this.voteInfo[0], 0, 0, {from: this.customer2.address});
+  //   await this.voteContract.connect(this.customer3).voteToAgent(this.voteInfo[0], 0, 0, {from: this.customer3.address});
+  //   await this.voteContract.connect(this.customer4).voteToAgent(this.voteInfo[1], 0, 0, {from: this.customer4.address});
+  //   await this.voteContract.connect(this.customer5).voteToAgent(this.voteInfo[1], 0, 0, {from: this.customer5.address});
+  //   await this.voteContract.connect(this.customer6).voteToAgent(this.voteInfo[2], 0, 0, {from: this.customer6.address});
+  //   await this.voteContract.connect(this.customer7).voteToAgent(this.voteInfo[2], 0, 0, {from: this.customer7.address});
 
+  //   console.log("====test-6")
   //   // => Increase next block timestamp
-  //   network.provider.send('evm_increaseTime', [defaultDisputeGracePeriod]);
+  //   network.provider.send('evm_increaseTime', [defaultDisputeGracePeriod + 11 * 86400]);
   //   await network.provider.send('evm_mine');
 
   //   // replaceAuditor
@@ -277,14 +308,6 @@ describe('Vote', function () {
   // });
 
   // it('voteToProperty', async function () {    
-  //   // Transfering VAB token to user1, 2, 3 and studio1,2,3
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
-  //   await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
-
   //   // Initialize StakingPool
   //   await this.stakingContract.connect(this.auditor).initializePool(
   //     this.DAOContract.address,
@@ -293,10 +316,25 @@ describe('Vote', function () {
   //     {from: this.auditor.address}
   //   )    
 
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(90000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer4.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer5.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer6.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.customer7.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
+  //   await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
+        
   //   const stakeAmount = getBigNumber(200)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(80000000), {from: this.customer1.address})
   //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
   //   await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
+  //   await this.stakingContract.connect(this.customer4).stakeToken(stakeAmount, {from: this.customer4.address})
+  //   await this.stakingContract.connect(this.customer5).stakeToken(stakeAmount, {from: this.customer5.address})
+  //   await this.stakingContract.connect(this.customer6).stakeToken(stakeAmount, {from: this.customer6.address})
+  //   await this.stakingContract.connect(this.customer7).stakeToken(stakeAmount, {from: this.customer7.address})
 
   //   // Initialize Vote contract
   //   await this.voteContract.connect(this.auditor).initializeVote(
@@ -327,7 +365,10 @@ describe('Vote', function () {
   //   // voteToProperty
   //   await this.voteContract.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
   //   await this.voteContract.connect(this.customer2).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer2.address})
-  //   await this.voteContract.connect(this.customer3).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer3.address})
+  //   await this.voteContract.connect(this.customer3).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer3.address})
+  //   await this.voteContract.connect(this.customer4).voteToProperty(this.voteInfo[1], indx, flag, {from: this.customer4.address})
+  //   await this.voteContract.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
+  //   await this.voteContract.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
 
   //   // => Increase next block timestamp
   //   network.provider.send('evm_increaseTime', [period_8]);
@@ -337,7 +378,7 @@ describe('Vote', function () {
   //   await expect(
   //     this.voteContract.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
   //   ).to.be.revertedWith('updateProperty: vote period yet')
-
+    
   //   // => Increase next block timestamp
   //   network.provider.send('evm_increaseTime', [period_3]);
   //   await network.provider.send('evm_mine');
@@ -354,7 +395,7 @@ describe('Vote', function () {
   //   let totalRewardAmount = await this.stakingContract.totalRewardAmount();
   //   console.log('====totalRewardAmount::', totalRewardAmount.toString())
 
-  //   flag = 7;
+  //   flag = 5;
   //   property1 = 50000; // 0.0005% (1% = 1e8, 100%=1e10)
   //   property2 = 80000; // 0.0008% (1% = 1e8, 100%=1e10)
   //   await this.propertyContract.connect(this.customer1).proposalProperty(property1, flag, {from: this.customer1.address})
@@ -368,11 +409,14 @@ describe('Vote', function () {
   //   await this.voteContract.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
   //   await this.voteContract.connect(this.customer2).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer2.address})
   //   await this.voteContract.connect(this.customer3).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer3.address})
+  //   await this.voteContract.connect(this.customer4).voteToProperty(this.voteInfo[1], indx, flag, {from: this.customer4.address})
+  //   await this.voteContract.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
+  //   await this.voteContract.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
 
   //   // => Increase next block timestamp
   //   network.provider.send('evm_increaseTime', [period_8]);
   //   await network.provider.send('evm_mine');
-
+  //   console.log('=====test-1')
   //   // Call updateProperty() before vote period
   //   await expect(
   //     this.voteContract.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
@@ -384,23 +428,17 @@ describe('Vote', function () {
 
   //   // updateProperty
   //   await this.voteContract.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
+  //   console.log('=====test-2')
   //   rewardRate = await this.propertyContract.rewardRate()
   //   expect(rewardRate).to.be.equal(property1)
   //   expect(await this.propertyContract.getProperty(0, flag)).to.be.equal(property2)
   //   console.log('====rewardRate::', rewardRate.toString())
 
-  //   const list = await this.propertyContract.getPeriodList(flag)
+  //   const list = await this.propertyContract.getPropertyProposalList(flag)
   //   console.log('====list::', list[0].toString())
   // });
 
-  it('voteToRewardAddress', async function () {    
-    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
-
+  it('voteToRewardAddress', async function () { 
     // Initialize StakingPool
     await this.stakingContract.connect(this.auditor).initializePool(
       this.DAOContract.address,
@@ -408,10 +446,26 @@ describe('Vote', function () {
       this.propertyContract.address,
       {from: this.auditor.address}
     )    
+
+    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(60000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(60000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer4.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer5.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer6.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer7.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
+        
     const stakeAmount = getBigNumber(200)
-    await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-    await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(50000000), {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(40000000), {from: this.customer2.address})
     await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
+    await this.stakingContract.connect(this.customer4).stakeToken(stakeAmount, {from: this.customer4.address})
+    await this.stakingContract.connect(this.customer5).stakeToken(stakeAmount, {from: this.customer5.address})
+    await this.stakingContract.connect(this.customer6).stakeToken(stakeAmount, {from: this.customer6.address})
+    await this.stakingContract.connect(this.customer7).stakeToken(stakeAmount, {from: this.customer7.address})
 
     // Initialize Vote contract
     await this.voteContract.connect(this.auditor).initializeVote(
@@ -442,7 +496,16 @@ describe('Vote', function () {
       this.reward.address, this.voteInfo[0], {from: this.customer2.address}
     );
     await this.voteContract.connect(this.customer3).voteToRewardAddress(
-      this.reward.address, this.voteInfo[0], {from: this.customer3.address}
+      this.reward.address, this.voteInfo[2], {from: this.customer3.address}
+    );
+    await this.voteContract.connect(this.customer4).voteToRewardAddress(
+      this.reward.address, this.voteInfo[2], {from: this.customer4.address}
+    );
+    await this.voteContract.connect(this.customer5).voteToRewardAddress(
+      this.reward.address, this.voteInfo[2], {from: this.customer5.address}
+    );
+    await this.voteContract.connect(this.customer6).voteToRewardAddress(
+      this.reward.address, this.voteInfo[2], {from: this.customer6.address}
     );
 
     let tx = await this.voteContract.connect(this.customer1).voteToRewardAddress(
@@ -454,7 +517,7 @@ describe('Vote', function () {
     expect(this.customer1.address).to.be.equal(arg.voter)
     expect(this.reward.address).to.be.equal(arg.rewardAddress)
     expect(this.voteInfo[0]).to.be.equal(arg.voteInfo)
-    
+    console.log("====test-0")
     // Call voteToRewardAddress again
     await expect(
       this.voteContract.connect(this.customer2).voteToRewardAddress(
@@ -462,6 +525,7 @@ describe('Vote', function () {
       )
     ).to.be.revertedWith('voteToRewardAddress: Already voted')
 
+    console.log("====test-1")
     // => Change the minVoteCount from 5 ppl to 3 ppl for testing
     await this.propertyContract.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
     
@@ -475,13 +539,16 @@ describe('Vote', function () {
     network.provider.send('evm_increaseTime', [defaultAgentVotePeriod]);
     await network.provider.send('evm_mine');
 
+    console.log("====test-2")
     let rewardAddress = await this.propertyContract.DAO_FUND_REWARD(); 
     // console.log("====rewardAddress-before::", rewardAddress)
     await this.voteContract.connect(this.customer2).setDAORewardAddress(this.reward.address, {from: this.customer2.address})
 
+    console.log("====test-3")
     rewardAddress = await this.propertyContract.DAO_FUND_REWARD(); 
     expect(rewardAddress).to.be.equal(this.reward.address)
 
+    console.log("====test-4")
     let totalRewardBalance = await this.vabToken.balanceOf(this.stakingContract.address)
     let totalRewardAmountBefore = await this.stakingContract.totalRewardAmount()
     console.log("====totalRewardAmount-1::", totalRewardAmountBefore.toString(), totalRewardBalance.toString())

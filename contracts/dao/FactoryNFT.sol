@@ -140,7 +140,6 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
         for(uint256 i = 0; i < _mintAmount; i++) {
             __mintTo(_to, _studio, _tokenUri);
         }
-
         emit BatchMinted(_studio, _to, _mintAmount, revenueAmount);
     }
 

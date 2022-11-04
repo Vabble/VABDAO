@@ -22,7 +22,8 @@ interface IProperty {
     function rewardVotePeriod() external view returns (uint256);      
     function boardVotePeriod() external view returns (uint256);       
     function boardVoteWeight() external view returns (uint256);       
-    function minStakerCountPercent() external view returns (uint256);       
+    function boardRewardRate() external view returns (uint256);       
+    function minStakerCountPercent() external view returns (uint256);      
 
     function getAgent(uint256 _agentIndex) external view returns (address agent_);
     function removeAgent(uint256 _index) external;
@@ -34,4 +35,8 @@ interface IProperty {
     function setRewardAddress(address _rewardAddress) external;    
     function isRewardWhitelist(address _rewardAddress) external view returns (uint256);
     function DAO_FUND_REWARD() external view returns (address);
+
+    function updateLastVoteTime(address _member) external;
+    function addFilmBoardMember(address _member) external;
+    function isBoardWhitelist(address _member) external view returns (uint256);
 }

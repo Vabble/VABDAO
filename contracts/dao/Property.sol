@@ -13,6 +13,10 @@ import "hardhat/console.sol";
 
 contract Property is ReentrancyGuard {
     event PropertyUpdated(uint256 property, uint256 flag);
+    // filmboard    
+    event FilmBoardProposalCreated(address member);
+    event FilmBoardMemberAdded(address member);
+    event FilmBoardMemberRemoved(address member);
     
     struct RewardProposal {
         string title;          // proposal title
@@ -37,8 +41,8 @@ contract Property is ReentrancyGuard {
     uint256 public propertyVotePeriod;   // 3 - vote period for updating properties    
     // StakingPool
     uint256 public lockPeriod;           // 4 - lock period for staked VAB
-    uint256 public rewardRate;           // 5 - 1% = 1e8, 100% = 1e10
-    uint256 public extraRewardRate;      // 6 - 1% = 1e8, 100% = 1e10
+    uint256 public rewardRate;           // 5 - 0.0004%(1% = 1e8, 100% = 1e10)
+    uint256 public extraRewardRate;      // 6 - 0.0001%(1% = 1e8, 100% = 1e10)
     // FilmBoard
     uint256 public maxAllowPeriod;       // 7 - max allowed period for removing filmBoard member
     // VabbleDAO
@@ -56,10 +60,11 @@ contract Property is ReentrancyGuard {
     uint256 public boardVotePeriod;      // filmBoard vote period
     uint256 public boardVoteWeight;      // filmBoard member's vote weight
     uint256 public rewardVotePeriod;     // withdraw address setup for moving to V2
-    uint256 public subscriptionAmount;   // user need to have an active subscription(pay $10 per month) for rent films.
-    
+    uint256 public subscriptionAmount;   // user need to have an active subscription(pay $10 per month) for rent films.    
+    uint256 public boardRewardRate;      // 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members   
 
     address[] private agents;
+    address[] private rewardAddressList;
     uint256[] private filmVotePeriodList;          
     uint256[] private agentVotePeriodList;      
     uint256[] private disputeGracePeriodList;         
@@ -75,6 +80,12 @@ contract Property is ReentrancyGuard {
     uint256[] private maxMintFeePercentList;
     uint256[] private minVoteCountList;    
     uint256[] private minStakerCountPercentList;        
+
+    // filmboard member proposal
+    address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
+    address[] private filmBoardMembers;      // filmBoard members
+    mapping(address => uint256) public isBoardWhitelist; // (filmBoard member => 0: no member, 1: candiate, 2: already member)
+    mapping(address => uint256) public lastVoteTime;     // (staker => block.timestamp)
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -113,14 +124,15 @@ contract Property is ReentrancyGuard {
         filmVotePeriod = 10 days;   
         boardVotePeriod = 14 days;
         agentVotePeriod = 10 days;
-        boardVoteWeight = 30 * 1e8;    // 30%, 1% = 1e8
+        boardVoteWeight = 30 * 1e8;    // 30% (1% = 1e8)
         disputeGracePeriod = 30 days;  
         propertyVotePeriod = 10 days;
         rewardVotePeriod = 30 days;
 
         lockPeriod = 30 days;
         rewardRate = 40000;            // 0.0004% (1% = 1e8, 100%=1e10)
-        extraRewardRate = 667;         // 0.00000667% (1% = 1e8, 100%=1e10)
+        extraRewardRate = 10000;       // 0.0001% (1% = 1e8, 100%=1e10)
+        boardRewardRate = 25 * 1e8;    // 25%
 
         maxAllowPeriod = 90 days;        
 
@@ -128,7 +140,7 @@ contract Property is ReentrancyGuard {
         minDepositAmount = 50 * (10**IERC20Metadata(_usdcToken).decimals());   // amount in cash(usd dollar - $50)
         maxDepositAmount = 5000 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $5000)
         fundFeePercent = 2 * 1e8;    // percent(2%) 
-        availableVABAmount = 75 * 1e7 * (10**IERC20Metadata(_payoutToken).decimals()); // 75M
+        availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(_payoutToken).decimals()); // 75M
         
         maxMintFeePercent = 1e9;   // 10%
         subscriptionAmount = 10 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $10)
@@ -140,7 +152,7 @@ contract Property is ReentrancyGuard {
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
     function proposalAuditor(address _agent) external onlyStaker nonReentrant {
         require(_agent != address(0), "proposalAuditor: Zero address");                
-        require(IOwnablee(OWNABLE).auditor() != _agent, "proposalAuditor: Already Auditor address");                
+        require(IOwnablee(OWNABLE).auditor() != _agent, "proposalAuditor: Already auditor address");                
         require(__isPaidFee(proposalFeeAmount), 'proposalAuditor: Not paid fee');
 
         agents.push(_agent);
@@ -190,26 +202,96 @@ contract Property is ReentrancyGuard {
         require(isRewardWhitelist[_rewardAddress] == 0, "proposalRewardFund: Already created proposal by this address");
         require(__isPaidFee(10 * proposalFeeAmount), 'proposalRewardFund: Not paid fee');
 
+        rewardAddressList.push(_rewardAddress);
         isRewardWhitelist[_rewardAddress] = 1;
 
-        RewardProposal storage _proposal = rewardProposalInfo[_rewardAddress];
-        _proposal.title = _title;
-        _proposal.description = _description;
+        RewardProposal storage rp = rewardProposalInfo[_rewardAddress];
+        rp.title = _title;
+        rp.description = _description;
     }
 
     /// @notice Set DAO_FUND_REWARD by Vote contract
     function setRewardAddress(address _rewardAddress) external onlyVote nonReentrant {
         isRewardWhitelist[_rewardAddress] = 2;
         DAO_FUND_REWARD = _rewardAddress;
+
+        __removeRewardAddress(_rewardAddress);
+    }
+
+    function __removeRewardAddress(address _address) private {
+        for(uint256 i = 0; i < rewardAddressList.length; i++) { 
+            if(_address != rewardAddressList[i]) continue;
+
+            rewardAddressList[i] = rewardAddressList[rewardAddressList.length - 1];
+            rewardAddressList.pop();
+        }
     }
 
     /// @notice Get reward fund proposal title and description
     function getRewardProposalInfo(address _rewardAddress) external view returns (string memory, string memory) {
-        RewardProposal storage _proposal = rewardProposalInfo[_rewardAddress];
-        string memory title_ = _proposal.title;
-        string memory desc_ = _proposal.description;        
+        RewardProposal storage rp = rewardProposalInfo[_rewardAddress];
+        string memory title_ = rp.title;
+        string memory desc_ = rp.description;        
 
         return (title_, desc_);
+    }
+
+    // =================== FilmBoard proposal ====================
+    /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
+    function proposalFilmBoard(address _member) external nonReentrant {
+        require(_member != address(0), "proposalFilmBoard: Zero candidate address");     
+        require(isBoardWhitelist[_member] == 0, "proposalFilmBoard: Already film board member or candidate");                  
+        require(__isPaidFee(proposalFeeAmount), 'proposalFilmBoard: Not paid fee');     
+
+        filmBoardCandidates.push(_member);
+        isBoardWhitelist[_member] = 1;
+
+        emit FilmBoardProposalCreated(_member);
+    }
+
+    /// @notice Add a member to whitelist by Vote contract
+    function addFilmBoardMember(address _member) external onlyVote nonReentrant {
+        require(_member != address(0), "addFilmBoardMember: Zero candidate address");     
+        require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
+
+        filmBoardMembers.push(_member);
+        isBoardWhitelist[_member] = 2;
+        
+        for(uint256 i = 0; i < filmBoardCandidates.length; i++) {
+            if(_member == filmBoardCandidates[i]) {
+                filmBoardCandidates[i] = filmBoardCandidates[filmBoardCandidates.length - 1];
+                filmBoardCandidates.pop();
+            }
+        }
+        emit FilmBoardMemberAdded(_member);
+    }
+
+    /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
+    function removeFilmBoardMember(address _member) external nonReentrant {
+        require(isBoardWhitelist[_member] == 2, "removeFilmBoardMember: Not Film board member");        
+        require(maxAllowPeriod < block.timestamp - lastVoteTime[_member], 'maxAllowPeriod');
+        require(maxAllowPeriod > block.timestamp - IStakingPool(STAKING_POOL).lastfundProposalCreateTime(), 'lastfundProposalCreateTime');
+
+        isBoardWhitelist[_member] = 0;
+    
+        for(uint256 i = 0; i < filmBoardMembers.length; i++) {
+            if(_member == filmBoardMembers[i]) {
+                filmBoardMembers[i] = filmBoardMembers[filmBoardMembers.length - 1];
+                filmBoardMembers.pop();
+            }
+        }
+        emit FilmBoardMemberRemoved(_member);
+    }
+    
+    /// @notice Get film board candidates/members
+    function getFilmBoardItems(bool _candidateOrMember) external view returns (address[] memory) {
+        if(_candidateOrMember) return filmBoardCandidates;
+        else return filmBoardMembers;
+    }
+
+    /// @notice Update last vote time
+    function updateLastVoteTime(address _member) external onlyVote {
+        lastVoteTime[_member] = block.timestamp;
     }
     
     // ================= subscriptionAmount ==========
@@ -427,7 +509,7 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice get a property list in a vote
-    function getPeriodList(uint256 _flag) public view returns (uint256[] memory _list) {
+    function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list) {
         if(_flag == 0) _list = filmVotePeriodList;
         else if(_flag == 1) _list = agentVotePeriodList;
         else if(_flag == 2) _list = disputeGracePeriodList;
@@ -445,7 +527,7 @@ contract Property is ReentrancyGuard {
         else if(_flag == 14) _list = minStakerCountPercentList;             
     }
 
-    /// @dev Update the property value for only testing in the testnet
+    ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
     function updatePropertyForTesting(uint256 _value, uint256 _flag) external onlyAuditor {
         require(_value > 0, "test: Zero value");

@@ -29,11 +29,5 @@ interface IVabbleDAO {
 
     function isRaisedFullAmount(uint256 _filmId) external view returns (bool);
 
-    function updateLastVoteTime(address _member) external;
-
-    function addFilmBoardMember(address _member) external;
-
-    function isBoardWhitelist(address _member) external view returns (uint256);
-
     function withdrawAllFund() external;
 }

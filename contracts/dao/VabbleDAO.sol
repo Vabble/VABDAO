@@ -28,14 +28,11 @@ contract VabbleDAO is ReentrancyGuard {
     event FundFeePercentUpdated(uint256 fundFeePercent);
     event ProposalFeeAmountUpdated(uint256 proposalFeeAmount);
     event FundProcessed(uint256 filmId);
-    // filmboard    
-    event FilmBoardProposalCreated(address member);
-    event FilmBoardMemberAdded(address member);
-    event FilmBoardMemberRemoved(address member);
 
     struct UserRent {
         uint256 vabAmount;       // current VAB amount in DAO
         uint256 withdrawAmount;  // pending withdraw amount for a customer
+        bool pending;            // pending status for withdraw
     }
 
     struct Asset {
@@ -63,22 +60,14 @@ contract VabbleDAO is ReentrancyGuard {
     address public immutable DAO_PROPERTY;
     address public immutable USDC_TOKEN;      // USDC token 
     
-    uint256 public lastfundProposalCreateTime;// funding proposal created time(block.timestamp)
-
     uint256[] private proposalFilmIds;    
     uint256[] private updatedFilmIds;    
     uint256[] private finalFilmIds;
-
-    address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
-    address[] private filmBoardMembers;      // filmBoard members
-
+    
     mapping(uint256 => Film) private filmInfo;             // Each film information(filmId => Film)
     mapping(address => UserRent) public userRentInfo;
     mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
-    // filmboard
-    mapping(address => uint256) public isBoardWhitelist; // (filmBoard member => 0: no member, 1: candiate, 2: already member)
-    mapping(address => uint256) public lastVoteTime;     // (staker => block.timestamp)
     
     Counters.Counter public filmCount;          // filmId is from No.1
 
@@ -135,8 +124,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         for(uint256 i = 0; i < _proposalFilms.length; i++) { 
             proposalFilmIds.push(__proposalFilm(_proposalFilms[i])); 
-        }
-        
+        }        
         emit FilmsProposalCreated(proposalFilmIds, msg.sender);        
     }
 
@@ -181,9 +169,7 @@ contract VabbleDAO is ReentrancyGuard {
         _filmInfo.status = Helper.Status.LISTED;
 
         // If proposal is for fund, update "lastfundProposalCreateTime"
-        if(_raiseAmount > 0) {
-            lastfundProposalCreateTime = block.timestamp;
-        }
+        if(_raiseAmount > 0) IStakingPool(STAKING_POOL).updateLastfundProposalCreateTime(block.timestamp);
 
         return filmId;
     }
@@ -209,7 +195,6 @@ contract VabbleDAO is ReentrancyGuard {
                 updatedFilmIds.push(filmId_);
             }
         }   
-
         emit FilmsMultiUpdated(updatedFilmIds, msg.sender);
     }
 
@@ -223,8 +208,7 @@ contract VabbleDAO is ReentrancyGuard {
             filmInfo[_filmId].fundStart = block.timestamp;
         } else {
             filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;    
-        }
-        
+        }        
         emit FilmApproved(_filmId);
     }
 
@@ -237,7 +221,6 @@ contract VabbleDAO is ReentrancyGuard {
         for(uint256 i = 0; i < _finalFilms.length; i++) {
             __setFinalFilm(_finalFilms[i]);
         }
-
         emit FilmsFinalSet(finalFilmIds);
     }
 
@@ -274,72 +257,15 @@ contract VabbleDAO is ReentrancyGuard {
                 filmInfo[filmIds_[i]].status == Helper.Status.APPROVED_LISTING;
             }
         }   
-    }
-
-    // =================== FilmBoard proposal ====================
-    /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
-    function proposalFilmBoard(address _member) external nonReentrant {
-        require(_member != address(0), "proposalFilmBoard: Zero candidate address");     
-        require(isBoardWhitelist[_member] == 0, "proposalFilmBoard: Already film board member or candidate");                  
-        require(__isPaidFee(false), 'proposalFilmBoard: Not paid fee');     
-
-        filmBoardCandidates.push(_member);
-        isBoardWhitelist[_member] = 1;
-
-        emit FilmBoardProposalCreated(_member);
-    }
-
-    /// @notice Get film board candidates/members
-    function getFilmBoardItems(bool _candidateOrMember) external view returns (address[] memory) {
-        if(_candidateOrMember) return filmBoardCandidates;
-        else return filmBoardMembers;
-    }
-
-    /// @notice Add a member to whitelist by Vote contract
-    function addFilmBoardMember(address _member) external onlyVote nonReentrant {
-        require(_member != address(0), "addFilmBoardMember: Zero candidate address");     
-        require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
-
-        filmBoardMembers.push(_member);
-        isBoardWhitelist[_member] = 2;
-        
-        for(uint256 i = 0; i < filmBoardCandidates.length; i++) {
-            if(_member == filmBoardCandidates[i]) {
-                filmBoardCandidates[i] = filmBoardCandidates[filmBoardCandidates.length - 1];
-                filmBoardCandidates.pop();
-            }
-        }
-        emit FilmBoardMemberAdded(_member);
-    }
-
-    /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
-    function removeFilmBoardMember(address _member) external nonReentrant {
-        require(isBoardWhitelist[_member] == 2, "removeFilmBoardMember: Not Film board member");        
-        require(IProperty(DAO_PROPERTY).maxAllowPeriod() < block.timestamp - lastVoteTime[_member], 'maxAllowPeriod');
-        require(IProperty(DAO_PROPERTY).maxAllowPeriod() > block.timestamp - lastfundProposalCreateTime, 'lastfundProposalCreateTime');
-
-        isBoardWhitelist[_member] = 0;
-    
-        for(uint256 i = 0; i < filmBoardMembers.length; i++) {
-            if(_member == filmBoardMembers[i]) {
-                filmBoardMembers[i] = filmBoardMembers[filmBoardMembers.length - 1];
-                filmBoardMembers.pop();
-            }
-        }
-        emit FilmBoardMemberRemoved(_member);
-    }
-
-    /// @notice Update last vote time
-    function updateLastVoteTime(address _member) external onlyVote {
-        lastVoteTime[_member] = block.timestamp;
-    }    
+    }  
 
     // =================== Funding(Launch Pad) START ===============================
-    /// @notice Deposit tokens/ETH($50 ~ $5000 per address for a film) to only funding film by customer(investor)
+    /// @notice Deposit tokens(VAB, USDT, USDC)/native token($50 ~ $5000 per address for a film) to only funding film by customer(investor)
     function depositToFilm(uint256 _filmId, address _token, uint256 _amount) external payable nonReentrant {
-        require(msg.sender != address(0), "depositToFilm: Zero customer address");
+        require(msg.sender != address(0) && _amount > 0, "depositToFilm: Zero value");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "depositToFilm: filmId not approved for funding");
         require(filmInfo[_filmId].fundPeriod >= block.timestamp - filmInfo[_filmId].fundStart, "depositToFilm: passed funding period");
+        require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");    
 
         if(filmInfo[_filmId].onlyAllowVAB) {
             require(_token == address(PAYOUT_TOKEN), "depositToFilm: Allowed only VAB token");            
@@ -376,10 +302,7 @@ contract VabbleDAO is ReentrancyGuard {
         }
         // add new token
         if(isNewTokenPerUser) {
-            assetInfo[_filmId][msg.sender].push(Asset({
-                token: _token,
-                amount: _amount 
-            }));
+            assetInfo[_filmId][msg.sender].push(Asset({token: _token, amount: _amount}));
         }
         
         for(uint256 i = 0; i < assetPerFilm[_filmId].length; i++) {
@@ -389,10 +312,7 @@ contract VabbleDAO is ReentrancyGuard {
             }
         }
         if(isNewTokenPerFilm) {
-            assetPerFilm[_filmId].push(Asset({
-                token: _token,
-                amount: _amount 
-            }));
+            assetPerFilm[_filmId].push(Asset({token: _token, amount: _amount}));
         }
     }
     
@@ -429,7 +349,6 @@ contract VabbleDAO is ReentrancyGuard {
             }        
             IStakingPool(STAKING_POOL).addRewardToPool(rewardSumAmount);
         }
-
         emit FundProcessed(_filmId);
     }
 
@@ -479,9 +398,11 @@ contract VabbleDAO is ReentrancyGuard {
     /// @notice Pending Withdraw VAB token by customer
     function pendingWithdraw(uint256 _amount) external nonReentrant {
         require(msg.sender != address(0), "pendingWithdraw: Zero address");
-        require(_amount > 0 && _amount <= userRentInfo[msg.sender].vabAmount, "pendingWithdraw: Insufficient VAB amount");
+        require(_amount > 0 && _amount <= userRentInfo[msg.sender].vabAmount - userRentInfo[msg.sender].withdrawAmount, "pendingWithdraw: Insufficient VAB amount");
+        require(!userRentInfo[msg.sender].pending, "pendingWithdraw: already pending status");
 
-        userRentInfo[msg.sender].withdrawAmount = _amount;
+        userRentInfo[msg.sender].withdrawAmount += _amount;
+        userRentInfo[msg.sender].pending = true;
 
         emit WithdrawPending(msg.sender, address(PAYOUT_TOKEN), _amount);
     }
@@ -492,10 +413,12 @@ contract VabbleDAO is ReentrancyGuard {
 
         // Transfer withdrawable amount to _customers
         for(uint256 i = 0; i < _customers.length; i++) {
-            if(userRentInfo[_customers[i]].withdrawAmount > 0) {
-                if(userRentInfo[_customers[i]].withdrawAmount <= userRentInfo[_customers[i]].vabAmount) {
-                    __transferVABWithdraw(_customers[i]);
-                }            
+            if(
+                userRentInfo[_customers[i]].withdrawAmount > 0 &&
+                userRentInfo[_customers[i]].withdrawAmount <= userRentInfo[_customers[i]].vabAmount &&
+                userRentInfo[_customers[i]].pending
+            ) {
+                __transferVABWithdraw(_customers[i]);
             }
         }
     }
@@ -507,6 +430,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         userRentInfo[_to].vabAmount -= payAmount;
         userRentInfo[_to].withdrawAmount = 0;
+        userRentInfo[_to].pending = false;
 
         emit WithdrawVABTransferred(_to, address(PAYOUT_TOKEN), payAmount);
     }
@@ -517,8 +441,9 @@ contract VabbleDAO is ReentrancyGuard {
 
         // Release withdrawable amount for _customers
         for(uint256 i = 0; i < _customers.length; i++) {
-            if(userRentInfo[_customers[i]].withdrawAmount > 0) {
+            if(userRentInfo[_customers[i]].withdrawAmount > 0 && userRentInfo[_customers[i]].pending) {
                 userRentInfo[_customers[i]].withdrawAmount = 0;
+                userRentInfo[_customers[i]].pending = false;
             }
         }
     }  
@@ -529,7 +454,7 @@ contract VabbleDAO is ReentrancyGuard {
         require(_fundPeriod > 0, "updatefundPeriod: Invalid fundPeriod");   
 
         filmInfo[_filmId].fundPeriod = _fundPeriod;
-
+        
         emit FundPeriodUpdated(_filmId, _fundPeriod);
     }    
 

@@ -25,6 +25,8 @@ contract StakingPool is ReentrancyGuard {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
         uint256 stakeTime;       // last staked time(here, means the time that staker withdrawable time)
+        uint256 voteCount;       //
+        uint256 proposalCount;
     }
 
     IERC20 private PAYOUT_TOKEN;           // VAB token   
@@ -35,6 +37,7 @@ contract StakingPool is ReentrancyGuard {
         
     uint256 public totalStakingAmount;   // 
     uint256 public totalRewardAmount;    // 
+    uint256 public lastfundProposalCreateTime;// funding proposal created time(block.timestamp)
     bool public isInitialized;           // check if contract initialized or not
 
     mapping(address => Stake) public stakeInfo;
@@ -45,7 +48,6 @@ contract StakingPool is ReentrancyGuard {
         require(msg.sender == VOTE, "caller is not the vote contract");
         _;
     }
-
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
         _;
@@ -89,17 +91,17 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Staking VAB token by staker
     function stakeToken(uint256 _amount) public nonReentrant {
         require(isInitialized, "stakeToken: Should be initialized");
-        require(msg.sender != address(0), "stakeToken: Zero address");
-        require(_amount > 0, "stakeToken: Zero amount");
+        require(msg.sender != address(0) && _amount > 0, "stakeToken: Zero value");
 
         Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
 
-        if(stakeInfo[msg.sender].stakeAmount == 0 && stakeInfo[msg.sender].withdrawableTime == 0) {
+        Stake storage si = stakeInfo[msg.sender];
+        if(si.stakeAmount == 0 && si.stakeTime == 0) {
             stakerCount.increment();
         }
-        stakeInfo[msg.sender].stakeAmount += _amount;
-        stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
-        stakeInfo[msg.sender].stakeTime = block.timestamp;
+        si.stakeAmount += _amount;
+        si.stakeTime = block.timestamp;
+        si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
 
         totalStakingAmount += _amount;
 
@@ -110,10 +112,10 @@ contract StakingPool is ReentrancyGuard {
     function unstakeToken(uint256 _amount) external nonReentrant {
         require(isInitialized, "unstakeToken: Should be initialized");
         require(msg.sender != address(0), "unstakeToken: Zero staker address");
-        require(stakeInfo[msg.sender].stakeAmount >= _amount, "unstakeToken: Insufficient stake token amount");
-        require(
-            block.timestamp >= stakeInfo[msg.sender].withdrawableTime, "unstakeToken: Token locked yet"
-        );
+
+        Stake storage si = stakeInfo[msg.sender];
+        require(si.stakeAmount >= _amount, "unstakeToken: Insufficient stake amount");
+        require(block.timestamp > si.withdrawableTime, "unstakeToken: lock period yet");
 
         // first, withdraw reward
         uint256 rewardAmount = calcRewardAmount(msg.sender);
@@ -124,19 +126,20 @@ contract StakingPool is ReentrancyGuard {
         // Next, unstake
         // Todo should check if we consider reward amount here or not
         Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);        
-        stakeInfo[msg.sender].stakeAmount -= _amount;
+        si.stakeAmount -= _amount;        
         totalStakingAmount -= _amount;
 
-        if(stakeInfo[msg.sender].stakeAmount == 0) stakerCount.decrement();
-
+        if(si.stakeAmount == 0) {
+            stakerCount.decrement();
+            delete stakeInfo[msg.sender];
+        } 
         emit TokenUnstaked(msg.sender, _amount);
     }
 
     /// @notice Withdraw reward
     function withdrawReward() external nonReentrant {
-        require(msg.sender != address(0), "withdrawReward: Zero staker address");
         require(stakeInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
-        require(block.timestamp - stakeInfo[msg.sender].stakeTime > IProperty(DAO_PROPERTY).lockPeriod(), "withdrawReward: lock period yet");
+        require(block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
 
         uint256 rewardAmount = calcRewardAmount(msg.sender);
         require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
@@ -146,11 +149,31 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Calculate reward amount and extra reward amount for funding film vote
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
-        require(stakeInfo[_customer].stakeAmount > 0, "calcRewardAmount: Not staker");
-        
+        Stake storage si = stakeInfo[_customer];
+        require(si.stakeAmount > 0, "calcRewardAmount: Not staker");
+
+        // get count of vote(proposal) started in withdrawable period of customer
+        uint256 voteStartCount = 0;
+        uint256[] memory voteTimeList = IVote(VOTE).getVoteStartTimeList();
+        for(uint256 i = 0; i < voteTimeList.length; i++) { 
+            if(voteTimeList[i] > si.stakeTime && voteTimeList[i] < si.withdrawableTime) {
+                voteStartCount += 1;
+            }
+        }
+
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 timeVal = (block.timestamp - stakeInfo[_customer].stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
-        uint256 rewardAmount = stakeInfo[_customer].stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
+        uint256 timeVal = (block.timestamp - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
+        uint256 rewardAmount = si.stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
+        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
+        if(voteStartCount > 0) {
+            require(si.voteCount > 0, "calcRewardAmount: Not vote in withdrawable period");
+            rewardAmount = rewardAmount * (si.voteCount * 1e4) / (voteStartCount * 1e4);
+        }
+        
+        // If film is for funding and voter is film board member, more rewards(25%)
+        if(IProperty(DAO_PROPERTY).isBoardWhitelist(_customer) == 2) {            
+            rewardAmount += rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+        }
 
         uint256 extraRewardAmount;
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
@@ -167,9 +190,11 @@ contract StakingPool is ReentrancyGuard {
 
     /// @dev Transfer reward amount
     function __withdrawReward(uint256 _amount) private {
-        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);
-        stakeInfo[msg.sender].stakeTime = block.timestamp;
+        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);        
         totalRewardAmount -= _amount;
+
+        stakeInfo[msg.sender].stakeTime = block.timestamp;
+        stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
 
         IVote(VOTE).removeFundingFilmIdsPerUser(msg.sender);
         
@@ -203,8 +228,7 @@ contract StakingPool is ReentrancyGuard {
         if(PAYOUT_TOKEN.balanceOf(address(VABBLE_DAO)) > 0) {
             // Already approved payoutToken for stakingPool in vabbleDAO, so don't need approve again.
             Helper.safeTransferFrom(address(PAYOUT_TOKEN), VABBLE_DAO, rewardAddress, PAYOUT_TOKEN.balanceOf(address(VABBLE_DAO)));
-        }
-        
+        }        
         emit RewardWithdraw(rewardAddress, totalPayoutAmount);
     }
 
@@ -213,12 +237,22 @@ contract StakingPool is ReentrancyGuard {
         stakeInfo[_user].withdrawableTime = _time;
     }
 
+    /// @notice Update lastStakedTime for a staker when vote
+    function updateVoteCount(address _user) external onlyVote {
+        stakeInfo[_user].voteCount += 1;
+    }
+
+    /// @notice Update lastfundProposalCreateTime for only fund film proposal
+    function updateLastfundProposalCreateTime(uint256 _time) external {
+        lastfundProposalCreateTime = _time;
+    }
+
     /// @notice Get staking amount for a staker
     function getStakeAmount(address _user) external view returns(uint256 amount_) {
         amount_ = stakeInfo[_user].stakeAmount;
     }
 
-    /// @notice Get limit staker count for votting
+    /// @notice Get limit staker count for voting
     function getLimitCount() external view returns(uint256 count_) {
         uint256 limitPercent = IProperty(DAO_PROPERTY).minStakerCountPercent();
         uint256 minVoteCount = IProperty(DAO_PROPERTY).minVoteCount();
