@@ -119,7 +119,8 @@ contract StakingPool is ReentrancyGuard {
 
         // first, withdraw reward
         uint256 rewardAmount = calcRewardAmount(msg.sender);
-        if(totalRewardAmount >= rewardAmount) {
+        console.log("sol=>rewardAmount::", rewardAmount);
+        if(totalRewardAmount >= rewardAmount && rewardAmount > 0) {
             __withdrawReward(rewardAmount);
         }
 
@@ -142,7 +143,7 @@ contract StakingPool is ReentrancyGuard {
         require(block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
 
         uint256 rewardAmount = calcRewardAmount(msg.sender);
-        require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
+        require(totalRewardAmount >= rewardAmount && rewardAmount > 0, "withdrawReward: Insufficient total reward amount");
 
         __withdrawReward(rewardAmount);
     }
@@ -164,17 +165,7 @@ contract StakingPool is ReentrancyGuard {
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 timeVal = (block.timestamp - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
         uint256 rewardAmount = si.stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
-        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
-        if(voteStartCount > 0) {
-            require(si.voteCount > 0, "calcRewardAmount: Not vote in withdrawable period");
-            rewardAmount = rewardAmount * (si.voteCount * 1e4) / (voteStartCount * 1e4);
-        }
         
-        // If film is for funding and voter is film board member, more rewards(25%)
-        if(IProperty(DAO_PROPERTY).isBoardWhitelist(_customer) == 2) {            
-            rewardAmount += rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
-        }
-
         uint256 extraRewardAmount;
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
@@ -184,6 +175,19 @@ contract StakingPool is ReentrancyGuard {
                 extraRewardAmount += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
             }
         } 
+        
+        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
+        if(voteStartCount > 0) {
+            if(si.voteCount == 0) {
+                rewardAmount = 0;
+                extraRewardAmount = 0;
+            } else rewardAmount = rewardAmount * (si.voteCount * 1e4) / (voteStartCount * 1e4);
+        }
+        
+        // If customer is film board member, more rewards(25%)
+        if(IProperty(DAO_PROPERTY).isBoardWhitelist(_customer) == 2) {            
+            rewardAmount += rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+        }        
 
         amount_ = rewardAmount + extraRewardAmount;
     }

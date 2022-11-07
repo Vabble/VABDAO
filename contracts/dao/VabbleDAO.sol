@@ -68,6 +68,7 @@ contract VabbleDAO is ReentrancyGuard {
     mapping(address => UserRent) public userRentInfo;
     mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
+    mapping(uint256 => address[]) private investorList;  // (filmId => investor address[])
     
     Counters.Counter public filmCount;          // filmId is from No.1
 
@@ -271,7 +272,10 @@ contract VabbleDAO is ReentrancyGuard {
             require(_token == address(PAYOUT_TOKEN), "depositToFilm: Allowed only VAB token");            
         } 
         require(__checkMinMaxAmount(_filmId, _token, _amount), "depositToFilm: Invalid amount");
-        
+
+        if(getUserFundAmountPerFilm(msg.sender, _filmId) == 0) {
+            investorList[_filmId].push(msg.sender);
+        }
         // Return remain ETH to user back if case of ETH
         if(_token == address(0)) {
             require(msg.value >= _amount, "depositToFilm: Insufficient paid");
@@ -557,9 +561,14 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// @notice Get proposal/updated/final film Ids
-    function getFilmIds(uint256 _flag) external view returns(uint256[] memory) {
+    function getFilmIds(uint256 _flag) external view returns (uint256[] memory) {
         if(_flag == 1) return proposalFilmIds;
         else if(_flag == 2) return updatedFilmIds;
         else return finalFilmIds;
     }  
+
+    /// @notice Get investor list per film Id
+    function getInvestorList(uint256 _filmId) external view returns (address[] memory) {
+        return investorList[_filmId];
+    }
 }

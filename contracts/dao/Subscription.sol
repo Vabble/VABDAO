@@ -94,7 +94,8 @@ contract Subscription is ReentrancyGuard {
     /// @notice active subscription(pay $10 monthly as ETH/USDC/USDT/VAB...) for renting the films
     function activeSubscription(address _token, uint256 _period) external payable nonReentrant {        
         require(!isActivedSubscription(msg.sender), "activeSubscription: Already actived");  
-        
+        require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset"); 
+
         uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
         if(_token == address(0)) {
             require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
