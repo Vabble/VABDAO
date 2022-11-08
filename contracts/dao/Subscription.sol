@@ -21,12 +21,10 @@ contract Subscription is ReentrancyGuard {
     event GatedContentRegistered(address studio, uint256[] filmIds);
     event VABWalletChanged(address wallet);
 
-    IERC20 private immutable PAYOUT_TOKEN;   // VAB token      
     address private immutable OWNABLE;      // Ownablee contract address  
     address private immutable VABBLE_DAO;   // VabbleDAO contract
     address private immutable UNI_HELPER;   // UniHelper contract
     address private immutable DAO_PROPERTY; // Property contract
-    address private immutable USDC_TOKEN;   // USDC token
     address public VAB_WALLET;              // Vabble wallet
 
     uint256 private constant PERIOD_UNIT = 30 days; // 30 days
@@ -66,16 +64,12 @@ contract Subscription is ReentrancyGuard {
     receive() external payable {}
 
     constructor(
-        address _payoutToken,
         address _ownableContract,
         address _uniHelperContract,
         address _daoProperty,
         address _vabbleDAO,
-        address _usdcToken,
         address _vabbleWallet
     ) {        
-        require(_payoutToken != address(0), "payoutToken: Zero address");
-        PAYOUT_TOKEN = IERC20(_payoutToken); 
         require(_ownableContract != address(0), "ownableContract: Zero address");
         OWNABLE = _ownableContract;  
         require(_uniHelperContract != address(0), "uniHelperContract: Zero address");
@@ -84,8 +78,6 @@ contract Subscription is ReentrancyGuard {
         DAO_PROPERTY = _daoProperty; 
         require(_vabbleDAO != address(0), "vabbleDAO: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO;  
-        require(_usdcToken != address(0), "usdcToken: Zero address");
-        USDC_TOKEN = _usdcToken;
         require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
         VAB_WALLET = _vabbleWallet;
     }
@@ -112,11 +104,13 @@ contract Subscription is ReentrancyGuard {
         }
 
         uint256 usdcAmount;
+        address usdc_token = IProperty(DAO_PROPERTY).USDC_TOKEN();
+        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
         // if token is VAB, send USDC to wallet after convert VAB to USDC
-        if(_token == address(PAYOUT_TOKEN)) {
-            bytes memory swapArgs = abi.encode(expectAmount, _token, USDC_TOKEN);
+        if(_token == payout_token) {
+            bytes memory swapArgs = abi.encode(expectAmount, _token, usdc_token);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
-            Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, usdcAmount);
+            Helper.safeTransfer(usdc_token, VAB_WALLET, usdcAmount);
         } 
         // if token is not VAB, 
         // 1. send VAB to wallet after convert token(60%) to VAB
@@ -127,23 +121,23 @@ contract Subscription is ReentrancyGuard {
             // Send ETH from this contract to UNI_HELPER contract
             if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, amount60);
             
-            bytes memory swapArgs = abi.encode(amount60, _token, address(PAYOUT_TOKEN));
+            bytes memory swapArgs = abi.encode(amount60, _token, payout_token);
             uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             
             // Transfer VAB to wallet
-            Helper.safeTransfer(address(PAYOUT_TOKEN), VAB_WALLET, vabAmount);
+            Helper.safeTransfer(payout_token, VAB_WALLET, vabAmount);
 
-            if(_token == USDC_TOKEN) {
+            if(_token == usdc_token) {
                 usdcAmount = expectAmount - amount60;
             } else {
                 // Send ETH from this contract to UNI_HELPER contract
                 if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60);
                 
-                bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, USDC_TOKEN);
+                bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdc_token);
                 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
             }
             // Transfer USDC to wallet
-            Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, usdcAmount);
+            Helper.safeTransfer(usdc_token, VAB_WALLET, usdcAmount);
         }
 
         UserSubscription storage subscription = subscriptionInfo[msg.sender];
@@ -157,14 +151,15 @@ contract Subscription is ReentrancyGuard {
     function getExpectedSubscriptionAmount(address _token, uint256 _period) public view returns(uint256 expectAmount_) {
         require(_period > 0, "getExpectedSubscriptionAmount: Zero period");
 
+        address usdc_token = IProperty(DAO_PROPERTY).USDC_TOKEN();
+        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
-        if(_token == address(PAYOUT_TOKEN)) {
-            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, USDC_TOKEN, _token);
-        } else if(_token == USDC_TOKEN) {
+        if(_token == payout_token) {
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, usdc_token, _token);
+        } else if(_token == usdc_token) {
             expectAmount_ = scriptAmount;
         } else {            
-            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
-            // if(_token == address(0)) _token is ETH/Matic...
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, usdc_token, _token);
         }
     }
 

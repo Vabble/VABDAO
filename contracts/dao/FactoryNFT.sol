@@ -27,12 +27,10 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
         uint256 mintedAmount;     // current minted amount(<= maxMintAmount)
     }
 
-    IERC20 private immutable PAYOUT_TOKEN;     // VAB token      
     address private immutable OWNABLE;         // Ownablee contract address
     address private immutable STAKING_POOL;    // StakingPool contract address
     address private immutable UNI_HELPER;      // UniHelper contract address
     address private immutable DAO_PROPERTY;    // Property contract address
-    address private immutable USDC_TOKEN;      // USDC token 
 
     Counters.Counter private nftCount;
     string public baseUri;                     // Base URI    
@@ -53,17 +51,13 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
     receive() external payable {}
 
     constructor(
-        address _payoutToken,
         address _ownableContract,
         address _stakingContract,
         address _uniHelperContract,
         address _daoProperty,
-        address _usdcToken,
         string memory _name,
         string memory _symbol
-    ) ERC721(_name, _symbol) {        
-        require(_payoutToken != address(0), "payoutToken: Zero address");
-        PAYOUT_TOKEN = IERC20(_payoutToken);        
+    ) ERC721(_name, _symbol) {
         require(_ownableContract != address(0), "ownableContract: Zero address");
         OWNABLE = _ownableContract;  
         require(_stakingContract != address(0), "stakingContract: Zero address");
@@ -72,8 +66,6 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
         UNI_HELPER = _uniHelperContract;   
         require(_daoProperty != address(0), "daoProperty: Zero address");
         DAO_PROPERTY = _daoProperty;    
-        require(_usdcToken != address(0), "usdcToken: Zero address");
-        USDC_TOKEN = _usdcToken;
     }
 
     /// @notice Set baseURI by Auditor.
@@ -106,7 +98,7 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
         require(maxMintAmount >= _mintAmount + currentMintedAmount, "batchMintTo: exceed mint amount");
 
         uint256 totalMintPrice = mintInfo[_studio].mintPrice * _mintAmount;        
-        uint256 expectAmount = IUniHelper(UNI_HELPER).expectedAmount(totalMintPrice, USDC_TOKEN, _payToken);
+        uint256 expectAmount = IUniHelper(UNI_HELPER).expectedAmount(totalMintPrice, IProperty(DAO_PROPERTY).USDC_TOKEN(), _payToken);
         
         // Return remain ETH to user back if case of ETH
         // Transfer Asset from buyer to this contract
@@ -119,14 +111,15 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
             Helper.safeTransferFrom(_payToken, msg.sender, address(this), expectAmount);
         }                
 
+        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
         // Approve VAB token to StakingPool contract
-        if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
-            Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
+        if(IERC20(payout_token).allowance(address(this), STAKING_POOL) == 0) {
+            Helper.safeApprove(payout_token, STAKING_POOL, IERC20(payout_token).totalSupply());
         } 
 
         // Add VAB token to rewardPool after swap feeAmount(2%) from UniswapV2
         uint256 feeAmount = expectAmount * mintInfo[_studio].feePercent / 1e10;       
-        if(_payToken == address(PAYOUT_TOKEN)) {
+        if(_payToken == payout_token) {
             IStakingPool(STAKING_POOL).addRewardToPool(feeAmount);
         } else {
             __addReward(feeAmount, _payToken);        
@@ -152,7 +145,7 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
                 Helper.safeApprove(_payToken, UNI_HELPER, IERC20(_payToken).totalSupply());
             }
         }         
-        bytes memory swapArgs = abi.encode(_feeAmount, _payToken, address(PAYOUT_TOKEN));
+        bytes memory swapArgs = abi.encode(_feeAmount, _payToken, IProperty(DAO_PROPERTY).PAYOUT_TOKEN());
         uint256 feeVABAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);        
 
         // Transfer it(VAB token) to rewardPool

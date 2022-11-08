@@ -47,7 +47,8 @@ const CONFIG = {
     },
   },
   mumbai: {
-    usdcAdress: "0xe11A86849d99F524cAC3E7A0Ec1241828e332C62",
+    usdcAdress: "0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c",
+    usdtAdress: "0x47719C2b2A6853d04213efc85075674E93D02037",
     daiAddress: "0x001B3B4d0F3714Ca98ba10F6042DaEbF0B1B7b6F",
     vabToken: "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32",
     exmAddress: "0x53BeF80E0EBE5A89dfb67782b12435aBeB943754",
@@ -55,8 +56,6 @@ const CONFIG = {
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
-      // factory: '0xc35dadb65012ec5796536bd9864ed8773abc74c4',
-      // router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
     },
     sushiswap: { // Mainnet, Mumbai
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',

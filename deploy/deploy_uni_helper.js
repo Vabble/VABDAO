@@ -8,11 +8,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     this.uniswapRouter = CONFIG.mumbai.uniswap.router
     this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
     this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
-  } else if(NETWORK == 'rinkeby') {
-    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
-    this.uniswapRouter = CONFIG.mumbai.uniswap.router
-    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
-    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
   } else if(NETWORK == 'ethereum') {
     this.uniswapFactory = CONFIG.mumbai.uniswap.factory
     this.uniswapRouter = CONFIG.mumbai.uniswap.router

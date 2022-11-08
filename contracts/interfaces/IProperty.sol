@@ -39,4 +39,7 @@ interface IProperty {
     function updateLastVoteTime(address _member) external;
     function addFilmBoardMember(address _member) external;
     function isBoardWhitelist(address _member) external view returns (uint256);
+
+    function USDC_TOKEN() external view returns (address);
+    function PAYOUT_TOKEN() external view returns (address);
 }

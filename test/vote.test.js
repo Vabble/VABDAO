@@ -41,13 +41,9 @@ describe('Vote', function () {
       CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy(
-      this.vabToken.address, this.ownableContract.address
-    )).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy(this.ownableContract.address)).deployed(); 
 
-    this.voteContract = await (await this.VoteFactory.deploy(
-      this.vabToken.address, this.ownableContract.address
-    )).deployed();
+    this.voteContract = await (await this.VoteFactory.deploy(this.ownableContract.address)).deployed();
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
@@ -62,13 +58,11 @@ describe('Vote', function () {
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
-        this.vabToken.address,
         this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address,
-        this.USDC.address
+        this.propertyContract.address
       )
     ).deployed();    
 

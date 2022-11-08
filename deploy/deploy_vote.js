@@ -5,20 +5,9 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
     this.Ownablee = await deployments.get('Ownablee');  
   
-    if(NETWORK == 'mumbai') {
-      this.vabToken = CONFIG.mumbai.vabToken
-    } else if(NETWORK == 'rinkeby') {
-      this.vabToken = CONFIG.mumbai.vabToken
-    } else if(NETWORK == 'ethereum') {
-      this.vabToken = CONFIG.ethereum.vabToken
-    } else if(NETWORK == 'polygon') {
-      this.vabToken = CONFIG.polygon.vabToken
-    }
-
     await deploy('Vote', {
       from: deployer,
       args: [
-        this.vabToken,
         this.Ownablee.address
       ],
       log: true,

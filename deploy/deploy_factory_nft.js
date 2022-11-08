@@ -8,29 +8,13 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   this.Property = await deployments.get('Property');
   this.Ownablee = await deployments.get('Ownablee');
 
-  if(NETWORK == 'mumbai') {
-    this.vabToken = CONFIG.mumbai.vabToken
-    this.usdc = CONFIG.mumbai.usdcAdress
-  } else if(NETWORK == 'rinkeby') {
-    this.vabToken = CONFIG.mumbai.vabToken
-    this.usdc = CONFIG.mumbai.usdcAdress
-  } else if(NETWORK == 'ethereum') {
-    this.vabToken = CONFIG.ethereum.vabToken
-    this.usdc = CONFIG.ethereum.usdcAdress
-  } else if(NETWORK == 'polygon') {
-    this.vabToken = CONFIG.polygon.vabToken
-    this.usdc = CONFIG.polygon.usdcAdress
-  }
-  
   await deploy('FactoryNFT', {
     from: deployer,
     args: [
-      this.vabToken,
       this.Ownablee.address,
       this.StakingPool.address,
       this.UniHelper.address,
       this.Property.address,
-      this.usdc,
       'Vabble NFT', 
       'vnft'
     ],

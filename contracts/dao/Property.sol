@@ -22,15 +22,16 @@ contract Property is ReentrancyGuard {
         string title;          // proposal title
         string description;    // proposal description
     }
-
-    IERC20 private immutable PAYOUT_TOKEN;    // VAB token       
+  
     address private immutable OWNABLE;        // Ownablee contract address 
     address private immutable VOTE;           // Vote contract address
     address private immutable STAKING_POOL;   // StakingPool contract address
     address private immutable UNI_HELPER;     // UniHelper contract address
-    address private immutable USDC_TOKEN;     // USDC token 
 
-    address public DAO_FUND_REWARD;                               // address for sending the DAO rewards fund
+    address public PAYOUT_TOKEN;    // VAB token       
+    address public USDC_TOKEN;      // USDC token 
+    address public DAO_FUND_REWARD; // address for sending the DAO rewards fund
+
     mapping(address => uint256) public isRewardWhitelist;         //(rewardAddress => 0: no member, 1: candiate, 2: already member)    
     mapping(address => RewardProposal) public rewardProposalInfo; //(rewardAddress => RewardProposal)
 
@@ -109,7 +110,7 @@ contract Property is ReentrancyGuard {
         address _usdcToken
     ) {
         require(_payoutToken != address(0), "payoutToken: Zero address");
-        PAYOUT_TOKEN = IERC20(_payoutToken);    
+        PAYOUT_TOKEN = _payoutToken;    
         require(_ownableContract != address(0), "ownableContract: Zero address");
         OWNABLE = _ownableContract;  
         require(_voteContract != address(0), "voteContract: Zero address");
@@ -179,11 +180,11 @@ contract Property is ReentrancyGuard {
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
     function __isPaidFee(uint256 _payAmount) private returns(bool) {    
-        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(_payAmount, USDC_TOKEN, address(PAYOUT_TOKEN));
+        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(_payAmount, USDC_TOKEN, PAYOUT_TOKEN);
         if(expectVABAmount > 0) {
-            Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), expectVABAmount);
-            if(PAYOUT_TOKEN.allowance(address(this), STAKING_POOL) == 0) {
-                Helper.safeApprove(address(PAYOUT_TOKEN), STAKING_POOL, PAYOUT_TOKEN.totalSupply());
+            Helper.safeTransferFrom(PAYOUT_TOKEN, msg.sender, address(this), expectVABAmount);
+            if(IERC20(PAYOUT_TOKEN).allowance(address(this), STAKING_POOL) == 0) {
+                Helper.safeApprove(PAYOUT_TOKEN, STAKING_POOL, IERC20(PAYOUT_TOKEN).totalSupply());
             }  
             IStakingPool(STAKING_POOL).addRewardToPool(expectVABAmount);
             return true;
@@ -555,9 +556,11 @@ contract Property is ReentrancyGuard {
     }
 
     /// @dev Update the rewardAddress for only testing in the testnet
-    function updateRewardAddressForTesting(address _rewardAddress) external onlyAuditor {
-        require(_rewardAddress != address(0), "test: Zero address");
-        DAO_FUND_REWARD = _rewardAddress;            
+    function updateAddressForTesting(address _address, uint _flag) external onlyAuditor {        
+        require(_address != address(0), "test: Zero address");
+        if(_flag == 0) DAO_FUND_REWARD = _address;            
+        else if(_flag == 1) USDC_TOKEN = _address;      
+        else if(_flag == 2) PAYOUT_TOKEN = _address;
     }
         
 }

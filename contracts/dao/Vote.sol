@@ -37,7 +37,6 @@ contract Vote is ReentrancyGuard {
         uint256 disputeVABAmount; // VAB voted dispute
     }
 
-    IERC20 private immutable PAYOUT_TOKEN; // VAB token  
     address private immutable OWNABLE;     // Ownablee contract address
     address private VABBLE_DAO;
     address private STAKING_POOL;
@@ -78,12 +77,7 @@ contract Vote is ReentrancyGuard {
         _;
     }
 
-    constructor(
-        address _payoutToken,
-        address _ownableContract
-    ) {
-        require(_payoutToken != address(0), "payoutToken: Zero address");
-        PAYOUT_TOKEN = IERC20(_payoutToken);
+    constructor(address _ownableContract) {
         require(_ownableContract != address(0), "ownableContract: Zero address");
         OWNABLE = _ownableContract; 
     }

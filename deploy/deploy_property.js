@@ -11,9 +11,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   if(NETWORK == 'mumbai') {
     this.vabToken = CONFIG.mumbai.vabToken
     this.usdc = CONFIG.mumbai.usdcAdress
-  } else if(NETWORK == 'rinkeby') {
-    this.vabToken = CONFIG.mumbai.vabToken
-    this.usdc = CONFIG.mumbai.usdcAdress
   } else if(NETWORK == 'ethereum') {
     this.vabToken = CONFIG.ethereum.vabToken
     this.usdc = CONFIG.ethereum.usdcAdress

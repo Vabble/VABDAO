@@ -29,7 +29,6 @@ contract StakingPool is ReentrancyGuard {
         uint256 proposalCount;
     }
 
-    IERC20 private PAYOUT_TOKEN;           // VAB token   
     address private immutable OWNABLE;     // Ownablee contract address
     address private VOTE;                  // vote contract address
     address private VABBLE_DAO;            // VabbleDAO contract address
@@ -52,12 +51,7 @@ contract StakingPool is ReentrancyGuard {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
         _;
     }
-    constructor(        
-        address _payoutToken,
-        address _ownableContract
-    ) {
-        require(_payoutToken != address(0), "payoutToken: Zero address");
-        PAYOUT_TOKEN = IERC20(_payoutToken);
+    constructor(address _ownableContract) {
         require(_ownableContract != address(0), "ownableContract: Zero address");
         OWNABLE = _ownableContract;  
     }
@@ -82,7 +76,7 @@ contract StakingPool is ReentrancyGuard {
     function addRewardToPool(uint256 _amount) external {
         require(_amount > 0, 'addRewardToPool: Zero amount');
 
-        Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
+        Helper.safeTransferFrom(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
         totalRewardAmount += _amount;
 
         emit RewardAdded(totalRewardAmount, _amount);
@@ -93,7 +87,7 @@ contract StakingPool is ReentrancyGuard {
         require(isInitialized, "stakeToken: Should be initialized");
         require(msg.sender != address(0) && _amount > 0, "stakeToken: Zero value");
 
-        Helper.safeTransferFrom(address(PAYOUT_TOKEN), msg.sender, address(this), _amount);
+        Helper.safeTransferFrom(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
 
         Stake storage si = stakeInfo[msg.sender];
         if(si.stakeAmount == 0 && si.stakeTime == 0) {
@@ -126,7 +120,7 @@ contract StakingPool is ReentrancyGuard {
 
         // Next, unstake
         // Todo should check if we consider reward amount here or not
-        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);        
+        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, _amount);        
         si.stakeAmount -= _amount;        
         totalStakingAmount -= _amount;
 
@@ -194,7 +188,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @dev Transfer reward amount
     function __withdrawReward(uint256 _amount) private {
-        Helper.safeTransfer(address(PAYOUT_TOKEN), msg.sender, _amount);        
+        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, _amount);        
         totalRewardAmount -= _amount;
 
         stakeInfo[msg.sender].stakeTime = block.timestamp;
@@ -212,7 +206,7 @@ contract StakingPool is ReentrancyGuard {
         require(totalRewardAmount > 0, 'withdrawAllReward: Zero balance');
         
         uint256 amount = totalRewardAmount;
-        Helper.safeTransfer(address(PAYOUT_TOKEN), rewardAddress, totalRewardAmount);
+        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), rewardAddress, totalRewardAmount);
         totalRewardAmount = 0;
         
         emit RewardWithdraw(rewardAddress, amount);
@@ -223,15 +217,16 @@ contract StakingPool is ReentrancyGuard {
         address rewardAddress = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
         require(rewardAddress != address(0), 'withdrawAllFund: Zero address');
 
-        uint256 totalPayoutAmount = PAYOUT_TOKEN.balanceOf(address(this));
+        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
+        uint256 totalPayoutAmount = IERC20(payout_token).balanceOf(address(this));
         require(totalPayoutAmount > 0, 'withdrawAllFund: Zero balance');
         
-        Helper.safeTransfer(address(PAYOUT_TOKEN), rewardAddress, totalPayoutAmount);
+        Helper.safeTransfer(payout_token, rewardAddress, totalPayoutAmount);
         totalRewardAmount = 0;
 
-        if(PAYOUT_TOKEN.balanceOf(address(VABBLE_DAO)) > 0) {
+        if(IERC20(payout_token).balanceOf(address(VABBLE_DAO)) > 0) {
             // Already approved payoutToken for stakingPool in vabbleDAO, so don't need approve again.
-            Helper.safeTransferFrom(address(PAYOUT_TOKEN), VABBLE_DAO, rewardAddress, PAYOUT_TOKEN.balanceOf(address(VABBLE_DAO)));
+            Helper.safeTransferFrom(payout_token, VABBLE_DAO, rewardAddress, IERC20(payout_token).balanceOf(address(VABBLE_DAO)));
         }        
         emit RewardWithdraw(rewardAddress, totalPayoutAmount);
     }
