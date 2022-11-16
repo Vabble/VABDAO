@@ -27,13 +27,9 @@ contract Property is ReentrancyGuard {
     address private immutable VOTE;           // Vote contract address
     address private immutable STAKING_POOL;   // StakingPool contract address
     address private immutable UNI_HELPER;     // UniHelper contract address
-
     address public PAYOUT_TOKEN;    // VAB token       
     address public USDC_TOKEN;      // USDC token 
     address public DAO_FUND_REWARD; // address for sending the DAO rewards fund
-
-    mapping(address => uint256) public isRewardWhitelist;         //(rewardAddress => 0: no member, 1: candiate, 2: already member)    
-    mapping(address => RewardProposal) public rewardProposalInfo; //(rewardAddress => RewardProposal)
 
     // Vote
     uint256 public filmVotePeriod;       // 0 - film vote period
@@ -62,7 +58,8 @@ contract Property is ReentrancyGuard {
     uint256 public boardVoteWeight;      // filmBoard member's vote weight
     uint256 public rewardVotePeriod;     // withdraw address setup for moving to V2
     uint256 public subscriptionAmount;   // user need to have an active subscription(pay $10 per month) for rent films.    
-    uint256 public boardRewardRate;      // 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members   
+    uint256 public boardRewardRate;      // 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members        
+    uint256 public governanceProposalCount;
 
     address[] private agents;
     address[] private rewardAddressList;
@@ -85,8 +82,12 @@ contract Property is ReentrancyGuard {
     // filmboard member proposal
     address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
     address[] private filmBoardMembers;      // filmBoard members
-    mapping(address => uint256) public isBoardWhitelist; // (filmBoard member => 0: no member, 1: candiate, 2: already member)
-    mapping(address => uint256) public lastVoteTime;     // (staker => block.timestamp)
+
+    mapping(address => uint256) public isBoardWhitelist;  // (filmBoard member => 0: no member, 1: candiate, 2: already member)
+    mapping(address => uint256) public lastVoteTime;      // (staker => block.timestamp)
+    mapping(address => uint256) public isRewardWhitelist; //(rewardAddress => 0: no member, 1: candiate, 2: already member)    
+    mapping(address => RewardProposal) public rewardProposalInfo; //(rewardAddress => RewardProposal)       
+    mapping(address => uint256) public userGovernProposalCount;   // (user => created governance-proposal count)
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -157,6 +158,8 @@ contract Property is ReentrancyGuard {
         require(__isPaidFee(proposalFeeAmount), 'proposalAuditor: Not paid fee');
 
         agents.push(_agent);
+        governanceProposalCount += 1;
+        userGovernProposalCount[msg.sender] += 1;
     }
 
     function getAgent(uint256 _index) public view returns (address agent_) {
@@ -204,11 +207,18 @@ contract Property is ReentrancyGuard {
         require(__isPaidFee(10 * proposalFeeAmount), 'proposalRewardFund: Not paid fee');
 
         rewardAddressList.push(_rewardAddress);
-        isRewardWhitelist[_rewardAddress] = 1;
+        isRewardWhitelist[_rewardAddress] = 1;        
+        governanceProposalCount += 1;
+        userGovernProposalCount[msg.sender] += 1;
 
         RewardProposal storage rp = rewardProposalInfo[_rewardAddress];
         rp.title = _title;
         rp.description = _description;
+    }
+
+    /// @notice Set DAO_FUND_REWARD by Vote contract
+    function getProposalRewardList() external view returns (address[] memory) {
+        return rewardAddressList;
     }
 
     /// @notice Set DAO_FUND_REWARD by Vote contract
@@ -246,6 +256,8 @@ contract Property is ReentrancyGuard {
 
         filmBoardCandidates.push(_member);
         isBoardWhitelist[_member] = 1;
+        governanceProposalCount += 1;
+        userGovernProposalCount[msg.sender] += 1;
 
         emit FilmBoardProposalCreated(_member);
     }
@@ -353,7 +365,10 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 14) {
             require(minStakerCountPercent != _property, "proposalProperty: Already minStakerCountPercent");
             minStakerCountPercentList.push(_property);
-        }                        
+        }          
+
+        governanceProposalCount += 1;     
+        userGovernProposalCount[msg.sender] += 1;         
     }
 
     function getProperty(uint256 _index, uint256 _flag) external view returns (uint256 property_) { 
@@ -527,7 +542,6 @@ contract Property is ReentrancyGuard {
         else if(_flag == 13) _list = minVoteCountList;        
         else if(_flag == 14) _list = minStakerCountPercentList;             
     }
-
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
     function updatePropertyForTesting(uint256 _value, uint256 _flag) external onlyAuditor {

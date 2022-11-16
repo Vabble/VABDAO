@@ -40,6 +40,7 @@ contract StakingPool is ReentrancyGuard {
     bool public isInitialized;           // check if contract initialized or not
 
     mapping(address => Stake) public stakeInfo;
+    mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
 
     Counters.Counter public stakerCount;   // count of stakers is from No.1
 
@@ -113,7 +114,6 @@ contract StakingPool is ReentrancyGuard {
 
         // first, withdraw reward
         uint256 rewardAmount = calcRewardAmount(msg.sender);
-        console.log("sol=>rewardAmount::", rewardAmount);
         if(totalRewardAmount >= rewardAmount && rewardAmount > 0) {
             __withdrawReward(rewardAmount);
         }
@@ -190,6 +190,7 @@ contract StakingPool is ReentrancyGuard {
     function __withdrawReward(uint256 _amount) private {
         Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, _amount);        
         totalRewardAmount -= _amount;
+        receivedRewardAmount[msg.sender] += _amount;
 
         stakeInfo[msg.sender].stakeTime = block.timestamp;
         stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
@@ -243,6 +244,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Update lastfundProposalCreateTime for only fund film proposal
     function updateLastfundProposalCreateTime(uint256 _time) external {
+        require(msg.sender == VABBLE_DAO, "caller is not vabbleDAO contract");
         lastfundProposalCreateTime = _time;
     }
 

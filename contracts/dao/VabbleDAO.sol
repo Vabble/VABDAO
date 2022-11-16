@@ -47,6 +47,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 raiseAmount;    // USDC amount(in cash) studio are seeking to raise for the film. if 0, this film is not for funding
         uint256 fundPeriod;     // how many days(ex: 20 days) to keep the funding pool open
         uint256 fundStart;      // time(block.timestamp) that film approved for raising fund
+        uint256 pCreateTime; // proposal created time(block.timestamp) by studio
         address studio;         // address of studio who is admin of film 
         bool onlyAllowVAB;      // if onlyVAB is true, customer can deposit only VAB token for this film
         Helper.Status status;   // status of film
@@ -61,12 +62,17 @@ contract VabbleDAO is ReentrancyGuard {
     uint256[] private proposalFilmIds;    
     uint256[] private updatedFilmIds;    
     uint256[] private finalFilmIds;
+    uint256[] private approvedFundingFilmIds;
+    uint256[] private approvedListingFilmIds;
+    uint256[] private fundProcessedFilmIds;
     
     mapping(uint256 => Film) private filmInfo;             // Each film information(filmId => Film)
     mapping(address => UserRent) public userRentInfo;
     mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
-    mapping(uint256 => address[]) private investorList;  // (filmId => investor address[])
+    mapping(uint256 => address[]) private investorList;       // (filmId => investor address[])
+    mapping(address => uint256[]) private userInvestFilmIds;  // (user => invest filmId[]) for only approved_funding films
+    mapping(address => uint256) public userFilmProposalCount; // (user => created film-proposal count)
     
     Counters.Counter public filmCount;          // filmId is from No.1
 
@@ -159,10 +165,12 @@ contract VabbleDAO is ReentrancyGuard {
         _filmInfo.rentPrice = _rentPrice;
         _filmInfo.raiseAmount = _raiseAmount;
         _filmInfo.fundPeriod = _fundPeriod;
+        _filmInfo.pCreateTime = block.timestamp;
         _filmInfo.studio = msg.sender;
         _filmInfo.onlyAllowVAB = _onlyAllowVAB;
         _filmInfo.status = Helper.Status.LISTED;
-
+     
+        userFilmProposalCount[msg.sender] += 1;
         // If proposal is for fund, update "lastfundProposalCreateTime"
         if(_raiseAmount > 0) IStakingPool(STAKING_POOL).updateLastfundProposalCreateTime(block.timestamp);
 
@@ -201,8 +209,10 @@ contract VabbleDAO is ReentrancyGuard {
         if(_isFund) {
             filmInfo[_filmId].status = Helper.Status.APPROVED_FUNDING;
             filmInfo[_filmId].fundStart = block.timestamp;
+            approvedFundingFilmIds.push(_filmId);
         } else {
             filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;    
+            approvedListingFilmIds.push(_filmId);
         }        
         emit FilmApproved(_filmId);
     }
@@ -269,6 +279,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         if(getUserFundAmountPerFilm(msg.sender, _filmId) == 0) {
             investorList[_filmId].push(msg.sender);
+            userInvestFilmIds[msg.sender].push(_filmId);
         }
         // Return remain ETH to user back if case of ETH
         if(_token == address(0)) {
@@ -324,7 +335,7 @@ contract VabbleDAO is ReentrancyGuard {
                         
         // TODO send fundFeePercent(2%) to reward pool as VAB token and rest send to studio
         address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
-        Asset[] memory assetArr = assetPerFilm[_filmId];
+        Asset[] storage assetArr = assetPerFilm[_filmId];
         uint256 rewardSumAmount;
         uint256 rewardAmount;
         for(uint256 i = 0; i < assetArr.length; i++) {                
@@ -348,6 +359,9 @@ contract VabbleDAO is ReentrancyGuard {
             }        
             IStakingPool(STAKING_POOL).addRewardToPool(rewardSumAmount);
         }
+
+        fundProcessedFilmIds.push(_filmId);
+
         emit FundProcessed(_filmId);
     }
 
@@ -530,6 +544,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 raiseAmount_,
         uint256 fundPeriod_,
         uint256 fundStart_,
+        uint256 pCreateTime_,
         address studio_,
         bool onlyAllowVAB_,
         Helper.Status status_
@@ -541,6 +556,7 @@ contract VabbleDAO is ReentrancyGuard {
         raiseAmount_ = _filmInfo.raiseAmount;
         fundPeriod_ = _filmInfo.fundPeriod;
         fundStart_ = _filmInfo.fundStart;
+        pCreateTime_ = _filmInfo.pCreateTime;
         studio_ = _filmInfo.studio;
         onlyAllowVAB_ = _filmInfo.onlyAllowVAB;
         status_ = _filmInfo.status;
@@ -557,15 +573,23 @@ contract VabbleDAO is ReentrancyGuard {
         else isFund_ = false;
     }
 
-    /// @notice Get proposal/updated/final film Ids
+    /// @notice Get proposal/updated/approvedFunding/approvedListing/fundProcessed/final film Ids
     function getFilmIds(uint256 _flag) external view returns (uint256[] memory) {
         if(_flag == 1) return proposalFilmIds;
         else if(_flag == 2) return updatedFilmIds;
+        else if(_flag == 3) return approvedFundingFilmIds;
+        else if(_flag == 4) return approvedListingFilmIds;
+        else if(_flag == 5) return fundProcessedFilmIds;        
         else return finalFilmIds;
     }  
 
     /// @notice Get investor list per film Id
     function getInvestorList(uint256 _filmId) external view returns (address[] memory) {
         return investorList[_filmId];
+    }
+
+    /// @notice Get investor film list
+    function getUserInvestFilmIds(address _user) external view returns (uint256[] memory) {
+        return userInvestFilmIds[_user];
     }
 }

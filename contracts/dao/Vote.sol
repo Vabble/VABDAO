@@ -13,7 +13,6 @@ import "hardhat/console.sol";
 contract Vote is ReentrancyGuard {
     
     event FilmsVoted(uint256[] indexed filmIds, uint256[] status, address voter);
-    event FilmIdsApproved(uint256[] filmIds, uint256[] approvedIds, address caller);
     event AuditorReplaced(address auditor);
     event VotedToAgent(address voter, address agent, uint256 voteInfo);
     event VotedToProperty(address voter, uint256 flag, uint256 propertyVal, uint256 voteInfo);
@@ -42,7 +41,6 @@ contract Vote is ReentrancyGuard {
     address private STAKING_POOL;
     address private DAO_PROPERTY;
              
-    uint256[] private approvedFilmIds; // approved film ID list    
     uint256[] private voteStartTimeList;
 
     bool public isInitialized;         // check if contract initialized or not
@@ -56,7 +54,9 @@ contract Vote is ReentrancyGuard {
     mapping(address => AgentVoting) public agentVoting;                      // (agent => AgentVoting) 
     mapping(address => mapping(address => bool)) public isAttendToAgentVote; // (staker => (agent => true/false)) 
     mapping(uint256 => mapping(uint256 => Voting)) public propertyVoting;    // (flag => (property value => Voting))
-    mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isAttendToPropertyVote; // (flag => (staker => (property => true/false)))
+    mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isAttendToPropertyVote; // (flag => (staker => (property => true/false)))    
+    mapping(address => uint256) public userFilmVoteCount;   //(user => film vote count)
+    mapping(address => uint256) public userGovernVoteCount; //(user => governance vote count)
     // For extra reward
     mapping(address => uint256[]) private fundingFilmIdsPerUser;                         // (staker => filmId[] for only funding)
     mapping(address => mapping(uint256 => uint256)) private fundingIdsVoteStatusPerUser; // (staker => (filmId => voteInfo) for only funing) 1,2,3
@@ -153,6 +153,7 @@ contract Vote is ReentrancyGuard {
         }
 
         fv.voteCount++;
+        userFilmVoteCount[msg.sender] += 1;
 
         isAttendToFilmVote[msg.sender][_filmId] = true;
         
@@ -190,13 +191,11 @@ contract Vote is ReentrancyGuard {
                 ) {                    
                     bool isFund = IVabbleDAO(VABBLE_DAO).isForFund(_filmIds[i]);
                     IVabbleDAO(VABBLE_DAO).approveFilm(_filmIds[i], isFund);
-                    approvedFilmIds.push(_filmIds[i]);
                 }
                 // format Vote info after pass the vote period
                 delete filmVoting[_filmIds[i]];
             }        
         }        
-        emit FilmIdsApproved(_filmIds, approvedFilmIds, msg.sender);
     }
 
     /// @notice Stakers vote(1,2,3 => Yes, No, Abstain) to agent for replacing Auditor
@@ -240,7 +239,8 @@ contract Vote is ReentrancyGuard {
             av.stakeAmount_3 += stakeAmount;
         }
 
-        if(_flag != 1) av.voteCount++;
+        if(_flag != 1) av.voteCount++;        
+        userGovernVoteCount[msg.sender] += 1;
 
         isAttendToAgentVote[msg.sender][agent] = true;
         
@@ -306,6 +306,7 @@ contract Vote is ReentrancyGuard {
         }
 
         fbp.voteCount++;
+        userGovernVoteCount[msg.sender] += 1;
 
         isAttendToBoardVote[msg.sender][_candidate] = true;
 
@@ -356,6 +357,7 @@ contract Vote is ReentrancyGuard {
         }
 
         rav.voteCount++;
+        userGovernVoteCount[msg.sender] += 1;
 
         isAttendToRewardAddressVote[msg.sender][_rewardAddress] = true;
 
@@ -408,6 +410,7 @@ contract Vote is ReentrancyGuard {
         }
 
         pv.voteCount++;
+        userGovernVoteCount[msg.sender] += 1;
 
         isAttendToPropertyVote[_flag][msg.sender][propertyVal] = true;
         
@@ -438,11 +441,6 @@ contract Vote is ReentrancyGuard {
         // format Vote info after pass the vote period
         delete propertyVoting[_flag][propertyVal];  
         IProperty(DAO_PROPERTY).removeProperty(_propertyIndex, _flag);
-    }
-
-    /// @notice Get approved film Ids
-    function getApprovedFilmIds() external view returns(uint256[] memory) {
-        return approvedFilmIds;
     }
 
     /// @notice Get funding filmId voteStatus per User
