@@ -26,7 +26,6 @@ contract StakingPool is ReentrancyGuard {
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
         uint256 stakeTime;       // last staked time(here, means the time that staker withdrawable time)
         uint256 voteCount;       //
-        uint256 proposalCount;
     }
 
     address private immutable OWNABLE;     // Ownablee contract address

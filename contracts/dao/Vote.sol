@@ -130,7 +130,7 @@ contract Vote is ReentrancyGuard {
             fv.voteStartTime = block.timestamp;
             voteStartTimeList.push(block.timestamp);
         } else {
-            require(IProperty(DAO_PROPERTY).filmVotePeriod() >= block.timestamp - fv.voteStartTime);
+            require(__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), fv.voteStartTime), "film elapsed vote period");
         }
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -184,7 +184,7 @@ contract Vote is ReentrancyGuard {
             // In this case, Approved since 2000 > 1000 + 500 (it means ">50%") and stakeAmount of "YES" > 75m          
             if(fv.voteCount < IStakingPool(STAKING_POOL).getLimitCount()) continue;
 
-            if(block.timestamp - fv.voteStartTime > IProperty(DAO_PROPERTY).filmVotePeriod()) {
+            if(!__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), fv.voteStartTime)) {
                 if(
                     fv.stakeAmount_1 > fv.stakeAmount_2 + fv.stakeAmount_3 &&
                     fv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
@@ -211,21 +211,21 @@ contract Vote is ReentrancyGuard {
         if(_flag == 1) {
             require(_voteInfo == 2, "voteToAgent: invalid vote value");
             require(av.voteCount > 0, "voteToAgent: no voter");
-            require(IProperty(DAO_PROPERTY).agentVotePeriod() < block.timestamp - startTime, "voteToAgent: vote period yet");            
+            require(!__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), startTime), "agent vote period yet");            
             require(IOwnablee(OWNABLE).auditor() != agent, "voteToAgent: Already replaced");
 
             uint256 disputeTime = av.disputeStartTime;
             if(av.disputeVABAmount == 0) {
                 disputeTime = block.timestamp;
             } else {
-                require(IProperty(DAO_PROPERTY).disputeGracePeriod() >= block.timestamp - disputeTime, "voteToAgent: grace period passed");            
+                require(__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), disputeTime), "agent elapsed grace period");            
             }
         } else {
             if(av.voteCount == 0) {
                 av.voteStartTime = block.timestamp; 
                 voteStartTimeList.push(block.timestamp);
             } else {
-                require(IProperty(DAO_PROPERTY).agentVotePeriod() >= block.timestamp - startTime, "voteToAgent: vote period passed");               
+                require(__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), startTime), "agent elapsed vote period");               
             }
         }
 
@@ -261,13 +261,13 @@ contract Vote is ReentrancyGuard {
         uint256 startTime = av.voteStartTime;
         uint256 disputeTime = av.disputeStartTime;
         require(av.voteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "replaceAuditor: Less than limit count"); 
-        require(IProperty(DAO_PROPERTY).agentVotePeriod() < block.timestamp - startTime, "replaceAuditor: vote period yet"); 
+        require(!__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), startTime), "auditor vote period yet"); 
         if(disputeTime > 0) {
-            require(IProperty(DAO_PROPERTY).disputeGracePeriod() < block.timestamp - disputeTime, "replaceAuditor: grace period yet");            
+            require(!__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), disputeTime), "auditor grace period yet");            
         } else {
             require(
-                IProperty(DAO_PROPERTY).agentVotePeriod() + IProperty(DAO_PROPERTY).disputeGracePeriod() < block.timestamp - startTime, 
-                "replaceAuditor: dispute vote period yet"
+                !__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod() + IProperty(DAO_PROPERTY).disputeGracePeriod(), startTime), 
+                "auditor dispute vote period yet"
             );
         }
         // must be over 51%, staking amount must be over 75m, dispute staking amount must be less than 150m
@@ -293,7 +293,7 @@ contract Vote is ReentrancyGuard {
             fbp.voteStartTime = block.timestamp;
             voteStartTimeList.push(block.timestamp);
         } else {            
-            require(IProperty(DAO_PROPERTY).boardVotePeriod() >= block.timestamp - fbp.voteStartTime, "voteToFilmBoard: vote period passed");
+            require(__isVotePeriod(IProperty(DAO_PROPERTY).boardVotePeriod(), fbp.voteStartTime), "filmBoard elapsed vote period");
         }
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -321,7 +321,7 @@ contract Vote is ReentrancyGuard {
         require(IProperty(DAO_PROPERTY).isBoardWhitelist(_member) == 1, "addFilmBoard: Not candidate");
 
         Voting storage fbp = filmBoardVoting[_member];
-        require(IProperty(DAO_PROPERTY).boardVotePeriod() < block.timestamp - fbp.voteStartTime, "addFilmBoard: vote period yet");
+        require(!__isVotePeriod(IProperty(DAO_PROPERTY).boardVotePeriod(), fbp.voteStartTime), "filmBoard vote period yet");
         require(fbp.voteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "addFilmBoard: Less than limit count");
 
         if(
@@ -344,7 +344,7 @@ contract Vote is ReentrancyGuard {
             rav.voteStartTime = block.timestamp;
             voteStartTimeList.push(block.timestamp);
         } else {
-            require(IProperty(DAO_PROPERTY).rewardVotePeriod() >= block.timestamp - rav.voteStartTime, "voteToRewardAddress: vote period yet");
+            require(__isVotePeriod(IProperty(DAO_PROPERTY).rewardVotePeriod(), rav.voteStartTime), "reward elapsed vote period");
         }
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -373,7 +373,7 @@ contract Vote is ReentrancyGuard {
         require(IProperty(DAO_PROPERTY).isRewardWhitelist(_rewardAddress) == 1, "setRewardAddress: Not candidate");
 
         Voting storage rav = rewardAddressVoting[_rewardAddress];
-        require(block.timestamp - rav.voteStartTime > IProperty(DAO_PROPERTY).rewardVotePeriod(), "setRewardAddress: vote period yet");
+        require(!__isVotePeriod(IProperty(DAO_PROPERTY).rewardVotePeriod(), rav.voteStartTime), "reward vote period yet");
         require(rav.voteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "addRewardAddress: Less than limit count");
 
         if(
@@ -397,7 +397,7 @@ contract Vote is ReentrancyGuard {
             pv.voteStartTime = block.timestamp;     
             voteStartTimeList.push(block.timestamp);
         } else {
-            require(IProperty(DAO_PROPERTY).propertyVotePeriod() >= block.timestamp - pv.voteStartTime, "voteToProperty: vote period yet");
+            require(__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), pv.voteStartTime), "property elapsed vote period");
         }
 
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -429,13 +429,12 @@ contract Vote is ReentrancyGuard {
         uint256 startTime = pv.voteStartTime;
 
         require(pv.voteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "updateProperty: Less than limit count");
-        require(IProperty(DAO_PROPERTY).propertyVotePeriod() < block.timestamp - startTime, "updateProperty: vote period yet");
+        require(!__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), startTime), "property vote period yet");
         
         if(
             pv.stakeAmount_1 > pv.stakeAmount_2 + pv.stakeAmount_3 && 
             pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
-            console.log("sol=>updateProperty", _propertyIndex, _flag);
             IProperty(DAO_PROPERTY).updateProperty(_propertyIndex, _flag);      
         }
         // format Vote info after pass the vote period
@@ -443,6 +442,10 @@ contract Vote is ReentrancyGuard {
         IProperty(DAO_PROPERTY).removeProperty(_propertyIndex, _flag);
     }
 
+    function __isVotePeriod(uint256 _period, uint256 _startTime) private view returns (bool) {
+        if(_period >= block.timestamp - _startTime) return true;
+        else return false;
+    }
     /// @notice Get funding filmId voteStatus per User
     function getFundingIdVoteStatusPerUser(address _staker, uint256 _filmId) external view returns(uint256) {
         return fundingIdsVoteStatusPerUser[_staker][_filmId];

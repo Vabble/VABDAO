@@ -278,7 +278,7 @@ contract VabbleDAO is ReentrancyGuard {
         require(__checkMinMaxAmount(_filmId, _token, _amount), "depositToFilm: Invalid amount");
 
         if(getUserFundAmountPerFilm(msg.sender, _filmId) == 0) {
-            investorList[_filmId].push(msg.sender);
+            investorList[_filmId].push(msg.sender);            
             userInvestFilmIds[msg.sender].push(_filmId);
         }
         // Return remain ETH to user back if case of ETH
