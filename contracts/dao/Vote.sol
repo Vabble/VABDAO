@@ -12,7 +12,8 @@ import "hardhat/console.sol";
 
 contract Vote is ReentrancyGuard {
     
-    event FilmsVoted(uint256[] indexed filmIds, uint256[] status, address voter);
+    event FilmsVoted(uint256[] filmIds, uint256[] status, address voter);
+    event FilmsApproved(uint256[] filmIds);
     event AuditorReplaced(address auditor);
     event VotedToAgent(address voter, address agent, uint256 voteInfo);
     event VotedToProperty(address voter, uint256 flag, uint256 propertyVal, uint256 voteInfo);
@@ -65,13 +66,10 @@ contract Vote is ReentrancyGuard {
         require(isInitialized, "Need initialized!");
         _;
     }
-
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
         _;
     }
-    
-    /// @notice Allow to vote for only staker(stakingAmount > 0)
     modifier onlyStaker() {
         require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) > 0, "Not staker");
         _;
@@ -101,11 +99,11 @@ contract Vote is ReentrancyGuard {
     /// @notice Vote to multi films from a staker
     function voteToFilms(bytes calldata _voteData) public onlyStaker initialized nonReentrant {
         require(_voteData.length > 0, "voteToFilm: Bad items length");
+        
         (
             uint256[] memory filmIds_, 
             uint256[] memory voteInfos_
-        ) = abi.decode(_voteData, (uint256[], uint256[]));
-        
+        ) = abi.decode(_voteData, (uint256[], uint256[]));        
         require(filmIds_.length == voteInfos_.length, "voteToFilm: Bad voteInfos length");
 
         uint256[] memory votedFilmIds = new uint256[](filmIds_.length);
@@ -174,28 +172,31 @@ contract Vote is ReentrancyGuard {
         return true;
     }
 
-    /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by auditor
+    /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by anyone
     // if isFund is true then "APPROVED_FUNDING", if isFund is false then "APPROVED_LISTING"
-    function approveFilms(uint256[] memory _filmIds) external onlyAuditor {
+    function approveFilms(uint256[] memory _filmIds) external {
         Voting storage fv;
+        uint256[] memory approvedFilmIds = new uint256[](_filmIds.length);
         for(uint256 i = 0; i < _filmIds.length; i++) {
             fv = filmVoting[_filmIds[i]];
             // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000, stakeAmount("ABSTAIN") is 500 in 10 days(votePeriod)
             // In this case, Approved since 2000 > 1000 + 500 (it means ">50%") and stakeAmount of "YES" > 75m          
             if(fv.voteCount < IStakingPool(STAKING_POOL).getLimitCount()) continue;
+            if(__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), fv.voteStartTime)) continue;
 
-            if(!__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), fv.voteStartTime)) {
-                if(
-                    fv.stakeAmount_1 > fv.stakeAmount_2 + fv.stakeAmount_3 &&
-                    fv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
-                ) {                    
-                    bool isFund = IVabbleDAO(VABBLE_DAO).isForFund(_filmIds[i]);
-                    IVabbleDAO(VABBLE_DAO).approveFilm(_filmIds[i], isFund);
-                }
-                // format Vote info after pass the vote period
-                delete filmVoting[_filmIds[i]];
-            }        
-        }        
+            if(
+                fv.stakeAmount_1 > fv.stakeAmount_2 + fv.stakeAmount_3 &&
+                fv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
+            ) {    
+                bool isFund = IVabbleDAO(VABBLE_DAO).isForFund(_filmIds[i]);
+                IVabbleDAO(VABBLE_DAO).approveFilm(_filmIds[i], isFund);
+                approvedFilmIds[i] = _filmIds[i];
+            }
+            // format Vote info after pass the vote period
+            delete filmVoting[_filmIds[i]];
+        }   
+
+        emit FilmsApproved(approvedFilmIds);
     }
 
     /// @notice Stakers vote(1,2,3 => Yes, No, Abstain) to agent for replacing Auditor

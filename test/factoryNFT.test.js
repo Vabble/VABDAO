@@ -6,6 +6,7 @@ const { BigNumber } = require('ethers');
 
 describe('FactoryNFT', function () {
   before(async function () {        
+    this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.VoteFactory = await ethers.getContractFactory('Vote');
@@ -35,13 +36,9 @@ describe('FactoryNFT', function () {
       CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
     )).deployed();
 
-    this.stakingContract = await (await this.StakingPoolFactory.deploy(
-      this.vabToken.address, this.ownableContract.address
-    )).deployed(); 
+    this.stakingContract = await (await this.StakingPoolFactory.deploy(this.ownableContract.address)).deployed(); 
 
-    this.voteContract = await (await this.VoteFactory.deploy(
-      this.vabToken.address, this.ownableContract.address
-    )).deployed();
+    this.voteContract = await (await this.VoteFactory.deploy(this.ownableContract.address)).deployed();
       
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
@@ -54,14 +51,22 @@ describe('FactoryNFT', function () {
       )
     ).deployed();
 
+    this.DAOContract = await (
+      await this.VabbleDAOFactory.deploy(
+        this.ownableContract.address,
+        this.voteContract.address,
+        this.stakingContract.address,
+        this.uniHelperContract.address,
+        this.propertyContract.address
+      )
+    ).deployed();   
+
     this.NFTContract = await (
       await this.NFTFactory.deploy(
-        this.vabToken.address,
         this.ownableContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
-        this.USDC.address, 
         "Vabble NFT",
         "vnft"
       )
@@ -78,13 +83,7 @@ describe('FactoryNFT', function () {
     await this.vabToken.connect(this.customer3).approve(this.NFTContract.address, getBigNumber(100000000));   
 
     // Confirm auditor
-    expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
-        
-    // Auditor add studio1, 2 in the studio whitelist    
-    const studioList = [this.studio1.address, this.studio2.address]
-    await expect(
-      this.ownableContract.addStudio(studioList)
-    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(studioList); 
+    expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);        
   });
 
   it("Should has the correct name and symbol ", async function () {
@@ -124,6 +123,13 @@ describe('FactoryNFT', function () {
   it('Should mint a token with token ID 1~10 to customer2, 11~15 customer3 from customer1 with VAB token', async function () {
     const base_uri = 'https://ipfs.io/ipfs/'
     await this.NFTContract.setBaseURI(base_uri)
+
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.propertyContract.address,
+      {from: this.auditor.address}
+    )
 
     // Set mint info
     const maxMintAmount = getBigNumber(10000, 0) // 10000
@@ -197,6 +203,13 @@ describe('FactoryNFT', function () {
     const base_uri = 'https://ipfs.io/ipfs/'
     await this.NFTContract.setBaseURI(base_uri)
 
+    await this.stakingContract.connect(this.auditor).initializePool(
+      this.DAOContract.address,
+      this.voteContract.address,
+      this.propertyContract.address,
+      {from: this.auditor.address}
+    )
+    
     // Set mint info
     const maxMintAmount = getBigNumber(100000, 0) // 100000
     const mintPrice = getBigNumber(2, 6)         // 2 usdc(2 * 1e6)

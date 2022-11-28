@@ -64,16 +64,6 @@ describe('Ownablee', function () {
     // Auditor is contract deployer
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
 
-    // Check if studio1 is studio
-    expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.false;  
-    
-    // Add studio1 address to studio list
-    const studioList = [this.studio1.address, this.studio2.address]
-    await this.ownableContract.addStudio(studioList);
-    
-    // Check if studio1 is studio after add studio1 to studiolist
-    expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.true;  
-
     // Transfer auditor to new address
     await this.ownableContract.transferAuditor(this.newAuditor.address);
     

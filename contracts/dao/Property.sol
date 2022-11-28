@@ -53,31 +53,39 @@ contract Property is ReentrancyGuard {
     uint256 public minVoteCount;         // 13 - 5 ppl
     uint256 public minStakerCountPercent;// 14 - percent(5% = 5*1e8)
 
-    uint256 public availableVABAmount;   // vab amount for replacing the auditor    
-    uint256 public boardVotePeriod;      // filmBoard vote period
-    uint256 public boardVoteWeight;      // filmBoard member's vote weight
-    uint256 public rewardVotePeriod;     // withdraw address setup for moving to V2
-    uint256 public subscriptionAmount;   // user need to have an active subscription(pay $10 per month) for rent films.    
-    uint256 public boardRewardRate;      // 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members        
+    uint256 public availableVABAmount;   // 15 - vab amount for replacing the auditor    
+    uint256 public boardVotePeriod;      // 16 - filmBoard vote period
+    uint256 public boardVoteWeight;      // 17 - filmBoard member's vote weight
+    uint256 public rewardVotePeriod;     // 18 - withdraw address setup for moving to V2
+    uint256 public subscriptionAmount;   // 19 - user need to have an active subscription(pay $10 per month) for rent films.    
+    uint256 public boardRewardRate;      // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
+    
     uint256 public governanceProposalCount;
 
     address[] private agents;
     address[] private rewardAddressList;
-    uint256[] private filmVotePeriodList;          
-    uint256[] private agentVotePeriodList;      
-    uint256[] private disputeGracePeriodList;         
-    uint256[] private propertyVotePeriodList;
-    uint256[] private lockPeriodList;           
-    uint256[] private rewardRateList;           
-    uint256[] private extraRewardRateList;      
-    uint256[] private maxAllowPeriodList;
-    uint256[] private proposalFeeAmountList;
-    uint256[] private fundFeePercentList;
-    uint256[] private minDepositAmountList;
-    uint256[] private maxDepositAmountList;
-    uint256[] private maxMintFeePercentList;
-    uint256[] private minVoteCountList;    
-    uint256[] private minStakerCountPercentList;        
+
+    uint256[] private filmVotePeriodList;          // 0
+    uint256[] private agentVotePeriodList;         // 1
+    uint256[] private disputeGracePeriodList;      // 2 
+    uint256[] private propertyVotePeriodList;      // 3
+    uint256[] private lockPeriodList;              // 4
+    uint256[] private rewardRateList;              // 5
+    uint256[] private extraRewardRateList;         // 6
+    uint256[] private maxAllowPeriodList;          // 7
+    uint256[] private proposalFeeAmountList;       // 8
+    uint256[] private fundFeePercentList;          // 9
+    uint256[] private minDepositAmountList;        // 10
+    uint256[] private maxDepositAmountList;        // 11
+    uint256[] private maxMintFeePercentList;       // 12
+    uint256[] private minVoteCountList;            // 13
+    uint256[] private minStakerCountPercentList;   // 14
+    uint256[] private availableVABAmountList;      // 15   
+    uint256[] private boardVotePeriodList;         // 16
+    uint256[] private boardVoteWeightList;         // 17
+    uint256[] private rewardVotePeriodList;        // 18
+    uint256[] private subscriptionAmountList;      // 19
+    uint256[] private boardRewardRateList;         // 20
 
     // filmboard member proposal
     address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
@@ -144,7 +152,7 @@ contract Property is ReentrancyGuard {
         fundFeePercent = 2 * 1e8;    // percent(2%) 
         availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(_payoutToken).decimals()); // 75M
         
-        maxMintFeePercent = 1e9;   // 10%
+        maxMintFeePercent = 10 * 1e8;   // 10%
         subscriptionAmount = 10 * (10**IERC20Metadata(_usdcToken).decimals()); // amount in cash(usd dollar - $10)
         minVoteCount = 5;
         minStakerCountPercent = 5 * 1e8; // 5%(1% = 1e8, 100%=1e10)
@@ -216,7 +224,7 @@ contract Property is ReentrancyGuard {
         rp.description = _description;
     }
 
-    /// @notice Set DAO_FUND_REWARD by Vote contract
+    /// @notice Get DAO_FUND_REWARD proposal list
     function getProposalRewardList() external view returns (address[] memory) {
         return rewardAddressList;
     }
@@ -240,7 +248,7 @@ contract Property is ReentrancyGuard {
 
     /// @notice Get reward fund proposal title and description
     function getRewardProposalInfo(address _rewardAddress) external view returns (string memory, string memory) {
-        RewardProposal storage rp = rewardProposalInfo[_rewardAddress];
+        RewardProposal memory rp = rewardProposalInfo[_rewardAddress];
         string memory title_ = rp.title;
         string memory desc_ = rp.description;        
 
@@ -306,18 +314,12 @@ contract Property is ReentrancyGuard {
     function updateLastVoteTime(address _member) external onlyVote {
         lastVoteTime[_member] = block.timestamp;
     }
-    
-    // ================= subscriptionAmount ==========
-    function updateSubscriptionAmount(uint256 _amount) external onlyAuditor {
-        require(_amount > 0, "updateSubscriptionAmount: Zero amount");
-        subscriptionAmount = _amount;
-    }
 
     // ===================properties proposal ====================
     /// @notice proposals for properties
     function proposalProperty(uint256 _property, uint256 _flag) public onlyStaker nonReentrant {
         require(_property > 0, "proposalProperty: Zero period");
-        require(_flag >= 0 && _flag < 15, "proposalProperty: Invalid flag");
+        require(_flag >= 0, "proposalProperty: Invalid flag");
         require(__isPaidFee(proposalFeeAmount), 'proposalProperty: Not paid fee');
 
         if(_flag == 0) {
@@ -365,14 +367,32 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 14) {
             require(minStakerCountPercent != _property, "proposalProperty: Already minStakerCountPercent");
             minStakerCountPercentList.push(_property);
+        } else if(_flag == 15) {
+            require(availableVABAmount != _property, "proposalProperty: Already availableVABAmount");
+            availableVABAmountList.push(_property);
+        } else if(_flag == 16) {
+            require(boardVotePeriod != _property, "proposalProperty: Already boardVotePeriod");
+            boardVotePeriodList.push(_property);
+        } else if(_flag == 17) {
+            require(boardVoteWeight != _property, "proposalProperty: Already boardVoteWeight");
+            boardVoteWeightList.push(_property);
+        } else if(_flag == 18) {
+            require(rewardVotePeriod != _property, "proposalProperty: Already rewardVotePeriod");
+            rewardVotePeriodList.push(_property);
+        } else if(_flag == 19) {
+            require(subscriptionAmount != _property, "proposalProperty: Already subscriptionAmount");
+            subscriptionAmountList.push(_property);
+        } else if(_flag == 20) {
+            require(boardRewardRate != _property, "proposalProperty: Already boardRewardRate");
+            boardRewardRateList.push(_property);
         }          
-
+        
         governanceProposalCount += 1;     
         userGovernProposalCount[msg.sender] += 1;         
     }
 
     function getProperty(uint256 _index, uint256 _flag) external view returns (uint256 property_) { 
-        require(_flag >= 0 && _flag < 15, "getProperty: Invalid flag");   
+        require(_flag >= 0 && _index >= 0, "getProperty: Invalid flag");   
         
         if(_flag == 0) {
             if(filmVotePeriodList.length > 0 && filmVotePeriodList.length > _index) property_ = filmVotePeriodList[_index];
@@ -419,11 +439,29 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 14) {
             if(minStakerCountPercentList.length > 0 && minStakerCountPercentList.length > _index) property_ = minStakerCountPercentList[_index];
             else property_ = 0;
-        }                         
+        } else if(_flag == 15) {
+            if(availableVABAmountList.length > 0 && availableVABAmountList.length > _index) property_ = availableVABAmountList[_index];
+            else property_ = 0;
+        } else if(_flag == 16) {
+            if(boardVotePeriodList.length > 0 && boardVotePeriodList.length > _index) property_ = boardVotePeriodList[_index];
+            else property_ = 0;
+        } else if(_flag == 17) {
+            if(boardVoteWeightList.length > 0 && boardVoteWeightList.length > _index) property_ = boardVoteWeightList[_index];
+            else property_ = 0;
+        } else if(_flag == 18) {
+            if(rewardVotePeriodList.length > 0 && rewardVotePeriodList.length > _index) property_ = rewardVotePeriodList[_index];
+            else property_ = 0;
+        } else if(_flag == 19) {
+            if(subscriptionAmountList.length > 0 && subscriptionAmountList.length > _index) property_ = subscriptionAmountList[_index];
+            else property_ = 0;
+        } else if(_flag == 20) {
+            if(boardRewardRateList.length > 0 && boardRewardRateList.length > _index) property_ = boardRewardRateList[_index];
+            else property_ = 0;
+        }                      
     }
 
     function updateProperty(uint256 _index, uint256 _flag) external onlyVote {
-        require(_flag >= 0 && _flag < 15, "updateProperty: Invalid flag");   
+        require(_flag >= 0 && _index >= 0, "updateProperty: Invalid flag");   
 
         if(_flag == 0) {
             filmVotePeriod = filmVotePeriodList[_index];
@@ -470,11 +508,29 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 14) {
             minStakerCountPercent = minStakerCountPercentList[_index];
             emit PropertyUpdated(minStakerCountPercent, _flag);     
-        }                 
+        } else if(_flag == 15) {
+            availableVABAmount = availableVABAmountList[_index];
+            emit PropertyUpdated(availableVABAmount, _flag);     
+        } else if(_flag == 16) {
+            boardVotePeriod = boardVotePeriodList[_index];
+            emit PropertyUpdated(boardVotePeriod, _flag);     
+        } else if(_flag == 17) {
+            boardVoteWeight = boardVoteWeightList[_index];
+            emit PropertyUpdated(boardVoteWeight, _flag);     
+        } else if(_flag == 18) {
+            rewardVotePeriod = rewardVotePeriodList[_index];
+            emit PropertyUpdated(rewardVotePeriod, _flag);     
+        } else if(_flag == 19) {
+            subscriptionAmount = subscriptionAmountList[_index];
+            emit PropertyUpdated(subscriptionAmount, _flag);     
+        } else if(_flag == 20) {
+            boardRewardRate = boardRewardRateList[_index];
+            emit PropertyUpdated(boardRewardRate, _flag);     
+        }         
     }
 
     function removeProperty(uint256 _index, uint256 _flag) external onlyVote {   
-        require(_flag >= 0 && _flag < 15, "removeProperty: Invalid flag");   
+        require(_flag >= 0 && _index >= 0, "removeProperty: Invalid flag");   
 
         if(_flag == 0) {  
             filmVotePeriodList[_index] = filmVotePeriodList[filmVotePeriodList.length - 1];
@@ -521,7 +577,25 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 14) {
             minStakerCountPercentList[_index] = minStakerCountPercentList[minStakerCountPercentList.length - 1];
             minStakerCountPercentList.pop();
-        }                                
+        } else if(_flag == 15) {
+            availableVABAmountList[_index] = availableVABAmountList[availableVABAmountList.length - 1];
+            availableVABAmountList.pop();
+        } else if(_flag == 16) {
+            boardVotePeriodList[_index] = boardVotePeriodList[boardVotePeriodList.length - 1];
+            boardVotePeriodList.pop();
+        } else if(_flag == 17) {
+            boardVoteWeightList[_index] = boardVoteWeightList[boardVoteWeightList.length - 1];
+            boardVoteWeightList.pop();
+        } else if(_flag == 18) {
+            rewardVotePeriodList[_index] = rewardVotePeriodList[rewardVotePeriodList.length - 1];
+            rewardVotePeriodList.pop();
+        } else if(_flag == 19) {
+            subscriptionAmountList[_index] = subscriptionAmountList[subscriptionAmountList.length - 1];
+            subscriptionAmountList.pop();
+        } else if(_flag == 20) {
+            boardRewardRateList[_index] = boardRewardRateList[boardRewardRateList.length - 1];
+            boardRewardRateList.pop();
+        } 
     }
 
     /// @notice get a property list in a vote
@@ -540,8 +614,15 @@ contract Property is ReentrancyGuard {
         else if(_flag == 11) _list = maxDepositAmountList;
         else if(_flag == 12) _list = maxMintFeePercentList;
         else if(_flag == 13) _list = minVoteCountList;        
-        else if(_flag == 14) _list = minStakerCountPercentList;             
+        else if(_flag == 14) _list = minStakerCountPercentList;     
+        else if(_flag == 15) _list = availableVABAmountList;     
+        else if(_flag == 16) _list = boardVotePeriodList;     
+        else if(_flag == 17) _list = boardVoteWeightList;     
+        else if(_flag == 18) _list = rewardVotePeriodList;     
+        else if(_flag == 19) _list = subscriptionAmountList;     
+        else if(_flag == 20) _list = boardRewardRateList;                                   
     }
+
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
     function updatePropertyForTesting(uint256 _value, uint256 _flag) external onlyAuditor {

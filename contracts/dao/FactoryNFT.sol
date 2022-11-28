@@ -43,11 +43,6 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
         _;
     }
 
-    modifier onlyStudio() {
-        require(IOwnablee(OWNABLE).isStudio(msg.sender), "caller is not the studio");
-        _;
-    }
-
     receive() external payable {}
 
     constructor(
@@ -73,15 +68,15 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
         baseUri = _baseUri;
     }
 
-    /// @notice Set mint info by Studio
-    function setMintInfo(uint256 _amount, uint256 _price, uint256 _percent) external onlyStudio nonReentrant {
+    /// @notice onlyStudio set mint info for his films
+    function setMintInfo(uint256 _amount, uint256 _price, uint256 _percent) external nonReentrant {
         require(_amount > 0 && _price > 0 && _percent > 0, "setMint: Zero value");        
         require(_percent <= IProperty(DAO_PROPERTY).maxMintFeePercent(), "setMint: over max mint fee");
 
         Mint storage _mintInfo = mintInfo[msg.sender];
         _mintInfo.maxMintAmount = _amount; // 100
         _mintInfo.mintPrice = _price;      // 5 usdc = 5 * 1e6
-        _mintInfo.feePercent = _percent;   // 2% = 2 * 1e9(1% = 1e9, 100% = 1e10)
+        _mintInfo.feePercent = _percent;   // 2% = 2 * 1e8(1% = 1e8, 100% = 1e10)
     }    
 
     /// @notice Mint the multiple tokens to _to address
@@ -99,7 +94,6 @@ contract FactoryNFT is ERC721, ReentrancyGuard {
 
         uint256 totalMintPrice = mintInfo[_studio].mintPrice * _mintAmount;        
         uint256 expectAmount = IUniHelper(UNI_HELPER).expectedAmount(totalMintPrice, IProperty(DAO_PROPERTY).USDC_TOKEN(), _payToken);
-        
         // Return remain ETH to user back if case of ETH
         // Transfer Asset from buyer to this contract
         if(_payToken == address(0)) {

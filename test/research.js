@@ -56,8 +56,9 @@ describe('VabbleDAO', function () {
     ).deployed();
 
     // Transfering VAB token to studio1, 2, 3
-    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(50000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.studio1).approve(this.DAOContract.address, getBigNumber(100000000));
+    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(150000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.studio1).approve(this.DAOContract.address, getBigNumber(150000000));
+    await this.vabToken.connect(this.studio1).approve(this.stakingContract.address, getBigNumber(150000000));
 
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
         
@@ -67,11 +68,6 @@ describe('VabbleDAO', function () {
     const balance1 = await provider.getBalance(this.auditor.address)
     console.log('====auditor::', balance1.toString());//9999984891174771500281
                                                       //100000001452399989048000
-    // Auditor add studio1 in the studio whitelist
-    await expect(
-      this.ownableContract.addStudio([this.studio1.address])
-    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(this.auditor.address, this.studio1.address);    
-      
 
     // Initialize StakingPool
     await this.stakingContract.connect(this.auditor).initializePool(
@@ -85,7 +81,7 @@ describe('VabbleDAO', function () {
   it('Should prospose films by studio', async function () {   
 
     let filmPropsoal = [];
-    const arrSize = 250; // in test script
+    const arrSize = 25; // in test script
     // const arrSize = 200; // in mumbai polygonscan
     for(let i = 0; i < arrSize; i++) {
       // random integer between 0 and 9
@@ -93,14 +89,14 @@ describe('VabbleDAO', function () {
       let allowVab = false;
       if(rn > 5) allowVab = true;
 
-      const film = [getBigNumber(rn * 100), getBigNumber(rn * 1000, 6), getBigNumber(rn * 864000, 0), allowVab]
+      const film = [getBigNumber(rn * 100), getBigNumber(rn * 1000, 6), getBigNumber(rn * 864000, 0), allowVab, false]
       const byteData = getProposalFilm(film)
       filmPropsoal.push(byteData)        
     }
     
     // console.log('=====param data::', filmPropsoal)
-
-    const tx = await this.DAOContract.connect(this.studio1).createProposalFilms(filmPropsoal, false, {from: this.studio1.address})   
+    await this.stakingContract.connect(this.studio1).stakeToken(getBigNumber(75000000), {from: this.studio1.address})
+    const tx = await this.DAOContract.connect(this.studio1).proposalMultiFilms(filmPropsoal, {from: this.studio1.address})   
     const events = (await tx.wait()).events;
     expect(events[6].args[1]).to.be.equal(this.studio1.address)
     const proposalIds = await this.DAOContract.getFilmIds(1);

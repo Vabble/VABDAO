@@ -55,11 +55,6 @@ contract Subscription is ReentrancyGuard {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
         _;
     }
-
-    modifier onlyStudio() {
-        require(IOwnablee(OWNABLE).isStudio(msg.sender), "caller is not the studio");
-        _;
-    }
     
     receive() external payable {}
 
@@ -188,7 +183,7 @@ contract Subscription is ReentrancyGuard {
         require(!isActivedSubscription(msg.sender), "NFTSubscription: Already actived");  
         require(isRegisteredNFT(_nft) && !isUsedNFT[_nft][_tokenId], "NFTSubscription: Used or Unregistered nft");
 
-        // TODO Verify Ownership On Chain.
+        // TODO Verify Ownership onChain.
         if(_tokenType == 1) {        
             require(IERC721(_nft).ownerOf(_tokenId) == msg.sender, "NFTSubscription: Not erc721-nft owner");
         } else if(_tokenType == 2) {
@@ -207,7 +202,7 @@ contract Subscription is ReentrancyGuard {
     /// @notice Register filmIds(nft gated content) and nfts by Studio
     function registerGatedContent(
         bytes[] calldata _uploadFilms
-    ) external onlyStudio nonReentrant {
+    ) external nonReentrant {
         require(_uploadFilms.length > 0, "registerGatedContent: Invalid item length");
 
         uint256 filmId;
@@ -271,9 +266,10 @@ contract Subscription is ReentrancyGuard {
 
     function __isApprovedFilm(uint256 _filmId) private view returns (bool approve_) {
         if(
-            IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_LISTING || 
+            IVabbleDAO(VABBLE_DAO).getFilmOwnerById(_filmId) == msg.sender &&
+            (IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_LISTING || 
             IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_FUNDING || 
-            IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_WITHOUTVOTE) {
+            IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_WITHOUTVOTE)) {
             approve_ = true;
         } else {
             approve_ = false;
@@ -290,7 +286,7 @@ contract Subscription is ReentrancyGuard {
 
     /// @notice Check if subscription period 
     function isActivedSubscription(address _customer) public view returns(bool active_) {
-        UserSubscription storage subscription = subscriptionInfo[_customer];        
+        UserSubscription memory subscription = subscriptionInfo[_customer];        
 
         if(subscription.time + PERIOD_UNIT * subscription.period > block.timestamp) active_ = true;
         else active_ = false;

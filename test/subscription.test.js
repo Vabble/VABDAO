@@ -70,15 +70,9 @@ describe('Subscription', function () {
 
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
         
-    // Auditor add studio1, studio2 in the studio whitelist
-    const studioList = [this.studio1.address, this.studio2.address]
-    await expect(
-      this.ownableContract.addStudio(studioList)
-    ).to.emit(this.ownableContract, 'StudioAdded').withArgs(studioList);    
-
     // ====== VAB
     // Transfering VAB token to user1, 2
-    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(100000000), {from: this.auditor.address});
     await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
     // Transfering VAB token to studio1, 2
     await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
@@ -95,6 +89,8 @@ describe('Subscription', function () {
     await this.vabToken.connect(this.studio2).approve(this.SubContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio1).approve(this.DAOContract.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio2).approve(this.DAOContract.address, getBigNumber(100000000));
+    await this.vabToken.connect(this.studio1).approve(this.stakingContract.address, getBigNumber(100000000));
+    await this.vabToken.connect(this.studio2).approve(this.stakingContract.address, getBigNumber(100000000));
     
     // ====== EXM
     // Transfering EXM token to user1, 2
@@ -121,6 +117,8 @@ describe('Subscription', function () {
     this.filmPropsoal = [];
     this.events = [];
 
+    const assetList = [CONFIG.addressZero, CONFIG.mumbai.usdcAdress, CONFIG.mumbai.vabToken, CONFIG.mumbai.daiAddress, CONFIG.mumbai.exmAddress]
+    await this.ownableContract.connect(this.auditor).addDepositAsset(assetList, {from: this.auditor.address});
   });
 
   it('0. Subscription by token', async function () {
@@ -138,7 +136,7 @@ describe('Subscription', function () {
 
     const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})    
     expect(isActived).to.be.true;  
-    console.log('====test-1')
+
     // => Increase next block timestamp for only testing
     const increseTime = 40 * 24 * 3600; // 40 days
     network.provider.send('evm_increaseTime', [increseTime]);
@@ -163,27 +161,24 @@ describe('Subscription', function () {
             
     expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.false;  
 
-    console.log('====test-2')
+    // //================ ETH
+    // const period2 = 2
+    // const payEth = ethers.utils.parseEther('0.01')
+    // await expect(
+    //   this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
+    // ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
+    //   this.customer2.address, 
+    //   CONFIG.addressZero, 
+    //   period2
+    // );
 
-    //================ ETH
-    const period2 = 2
-    const payEth = ethers.utils.parseEther('0.01')
-    await expect(
-      this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
-    ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-      this.customer2.address, 
-      CONFIG.addressZero, 
-      period2
-    );
-
-    console.log('====test-3')
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
     
-    // => Increase next block timestamp for only testing
-    network.provider.send('evm_increaseTime', [increseTime]);
-    await network.provider.send('evm_mine');
+    // // => Increase next block timestamp for only testing
+    // network.provider.send('evm_increaseTime', [increseTime]);
+    // await network.provider.send('evm_mine');
             
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
   });
 
   it('1. Subscription NFTs', async function () {
@@ -253,8 +248,6 @@ describe('Subscription', function () {
   });
 
   it('2. NFT Gated Content', async function () {
-    expect(await this.ownableContract.isStudio(this.studio1.address)).to.be.true;  
-
     // Initialize StakingPool
     await this.stakingContract.connect(this.auditor).initializePool(
       this.DAOContract.address,
@@ -263,21 +256,22 @@ describe('Subscription', function () {
       {from: this.auditor.address}
     )  
     // Staking VAB token
-    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(100), {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(80000000), {from: this.customer1.address})
     await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(150), {from: this.customer2.address})
-    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
+    await this.stakingContract.connect(this.studio1).stakeToken(getBigNumber(150), {from: this.studio1.address})
+    expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(80000000))
     expect(await this.stakingContract.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
     
     const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
     const onlyAllowVABs = [true, true, false, false];
-    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0]]
-    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1]]
-    const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2]]
-    const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3]]
+    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0], false]
+    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1], false]
+    const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2], false]
+    const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3], false]
     this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
     
-    // 1. Create proposal for four films by studio
-    await this.DAOContract.connect(this.studio1).createProposalFilms(this.filmPropsoal, false, {from: this.studio1.address})
+    // 1. Create proposal for four films by anyone
+    await this.DAOContract.connect(this.studio1).proposalMultiFilms(this.filmPropsoal, {from: this.studio1.address})
     
     // 2. Deposit to contract(VAB amount : 100, 200)
     await this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
@@ -304,16 +298,21 @@ describe('Subscription', function () {
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
 
-    // 5. Approve two films by calling the approveFilms() from Auditor
+    // => Change the minVoteCount from 5 ppl to 2 ppl for testing
+    await this.propertyContract.connect(this.auditor).updatePropertyForTesting(2, 18, {from: this.auditor.address})
+
+    // 5. Approve two films by calling the approveFilms() from any staker
     const approveData = [proposalIds[0], proposalIds[1], proposalIds[2]]
-    await this.voteContract.approveFilms(approveData);// filmId = 1, 2 ,3
-    const approved_ids = await this.voteContract.getApprovedFilmIds() // 1, 2, 3
-    expect(approved_ids.length).to.be.equal(approveData.length)
+    await expect(
+      this.voteContract.connect(this.customer1).approveFilms(approveData, {from: this.customer1.address})
+    )
+    .to.emit(this.voteContract, 'FilmsApproved')
+    .withArgs([getBigNumber(1,0), getBigNumber(2,0), getBigNumber(3,0)]);
 
     // 6. Register gated content
-    const contentData1 = getUploadGateContent(approved_ids[0], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
-    const contentData2 = getUploadGateContent(approved_ids[1], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
-    const contentData3 = getUploadGateContent(approved_ids[2], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
+    const contentData1 = getUploadGateContent(proposalIds[0], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
+    const contentData2 = getUploadGateContent(proposalIds[1], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
+    const contentData3 = getUploadGateContent(proposalIds[2], NFTs.mumbai.addressList, NFTs.mumbai.tokenIdList, NFTs.mumbai.tokenTypeList)
     const tx1 = await this.SubContract.connect(this.studio1).registerGatedContent(
       [contentData1, contentData2, contentData3]
     )

@@ -162,7 +162,7 @@ function getByteFilm() {
 
 function getProposalFilm(film) {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
-    [ "uint256", "uint256", "uint256", "bool" ], film
+    [ "uint256", "uint256", "uint256", "bool", "bool" ], film
   );
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);
