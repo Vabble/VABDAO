@@ -60,7 +60,7 @@ describe('Ownablee', function () {
     
   });
 
-  it('Transfer ownership and Add studio', async function () {
+  it('Transfer ownership', async function () {
     // Auditor is contract deployer
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);
 

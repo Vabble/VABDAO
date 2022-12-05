@@ -9,5 +9,5 @@ interface IVote {
 
     function removeFundingFilmIdsPerUser(address _staker) external;
 
-    function getVoteStartTimeList() external view returns(uint256[] memory);  
+    function getLastVoteTime(address _member) external view returns (uint256 time_);
 }

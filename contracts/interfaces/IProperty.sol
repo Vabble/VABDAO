@@ -25,12 +25,11 @@ interface IProperty {
     function boardRewardRate() external view returns (uint256);       
     function minStakerCountPercent() external view returns (uint256);      
 
-    function getAgent(uint256 _agentIndex) external view returns (address agent_);
-    function removeAgent(uint256 _index) external;
+    // function removeAgent(address _agent) external;
 
     function getProperty(uint256 _propertyIndex, uint256 _flag) external view returns (uint256 property_);
     function updateProperty(uint256 _propertyIndex, uint256 _flag) external;
-    function removeProperty(uint256 _propertyIndex, uint256 _flag) external;
+    // function removeProperty(uint256 _propertyIndex, uint256 _flag) external;
     
     function setRewardAddress(address _rewardAddress) external;    
     function isRewardWhitelist(address _rewardAddress) external view returns (uint256);
@@ -42,4 +41,9 @@ interface IProperty {
 
     function USDC_TOKEN() external view returns (address);
     function PAYOUT_TOKEN() external view returns (address);
+
+    function getPropertyProposalTime(uint256 _property, uint256 _flag) external view returns (uint256 time_);
+    function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 time_);
+    function updatePropertyProposalApproveTime(uint256 _property, uint256 _flag, uint256 _time) external;
+    function updateGovProposalApproveTime(address _member, uint256 _flag, uint256 _time) external;
 }

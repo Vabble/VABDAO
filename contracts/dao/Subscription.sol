@@ -33,8 +33,9 @@ contract Subscription is ReentrancyGuard {
     uint256[] private gatedFilmIds;              // filmIds added by Studio for gated content
 
     struct UserSubscription {
-        uint256 time;             // current timestamp
+        uint256 activeTime;       // active time
         uint256 period;           // period of subscription(ex: 1 => 1 month, 3 => 3 month)
+        uint256 expireTime;       // expire time
     }
 
     struct GateNFT {
@@ -79,8 +80,7 @@ contract Subscription is ReentrancyGuard {
 
     // ============= 0. Subscription by token. ===========
     /// @notice active subscription(pay $10 monthly as ETH/USDC/USDT/VAB...) for renting the films
-    function activeSubscription(address _token, uint256 _period) external payable nonReentrant {        
-        require(!isActivedSubscription(msg.sender), "activeSubscription: Already actived");  
+    function activeSubscription(address _token, uint256 _period) external payable nonReentrant {      
         require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset"); 
 
         uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
@@ -101,24 +101,20 @@ contract Subscription is ReentrancyGuard {
         uint256 usdcAmount;
         address usdc_token = IProperty(DAO_PROPERTY).USDC_TOKEN();
         address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
-        // if token is VAB, send USDC to wallet after convert VAB to USDC
+        // if token is VAB, send USDC(convert from VAB to USDC) to wallet
         if(_token == payout_token) {
             bytes memory swapArgs = abi.encode(expectAmount, _token, usdc_token);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             Helper.safeTransfer(usdc_token, VAB_WALLET, usdcAmount);
         } 
-        // if token is not VAB, 
-        // 1. send VAB to wallet after convert token(60%) to VAB
-        // 2. send USDC to wallet after convert token(40%) to USDC
+        // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC) to wallet
         else {            
             uint256 amount60 = expectAmount * 60 * 1e8 / 1e10;  
-
             // Send ETH from this contract to UNI_HELPER contract
-            if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, amount60);
+            if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, amount60); // 60%
             
             bytes memory swapArgs = abi.encode(amount60, _token, payout_token);
-            uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
-            
+            uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);            
             // Transfer VAB to wallet
             Helper.safeTransfer(payout_token, VAB_WALLET, vabAmount);
 
@@ -126,7 +122,7 @@ contract Subscription is ReentrancyGuard {
                 usdcAmount = expectAmount - amount60;
             } else {
                 // Send ETH from this contract to UNI_HELPER contract
-                if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60);
+                if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60); // 40%
                 
                 bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdc_token);
                 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
@@ -136,8 +132,15 @@ contract Subscription is ReentrancyGuard {
         }
 
         UserSubscription storage subscription = subscriptionInfo[msg.sender];
-        subscription.time = block.timestamp;
-        subscription.period = _period;
+        if(isActivedSubscription(msg.sender)) {
+            uint256 oldPeriod = subscription.period;
+            subscription.period = oldPeriod + _period;
+            subscription.expireTime = subscription.activeTime + PERIOD_UNIT * (oldPeriod + _period);
+        } else {
+            subscription.activeTime = block.timestamp;
+            subscription.period = _period;
+            subscription.expireTime = block.timestamp + PERIOD_UNIT * _period;
+        }
 
         emit SubscriptionActivated(msg.sender, _token, _period);
     }
@@ -179,8 +182,7 @@ contract Subscription is ReentrancyGuard {
     /// @param _nft : nft address 
     /// @param _tokenId: if ERC721 then nft token Id, if ERC1155 then nft Id(ex: cate=0, gold=1...)
     /// @param _tokenType: 1 => ERC721, 2 => ERC1155
-    function activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType) external nonReentrant {        
-        require(!isActivedSubscription(msg.sender), "NFTSubscription: Already actived");  
+    function activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType) external nonReentrant {     
         require(isRegisteredNFT(_nft) && !isUsedNFT[_nft][_tokenId], "NFTSubscription: Used or Unregistered nft");
 
         // TODO Verify Ownership onChain.
@@ -191,8 +193,16 @@ contract Subscription is ReentrancyGuard {
         }
 
         UserSubscription storage subscription = subscriptionInfo[msg.sender];
-        subscription.time = block.timestamp;
-        subscription.period = periodPerNFT[_nft]; // for now, 3 => 3 month
+        if(isActivedSubscription(msg.sender)) {
+            uint256 oldPeriod = subscription.period;
+            subscription.period = oldPeriod + periodPerNFT[_nft];
+            subscription.expireTime = subscription.activeTime + PERIOD_UNIT * (oldPeriod + periodPerNFT[_nft]);
+        } else {
+            subscription.activeTime = block.timestamp;
+            subscription.period = periodPerNFT[_nft];
+            subscription.expireTime = block.timestamp + PERIOD_UNIT * periodPerNFT[_nft];
+        }
+
         isUsedNFT[_nft][_tokenId] = true;
 
         emit SubscriptionNFTActivated(msg.sender, _nft, _tokenId, _tokenType);
@@ -286,9 +296,7 @@ contract Subscription is ReentrancyGuard {
 
     /// @notice Check if subscription period 
     function isActivedSubscription(address _customer) public view returns(bool active_) {
-        UserSubscription memory subscription = subscriptionInfo[_customer];        
-
-        if(subscription.time + PERIOD_UNIT * subscription.period > block.timestamp) active_ = true;
+        if(subscriptionInfo[_customer].expireTime > block.timestamp) active_ = true;
         else active_ = false;
     }
 

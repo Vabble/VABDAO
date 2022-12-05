@@ -152,101 +152,101 @@ describe('VabbleDAO', function () {
     this.events = [];
   });
 
-describe('VabbleDAO-test-1', function () {
-  it('Should prospose films by studio', async function () {      
-    const onlyAllowVABs = [true, true, false, false];
-    const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
-    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0], false]
-    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1], false]
-    const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2], false]
-    const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3], false]
-    this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
-    // console.log("====filmProposal", this.filmPropsoal)
-    const studioBalance = await this.vabToken.balanceOf(this.studio1.address)
-    // console.log('====studioBalance::', studioBalance.toString());
+// describe('VabbleDAO-test-1', function () {
+//   it('Should prospose films by studio', async function () {      
+//     const onlyAllowVABs = [true, true, false, false];
+//     const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
+//     const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0], false]
+//     const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1], false]
+//     const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2], false]
+//     const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3], false]
+//     this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
+//     // console.log("====filmProposal", this.filmPropsoal)
+//     const studioBalance = await this.vabToken.balanceOf(this.studio1.address)
+//     // console.log('====studioBalance::', studioBalance.toString());
     
-    let tx = await this.DAOContract.connect(this.studio1).proposalMultiFilms(this.filmPropsoal, {from: this.studio1.address})   
-    this.events = (await tx.wait()).events;
-    expect(this.events[6].args[1]).to.be.equal(this.studio1.address)
-    const proposalIds_1 = await this.DAOContract.getFilmIds(1);
-    expect(proposalIds_1.length).to.be.equal(this.filmPropsoal.length)
+//     let tx = await this.DAOContract.connect(this.studio1).proposalMultiFilms(this.filmPropsoal, {from: this.studio1.address})   
+//     this.events = (await tx.wait()).events;
+//     expect(this.events[6].args[1]).to.be.equal(this.studio1.address)
+//     const proposalIds_1 = await this.DAOContract.getFilmIds(1);
+//     expect(proposalIds_1.length).to.be.equal(this.filmPropsoal.length)
 
-    tx = await this.DAOContract.connect(this.studio1).proposalMultiFilms(this.filmPropsoal, {from: this.studio1.address})   
-    this.events = (await tx.wait()).events;
-    const proposalIds_2 = await this.DAOContract.getFilmIds(1);
-    expect(proposalIds_2.length).to.be.equal(this.filmPropsoal.length + proposalIds_1.length)
+//     tx = await this.DAOContract.connect(this.studio1).proposalMultiFilms(this.filmPropsoal, {from: this.studio1.address})   
+//     this.events = (await tx.wait()).events;
+//     const proposalIds_2 = await this.DAOContract.getFilmIds(1);
+//     expect(proposalIds_2.length).to.be.equal(this.filmPropsoal.length + proposalIds_1.length)
 
-    // Get A proposal film information with id
-    const proposalFilm = await this.DAOContract.getFilmById(proposalIds_1[0])
-    expect(proposalFilm.studioPayees_).to.have.lengthOf(0)
-    expect(proposalFilm.sharePercents_).to.have.lengthOf(0)
-    expect(proposalFilm.rentPrice_).to.be.equal(this.rentPrices[0])
-    expect(proposalFilm.raiseAmount_).to.be.equal(raiseAmounts[0])
-    expect(proposalFilm.fundPeriod_).to.be.equal(this.fundPeriods[0])
-    expect(proposalFilm.fundStart_).to.be.equal(0)
-    expect(proposalFilm.studio_).to.be.equal(this.studio1.address)
-    expect(proposalFilm.onlyAllowVAB_).to.be.equal(onlyAllowVABs[0])
-    expect(proposalFilm.status_).to.be.equal(0)
+//     // Get A proposal film information with id
+//     const proposalFilm = await this.DAOContract.getFilmById(proposalIds_1[0])
+//     expect(proposalFilm.studioPayees_).to.have.lengthOf(0)
+//     expect(proposalFilm.sharePercents_).to.have.lengthOf(0)
+//     expect(proposalFilm.rentPrice_).to.be.equal(this.rentPrices[0])
+//     expect(proposalFilm.raiseAmount_).to.be.equal(raiseAmounts[0])
+//     expect(proposalFilm.fundPeriod_).to.be.equal(this.fundPeriods[0])
+//     expect(proposalFilm.fundStart_).to.be.equal(0)
+//     expect(proposalFilm.studio_).to.be.equal(this.studio1.address)
+//     expect(proposalFilm.onlyAllowVAB_).to.be.equal(onlyAllowVABs[0])
+//     expect(proposalFilm.status_).to.be.equal(0)
 
-    // Update actors and percents by only Studio
-    const updateData = [
-      getByteFilmUpdate(proposalIds_1[0]), 
-      getByteFilmUpdate(proposalIds_1[1]), 
-      getByteFilmUpdate(proposalIds_1[2])
-    ]
+//     // Update actors and percents by only Studio
+//     const updateData = [
+//       getByteFilmUpdate(proposalIds_1[0]), 
+//       getByteFilmUpdate(proposalIds_1[1]), 
+//       getByteFilmUpdate(proposalIds_1[2])
+//     ]
 
-    // studio3 didn't submit any film proposals so that he cannot update any films too
-    await expect(
-      this.DAOContract.connect(this.studio3).updateMultiFilms(updateData, {from: this.studio3.address})
-    )
-    .to.emit(this.DAOContract, 'FilmsMultiUpdated')
-    .withArgs([getBigNumber(0),getBigNumber(0),getBigNumber(0)], this.studio3.address);    
+//     // studio3 didn't submit any film proposals so that he cannot update any films too
+//     await expect(
+//       this.DAOContract.connect(this.studio3).updateMultiFilms(updateData, {from: this.studio3.address})
+//     )
+//     .to.emit(this.DAOContract, 'FilmsMultiUpdated')
+//     .withArgs([getBigNumber(0),getBigNumber(0),getBigNumber(0)], this.studio3.address);    
 
-    // console.log("====updateData", updateData)
-    const up_tx = await this.DAOContract.connect(this.studio1).updateMultiFilms(updateData, {from: this.studio1.address})
-    this.events = (await up_tx.wait()).events
-    // console.log('=====events::', this.events[0].args)
+//     // console.log("====updateData", updateData)
+//     const up_tx = await this.DAOContract.connect(this.studio1).updateMultiFilms(updateData, {from: this.studio1.address})
+//     this.events = (await up_tx.wait()).events
+//     // console.log('=====events::', this.events[0].args)
 
-    expect(this.events[0].args[1]).to.be.equal(this.studio1.address)
-    expect(updateData.length).to.be.equal(updateData.length)
-  });  
-})  
+//     expect(this.events[0].args[1]).to.be.equal(this.studio1.address)
+//     expect(updateData.length).to.be.equal(updateData.length)
+//   });  
+// })  
 
-describe('VabbleDAO-test-2', function () {
-  it('Should deposit and withdraw by customer', async function () {
-    const customer1V = await this.vabToken.balanceOf(this.customer1.address)
+// describe('VabbleDAO-test-2', function () {
+//   it('Should deposit and withdraw by customer', async function () {
+//     const customer1V = await this.vabToken.balanceOf(this.customer1.address)
     
-    // Event - depositVAB
-    await expect(
-      this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
-    )
-    .to.emit(this.DAOContract, 'VABDeposited')
-    .withArgs(this.customer1.address, getBigNumber(100));    
+//     // Event - depositVAB
+//     await expect(
+//       this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
+//     )
+//     .to.emit(this.DAOContract, 'VABDeposited')
+//     .withArgs(this.customer1.address, getBigNumber(100));    
 
-    await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200));
-    await this.DAOContract.connect(this.customer3).depositVAB(getBigNumber(300));
+//     await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200));
+//     await this.DAOContract.connect(this.customer3).depositVAB(getBigNumber(300));
   
-    // Check user balance(amount) after deposit
-    let user1Amount = await this.DAOContract.userRentInfo(this.customer1.address);
-    expect(user1Amount.vabAmount).to.be.equal(getBigNumber(100))
-    expect(user1Amount.withdrawAmount).to.be.equal(getBigNumber(0))
+//     // Check user balance(amount) after deposit
+//     let user1Amount = await this.DAOContract.userRentInfo(this.customer1.address);
+//     expect(user1Amount.vabAmount).to.be.equal(getBigNumber(100))
+//     expect(user1Amount.withdrawAmount).to.be.equal(getBigNumber(0))
 
-    // Event - WithdrawPending
-    await expect(
-      this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(50), {from: this.customer1.address})
-    )
-    .to.emit(this.DAOContract, 'WithdrawPending')
-    .withArgs(this.customer1.address, this.vabToken.address, getBigNumber(50));  
+//     // Event - WithdrawPending
+//     await expect(
+//       this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(50), {from: this.customer1.address})
+//     )
+//     .to.emit(this.DAOContract, 'WithdrawPending')
+//     .withArgs(this.customer1.address, this.vabToken.address, getBigNumber(50));  
 
-    await expect(
-      this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(150), {from: this.customer1.address})
-    ).to.be.revertedWith('pendingWithdraw: Insufficient VAB amount');
+//     await expect(
+//       this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(150), {from: this.customer1.address})
+//     ).to.be.revertedWith('pendingWithdraw: Insufficient VAB amount');
     
-    // Check withdraw amount after send withraw request
-    user1Amount = await this.DAOContract.userRentInfo(this.customer1.address);
-    expect(user1Amount.withdrawAmount).to.be.equal(getBigNumber(50))
-  });
-})
+//     // Check withdraw amount after send withraw request
+//     user1Amount = await this.DAOContract.userRentInfo(this.customer1.address);
+//     expect(user1Amount.withdrawAmount).to.be.equal(getBigNumber(50))
+//   });
+// })
 
 describe('VabbleDAO-test-3', function () {
   it('approve_listing logic with only VAB', async function () {
@@ -301,7 +301,7 @@ describe('VabbleDAO-test-3', function () {
     
     // => Change the minVoteCount from 5 ppl to 3 ppl for testing
     await this.propertyContract.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
-    
+    console.log('=====test-0')
     // 4-4. Approve two films by calling the approveFilms() from anyone
     const approveData = [proposalIds[0], proposalIds[1], proposalIds[2]]
     await expect(
@@ -309,7 +309,7 @@ describe('VabbleDAO-test-3', function () {
     )
     .to.emit(this.voteContract, 'FilmsApproved')
     .withArgs([getBigNumber(1,0), getBigNumber(2,0), getBigNumber(0,0)]);
-
+    console.log('=====test-1')
     // 5 Withdraw request(40 VAB) from customer1, 2, 3
     await this.DAOContract.connect(this.customer1).pendingWithdraw(getBigNumber(40), {from: this.customer1.address});
     await this.DAOContract.connect(this.customer2).pendingWithdraw(getBigNumber(40), {from: this.customer2.address});

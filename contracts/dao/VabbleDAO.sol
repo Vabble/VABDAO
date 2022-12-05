@@ -47,7 +47,8 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 raiseAmount;    // USDC amount(in cash) studio are seeking to raise for the film. if 0, this film is not for funding
         uint256 fundPeriod;     // how many days(ex: 20 days) to keep the funding pool open
         uint256 fundStart;      // time(block.timestamp) that film approved for raising fund
-        uint256 pCreateTime; // proposal created time(block.timestamp) by studio
+        uint256 pCreateTime;    // proposal created time(block.timestamp) by studio
+        uint256 pApproveTime;   // proposal approved time(block.timestamp) by vote
         address studio;         // address of studio who is admin of film 
         bool onlyAllowVAB;      // if onlyVAB is true, customer can deposit only VAB token for this film
         Helper.Status status;   // status of film
@@ -148,6 +149,9 @@ contract VabbleDAO is ReentrancyGuard {
         _filmInfo.onlyAllowVAB = _onlyAllowVAB;
 
         userFilmProposalCount[msg.sender] += 1;
+        
+        // add timestap to array for calculating rewards
+        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);        
         // If proposal is for fund, update "lastfundProposalCreateTime"
         if(_raiseAmount > 0) IStakingPool(STAKING_POOL).updateLastfundProposalCreateTime(block.timestamp);
 
@@ -561,7 +565,7 @@ contract VabbleDAO is ReentrancyGuard {
         bool onlyAllowVAB_,
         Helper.Status status_
     ) {
-        Film storage _filmInfo = filmInfo[_filmId];
+        Film memory _filmInfo = filmInfo[_filmId];
         studioPayees_ = _filmInfo.studioPayees;
         sharePercents_ = _filmInfo.sharePercents;
         rentPrice_ = _filmInfo.rentPrice;
@@ -581,6 +585,14 @@ contract VabbleDAO is ReentrancyGuard {
     /// @notice Get film owner based on Id
     function getFilmOwnerById(uint256 _filmId) external view returns (address studio_) {
         studio_ = filmInfo[_filmId].studio;
+    }
+    /// @notice Get film proposal created time based on Id
+    function getFilmProposalTime(uint256 _filmId) external view returns (uint256 time_) {
+        time_ = filmInfo[_filmId].pCreateTime;
+    }
+    /// @notice Set film proposal approved time based on Id
+    function setFilmProposalApproveTime(uint256 _filmId, uint256 _time) external onlyVote {
+        filmInfo[_filmId].pApproveTime = _time;
     }
 
     /// @notice Check if film is for fund or list

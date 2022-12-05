@@ -16,5 +16,8 @@ interface IStakingPool {
     function getLimitCount() external view returns(uint256 count_);
        
     function lastfundProposalCreateTime() external view returns(uint256);
+
     function updateLastfundProposalCreateTime(uint256 _time) external;
+
+    function updateProposalCreatedTimeList(uint256 _time) external;
 }

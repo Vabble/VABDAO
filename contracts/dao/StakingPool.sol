@@ -37,7 +37,8 @@ contract StakingPool is ReentrancyGuard {
     uint256 public totalRewardAmount;    // 
     uint256 public lastfundProposalCreateTime;// funding proposal created time(block.timestamp)
     bool public isInitialized;           // check if contract initialized or not
-
+    uint256[] private proposalCreatedTimeList; // need for calculating rewards
+    
     mapping(address => Stake) public stakeInfo;
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
 
@@ -145,19 +146,17 @@ contract StakingPool is ReentrancyGuard {
         Stake storage si = stakeInfo[_customer];
         require(si.stakeAmount > 0, "calcRewardAmount: Not staker");
 
-        // get count of vote(proposal) started in withdrawable period of customer
-        uint256 voteStartCount = 0;
-        uint256[] memory voteTimeList = IVote(VOTE).getVoteStartTimeList();
-        for(uint256 i = 0; i < voteTimeList.length; i++) { 
-            if(voteTimeList[i] > si.stakeTime && voteTimeList[i] < si.withdrawableTime) {
-                voteStartCount += 1;
+        // Get proposal count started in withdrawable period of customer
+        uint256 proposalCount = 0;     
+        for(uint256 i = 0; i < proposalCreatedTimeList.length; i++) { 
+            if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
+                proposalCount += 1;
             }
         }
 
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 timeVal = (block.timestamp - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
         uint256 rewardAmount = si.stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
-        
         uint256 extraRewardAmount;
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
@@ -169,11 +168,14 @@ contract StakingPool is ReentrancyGuard {
         } 
         
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
-        if(voteStartCount > 0) {
+        if(proposalCount > 0) {
             if(si.voteCount == 0) {
+        console.log("sol=>rewards::", rewardAmount, si.stakeAmount);
                 rewardAmount = 0;
                 extraRewardAmount = 0;
-            } else rewardAmount = rewardAmount * (si.voteCount * 1e4) / (voteStartCount * 1e4);
+            } else {
+                rewardAmount = rewardAmount * (si.voteCount * 1e4) / (proposalCount * 1e4);
+            }
         }
         
         // If customer is film board member, more rewards(25%)
@@ -197,19 +199,6 @@ contract StakingPool is ReentrancyGuard {
         
         emit RewardWithdraw(msg.sender, _amount);
     }
-
-    // /// @notice Transfer DAO rewards fund to new contract or something
-    // function withdrawAllReward() public onlyAuditor {
-    //     address rewardAddress = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
-    //     require(rewardAddress != address(0), 'withdrawAllReward: Zero address');
-    //     require(totalRewardAmount > 0, 'withdrawAllReward: Zero balance');
-        
-    //     uint256 amount = totalRewardAmount;
-    //     Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), rewardAddress, totalRewardAmount);
-    //     totalRewardAmount = 0;
-        
-    //     emit RewardWithdraw(rewardAddress, amount);
-    // }
 
     /// @notice Transfer DAO all fund to new contract or something
     function withdrawAllFund() public onlyAuditor {
@@ -245,6 +234,12 @@ contract StakingPool is ReentrancyGuard {
         require(msg.sender == VABBLE_DAO, "caller is not vabbleDAO contract");
         lastfundProposalCreateTime = _time;
     }
+
+    /// @notice Update ProposalCreateTimeList for calculating rewards
+    function updateProposalCreatedTimeList(uint256 _time) external {
+        require(msg.sender == VABBLE_DAO || msg.sender == DAO_PROPERTY, "caller is not VabbleDAO/Property contract");
+        proposalCreatedTimeList.push(_time);
+    }    
 
     /// @notice Get staking amount for a staker
     function getStakeAmount(address _user) external view returns(uint256 amount_) {

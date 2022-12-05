@@ -30,12 +30,12 @@ contract Ownablee {
     }    
     
     function transferAuditor(address _newAuditor) external onlyAuditor {
-        require(_newAuditor != address(0), "Ownablee: Zero newAuditor address");
+        require(_newAuditor != address(0) && _newAuditor != auditor, "Ownablee: Zero newAuditor address");
         auditor = _newAuditor;
     }
 
     function replaceAuditor(address _newAuditor) external onlyVote {
-        require(_newAuditor != address(0), "Ownablee: Zero newAuditor address");
+        require(_newAuditor != address(0) && _newAuditor != auditor, "Ownablee: Zero newAuditor address");
         auditor = _newAuditor;
     }
 

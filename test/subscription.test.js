@@ -131,15 +131,29 @@ describe('Subscription', function () {
       this.vabToken.address, 
       periodVal
     );    
-    const {time, period} = await this.SubContract.subscriptionInfo(this.customer1.address)
-    console.log('====time, period::', time.toString(), period.toString())
+    const {activeTime, period, expireTime} = await this.SubContract.subscriptionInfo(this.customer1.address)
+    console.log('====time, period::', activeTime.toString(), period.toString(), expireTime.toString())
 
     const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})    
     expect(isActived).to.be.true;  
 
     // => Increase next block timestamp for only testing
-    const increseTime = 40 * 24 * 3600; // 40 days
+    const incresTime = 4 * 86400; // 4 days
+    network.provider.send('evm_increaseTime', [incresTime]);
+    await network.provider.send('evm_mine');
+
+    await this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, 2, {from: this.customer1.address})
+    
+    // => Increase next block timestamp for only testing
+    const increseTime = 40 * 86400; // 40 days
     network.provider.send('evm_increaseTime', [increseTime]);
+    await network.provider.send('evm_mine');
+            
+    expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.true;  
+
+    // => Increase next block timestamp for only testing
+    const increseTim = 60 * 86400; // 60 days
+    network.provider.send('evm_increaseTime', [increseTim]);
     await network.provider.send('evm_mine');
             
     expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.false;  
