@@ -8,6 +8,8 @@
 - [FilmBoard](https://github.com/Vabble/dao-sc#filmboard)
 - [Deployment](https://github.com/Vabble/dao-sc#deployment)
 - [Assets store](https://github.com/Vabble/dao-sc#assets-store)
+- [Funding](https://github.com/Vabble/dao-sc/edit/master/README.md#funding-launch-pad)
+- [Proposal Flow](https://github.com/Vabble/dao-sc/edit/master/README.md#proposal-flow)
 
 ### Definitions
 - VAB Holder - A user that holds VAB in thier web3 wallet (metamast, etc..)
@@ -133,7 +135,7 @@ There are two types of NFTs.
  - Studio's define the film what % of revenue of the NFT.
     - Example: 1000 NFT's are minted, the studio can say each NFT get's 0.01% of the revenue each, and the rest is defined by the studioPayee rules set in the film. (Director, Actor, etc..)
 
-## NFT
+## Proposal Flow
 <ins>Step #1 (Proposal Genisis)</ins>
 
  - **Financing Type** - This field determines what type of financing they are looking for in the DAO. NFT, Token, NFT & Token, or None.
