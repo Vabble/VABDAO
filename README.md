@@ -164,7 +164,8 @@ Make it like Open sea where the studio can define the properties and change the 
  - **Film Rental Price**: This is on chain, but allow the studio to change this at any time. This value needs to be in USDC, and when a rental is done, the auditor will specify how much VAB is taken from the users balance in the DAO based off of this value.
 
 <ins>Finalize Step (On Chain)</ins>
-This step will trigger the listing of the film on the platform when done.
+
+Important: This step will trigger the listing of the film on the platform when done.
  - **Studio Pay**: An address for each user to receive a % of revenue.
 
 ## Other Information:
