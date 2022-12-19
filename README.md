@@ -8,6 +8,8 @@
 - [FilmBoard](https://github.com/Vabble/dao-sc#filmboard)
 - [Deployment](https://github.com/Vabble/dao-sc#deployment)
 - [Assets store](https://github.com/Vabble/dao-sc#assets-store)
+- [Funding](https://github.com/Vabble/dao-sc/edit/master/README.md#funding-launch-pad)
+- [Proposal Flow](https://github.com/Vabble/dao-sc/edit/master/README.md#proposal-flow)
 
 ### Definitions
 - VAB Holder - A user that holds VAB in thier web3 wallet (metamast, etc..)
@@ -118,6 +120,7 @@ There are two types of NFTs.
 ### Funding Raise from Tokens:
  - Once the funding is approved for a film funding proposal then Investors can deposit VAB (Minimum $50, Maximum $5000 per address) for that film
  - Allow the studio that created the proposal to define how many days to keep the funding pool open.
+ - Raise Goal: A minimum amount to raise, if the goal is not meet by the ending time, the funds will be returned to the users.
  - If funding fails to meet the amount requested to raise, then return the funds back to the Investors (A method for the studio **or** anyone to kick off).
  - Allow the studio to raise in VAB and/or USDT and/or USDC.
  - 2% fee on the amount raised after the raise is a success.
@@ -132,6 +135,40 @@ There are two types of NFTs.
  - Studio's define the film what % of revenue of the NFT.
     - Example: 1000 NFT's are minted, the studio can say each NFT get's 0.01% of the revenue each, and the rest is defined by the studioPayee rules set in the film. (Director, Actor, etc..)
 
+## Proposal Flow
+<ins>Step #1 (Proposal Genisis)</ins>
+
+ - **Financing Type** - This field determines what type of financing they are looking for in the DAO. NFT, Token, NFT & Token, or None.
+ - **Studio Address (Admin of film)** - This shouldn't change for the proposal lifecycle. If they were hacked, the attacker could come in and change the studio address. This cannot change for the duration of the proposal lifecycle.
+
+<ins>Step #2 (If NFT funding type)</ins>
+ - **Expectations**: The NFT should be able to be listed on other market places (Like open sea), so we need to structure the NFT to prepare for that.
+ - **NFT Tiers** – A tier of the NFT’s and the prices in the case they are minting NFTs, the tier would be the base line price for an NFT and once submitted, this shouldn't change for the duration of the proposal lifecycle. Example: Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
+ - **Vabble NFT Perks** – These are specific perks that studios can choose where we (Vabble) can use for our logic. In the smart contract this can be a uint256 array, where we just have a list of numbers, 1,2,3,4 and we know what each of the numbers represent.
+Example: Tier 1 gets all behind the scenes content (None of the other tiers), tier 2 does not, tier 3, does not either, then we have a spot in the consumer portal where they can view the behind-the-scenes content if they have this property set in the NFT for the film.
+ - **Studio NFT Perks** – Allow the studio to define the perks for each tier in the NFT properties.
+Make it like Open sea where the studio can define the properties and change the text for each of the properties they want.
+ - **Percentage of revenue to NFT financers** – Define a % revenue for each NFT based on its tier. Example: Each Tier 1 NFT will get 10% of the revenue, each tier 2 NFT will get 1% 
+(Note: We will need to do some checks to make sure they don’t go over 100%)
+
+<ins>Step #3 (More on chain data)</ins>
+ - **Percentage of revenue to Token financers** – Once submitted to the contract from the studio this cannot change.
+ - **NFT rights** - NFT rights should never change.
+ - **Auditor choice** - This shouldn't change during the proposal lifecycle
+ - **NFT Contract Address** - This shouldn't change for the proposal life cycle. 
+
+<ins>Step #4 (Off chain data)</ins>
+ - **Financing History** - This field determines what stage they are in for financing. Once the proposal is made. Note: once added in to the database, we don’t allow the user the update this field.
+ - **Invest Perk** - True or false, an investor gets to watch the film for free – Allow the studio to toggle this on or off.
+ - **Custom NFT Contact for film gate** - Ability for studio to define the contract address, and network (ETH, POLY, etc..)
+
+<ins>Step #4 (On chain data)</ins>
+ - **Film Rental Price**: This is on chain, but allow the studio to change this at any time. This value needs to be in USDC, and when a rental is done, the auditor will specify how much VAB is taken from the users balance in the DAO based off of this value.
+
+<ins>Finalize Step (On Chain)</ins>
+
+Important: This step will trigger the listing of the film on the platform when done.
+ - **Studio Pay**: An address for each user to receive a % of revenue.
 
 ## Other Information:
 ### Deployment
