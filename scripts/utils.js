@@ -160,10 +160,16 @@ function getByteFilm() {
   return ethers.utils.hexlify(uint8Arr);// '0x01020304'
 }
 
-function getProposalFilm(film) {
+function createMintData(filmId, tier, amount, price, fee, revenue) {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
-    [ "uint256", "uint256", "uint256", "bool", "bool" ], film
+    [ "uint256", "uint256", "uint256", "uint256", "uint256", "uint256" ], [filmId, tier, amount, price, fee, revenue]
   );
+  const uint8Arr = ethers.utils.arrayify(hexStr); // Uint8Array [ 18, 52 ]
+  return ethers.utils.hexlify(uint8Arr);// '0x01020304'
+}
+function getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "uint256[]", "uint256[]", "uint256[]", "address[]", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256" ], [nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType]);
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);
 }
@@ -245,5 +251,6 @@ module.exports = {
   getProposalFilm,
   FILM,
   NFTs,
-  getUploadGateContent
+  getUploadGateContent,
+  createMintData
 };

@@ -252,17 +252,20 @@ describe('VabbleDAO-test-3', function () {
   it('approve_listing logic with only VAB', async function () {
     const finalData_1 = [getFinalFilm("0xcbaa16FDE7799A68CB468a81e45CbCd557B8AfaA", [1, 2, 3])]    
     // console.log("====finalData_1", finalData_1)
-
-    const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
-    const onlyAllowVABs = [true, true, false, false];
-    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0], false]
-    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1], false]
-    const film_3 = [this.rentPrices[2], raiseAmounts[2], this.fundPeriods[2], onlyAllowVABs[2], false]
-    const film_4 = [this.rentPrices[3], raiseAmounts[3], this.fundPeriods[3], onlyAllowVABs[3], false]
-    this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2), getProposalFilm(film_3), getProposalFilm(film_4)]
+    const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
+    const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
+    const choiceAuditor = [getBigNumber(1, 0)]
+    const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
+    const gatingType = getBigNumber(2, 0)
+    const rentPrice = getBigNumber(20, 6)
+    const raiseAmount = getBigNumber(20000, 6)
+    const fundPeriod = getBigNumber(120, 0)
+    const fundStage = getBigNumber(2, 0)
+    const fundType = getBigNumber(2, 0)
+    this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)
     
     // 1. Create proposal for four films by studio
-    await this.DAOContract.connect(this.studio1).proposalMultiFilms(this.filmPropsoal, {from: this.studio1.address})
+    await this.DAOContract.connect(this.studio1).proposalFilm(this.filmPropsoal, false, {from: this.studio1.address})
     
     // 2. Deposit to contract(VAB amount : 100, 200, 300)
     await this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
@@ -318,7 +321,7 @@ describe('VabbleDAO-test-3', function () {
     // 6. Auditor submit three audit actions(for customer1) with watched percent(20%, 15%, 30%) to VabbleDAO contract
     // only two film 1,2 approved in 4-4 so film3 watch(30%) ignored   
     const finalData = [getFinalFilm(this.customer1.address, approveData)]    
-    let tx = await this.DAOContract.setFinalFilms(finalData);
+    let tx = await this.DAOContract.setFinalFilm(finalData);
     this.events = (await tx.wait()).events
     // console.log('======events::', this.events[0].args)
     expect(this.events[0].args.filmIds[0]).to.be.equal(proposalIds[0]) // id = 1

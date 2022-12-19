@@ -122,10 +122,10 @@ contract Vote is ReentrancyGuard {
     function __voteToFilm(uint256 _filmId, uint256 _voteInfo) private returns(bool) {
         require(!isAttendToFilmVote[msg.sender][_filmId], "_voteToFilm: Already voted");    
 
-        Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId);
+        Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
         require(status == Helper.Status.LISTED, "Not listed");        
 
-        uint256 pCreateTime = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
+        (uint256 pCreateTime, ) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
         require(__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), pCreateTime), "film elapsed vote period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -184,7 +184,7 @@ contract Vote is ReentrancyGuard {
             fv = filmVoting[_filmIds[i]];
             // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000, stakeAmount("ABSTAIN") is 500 in 10 days(votePeriod)
             // In this case, Approved since 2000 > 1000 + 500 (it means ">50%") and stakeAmount of "YES" > 75m          
-            uint256 pCreateTime = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmIds[i]);
+            (uint256 pCreateTime, ) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmIds[i]);
             require(!__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), pCreateTime), "approveFilms: vote period yet");
             require(fv.voteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "approveFilms: Less than limit count");
 
@@ -278,7 +278,6 @@ contract Vote is ReentrancyGuard {
         require(av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).availableVABAmount(), "auditor: large disput amount");
 
         IOwnablee(OWNABLE).replaceAuditor(_agent);
-        // IProperty(DAO_PROPERTY).removeAgent(_agent); // TODO thinking...            
         IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_agent, 1, block.timestamp);
         govPassedVoteCount[1] += 1;
 
@@ -432,7 +431,6 @@ contract Vote is ReentrancyGuard {
         require(pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount(), "updateProperty: less than permit amount");
         
         IProperty(DAO_PROPERTY).updateProperty(_propertyIndex, _flag);    
-        // IProperty(DAO_PROPERTY).removeProperty(_propertyIndex, _flag); // TODO thinking...
         govPassedVoteCount[5] += 1;  
     }
 

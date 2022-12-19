@@ -20,4 +20,7 @@ interface IStakingPool {
     function updateLastfundProposalCreateTime(uint256 _time) external;
 
     function updateProposalCreatedTimeList(uint256 _time) external;
+
+    function getRentVABAmount(address _user) external view returns(uint256 amount_);
+    function subRentVABAmount(address _user, uint256 _amount) external;
 }

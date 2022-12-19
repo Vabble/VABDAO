@@ -41,21 +41,21 @@ contract Property is ReentrancyGuard {
     uint256 public disputeGracePeriod;   // 2 - grace period for replacing Auditor
     uint256 public propertyVotePeriod;   // 3 - vote period for updating properties    
     uint256 public lockPeriod;           // 4 - lock period for staked VAB
-    uint256 public rewardRate;           // 5 - 0.0004%(1% = 1e8, 100% = 1e10)
-    uint256 public extraRewardRate;      // 6 - 0.0001%(1% = 1e8, 100% = 1e10)
+    uint256 public rewardRate;           // 5 - day rewards rate => 0.0004%(1% = 1e8, 100% = 1e10)
+    uint256 public extraRewardRate;      // 6 - bonus day rewards rate =>0.0001%(1% = 1e8, 100% = 1e10)
     uint256 public maxAllowPeriod;       // 7 - max allowed period for removing filmBoard member
     uint256 public proposalFeeAmount;    // 8 - USDC amount($100) studio should pay when create a proposal
     uint256 public fundFeePercent;       // 9 - percent(2% = 2*1e8) of fee on the amount raised
     uint256 public minDepositAmount;     // 10 - USDC min amount($50) that a customer can deposit to a film approved for funding
     uint256 public maxDepositAmount;     // 11 - USDC max amount($5000) that a customer can deposit to a film approved for funding
     uint256 public maxMintFeePercent;    // 12 - 10%(1% = 1e8, 100% = 1e10)
-    uint256 public minVoteCount;         // 13 - 5 ppl
+    uint256 public minVoteCount;         // 13 - 5 ppl(minium voter count for approving the proposal)
     uint256 public minStakerCountPercent;// 14 - percent(5% = 5*1e8)
     uint256 public availableVABAmount;   // 15 - vab amount for replacing the auditor    
     uint256 public boardVotePeriod;      // 16 - filmBoard vote period
     uint256 public boardVoteWeight;      // 17 - filmBoard member's vote weight
     uint256 public rewardVotePeriod;     // 18 - withdraw address setup for moving to V2
-    uint256 public subscriptionAmount;   // 19 - user need to have an active subscription(pay $10 per month) for rent films.    
+    uint256 public subscriptionAmount;   // 19 - user need to have an active subscription(pay $1 per month) for rent films.    
     uint256 public boardRewardRate;      // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
     
     uint256 public governanceProposalCount;
@@ -182,17 +182,6 @@ contract Property is ReentrancyGuard {
         emit AuditorProposalCreated(_agent);
     }
 
-    // // TODO thinking...
-    // /// @notice Remove agent address from array
-    // function removeAgent(address _agent) external onlyVote {        
-    //     for(uint256 i = 0; i < agentList.length; i++) { 
-    //         if(_agent == agentList[i]) {
-    //             agentList[i] = agentList[agentList.length - 1];
-    //             agentList.pop();
-    //         }
-    //     }
-    // }
-
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
     function __isPaidFee(uint256 _payAmount) private returns(bool) {    
@@ -242,15 +231,6 @@ contract Property is ReentrancyGuard {
 
         isRewardWhitelist[_rewardAddress] = 2;
         DAO_FUND_REWARD = _rewardAddress;
-
-        // // TODO thinking...
-        // // remove item from proposal list
-        // for(uint256 i = 0; i < rewardAddressList.length; i++) { 
-        //     if(_rewardAddress == rewardAddressList[i]) {
-        //         rewardAddressList[i] = rewardAddressList[rewardAddressList.length - 1];
-        //         rewardAddressList.pop();
-        //     }
-        // }
     }
 
     /// @notice Get reward fund proposal title and description
@@ -297,14 +277,7 @@ contract Property is ReentrancyGuard {
 
         filmBoardMembers.push(_member);
         isBoardWhitelist[_member] = 2;
-
-        // // TODO thinking...
-        // for(uint256 i = 0; i < filmBoardCandidates.length; i++) {
-        //     if(_member != filmBoardCandidates[i]) {
-        //         filmBoardCandidates[i] = filmBoardCandidates[filmBoardCandidates.length - 1];
-        //         filmBoardCandidates.pop();
-        //     }
-        // }
+        
         emit FilmBoardMemberAdded(_member);
     }
 

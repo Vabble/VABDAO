@@ -20,12 +20,21 @@ contract StakingPool is ReentrancyGuard {
     event LockTimeUpdated(uint256 lockTime);
     event RewardWithdraw(address staker, uint256 rewardAmount);
     event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount);
+    event VABDeposited(address customer, uint256 amount);
+    event WithdrawPending(address customer, address token, uint256 amount);  
+    event WithdrawVABTransferred(address customer, address token, uint256 amount);  
 
     struct Stake {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
         uint256 stakeTime;       // last staked time(here, means the time that staker withdrawable time)
         uint256 voteCount;       //
+    }
+
+    struct UserRent {
+        uint256 vabAmount;       // current VAB amount in DAO
+        uint256 withdrawAmount;  // pending withdraw amount for a customer
+        bool pending;            // pending status for withdraw
     }
 
     address private immutable OWNABLE;     // Ownablee contract address
@@ -41,15 +50,20 @@ contract StakingPool is ReentrancyGuard {
     
     mapping(address => Stake) public stakeInfo;
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
+    mapping(address => UserRent) public userRentInfo;
 
     Counters.Counter public stakerCount;   // count of stakers is from No.1
 
     modifier onlyVote() {
-        require(msg.sender == VOTE, "caller is not the vote contract");
+        require(msg.sender == VOTE, "caller is not vote contract");
+        _;
+    }
+    modifier onlyDAO() {
+        require(msg.sender == VABBLE_DAO, "caller is not dao contract");
         _;
     }
     modifier onlyAuditor() {
-        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not auditor");
         _;
     }
     constructor(address _ownableContract) {
@@ -170,7 +184,6 @@ contract StakingPool is ReentrancyGuard {
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
         if(proposalCount > 0) {
             if(si.voteCount == 0) {
-        console.log("sol=>rewards::", rewardAmount, si.stakeAmount);
                 rewardAmount = 0;
                 extraRewardAmount = 0;
             } else {
@@ -200,6 +213,73 @@ contract StakingPool is ReentrancyGuard {
         emit RewardWithdraw(msg.sender, _amount);
     }
 
+    // =================== Customer deposit/withdraw VAB START =================    
+    /// @notice Deposit VAB token from customer for renting the films
+    function depositVAB(uint256 _amount) external nonReentrant {
+        require(msg.sender != address(0), "depositVAB: Zero address");
+        require(_amount > 0, "depositVAB: Zero amount");
+
+        Helper.safeTransferFrom(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
+        userRentInfo[msg.sender].vabAmount += _amount;
+
+        emit VABDeposited(msg.sender, _amount);
+    }
+
+    /// @notice Pending Withdraw VAB token by customer
+    function pendingWithdraw(uint256 _amount) external nonReentrant {
+        require(msg.sender != address(0), "pendingWithdraw: Zero address");
+        require(_amount > 0 && _amount <= userRentInfo[msg.sender].vabAmount - userRentInfo[msg.sender].withdrawAmount, "pendingWithdraw: Insufficient VAB amount");
+        require(!userRentInfo[msg.sender].pending, "pendingWithdraw: already pending status");
+
+        userRentInfo[msg.sender].withdrawAmount += _amount;
+        userRentInfo[msg.sender].pending = true;
+
+        emit WithdrawPending(msg.sender, IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _amount);
+    }
+
+    /// @notice Approve pending-withdraw of given customers by Auditor
+    function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant returns (address[] memory) {
+        require(_customers.length > 0, "approvePendingWithdraw: No customer");
+        
+        address[] memory withdrawer = new address[](_customers.length);
+        // Transfer withdrawable amount to _customers
+        for(uint256 i = 0; i < _customers.length; i++) {
+            if(
+                userRentInfo[_customers[i]].withdrawAmount > 0 &&
+                userRentInfo[_customers[i]].withdrawAmount <= userRentInfo[_customers[i]].vabAmount &&
+                userRentInfo[_customers[i]].pending
+            ) {
+                withdrawer[i] = __transferVABWithdraw(_customers[i]);
+            }
+        }
+        return withdrawer;
+    }
+
+    /// @dev Transfer VAB token to user's withdraw request
+    function __transferVABWithdraw(address _to) private returns (address withdrawer_) {
+        uint256 payAmount = userRentInfo[_to].withdrawAmount;
+        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _to, payAmount);
+
+        userRentInfo[_to].vabAmount -= payAmount;
+        userRentInfo[_to].withdrawAmount = 0;
+        userRentInfo[_to].pending = false;
+
+        withdrawer_ = _to;
+        emit WithdrawVABTransferred(_to, IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), payAmount);
+    }
+
+    /// @notice Deny pending-withdraw of given customers by Auditor
+    function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
+        require(_customers.length > 0, "denyPendingWithdraw: No customer");
+
+        // Release withdrawable amount for _customers
+        for(uint256 i = 0; i < _customers.length; i++) {
+            if(userRentInfo[_customers[i]].withdrawAmount > 0 && userRentInfo[_customers[i]].pending) {
+                userRentInfo[_customers[i]].withdrawAmount = 0;
+                userRentInfo[_customers[i]].pending = false;
+            }
+        }
+    } 
     /// @notice Transfer DAO all fund to new contract or something
     function withdrawAllFund() public onlyAuditor {
         address rewardAddress = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
@@ -244,6 +324,15 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Get staking amount for a staker
     function getStakeAmount(address _user) external view returns(uint256 amount_) {
         amount_ = stakeInfo[_user].stakeAmount;
+    }
+
+    /// @notice Get user rent VAB amount
+    function getRentVABAmount(address _user) external view returns(uint256 amount_) {
+        amount_ = userRentInfo[_user].vabAmount;
+    }
+    /// @notice Update user rent VAB amount
+    function subRentVABAmount(address _user, uint256 _amount) external onlyDAO {
+        userRentInfo[_user].vabAmount -= _amount;
     }
 
     /// @notice Get limit staker count for voting

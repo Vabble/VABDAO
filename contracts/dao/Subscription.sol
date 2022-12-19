@@ -29,7 +29,6 @@ contract Subscription is ReentrancyGuard {
 
     uint256 private constant PERIOD_UNIT = 30 days; // 30 days
 
-    address[] private registeredNFTs;            // nfts registered for subscription by Auditor
     uint256[] private gatedFilmIds;              // filmIds added by Studio for gated content
 
     struct UserSubscription {
@@ -45,7 +44,6 @@ contract Subscription is ReentrancyGuard {
     }
     
     mapping(address => UserSubscription) public subscriptionInfo;             // (user => UserSubscription)
-    mapping(address => uint256) public periodPerNFT;                          // (nft => period)
     mapping(address => mapping(uint256 => bool)) public isUsedNFT;            // (nft => (tokenId => true/false))
 
     mapping(uint256 => GateNFT[]) public gatedNFTs;                           // (filmId => GateNFT[])
@@ -66,31 +64,31 @@ contract Subscription is ReentrancyGuard {
         address _vabbleDAO,
         address _vabbleWallet
     ) {        
-        require(_ownableContract != address(0), "ownableContract: Zero address");
+        require(_ownableContract != address(0), "ownableContract: zero address");
         OWNABLE = _ownableContract;  
-        require(_uniHelperContract != address(0), "uniHelperContract: Zero address");
+        require(_uniHelperContract != address(0), "uniHelperContract: zero address");
         UNI_HELPER = _uniHelperContract;      
-        require(_daoProperty != address(0), "initializeVote: Zero filmBoard address");
+        require(_daoProperty != address(0), "daoProperty: zero address");
         DAO_PROPERTY = _daoProperty; 
-        require(_vabbleDAO != address(0), "vabbleDAO: Zero vabbleDAO address");
+        require(_vabbleDAO != address(0), "vabbleDAO: zero address");
         VABBLE_DAO = _vabbleDAO;  
-        require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
+        require(_vabbleWallet != address(0), "vabbleWallet: zero address");
         VAB_WALLET = _vabbleWallet;
     }
 
-    // ============= 0. Subscription by token. ===========
-    /// @notice active subscription(pay $10 monthly as ETH/USDC/USDT/VAB...) for renting the films
-    function activeSubscription(address _token, uint256 _period) external payable nonReentrant {      
+    // ============= 0. Subscription by token and NFT. ===========    
+    /// @notice active subscription(pay $1 monthly as ETH/USDC/USDT/VAB...) for renting the films
+    function activeSubscription(address _token, uint256 _period) public payable nonReentrant {
         require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset"); 
-
-        uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
+        
+        uint256 _expectAmount = getExpectedSubscriptionAmount(_token, _period);
         if(_token == address(0)) {
-            require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
-            if (msg.value > expectAmount) {
-                Helper.safeTransferETH(msg.sender, msg.value - expectAmount);
+            require(msg.value >= _expectAmount, "activeSubscription: Insufficient paid");
+            if (msg.value > _expectAmount) {
+                Helper.safeTransferETH(msg.sender, msg.value - _expectAmount);
             }
         } else {
-            Helper.safeTransferFrom(_token, msg.sender, address(this), expectAmount); 
+            Helper.safeTransferFrom(_token, msg.sender, address(this), _expectAmount); 
 
             // Approve token to send from this contract to UNI_HELPER contract
             if(IERC20(_token).allowance(address(this), UNI_HELPER) == 0) {
@@ -103,13 +101,13 @@ contract Subscription is ReentrancyGuard {
         address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
         // if token is VAB, send USDC(convert from VAB to USDC) to wallet
         if(_token == payout_token) {
-            bytes memory swapArgs = abi.encode(expectAmount, _token, usdc_token);
+            bytes memory swapArgs = abi.encode(_expectAmount, _token, usdc_token);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             Helper.safeTransfer(usdc_token, VAB_WALLET, usdcAmount);
         } 
         // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC) to wallet
         else {            
-            uint256 amount60 = expectAmount * 60 * 1e8 / 1e10;  
+            uint256 amount60 = _expectAmount * 60 * 1e8 / 1e10;  
             // Send ETH from this contract to UNI_HELPER contract
             if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, amount60); // 60%
             
@@ -119,18 +117,18 @@ contract Subscription is ReentrancyGuard {
             Helper.safeTransfer(payout_token, VAB_WALLET, vabAmount);
 
             if(_token == usdc_token) {
-                usdcAmount = expectAmount - amount60;
+                usdcAmount = _expectAmount - amount60;
             } else {
                 // Send ETH from this contract to UNI_HELPER contract
-                if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60); // 40%
+                if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, _expectAmount - amount60); // 40%
                 
-                bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdc_token);
+                bytes memory swapArgs1 = abi.encode(_expectAmount - amount60, _token, usdc_token);
                 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
             }
             // Transfer USDC to wallet
             Helper.safeTransfer(usdc_token, VAB_WALLET, usdcAmount);
-        }
-
+        }        
+        
         UserSubscription storage subscription = subscriptionInfo[msg.sender];
         if(isActivedSubscription(msg.sender)) {
             uint256 oldPeriod = subscription.period;
@@ -142,7 +140,7 @@ contract Subscription is ReentrancyGuard {
             subscription.expireTime = block.timestamp + PERIOD_UNIT * _period;
         }
 
-        emit SubscriptionActivated(msg.sender, _token, _period);
+        emit SubscriptionActivated(msg.sender, _token, _period);          
     }
 
     /// @notice Expected token amount that user should pay for activing the subscription
@@ -159,53 +157,6 @@ contract Subscription is ReentrancyGuard {
         } else {            
             expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, usdc_token, _token);
         }
-    }
-
-    // ============= 1. Subscription NFTs. ===========
-    /// @notice Register NFTs for subscription by Auditor
-    /// @param _periods : [1, 2, 6 ...] 1=>1 month, 2=>2 months, 6=>6 months
-    function registerNFTs(address[] memory _nfts, uint256[] memory _periods) public onlyAuditor {
-        require(_nfts.length == _periods.length, "registerNFTs: Difference array length");
-
-        for(uint256 i = 0; i < _nfts.length; i++) { 
-            if(_nfts[i] == address(0) || _periods[i] <= 0) continue;
-
-            if(!isRegisteredNFT(_nfts[i])) {
-                registeredNFTs.push(_nfts[i]); 
-            }            
-            periodPerNFT[_nfts[i]] = _periods[i];
-        }
-        emit NFTsRegistered(registeredNFTs);
-    }
-
-    /// @notice active subscription by NFT for renting the films
-    /// @param _nft : nft address 
-    /// @param _tokenId: if ERC721 then nft token Id, if ERC1155 then nft Id(ex: cate=0, gold=1...)
-    /// @param _tokenType: 1 => ERC721, 2 => ERC1155
-    function activeNFTSubscription(address _nft, uint256 _tokenId, uint256 _tokenType) external nonReentrant {     
-        require(isRegisteredNFT(_nft) && !isUsedNFT[_nft][_tokenId], "NFTSubscription: Used or Unregistered nft");
-
-        // TODO Verify Ownership onChain.
-        if(_tokenType == 1) {        
-            require(IERC721(_nft).ownerOf(_tokenId) == msg.sender, "NFTSubscription: Not erc721-nft owner");
-        } else if(_tokenType == 2) {
-            require(IERC1155(_nft).balanceOf(msg.sender, _tokenId) > 0, "NFTSubscription: No erc1155-nft balance");
-        }
-
-        UserSubscription storage subscription = subscriptionInfo[msg.sender];
-        if(isActivedSubscription(msg.sender)) {
-            uint256 oldPeriod = subscription.period;
-            subscription.period = oldPeriod + periodPerNFT[_nft];
-            subscription.expireTime = subscription.activeTime + PERIOD_UNIT * (oldPeriod + periodPerNFT[_nft]);
-        } else {
-            subscription.activeTime = block.timestamp;
-            subscription.period = periodPerNFT[_nft];
-            subscription.expireTime = block.timestamp + PERIOD_UNIT * periodPerNFT[_nft];
-        }
-
-        isUsedNFT[_nft][_tokenId] = true;
-
-        emit SubscriptionNFTActivated(msg.sender, _nft, _tokenId, _tokenType);
     }
 
     // ============= 2. NFT Gated Content ===========
@@ -275,11 +226,13 @@ contract Subscription is ReentrancyGuard {
     }
 
     function __isApprovedFilm(uint256 _filmId) private view returns (bool approve_) {
+        address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);
+        Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
         if(
-            IVabbleDAO(VABBLE_DAO).getFilmOwnerById(_filmId) == msg.sender &&
-            (IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_LISTING || 
-            IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_FUNDING || 
-            IVabbleDAO(VABBLE_DAO).getFilmStatusById(_filmId) == Helper.Status.APPROVED_WITHOUTVOTE)) {
+            owner == msg.sender &&
+            (status == Helper.Status.APPROVED_LISTING || 
+            status == Helper.Status.APPROVED_FUNDING || 
+            status == Helper.Status.APPROVED_WITHOUTVOTE)) {
             approve_ = true;
         } else {
             approve_ = false;
@@ -299,19 +252,6 @@ contract Subscription is ReentrancyGuard {
         if(subscriptionInfo[_customer].expireTime > block.timestamp) active_ = true;
         else active_ = false;
     }
-
-    /// @notice Check if nft registered 
-    function isRegisteredNFT(address _nft) public view returns(bool register_) {     
-        require(_nft != address(0), "isRegisteredNFT: Zero nft address");
-
-        if(periodPerNFT[_nft] > 0) register_ = true;
-        else register_ = false;
-    }
-
-    /// @notice Get registered nft list
-    function getRegisteredNFTList() public view returns (address[] memory) {
-        return registeredNFTs;
-    } 
     
     /// @notice Get gated content(film) list
     function getGatedFilmIdList() public view returns (uint256[] memory) {

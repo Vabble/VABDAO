@@ -4,6 +4,7 @@
 // require('./vote.test');
 // require('./vabbleDAO.test');
 // require('./stakingPool.test');
-// require('./factoryNFT.test');
-require('./subscription.test');
+// require('./factoryFilmNFT.test');
+require('./factorySubNFT.test');
+// require('./subscription.test');
 // require('./research');

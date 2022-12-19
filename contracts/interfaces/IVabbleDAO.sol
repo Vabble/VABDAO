@@ -6,22 +6,21 @@ import "../libraries/Helper.sol";
 interface IVabbleDAO {    
     function getFilmById(uint256 _filmId) external view 
     returns (
-        address[] memory studioPayees_, 
-        uint256[] memory sharePercents_, 
-        uint256 rentPrice_,
-        uint256 raiseAmount_,
-        uint256 fundPeriod_,
-        uint256 fundStart_,
-        address studio_,
-        bool onlyAllowVAB_,
-        Helper.Status status_
+        uint256[] memory nftRight_,
+        uint256[] memory sharePercents_,
+        address[] memory choiceAuditor_,
+        address[] memory studioPayees_,
+        uint256 gatingType_,
+        uint256 rentPrice_       
     );
 
-    function getFilmStatusById(uint256 _filmId) external view returns (Helper.Status status_);
-    
-    function getFilmOwnerById(uint256 _filmId) external view returns (address studio_);
+    function getFilmFund(uint256 _filmId) external view returns (uint256 raiseAmount_,uint256 fundPeriod_,uint256 fundStage_,uint256 fundType_);
 
-    function getFilmProposalTime(uint256 _filmId) external view returns (uint256 time_);
+    function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_);
+    
+    function getFilmOwner(uint256 _filmId) external view returns (address owner_);
+
+    function getFilmProposalTime(uint256 _filmId) external view returns (uint256 cTime_, uint256 aTime_);
 
     function setFilmProposalApproveTime(uint256 _filmId, uint256 _time) external;
 

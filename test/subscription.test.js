@@ -12,6 +12,7 @@ describe('Subscription', function () {
     this.PropertyFactory = await ethers.getContractFactory('Property');
     this.SubscriptionFactory = await ethers.getContractFactory('Subscription');
     this.OwnableFactory = await ethers.getContractFactory('Ownablee');
+    this.NFTFactory = await ethers.getContractFactory('FactoryNFT');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -58,12 +59,17 @@ describe('Subscription', function () {
       )
     ).deployed();    
 
+    this.NFTContract = await (
+      await this.NFTFactory.deploy()
+    ).deployed();  
+
     this.SubContract = await (
       await this.SubscriptionFactory.deploy(
         this.ownableContract.address,
         this.uniHelperContract.address,
         this.propertyContract.address,
         this.DAOContract.address,
+        this.NFTContract.address,
         CONFIG.daoWalletAddress
       )
     ).deployed();    

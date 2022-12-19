@@ -4,7 +4,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
   this.Ownablee = await deployments.get('Ownablee');  
 
-  await deploy('StakingPool', {
+  await deploy('FactoryFilmNFT', {
     from: deployer,
     args: [
       this.Ownablee.address
@@ -12,9 +12,9 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     log: true,
     deterministicDeployment: false,
     skipIfAlreadyDeployed: false,
-  });
+  }); 
 };
 
-module.exports.id = 'deploy_staking_pool'
-module.exports.tags = ['StakingPool'];
+module.exports.id = 'deploy_factory_film_nft'
+module.exports.tags = ['FactoryFilmNFT'];
 module.exports.dependencies = ['Ownablee'];

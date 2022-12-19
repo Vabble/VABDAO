@@ -15,7 +15,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
       this.UniHelper.address,   // UniHelper contract
       this.Property.address,    // Property contract
       this.VabbleDAO.address,   // VabbleDAO contract
-      CONFIG.daoWalletAddress
+      CONFIG.daoWalletAddress   //
     ],
     log: true,
     deterministicDeployment: false,
