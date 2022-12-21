@@ -15,8 +15,8 @@ import "hardhat/console.sol";
 
 contract FactoryFilmNFT is ReentrancyGuard {
 
-    event ERC721Created(address nftCreator, address nftContract);
-    event ERC721Minted(address nftContract, uint256 tokenId);    
+    event FilmERC721Created(address nftCreator, address nftContract);
+    event FilmERC721Minted(address nftContract, uint256 tokenId);    
 
     struct Mint {
         uint256 tier;             // Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
@@ -50,8 +50,6 @@ contract FactoryFilmNFT is ReentrancyGuard {
     address private UNI_HELPER;      // UniHelper contract address
     address private DAO_PROPERTY;    // Property contract address
     address private VABBLE_DAO;      // VabbleDAO contract address
-    address private SUBSCRIPTION;    // Subscription contract address 
-    address private VAB_WALLET;      // Vabble wallet
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -68,9 +66,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         address _stakingContract,
         address _uniHelperContract,
         address _daoProperty,
-        address _daoContract, 
-        address _subscriptionContract,       
-        address _vabbleWallet
+        address _daoContract
     ) external onlyAuditor {         
         require(_stakingContract != address(0), "stakingContract: Zero address");
         STAKING_POOL = _stakingContract;
@@ -80,10 +76,6 @@ contract FactoryFilmNFT is ReentrancyGuard {
         DAO_PROPERTY = _daoProperty; 
         require(_daoContract != address(0), "daoContract: Zero address");
         VABBLE_DAO = _daoContract;  
-        require(_subscriptionContract != address(0), "setupSubscription: zero contract address");
-        SUBSCRIPTION = _subscriptionContract;      
-        require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
-        VAB_WALLET = _vabbleWallet; 
     } 
 
     /// @notice Set baseURI by Auditor.
@@ -135,9 +127,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);
         require(owner == msg.sender, "deployNFT: not film owner");
 
-        VabbleNFT t = new VabbleNFT(
-            OWNABLE, STAKING_POOL, UNI_HELPER, DAO_PROPERTY, VABBLE_DAO, SUBSCRIPTION, VAB_WALLET, baseUri, _name, _symbol
-        );
+        VabbleNFT t = new VabbleNFT(baseUri, _name, _symbol);
         filmNFTContractList.push(t);
         
         indexToContract[filmNFTContractList.length - 1] = address(t);
@@ -152,7 +142,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         mInfo.nft = address(t);
         mInfo.studio = msg.sender;
         
-        emit ERC721Created(msg.sender, address(t));
+        emit FilmERC721Created(msg.sender, address(t));
     }
 
     function mint(
@@ -170,7 +160,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         uint256 tokenId = filmNFTContractList[_index].mintTo(_to);
         filmNFTTokenList[_filmId].push(tokenId);
 
-        emit ERC721Minted(indexToContract[_index], tokenId);
+        emit FilmERC721Minted(indexToContract[_index], tokenId);
     }
 
     function mintToBatch(

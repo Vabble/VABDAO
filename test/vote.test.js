@@ -12,6 +12,7 @@ describe('Vote', function () {
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.PropertyFactory = await ethers.getContractFactory('Property');
     this.OwnableFactory = await ethers.getContractFactory('Ownablee');
+    this.NFTFilmFactory = await ethers.getContractFactory('FactoryFilmNFT');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -22,8 +23,8 @@ describe('Vote', function () {
     this.customer2 = this.signers[6];
     this.customer3 = this.signers[7];
     this.auditorAgent1 = this.signers[8];   
-    this.auditorAgent2 = this.signers[9];   
-    this.reward = this.signers[10];  
+    this.reward = this.signers[9];   
+    this.auditorAgent2 = this.signers[10]; 
     this.customer4 = this.signers[11];
     this.customer5 = this.signers[12];
     this.customer6 = this.signers[13];
@@ -35,7 +36,7 @@ describe('Vote', function () {
     this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
+    this.ownableContract = await (await this.OwnableFactory.deploy(CONFIG.daoWalletAddress)).deployed(); 
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
       CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
@@ -56,13 +57,18 @@ describe('Vote', function () {
       )
     ).deployed();
 
+    this.NFTFilmContract = await (
+      await this.NFTFilmFactory.deploy(this.ownableContract.address)
+    ).deployed();  
+
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address
+        this.propertyContract.address,
+        this.NFTFilmContract.address
       )
     ).deployed();    
 
@@ -139,15 +145,15 @@ describe('Vote', function () {
   //   )
   //   // Staking from customer1,2,3 for vote
   //   const stakeAmount = getBigNumber(200)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-  //   await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
-  //   await this.stakingContract.connect(this.studio1).stakeToken(stakeAmount, {from: this.studio1.address})
+  //   await this.stakingContract.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+  //   await this.stakingContract.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
+  //   await this.stakingContract.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
        
   //   // Deposit to contract(VAB amount : 100, 200, 300)
-  //   await this.DAOContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
-  //   await this.DAOContract.connect(this.customer2).depositVAB(getBigNumber(200), {from: this.customer2.address})
-  //   await this.DAOContract.connect(this.customer3).depositVAB(getBigNumber(300), {from: this.customer3.address})
+  //   await this.stakingContract.connect(this.customer1).depositVAB(getBigNumber(100), {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer2).depositVAB(getBigNumber(200), {from: this.customer2.address})
+  //   await this.stakingContract.connect(this.customer3).depositVAB(getBigNumber(300), {from: this.customer3.address})
 
   //   // Create proposal for four films by studio
   //   const raiseAmounts = [getBigNumber(0), getBigNumber(0), getBigNumber(3000, 6), getBigNumber(3000, 6)];
@@ -184,13 +190,13 @@ describe('Vote', function () {
   //   await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(100000000), {from: this.auditor.address});
         
   //   const stakeAmount = getBigNumber(200)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(75000000), {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-  //   await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
-  //   await this.stakingContract.connect(this.customer4).stakeToken(stakeAmount, {from: this.customer4.address})
-  //   await this.stakingContract.connect(this.customer5).stakeToken(stakeAmount, {from: this.customer5.address})
-  //   await this.stakingContract.connect(this.customer6).stakeToken(stakeAmount, {from: this.customer6.address})
-  //   await this.stakingContract.connect(this.customer7).stakeToken(stakeAmount, {from: this.customer7.address})
+  //   await this.stakingContract.connect(this.customer1).stakeVAB(getBigNumber(75000000), {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+  //   await this.stakingContract.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
+  //   await this.stakingContract.connect(this.customer4).stakeVAB(stakeAmount, {from: this.customer4.address})
+  //   await this.stakingContract.connect(this.customer5).stakeVAB(stakeAmount, {from: this.customer5.address})
+  //   await this.stakingContract.connect(this.customer6).stakeVAB(stakeAmount, {from: this.customer6.address})
+  //   await this.stakingContract.connect(this.customer7).stakeVAB(stakeAmount, {from: this.customer7.address})
     
   //   // Initialize Vote contract
   //   await this.voteContract.connect(this.auditor).initializeVote(
@@ -273,8 +279,8 @@ describe('Vote', function () {
   //   await this.vabToken.connect(this.auditor).transfer(this.customer2.address, transferAmount, {from: this.auditor.address});
 
   //   // Staking
-  //   await this.stakingContract.connect(this.customer1).stakeToken(transferAmount, {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(transferAmount, {from: this.customer2.address})
+  //   await this.stakingContract.connect(this.customer1).stakeVAB(transferAmount, {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer2).stakeVAB(transferAmount, {from: this.customer2.address})
 
   //   const aud = await this.ownableContract.auditor(); 
   //   console.log("====new_aud", aud)
@@ -301,13 +307,13 @@ describe('Vote', function () {
     await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
         
     const stakeAmount = getBigNumber(200)
-    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(80000000), {from: this.customer1.address})
-    await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-    await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
-    await this.stakingContract.connect(this.customer4).stakeToken(stakeAmount, {from: this.customer4.address})
-    await this.stakingContract.connect(this.customer5).stakeToken(stakeAmount, {from: this.customer5.address})
-    await this.stakingContract.connect(this.customer6).stakeToken(stakeAmount, {from: this.customer6.address})
-    await this.stakingContract.connect(this.customer7).stakeToken(stakeAmount, {from: this.customer7.address})
+    await this.stakingContract.connect(this.customer1).stakeVAB(getBigNumber(80000000), {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
+    await this.stakingContract.connect(this.customer4).stakeVAB(stakeAmount, {from: this.customer4.address})
+    await this.stakingContract.connect(this.customer5).stakeVAB(stakeAmount, {from: this.customer5.address})
+    await this.stakingContract.connect(this.customer6).stakeVAB(stakeAmount, {from: this.customer6.address})
+    await this.stakingContract.connect(this.customer7).stakeVAB(stakeAmount, {from: this.customer7.address})
 
     // Initialize Vote contract
     await this.voteContract.connect(this.auditor).initializeVote(
@@ -430,13 +436,13 @@ describe('Vote', function () {
     await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
         
     const stakeAmount = getBigNumber(200)
-    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(50000000), {from: this.customer1.address})
-    await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(40000000), {from: this.customer2.address})
-    await this.stakingContract.connect(this.customer3).stakeToken(stakeAmount, {from: this.customer3.address})
-    await this.stakingContract.connect(this.customer4).stakeToken(stakeAmount, {from: this.customer4.address})
-    await this.stakingContract.connect(this.customer5).stakeToken(stakeAmount, {from: this.customer5.address})
-    await this.stakingContract.connect(this.customer6).stakeToken(stakeAmount, {from: this.customer6.address})
-    await this.stakingContract.connect(this.customer7).stakeToken(stakeAmount, {from: this.customer7.address})
+    await this.stakingContract.connect(this.customer1).stakeVAB(getBigNumber(50000000), {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeVAB(getBigNumber(40000000), {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
+    await this.stakingContract.connect(this.customer4).stakeVAB(stakeAmount, {from: this.customer4.address})
+    await this.stakingContract.connect(this.customer5).stakeVAB(stakeAmount, {from: this.customer5.address})
+    await this.stakingContract.connect(this.customer6).stakeVAB(stakeAmount, {from: this.customer6.address})
+    await this.stakingContract.connect(this.customer7).stakeVAB(stakeAmount, {from: this.customer7.address})
 
     // Initialize Vote contract
     await this.voteContract.connect(this.auditor).initializeVote(
@@ -510,10 +516,14 @@ describe('Vote', function () {
     await network.provider.send('evm_mine');
 
     let rewardAddress = await this.propertyContract.DAO_FUND_REWARD(); 
-    // console.log("====rewardAddress-before::", rewardAddress)
+    console.log("====rewardAddress-before::", rewardAddress)
     await this.voteContract.connect(this.customer2).setDAORewardAddress(this.reward.address, {from: this.customer2.address})
 
     rewardAddress = await this.propertyContract.DAO_FUND_REWARD(); 
+    console.log("====rewardAddress-after::", rewardAddress)
+    // 90092844245613213346606185
+    // 90091944245613213346606185
+    //      900000000000000000000
     expect(rewardAddress).to.be.equal(this.reward.address)
 
     let stakeContractVAB = await this.vabToken.balanceOf(this.stakingContract.address)
@@ -535,7 +545,7 @@ describe('Vote', function () {
     remainBalance = await this.vabToken.balanceOf(this.stakingContract.address)
     newAddrBalance = await this.vabToken.balanceOf(rewardAddress)
     const daoVABBalance = await this.vabToken.balanceOf(this.DAOContract.address)
-    console.log("====test-4", daoVABBalance)
+    console.log("====test-4", daoVABBalance.toString(), currentBalance.toString())
     expect(remainBalance).to.be.equal(0)
     expect(newAddrBalance).to.be.equal(currentBalance.add(daoVABBalance))
   });

@@ -6,17 +6,15 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
-import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
-import "../interfaces/IVabbleDAO.sol";
 import "./VabbleNFT.sol";
 import "hardhat/console.sol";
 
 contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
-    event ERC721SubCreated(address nftCreator, address nftContract);
-    event ERC721SubMinted(address receiver, uint256 subscriptionPeriod, uint256 tokenId);   
+    event SubscriptionERC721Created(address nftCreator, address nftContract);
+    event SubscriptionERC721Minted(address receiver, uint256 subscriptionPeriod, uint256 tokenId);   
     event SubscriptionNFTLocked(uint256 tokenId, uint256 lockPeriod, address owner);    
     event SubscriptionNFTUnLocked(uint256 tokenId, address owner);
 
@@ -46,12 +44,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     address public subNFTAddress;
 
     address private OWNABLE;         // Ownablee contract address
-    address private STAKING_POOL;    // StakingPool contract address
     address private UNI_HELPER;      // UniHelper contract address
     address private DAO_PROPERTY;    // Property contract address
-    address private VABBLE_DAO;      // VabbleDAO contract address
-    address private SUBSCRIPTION;    // Subscription contract address 
-    address private VAB_WALLET;      // Vabble wallet
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -65,25 +59,13 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     function initializeFactory(
-        address _stakingContract,
         address _uniHelperContract,
-        address _daoProperty,
-        address _daoContract, 
-        address _subscriptionContract,       
-        address _vabbleWallet
-    ) external onlyAuditor {         
-        require(_stakingContract != address(0), "stakingContract: Zero address");
-        STAKING_POOL = _stakingContract;
+        address _daoProperty
+    ) external onlyAuditor {  
         require(_uniHelperContract != address(0), "uniHelperContract: Zero address");
         UNI_HELPER = _uniHelperContract;   
         require(_daoProperty != address(0), "daoProperty: Zero address");
         DAO_PROPERTY = _daoProperty; 
-        require(_daoContract != address(0), "daoContract: Zero address");
-        VABBLE_DAO = _daoContract;  
-        require(_subscriptionContract != address(0), "setupSubscription: zero contract address");
-        SUBSCRIPTION = _subscriptionContract;      
-        require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
-        VAB_WALLET = _vabbleWallet; 
     } 
 
     /// @notice Set baseURI by Auditor.
@@ -115,13 +97,11 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         string memory _symbol
     ) public onlyAuditor {   
 
-        subNFTContract = new VabbleNFT(
-            OWNABLE, STAKING_POOL, UNI_HELPER, DAO_PROPERTY, VABBLE_DAO, SUBSCRIPTION, VAB_WALLET, baseUri, _name, _symbol
-        );
+        subNFTContract = new VabbleNFT(baseUri, _name, _symbol);
 
         subNFTAddress = address(subNFTContract);
 
-        emit ERC721SubCreated(msg.sender, subNFTAddress);
+        emit SubscriptionERC721Created(msg.sender, subNFTAddress);
     }
 
     /// @notice User mint the subscription NFTs to "_to" address
@@ -153,7 +133,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
         subNFTTokenList[receiver].push(tokenId);
         
-        emit ERC721SubMinted(receiver, _subPeriod, tokenId);    
+        emit SubscriptionERC721Minted(receiver, _subPeriod, tokenId);    
     }
     
     function mintToBatch(
@@ -183,7 +163,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         bytes memory swapArgs = abi.encode(expectAmount, _token, usdcToken);
         uint256 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);                
         // Transfer USDC to wallet
-        Helper.safeTransfer(usdcToken, VAB_WALLET, usdcAmount);
+        Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
     }
 
     function __transferInto(address _payToken, uint256 _amount) private {

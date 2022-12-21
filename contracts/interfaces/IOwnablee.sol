@@ -10,4 +10,6 @@ interface IOwnablee {
     function isDepositAsset(address _asset) external view returns (bool);
     
     function getDepositAssetList() external view returns (address[] memory);
+
+    function VAB_WALLET() external view returns (address);
 }

@@ -33,6 +33,4 @@ interface IVabbleDAO {
     function isForFund(uint256 _filmId) external view returns (bool);
 
     function isRaisedFullAmount(uint256 _filmId) external view returns (bool);
-
-    function withdrawAllFund() external;
 }

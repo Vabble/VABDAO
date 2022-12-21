@@ -98,9 +98,9 @@ contract StakingPool is ReentrancyGuard {
     }    
 
     /// @notice Staking VAB token by staker
-    function stakeToken(uint256 _amount) public nonReentrant {
-        require(isInitialized, "stakeToken: Should be initialized");
-        require(msg.sender != address(0) && _amount > 0, "stakeToken: Zero value");
+    function stakeVAB(uint256 _amount) public nonReentrant {
+        require(isInitialized, "stakeVAB: Should be initialized");
+        require(msg.sender != address(0) && _amount > 0, "stakeVAB: Zero value");
 
         Helper.safeTransferFrom(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
 
@@ -118,13 +118,13 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @dev Allows user to unstake tokens after the correct time period has elapsed
-    function unstakeToken(uint256 _amount) external nonReentrant {
-        require(isInitialized, "unstakeToken: Should be initialized");
-        require(msg.sender != address(0), "unstakeToken: Zero staker address");
+    function unstakeVAB(uint256 _amount) external nonReentrant {
+        require(isInitialized, "unstakeVAB: Should be initialized");
+        require(msg.sender != address(0), "unstakeVAB: Zero staker address");
 
         Stake storage si = stakeInfo[msg.sender];
-        require(si.stakeAmount >= _amount, "unstakeToken: Insufficient stake amount");
-        require(block.timestamp > si.withdrawableTime, "unstakeToken: lock period yet");
+        require(si.stakeAmount >= _amount, "unstakeVAB: Insufficient stake amount");
+        require(block.timestamp > si.withdrawableTime, "unstakeVAB: lock period yet");
 
         // first, withdraw reward
         uint256 rewardAmount = calcRewardAmount(msg.sender);
@@ -280,6 +280,15 @@ contract StakingPool is ReentrancyGuard {
             }
         }
     } 
+    
+    /// @notice Transfer VAB token to user
+    function sendVAB(address _user, address _to, uint256 _amount) external onlyDAO {
+        require(userRentInfo[_user].vabAmount >= _amount, "sendVAB: insufficient balance");
+
+        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _to, _amount);
+        userRentInfo[_user].vabAmount -= _amount;
+    }
+
     /// @notice Transfer DAO all fund to new contract or something
     function withdrawAllFund() public onlyAuditor {
         address rewardAddress = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
@@ -287,15 +296,11 @@ contract StakingPool is ReentrancyGuard {
 
         address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
         uint256 totalPayoutAmount = IERC20(payout_token).balanceOf(address(this));
-        require(totalPayoutAmount > 0, 'withdrawAllFund: Zero balance');
+        require(totalPayoutAmount >= totalRewardAmount, 'withdrawAllFund: insufficient balance');
         
         Helper.safeTransfer(payout_token, rewardAddress, totalPayoutAmount);
         totalRewardAmount = 0;
 
-        if(IERC20(payout_token).balanceOf(VABBLE_DAO) > 0) {
-            // Already approved payoutToken for stakingPool in vabbleDAO, so don't need approve again.
-            Helper.safeTransferFrom(payout_token, VABBLE_DAO, rewardAddress, IERC20(payout_token).balanceOf(VABBLE_DAO));
-        }        
         emit RewardWithdraw(rewardAddress, totalPayoutAmount);
     }
 
@@ -329,10 +334,6 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Get user rent VAB amount
     function getRentVABAmount(address _user) external view returns(uint256 amount_) {
         amount_ = userRentInfo[_user].vabAmount;
-    }
-    /// @notice Update user rent VAB amount
-    function subRentVABAmount(address _user, uint256 _amount) external onlyDAO {
-        userRentInfo[_user].vabAmount -= _amount;
     }
 
     /// @notice Get limit staker count for voting

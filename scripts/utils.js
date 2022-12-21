@@ -182,9 +182,9 @@ function getByteFilmUpdate(filmId) {
   return ethers.utils.hexlify(uint8Arr);
 }
 
-function getFinalFilm(customer, filmIds) {
+function getFinalFilm(customer, filmId, wPercent) {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
-    [ "address", "uint256[]", "uint256[]" ], [customer, filmIds, FILM_DATA.sWatchs]
+    [ "address", "uint256", "uint256" ], [customer, filmId, wPercent]
   );
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);

@@ -11,37 +11,15 @@ contract VabbleNFT is ERC721, ERC721Enumerable {
     using Counters for Counters.Counter;
     using Strings for uint256;
 
-    address private OWNABLE;         // Ownablee contract address
-    address private STAKING_POOL;    // StakingPool contract address
-    address private UNI_HELPER;      // UniHelper contract address
-    address private DAO_PROPERTY;    // Property contract address
-    address private VABBLE_DAO;      // VabbleDAO contract address
-    address private VAB_WALLET;      // Vabble wallet
-    address private SUBSCRIPTION;    // Subscription contract address 
-
     Counters.Counter private nftCount;
     string public baseUri;                     // Base URI       
 
     receive() external payable {}
     constructor(
-        address _ownableContract,
-        address _stakingContract,
-        address _uniHelperContract,
-        address _daoProperty,
-        address _daoContract,   
-        address _subscriptionContract,     
-        address _vabbleWallet,
         string memory _baseUri,
         string memory _name,
         string memory _symbol
     ) ERC721(_name, _symbol) {
-        OWNABLE = _ownableContract;  
-        STAKING_POOL = _stakingContract;
-        UNI_HELPER = _uniHelperContract;
-        DAO_PROPERTY = _daoProperty; 
-        VABBLE_DAO = _daoContract;   
-        SUBSCRIPTION = _subscriptionContract;
-        VAB_WALLET = _vabbleWallet; 
         baseUri = _baseUri;
     }
 
@@ -74,7 +52,6 @@ contract VabbleNFT is ERC721, ERC721Enumerable {
     function tokenURI(uint256 _tokenId) public view virtual override returns (string memory) {
         require(_exists(_tokenId), "ERC721Metadata: URI query for nonexistent token");
 
-        // If there is a baseURI, concatenate the tokenID to the baseURI.
         return string(abi.encodePacked(baseUri, _tokenId.toString(), ".json"));
     }
 

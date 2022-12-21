@@ -4,7 +4,10 @@ pragma solidity ^0.8.4;
 
 contract Ownablee {
     
+    event VABWalletChanged(address wallet);
+
     address public auditor;
+    address public VAB_WALLET;           // Vabble wallet
     address private VOTE;                // vote contract address
     address[] private depositAssetList;
     
@@ -20,8 +23,11 @@ contract Ownablee {
         _;
     }
 
-    constructor() {
+    constructor(address _vabbleWallet) {
         auditor = msg.sender;
+
+        require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
+        VAB_WALLET = _vabbleWallet; 
     }
     
     function setupVote(address _voteContract) external onlyAuditor {
@@ -75,4 +81,12 @@ contract Ownablee {
     function getDepositAssetList() external view returns (address[] memory) {
         return depositAssetList;
     }
+    
+    /// @notice Change VAB wallet address
+    function changeVABWallet(address _wallet) external onlyAuditor {
+        require(_wallet == address(0), "changeVABWallet: Zero Address");
+        VAB_WALLET = _wallet;
+
+        emit VABWalletChanged(_wallet);
+    } 
 }

@@ -31,7 +31,7 @@ describe('FactoryFilmNFT', function () {
     this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
+    this.ownableContract = await (await this.OwnableFactory.deploy(CONFIG.daoWalletAddress)).deployed(); 
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
       CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
@@ -51,6 +51,10 @@ describe('FactoryFilmNFT', function () {
         this.USDC.address
       )
     ).deployed();
+    
+    this.NFTContract = await (
+      await this.NFTFactory.deploy(this.ownableContract.address)
+    ).deployed();   
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
@@ -58,33 +62,24 @@ describe('FactoryFilmNFT', function () {
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address
+        this.propertyContract.address,
+        this.NFTContract.address
       )
-    ).deployed();   
-    
-    this.NFTContract = await (
-      await this.NFTFactory.deploy(this.ownableContract.address)
-    ).deployed();   
+    ).deployed();       
 
     this.subContract = await (
       await this.SubscriptionFactory.deploy(
         this.ownableContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address,
-        this.DAOContract.address,
-        this.NFTContract.address,
-        CONFIG.daoWalletAddress
+        this.propertyContract.address
       )
     ).deployed();    
      
- 
     await this.NFTContract.connect(this.auditor).initializeFactory(
       this.stakingContract.address,
       this.uniHelperContract.address,
       this.propertyContract.address,
       this.DAOContract.address, 
-      this.subContract.address,  
-      CONFIG.daoWalletAddress,
       {from: this.auditor.address}
     );    
     
@@ -133,12 +128,12 @@ describe('FactoryFilmNFT', function () {
       {from: this.auditor.address}
     )  
     // Staking VAB token
-    await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(40000000), {from: this.customer1.address})
-    await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(40000000), {from: this.customer2.address})
-    await this.stakingContract.connect(this.customer3).stakeToken(getBigNumber(300), {from: this.customer3.address})    
-    await this.stakingContract.connect(this.studio1).stakeToken(getBigNumber(300), {from: this.studio1.address})
-    await this.stakingContract.connect(this.studio2).stakeToken(getBigNumber(300), {from: this.studio2.address})
-    await this.stakingContract.connect(this.studio3).stakeToken(getBigNumber(300), {from: this.studio3.address})
+    await this.stakingContract.connect(this.customer1).stakeVAB(getBigNumber(40000000), {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeVAB(getBigNumber(40000000), {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer3).stakeVAB(getBigNumber(300), {from: this.customer3.address})    
+    await this.stakingContract.connect(this.studio1).stakeVAB(getBigNumber(300), {from: this.studio1.address})
+    await this.stakingContract.connect(this.studio2).stakeVAB(getBigNumber(300), {from: this.studio2.address})
+    await this.stakingContract.connect(this.studio3).stakeVAB(getBigNumber(300), {from: this.studio3.address})
     // Confirm auditor
     expect(await this.ownableContract.auditor()).to.be.equal(this.auditor.address);    
     

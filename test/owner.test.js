@@ -11,6 +11,7 @@ describe('Ownablee', function () {
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.PropertyFactory = await ethers.getContractFactory('Property');
+    this.NFTFilmFactory = await ethers.getContractFactory('FactoryFilmNFT');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -27,7 +28,7 @@ describe('Ownablee', function () {
     this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
+    this.ownableContract = await (await this.OwnableFactory.deploy(CONFIG.daoWalletAddress)).deployed(); 
 
     this.voteContract = await (await this.VoteFactory.deploy(this.ownableContract.address)).deployed();
 
@@ -48,13 +49,18 @@ describe('Ownablee', function () {
       )
     ).deployed();
 
+    this.NFTFilmContract = await (
+      await this.NFTFilmFactory.deploy(this.ownableContract.address)
+    ).deployed();  
+
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address
+        this.propertyContract.address,
+        this.NFTFilmContract.address
       )
     ).deployed();    
     

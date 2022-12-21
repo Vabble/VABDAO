@@ -12,6 +12,7 @@ describe('StakingPool', function () {
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.PropertyFactory = await ethers.getContractFactory('Property');
     this.OwnableFactory = await ethers.getContractFactory('Ownablee');
+    this.NFTFilmFactory = await ethers.getContractFactory('FactoryFilmNFT');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -30,7 +31,7 @@ describe('StakingPool', function () {
     this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
+    this.ownableContract = await (await this.OwnableFactory.deploy(CONFIG.daoWalletAddress)).deployed(); 
 
     this.voteContract = await (await this.VoteFactory.deploy(this.ownableContract.address)).deployed();
 
@@ -51,13 +52,18 @@ describe('StakingPool', function () {
       )
     ).deployed();
 
+    this.NFTFilmContract = await (
+      await this.NFTFilmFactory.deploy(this.ownableContract.address)
+    ).deployed();  
+
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address
+        this.propertyContract.address,
+        this.NFTFilmContract.address
       )
     ).deployed();    
 
@@ -95,7 +101,7 @@ describe('StakingPool', function () {
 
     await this.vabToken.connect(this.auditor).approve(this.stakingContract.address, getBigNumber(100000000));      
 
-    this.rentPrices = [getBigNumber(100), getBigNumber(200), getBigNumber(300), getBigNumber(400)];
+    this.rentPrices = [getBigNumber(100,6), getBigNumber(200,6), getBigNumber(300,6), getBigNumber(400,6)];
     this.fundPeriods = [getBigNumber(20 * 86400, 0), getBigNumber(30 * 86400, 0), getBigNumber(60 * 86400, 0), getBigNumber(10 * 86400, 0)];
     this.events = [];
 
@@ -112,9 +118,9 @@ describe('StakingPool', function () {
   //     {from: this.auditor.address}
   //   )
   //   // Staking VAB token
-  //   await this.stakingContract.connect(this.customer1).stakeToken(getBigNumber(100), {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(getBigNumber(150), {from: this.customer2.address})
-  //   await this.stakingContract.connect(this.customer3).stakeToken(getBigNumber(300), {from: this.customer3.address})
+  //   await this.stakingContract.connect(this.customer1).stakeVAB(getBigNumber(100), {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer2).stakeVAB(getBigNumber(150), {from: this.customer2.address})
+  //   await this.stakingContract.connect(this.customer3).stakeVAB(getBigNumber(300), {from: this.customer3.address})
   //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
   //   expect(await this.stakingContract.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
   //   expect(await this.stakingContract.getStakeAmount(this.customer3.address)).to.be.equal(getBigNumber(300))
@@ -122,8 +128,8 @@ describe('StakingPool', function () {
   //   console.log('===isInitialized::', await this.stakingContract.isInitialized())
   //   // unstaking VAB token
   //   await expect(
-  //     this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeToken: lock period yet');
+  //     this.stakingContract.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
         
   //   console.log('===test::0')
   //   // => Increase next block timestamp for only testing
@@ -131,7 +137,7 @@ describe('StakingPool', function () {
   //   network.provider.send('evm_increaseTime', [period]);
   //   await network.provider.send('evm_mine');
 
-  //   await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
   //   console.log('===isInitialized::', 'ok')
   //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
   // });
@@ -146,9 +152,9 @@ describe('StakingPool', function () {
   //   )          
   //   // Staking VAB token
   //   const stakeAmount = getBigNumber(100)
-  //   await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-  //   await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-  //   await this.stakingContract.connect(this.studio1).stakeToken(stakeAmount, {from: this.studio1.address})
+  //   await this.stakingContract.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+  //   await this.stakingContract.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+  //   await this.stakingContract.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
   //   expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
 
   //   let w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
@@ -176,8 +182,8 @@ describe('StakingPool', function () {
   //   await network.provider.send('evm_mine');
 
   //   await expect(
-  //     this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeToken: lock period yet');
+  //     this.stakingContract.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
   //   console.log('=====test-0')
   //   // customer1 vote to films
   //   const proposalIds = await this.DAOContract.getFilmIds(1); // 1, 2
@@ -196,8 +202,8 @@ describe('StakingPool', function () {
   //   // w_t = await this.stakingContract.getWithdrawableTime(this.customer1.address);
   //   // console.log("=====w-t after 34 days::", w_t.toString())
   //   await expect(
-  //     this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeToken: lock period yet');
+  //     this.stakingContract.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
 
   //   // => Increase next block timestamp
   //   const period_3 = 20 * 24 * 3600; // 20 days
@@ -209,7 +215,7 @@ describe('StakingPool', function () {
   //   const timePercent = (BigNumber.from(period_1).add(period_2).add(period_3)).mul(10000).div(lockPeriod);
   //   const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000).div(2);
 
-  //   const tx = await this.stakingContract.connect(this.customer1).unstakeToken(getBigNumber(70), {from: this.customer1.address})
+  //   const tx = await this.stakingContract.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
   //   this.events = (await tx.wait()).events
   //   const arg_reward = this.events[1].args
   //   const arg_unstake = this.events[3].args    
@@ -238,8 +244,8 @@ describe('StakingPool', function () {
     )    
 
     const stakeAmount = getBigNumber(100)
-    await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount, {from: this.customer1.address})
-    await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
+    await this.stakingContract.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
 
     // Add reward from auditor
     const rewardAmount = getBigNumber(1000)
@@ -247,7 +253,7 @@ describe('StakingPool', function () {
     expect(await this.stakingContract.totalRewardAmount()).to.be.equal(rewardAmount)
     
     // deposit VAB token
-    await this.DAOContract.connect(this.studio1).depositVAB(rewardAmount, {from: this.studio1.address})
+    await this.stakingContract.connect(this.studio1).depositVAB(rewardAmount, {from: this.studio1.address})
     
     // proposalFilmBoard
     const VABBalance = await this.vabToken.balanceOf(this.customer1.address)
@@ -316,9 +322,9 @@ describe('StakingPool', function () {
     // lockPeriod = 30 days as default
     const stakeAmount = getBigNumber(1000)
     const stakeAmount1 = getBigNumber(80000000)
-    await this.stakingContract.connect(this.customer1).stakeToken(stakeAmount1, {from: this.customer1.address})
-    await this.stakingContract.connect(this.customer2).stakeToken(stakeAmount, {from: this.customer2.address})
-    await this.stakingContract.connect(this.studio1).stakeToken(stakeAmount, {from: this.studio1.address})
+    await this.stakingContract.connect(this.customer1).stakeVAB(stakeAmount1, {from: this.customer1.address})
+    await this.stakingContract.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+    await this.stakingContract.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
     expect(await this.stakingContract.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(80000000))
 
     // WithdrawableTime after staking
@@ -327,12 +333,21 @@ describe('StakingPool', function () {
     console.log("=====WithdrawableTime after staking::", _t.toString())
 
     // Create proposal for 2 funding films by studio    
-    const raiseAmounts = [getBigNumber(100, 6), getBigNumber(3000, 6)];
-    const onlyAllowVABs = [true, false];
-    const film_1 = [this.rentPrices[0], raiseAmounts[0], this.fundPeriods[0], onlyAllowVABs[0], false]
-    const film_2 = [this.rentPrices[1], raiseAmounts[1], this.fundPeriods[1], onlyAllowVABs[1], false]
-    this.filmPropsoal = [getProposalFilm(film_1), getProposalFilm(film_2)]    
-    await this.DAOContract.connect(this.studio1).proposalMultiFilms(this.filmPropsoal, {from: this.studio1.address})
+    const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
+    const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
+    const choiceAuditor = [getBigNumber(1, 0)]
+    const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
+    const gatingType = getBigNumber(2, 0)
+    const rentPrice = getBigNumber(20000, 6)
+    const raiseAmount = getBigNumber(100, 6)
+    const fundPeriod = getBigNumber(120, 0)
+    const fundStage = getBigNumber(2, 0)
+    const fundType = getBigNumber(2, 0)
+    // 1. Create proposal for four films by staker(studio)
+    this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)    
+    await this.DAOContract.connect(this.studio1).proposalFilm(this.filmPropsoal, false, {from: this.studio1.address})
+    this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)    
+    await this.DAOContract.connect(this.studio1).proposalFilm(this.filmPropsoal, false, {from: this.studio1.address})
 
     // => Increase next block timestamp
     const period_0 = 5 * 24 * 3600; // 5 days
@@ -392,15 +407,12 @@ describe('StakingPool', function () {
     
     const raisingAmount = await this.DAOContract.getRaisedAmountPerFilm(proposalIds[0])
     const {
-      studioPayees_,
+      nftRight_,
       sharePercents_,
+      choiceAuditor_,
+      studioPayees_,
+      gatingType_,
       rentPrice_,
-      raiseAmount_,
-      fundPeriod_,
-      fundStart_,
-      studio_,
-      onlyAllowVAB_,
-      status_
     } = await this.DAOContract.getFilmById(proposalIds[0])
     const isRaised = await this.DAOContract.isRaisedFullAmount(proposalIds[0])
 
@@ -421,7 +433,6 @@ describe('StakingPool', function () {
       extraExpectRewardAmount.toString(), //       604709466218059
       totalRewardAmount.toString(),       //9066108938801491315813
       isRaised,                           // true
-      raiseAmount_.toString(),            //100000000
       raisingAmount.toString()            //499248873
     )
     

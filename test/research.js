@@ -13,6 +13,7 @@ describe('VabbleDAO', function () {
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.PropertyFactory = await ethers.getContractFactory('Property');
     this.OwnableFactory = await ethers.getContractFactory('Ownablee');
+    this.NFTFilmFactory = await ethers.getContractFactory('FactoryFilmNFT');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
@@ -24,7 +25,7 @@ describe('VabbleDAO', function () {
     this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.ownableContract = await (await this.OwnableFactory.deploy()).deployed(); 
+    this.ownableContract = await (await this.OwnableFactory.deploy(CONFIG.daoWalletAddress)).deployed(); 
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
       CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
@@ -45,15 +46,20 @@ describe('VabbleDAO', function () {
       )
     ).deployed();
 
+    this.NFTFilmContract = await (
+      await this.NFTFilmFactory.deploy(this.ownableContract.address)
+    ).deployed();  
+
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.ownableContract.address,
         this.voteContract.address,
         this.stakingContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address
+        this.propertyContract.address,
+        this.NFTFilmContract.address
       )
-    ).deployed();
+    ).deployed();  
 
     // Transfering VAB token to studio1, 2, 3
     await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(150000000), {from: this.auditor.address});
@@ -95,7 +101,7 @@ describe('VabbleDAO', function () {
     }
     
     // console.log('=====param data::', filmPropsoal)
-    await this.stakingContract.connect(this.studio1).stakeToken(getBigNumber(75000000), {from: this.studio1.address})
+    await this.stakingContract.connect(this.studio1).stakeVAB(getBigNumber(75000000), {from: this.studio1.address})
     const tx = await this.DAOContract.connect(this.studio1).proposalMultiFilms(filmPropsoal, {from: this.studio1.address})   
     const events = (await tx.wait()).events;
     expect(events[6].args[1]).to.be.equal(this.studio1.address)
