@@ -11,8 +11,7 @@ import "../interfaces/IOwnablee.sol";
 import "hardhat/console.sol";
 
 contract Vote is ReentrancyGuard {
-    
-    event FilmsVoted(uint256[] filmIds, uint256[] status, address voter);
+    event FilmVoted(uint256 filmId, uint256 voteInfo, address voter);
     event FilmsApproved(uint256[] filmIds);
     event AuditorReplaced(address auditor);
     event VotedToAgent(address voter, address agent, uint256 voteInfo);
@@ -107,19 +106,13 @@ contract Vote is ReentrancyGuard {
         ) = abi.decode(_voteData, (uint256[], uint256[]));        
         require(filmIds_.length == voteInfos_.length, "voteToFilm: Bad voteInfos length");
 
-        uint256[] memory votedFilmIds = new uint256[](filmIds_.length);
-        uint256[] memory votedStatus = new uint256[](filmIds_.length);
-
         for(uint256 i = 0; i < filmIds_.length; i++) { 
-            if(__voteToFilm(filmIds_[i], voteInfos_[i])) {
-                votedFilmIds[i] = filmIds_[i];
-                votedStatus[i] = voteInfos_[i];
-            }
-        }
-        emit FilmsVoted(votedFilmIds, votedStatus, msg.sender);
+            voteToFilm(filmIds_[i], voteInfos_[i]);
+        }        
     }
 
-    function __voteToFilm(uint256 _filmId, uint256 _voteInfo) private returns(bool) {
+    function voteToFilm(uint256 _filmId, uint256 _voteInfo) public onlyStaker initialized {
+        require(msg.sender != IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId), "filmVote: film owner");
         require(!isAttendToFilmVote[msg.sender][_filmId], "_voteToFilm: Already voted");    
 
         Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
@@ -170,7 +163,7 @@ contract Vote is ReentrancyGuard {
             IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
         }
 
-        return true;
+        emit FilmVoted(_filmId, _voteInfo, msg.sender);
     }
 
     /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by anyone

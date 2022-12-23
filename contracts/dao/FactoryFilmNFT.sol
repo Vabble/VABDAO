@@ -151,7 +151,9 @@ contract FactoryFilmNFT is ReentrancyGuard {
         address _to, 
         address _payToken
     ) public payable {
-        require(IOwnablee(OWNABLE).isDepositAsset(_payToken), "mint: not allowed asset");    
+        if(_payToken != IProperty(DAO_PROPERTY).PAYOUT_TOKEN()) {
+            require(IOwnablee(OWNABLE).isDepositAsset(_payToken), "mint: not allowed asset");    
+        }
         require(mintInfo[_filmId].maxMintAmount > 0, "mint: no mint info");     
         require(mintInfo[_filmId].maxMintAmount > getTotalSupply(_index), "mint: exceed mint amount");        
 

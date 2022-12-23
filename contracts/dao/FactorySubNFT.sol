@@ -111,8 +111,10 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256 _subPeriod, 
         uint256 _category
     ) public payable nonReentrant {
-        require(subNFTAddress != address(0), "mint: not deploy yet");
-        require(IOwnablee(OWNABLE).isDepositAsset(_token), "mint: not allowed asset"); 
+        if(_token != IProperty(DAO_PROPERTY).PAYOUT_TOKEN()) {
+            require(IOwnablee(OWNABLE).isDepositAsset(_token), "mint: not allowed asset"); 
+        }
+        require(subNFTAddress != address(0), "mint: not deploy yet");        
         require(mintInfo[_category].maxMintAmount > 0, "mint: no admin mint info");
         require(mintInfo[_category].maxMintAmount > getTotalSupply(), "mint: exceed max mint amount");
 

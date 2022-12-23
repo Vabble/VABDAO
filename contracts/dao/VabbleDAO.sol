@@ -323,10 +323,12 @@ contract VabbleDAO is ReentrancyGuard {
     // =================== Funding(Launch Pad) START ===============================
     /// @notice Deposit tokens(VAB, USDT, USDC)/native token($50 ~ $5000 per address for a film) to only funding film by customer(investor)
     function depositToFilm(uint256 _filmId, address _token, uint256 _amount) external payable nonReentrant {
+        if(_token != IProperty(DAO_PROPERTY).PAYOUT_TOKEN()) {
+            require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
+        }
         require(msg.sender != address(0) && _amount > 0, "depositToFilm: Zero value");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "depositToFilm: filmId not approved for funding");
-        require(filmInfo[_filmId].fundPeriod >= block.timestamp - filmInfo[_filmId].pApproveTime, "depositToFilm: passed funding period");
-        require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
+        require(filmInfo[_filmId].fundPeriod >= block.timestamp - filmInfo[_filmId].pApproveTime, "depositToFilm: passed funding period");        
         require(__checkMinMaxAmount(_filmId, _token, _amount), "depositToFilm: Invalid amount");
 
         if(getUserFundAmountPerFilm(msg.sender, _filmId) == 0) {
