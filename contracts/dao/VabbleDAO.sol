@@ -19,11 +19,11 @@ contract VabbleDAO is ReentrancyGuard {
     
     event FilmProposalCreated(uint256 indexed filmIds, address studio);
     event FilmApproved(uint256 filmId);
-    event FilmsFinalSet(address user, uint256 filmId);
-    event FilmsMultiUpdated(uint256[] filmIds, address studio);
+    event FinalFilmSetted(address user, uint256 filmId);
     event DepositedTokenToFilm(address customer, address token, uint256 amount, uint256 filmId);
-    event RentPriceUpdated(uint256 filmId, uint256 price);
-    event FundProcessed(uint256 filmId);
+    event FundFilmProcessed(uint256 filmId);
+    event FilmShareAndPayeeUpdated(address filmOwner, uint256 filmId, uint256[] shares, address[] payees);
+    event FilmPriceAndPeriodUpdated(address filmOwner, uint256 filmId, uint256 rentPrice, uint256 fundPeriod);
 
     struct Asset {
         address token;   // token address
@@ -219,62 +219,67 @@ contract VabbleDAO is ReentrancyGuard {
     ) external nonReentrant {
         require(_updateFilms.length > 0, "updateFilm: Invalid item length");
         
-        uint256[] memory updatedFilmIds = new uint256[](_updateFilms.length);    
-        for(uint256 i = 0; i < _updateFilms.length; i++) {        
+        for(uint256 i = 0; i < _updateFilms.length; i++) {   
             (
                 uint256 _filmId, 
                 uint256[] memory _sharePercents, 
                 address[] memory _studioPayees
             ) = abi.decode(_updateFilms[i], (uint256, uint256[], address[]));
 
-            Film storage fInfo = filmInfo[_filmId];
-            require(fInfo.status == Helper.Status.LISTED, "updateFilm: not listed");
-            require(fInfo.studio == msg.sender, "updateFilm: not film owner");
-
-            uint256 totalPercent = 0;
-            for(uint256 k = 0; k < _studioPayees.length; k++) {
-                require(_sharePercents[k] <= 1e10, 'updateFilm: over 100%');
-                totalPercent += _sharePercents[k];
-            }
-            require(totalPercent <= 1e10, 'updateFilm: total over 100%');
-
-            fInfo.studioPayees = _studioPayees;   
-            fInfo.sharePercents = _sharePercents;   
-
-            updatedFilmIds[i] = _filmId;
+            updateFilmShareAndPayee(_filmId, _sharePercents, _studioPayees);
         }   
-        emit FilmsMultiUpdated(updatedFilmIds, msg.sender);
     }
 
-    /// @notice onlyStudio update film rental price
-    function updateRentPrice(uint256 _filmId, uint256 _price) external nonReentrant {
+    function updateFilmShareAndPayee(
+        uint256 _filmId, 
+        uint256[] memory _sharePercents, 
+        address[] memory _studioPayees
+    ) public nonReentrant {        
+        require(_sharePercents.length == _studioPayees.length, "updateFilm: bad array length");
+        require(filmInfo[_filmId].studio == msg.sender, "updateFilm: not film owner");
+
+        uint256 totalPercent = 0;
+        for(uint256 k = 0; k < _studioPayees.length; k++) {
+            totalPercent += _sharePercents[k];
+        }
+        require(totalPercent <= 1e10, 'updateFilm: total over 100%');
+
+        Film storage fInfo = filmInfo[_filmId];
+        fInfo.studioPayees = _studioPayees;   
+        fInfo.sharePercents = _sharePercents;   
+            
+        emit FilmShareAndPayeeUpdated(msg.sender, _filmId, _sharePercents, _studioPayees);
+    }
+
+    /// @notice onlyStudio update film rental price and fund period
+    function updateFilmPriceAndPeriod(uint256 _filmId, uint256 _rentPrice, uint256 _fundPeriod) external nonReentrant {
         require(msg.sender == filmInfo[_filmId].studio, "updateRentPrice: not film owner");
-        require(_price > 0, "updateRentPrice: zero price");   
-        filmInfo[_filmId].rentPrice = _price;
+        require(_rentPrice > 0, "updateRentPrice: zero price"); 
+
+        filmInfo[_filmId].rentPrice = _rentPrice;
+        filmInfo[_filmId].fundPeriod = _fundPeriod;
         
-        emit RentPriceUpdated(_filmId, _price);
+        emit FilmPriceAndPeriodUpdated(msg.sender, _filmId, _rentPrice, _fundPeriod);
     }   
 
+    /// @notice Set final films for a customer with watched percents
     function setFinalFilms(        
         bytes[] calldata _filmDataList
     ) external onlyAuditor nonReentrant {
         require(_filmDataList.length > 0, "setFinalFilms: bad length");
 
         for(uint256 i = 0; i < _filmDataList.length; i++) {
-            setFinalFilm(_filmDataList[i]);
+            (   
+                address _user,
+                uint256 _filmId,
+                uint256 _watchPercent
+            ) = abi.decode(_filmDataList[i], (address, uint256, uint256)); 
+
+            setFinalFilm(_user, _filmId, _watchPercent);
         }
 
     }
-    /// @notice Set final films for a customer with watched percents
-    function setFinalFilm(        
-        bytes calldata _filmData
-    ) public onlyAuditor {
-        (   
-            address _user,
-            uint256 _filmId,
-            uint256 _watchPercent
-        ) = abi.decode(_filmData, (address, uint256, uint256));   
-          
+    function setFinalFilm(address _user, uint256 _filmId, uint256 _watchPercent) public onlyAuditor {          
         Film memory fInfo = filmInfo[_filmId];
         require(
             fInfo.status == Helper.Status.APPROVED_LISTING || 
@@ -317,7 +322,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         userFinalFilmIds[_user].push(_filmId);
 
-        emit FilmsFinalSet(_user, _filmId);
+        emit FinalFilmSetted(_user, _filmId);
     }  
 
     // =================== Funding(Launch Pad) START ===============================
@@ -378,7 +383,7 @@ contract VabbleDAO is ReentrancyGuard {
             assetPerFilm[_filmId].push(Asset({token: _token, amount: _amount}));
         }
     }
-    
+
     /// @notice onlyStudio send the 2% of funds to reward pool in VAB if funding meet the raise amount after fund period
     function fundProcess(uint256 _filmId) external nonReentrant {
         require(filmInfo[_filmId].studio == msg.sender, "fundProcess: Bad studio of this film");
@@ -416,7 +421,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         fundProcessedFilmIds.push(_filmId);
 
-        emit FundProcessed(_filmId);
+        emit FundFilmProcessed(_filmId);
     }
 
     /// @notice Investor can withdraw fund after fund period if funding fails to meet the raise amount
@@ -438,6 +443,27 @@ contract VabbleDAO is ReentrancyGuard {
                 }
             }
         }
+    }
+
+    /// @notice Call from WithdrawAllFund() in StakingPool
+    function transferAllFund(address _to, address _vabToken) external nonReentrant {
+        require(msg.sender == STAKING_POOL, "caller is not pool");
+
+        // Transfer VAB token
+        uint256 totalVABAmount = IERC20(_vabToken).balanceOf(address(this));
+        Helper.safeTransfer(_vabToken, _to, totalVABAmount);
+
+        // Transfer Matic/ETH
+        uint256 totalMaticAmount = address(this).balance;
+        Helper.safeTransferETH(_to, totalMaticAmount);
+
+        uint256 tokenAmount;
+        address[] memory assetlist = IOwnablee(OWNABLE).getDepositAssetList();
+        for(uint256 i = 0; i < assetlist.length; i++) {
+            tokenAmount = IERC20(assetlist[i]).balanceOf(address(this));        
+            Helper.safeTransfer(assetlist[i], _to, tokenAmount);
+        }
+        
     }
 
     /// @notice Check if fund meet raise amount

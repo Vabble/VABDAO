@@ -174,6 +174,15 @@ function getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, g
   return ethers.utils.hexlify(uint8Arr);
 }
 
+function getOldProposalFilm(film) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "uint256", "uint256", "uint256", "bool", "bool" ], film
+  );
+  const uint8Arr = ethers.utils.arrayify(hexStr);
+  return ethers.utils.hexlify(uint8Arr);
+}
+
+
 function getByteFilmUpdate(filmId) {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
     [ "uint256", "uint256[]", "address[]" ], [filmId, FILM_DATA.shares, FILM_DATA.actors]
@@ -249,6 +258,7 @@ module.exports = {
   getFinalFilm,
   getVoteData,
   getProposalFilm,
+  getOldProposalFilm,
   FILM,
   NFTs,
   getUploadGateContent,

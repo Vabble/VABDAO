@@ -19,6 +19,7 @@ contract StakingPool is ReentrancyGuard {
     event TokenUnstaked(address unstaker, uint256 unStakeAmount);
     event LockTimeUpdated(uint256 lockTime);
     event RewardWithdraw(address staker, uint256 rewardAmount);
+    event AllFundWithdraw(address to, uint256 amount);
     event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount);
     event VABDeposited(address customer, uint256 amount);
     event WithdrawPending(address customer, address token, uint256 amount);  
@@ -291,17 +292,21 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Transfer DAO all fund to new contract or something
     function withdrawAllFund() public onlyAuditor {
-        address rewardAddress = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
-        require(rewardAddress != address(0), 'withdrawAllFund: Zero address');
+        address to = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
+        require(to != address(0), 'withdrawAllFund: Zero address');
 
-        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
-        uint256 totalPayoutAmount = IERC20(payout_token).balanceOf(address(this));
-        require(totalPayoutAmount >= totalRewardAmount, 'withdrawAllFund: insufficient balance');
+        // VAB token
+        address vabToken = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
+        uint256 totalPayoutAmount = IERC20(vabToken).balanceOf(address(this));        
+        Helper.safeTransfer(vabToken, to, totalPayoutAmount);
+
+        totalRewardAmount = 0;        
+        totalStakingAmount = 0;
+
+        // Other deposit token allowed
+        IVabbleDAO(VABBLE_DAO).transferAllFund(to, vabToken);
         
-        Helper.safeTransfer(payout_token, rewardAddress, totalPayoutAmount);
-        totalRewardAmount = 0;
-
-        emit RewardWithdraw(rewardAddress, totalPayoutAmount);
+        emit AllFundWithdraw(to, totalPayoutAmount);
     }
 
     /// @notice Update lastStakedTime for a staker when vote

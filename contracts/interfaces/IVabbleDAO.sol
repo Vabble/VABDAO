@@ -33,4 +33,6 @@ interface IVabbleDAO {
     function isForFund(uint256 _filmId) external view returns (bool);
 
     function isRaisedFullAmount(uint256 _filmId) external view returns (bool);
+
+    function transferAllFund(address _to, address _vabToken) external;
 }
