@@ -60,22 +60,32 @@ VabbleDAO (0xa9040F3070Cb492f1bA0808B9C4deB7590349B0E)
 Vote (0x858513934353D14a0721ac9056dcB64d40d556E4)
 
 
-
-
-
-
-
-
 // 2022-12-22 Polygon(Mumbai testnet)
-- FactoryFilmNFT (0x80404aBd4C695ba405E15bC89683aD04901DA9fA)  // initializeFactory(), setBaseURI()
-- FactorySubNFT (0xb7B006eC97DBBd6439bDF91AB5D14148e2f3368b)   // initializeFactory(), setBaseURI()
-o Ownablee (0x42a6b905e2B07b04b34A57Aba7D85659470c80D7)        // setupVote(), addDepositAsset()
+- FactoryFilmNFT (0x80404aBd4C695ba405E15bC89683aD04901DA9fA)
+- FactorySubNFT (0xb7B006eC97DBBd6439bDF91AB5D14148e2f3368b)   
+o Ownablee (0x42a6b905e2B07b04b34A57Aba7D85659470c80D7)        
 - Property (0x967f736aD86E476b83DF999a69F756958313a32b)
-- StakingPool (0x9a9DEcF3Ac09eD473311029BE9647E401CD48A9e)     // initializePool()
+- StakingPool (0x9a9DEcF3Ac09eD473311029BE9647E401CD48A9e)    
 - Subscription (0x6c5B7DDD9cE69C8Ca4B789B6c062ec051f474bCc)
 o UniHelper (0x07ED7EeD59E73fE83de882C43D221c45b38B9127)
 - VabbleDAO (0x59601722e551c65c885bF3E80e0Bb18a9b8c6782)
-o Vote (0x9Fb45a5e65145BEc6a131e1DdEb1BAfd93978Fd8)            // initializeVote()
+o Vote (0x9Fb45a5e65145BEc6a131e1DdEb1BAfd93978Fd8)            
+
+
+
+
+
+// 2022-12-29 Polygon(Mumbai testnet)
+- FactoryFilmNFT (0xB1F0729dF0416da829F916fEbeeb971b7310926F)       // initializeFactory(), setBaseURI()
+- FactorySubNFT (0x68853d9AC605b7aA32714f0E2A2FE1156B8FF274)        // initializeFactory(), setBaseURI()
+o Ownablee (0x42a6b905e2B07b04b34A57Aba7D85659470c80D7), skipping.  // setupVote(), addDepositAsset()
+- Property (0xe8cc5B245936109276Ee0c9a621c1C065134a10e) 
+- StakingPool (0xA919DaEe49E5c13d14BD47c56d3e1AC1fd4bCd4e)          // initializePool()
+- Subscription (0x20D8e007Ab9Aa2166B09ee060B912Be901Ff2c7A) 
+o UniHelper (0x07ED7EeD59E73fE83de882C43D221c45b38B9127), skipping.
+- VabbleDAO (0x934bB300754e0ae7AdD420a1eac68fF50d6044fd) 
+o Vote (0xB8775DeEcB569cd0C6b1b54E55C1aEC3D24044D0)                 // initializeVote()
+
 
 ** 
 Auditor wallet address: 0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1
