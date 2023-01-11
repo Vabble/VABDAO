@@ -10,7 +10,6 @@ import "../interfaces/IUniHelper.sol";
 import "../interfaces/IVote.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IOwnablee.sol";
-import "hardhat/console.sol";
 
 contract Property is ReentrancyGuard {
     event AuditorProposalCreated(address member);
@@ -148,7 +147,7 @@ contract Property is ReentrancyGuard {
         maxMintFeePercent = 10 * 1e8;    // 10%
         minStakerCountPercent = 5 * 1e8; // 5%(1% = 1e8, 100%=1e10)
 
-        proposalFeeAmount = 100 * (10**IERC20Metadata(_usdcToken).decimals());  // amount in cash(usd dollar - $100)
+        proposalFeeAmount = 20 * (10**IERC20Metadata(_usdcToken).decimals());   // amount in cash(usd dollar - $20)
         minDepositAmount = 50 * (10**IERC20Metadata(_usdcToken).decimals());    // amount in cash(usd dollar - $50)
         maxDepositAmount = 5000 * (10**IERC20Metadata(_usdcToken).decimals());  // amount in cash(usd dollar - $5000)
         availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(_payoutToken).decimals()); // 75M        

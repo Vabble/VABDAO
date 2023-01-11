@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IUniswapV2Factory.sol";
-import "hardhat/console.sol";
 
 contract UniHelper {
         

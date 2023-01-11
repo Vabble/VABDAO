@@ -8,7 +8,6 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
-import "hardhat/console.sol";
 
 contract Vote is ReentrancyGuard {
     event FilmVoted(uint256 filmId, uint256 voteInfo, address voter);

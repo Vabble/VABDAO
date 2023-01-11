@@ -8,7 +8,6 @@ import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
-import "hardhat/console.sol";
 
 contract Subscription is ReentrancyGuard {
     

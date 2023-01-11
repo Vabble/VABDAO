@@ -9,7 +9,6 @@ import "../interfaces/IVote.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
-import "hardhat/console.sol";
 
 contract StakingPool is ReentrancyGuard {
     
@@ -295,18 +294,14 @@ contract StakingPool is ReentrancyGuard {
         address to = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
         require(to != address(0), 'withdrawAllFund: Zero address');
 
-        // VAB token
         address vabToken = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
-        uint256 totalPayoutAmount = IERC20(vabToken).balanceOf(address(this));        
-        Helper.safeTransfer(vabToken, to, totalPayoutAmount);
+        uint256 poolBalance = IERC20(vabToken).balanceOf(address(this));        
+        require(totalRewardAmount <= poolBalance, "withdrawAllFund: insufficient balance");
 
+        Helper.safeTransfer(vabToken, to, totalRewardAmount);
         totalRewardAmount = 0;        
-        totalStakingAmount = 0;
-
-        // Other deposit token allowed
-        IVabbleDAO(VABBLE_DAO).transferAllFund(to, vabToken);
         
-        emit AllFundWithdraw(to, totalPayoutAmount);
+        emit AllFundWithdraw(to, totalRewardAmount);
     }
 
     /// @notice Update lastStakedTime for a staker when vote

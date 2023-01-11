@@ -12,12 +12,12 @@ import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IFactoryFilmNFT.sol";
-import "hardhat/console.sol";
 
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
     
     event FilmProposalCreated(uint256 indexed filmIds, address studio);
+    event FilmProposalUpdated(uint256 indexed filmIds, address studio);
     event FilmApproved(uint256 filmId);
     event FinalFilmSetted(address user, uint256 filmId);
     event DepositedTokenToFilm(address customer, address token, uint256 amount, uint256 filmId);
@@ -37,13 +37,14 @@ contract VabbleDAO is ReentrancyGuard {
         address[] studioPayees;  // payee addresses who studio define to pay revenue
         uint256 gatingType;      // movie is Token rental ONLY(1) OR NFT rental(2) OR both(3)
         uint256 rentPrice;       // USDC amount that a customer should pay for renting a film
-        uint256 raiseAmount;     // USDC amount(in cash) studio are seeking to raise for the film. if 0, this film is not for funding
+        uint256 raiseAmount;     // USDC amount(in cash) studio are seeking to raise for the film
         uint256 fundPeriod;      // how many days(ex: 20 days) to keep the funding pool open        
         uint256 fundStage;       // Financial Stage(Development, Production & Post-Production, Distribution & Marketing)
         uint256 fundType;        // Financing Type(None=>0, Token=>1, NFT=>2, NFT & Token=>3)
         uint256 pCreateTime;     // proposal created time(block.timestamp) by studio
         uint256 pApproveTime;    // proposal approved time(block.timestamp) by vote
         address studio;          // Studio Address (Admin of film)
+        bool noVote;             // check if vote need or not
         Helper.Status status;    // status of film
     }
   
@@ -67,6 +68,8 @@ contract VabbleDAO is ReentrancyGuard {
     mapping(address => uint256[]) private userInvestFilmIds;  // (user => invest filmId[]) for only approved_funding films
     mapping(address => uint256) public userFilmProposalCount; // (user => created film-proposal count)
     mapping(address => uint256[]) public userFinalFilmIds;
+    mapping(address => mapping(uint256 => bool)) public isFundProcessed; // (customer => (filmId => true/false))
+    mapping(address => uint256[]) public userFilmProposalIds; // (studio => filmId list)
     
     Counters.Counter public filmCount;          // filmId is from No.1
 
@@ -109,39 +112,58 @@ contract VabbleDAO is ReentrancyGuard {
 
     // ======================== Film proposal ==============================
     /// @notice Staker create a proposal for a film
-    function proposalFilm(
-        bytes calldata _proposalFilm, bool _noVote
-    ) external onlyStaker nonReentrant {     
+    function proposalFilmCreate(bool _noVote) external onlyStaker nonReentrant {     
         require(__isPaidFee(_noVote), 'proposalFilm: Not paid fee');
-
-        (
-            uint256[] memory _nftRight,
-            uint256[] memory _sharePercents,
-            address[] memory _choiceAuditor,
-            address[] memory _studioPayees,
-            uint256 _gatingType,
-            uint256 _rentPrice,
-            uint256 _raiseAmount,
-            uint256 _fundPeriod,
-            uint256 _fundStage,
-            uint256 _fundType
-        ) = abi.decode(_proposalFilm, (uint256[], uint256[], address[], address[], uint256, uint256, uint256, uint256, uint256, uint256));
-        require(_nftRight.length > 0, 'proposalFilm: invalid item1');
-        require(_studioPayees.length == _sharePercents.length, 'proposalFilm: invalid item3');
-        require(_rentPrice > 0 && _raiseAmount > 0, 'proposalFilm: invalid item4');
-        require(_fundPeriod > 0 && _fundStage > 0, 'proposalFilm: invalid item5');
-
-        uint256 totalPercent = 0;
-        for(uint256 i = 0; i < _studioPayees.length; i++) {
-            require(_sharePercents[i] <= 1e10, 'proposalFilm: over 100%');
-            totalPercent += _sharePercents[i];
-        }
-        require(totalPercent <= 1e10, 'proposalFilm: total over 100%');
 
         filmCount.increment();
         uint256 filmId = filmCount.current();
 
         Film storage fInfo = filmInfo[filmId];
+        fInfo.noVote = _noVote;
+        fInfo.studio = msg.sender;
+        fInfo.status = Helper.Status.LISTED;
+
+        proposalFilmIds.push(filmId);
+        userFilmProposalIds[msg.sender].push(filmId);
+
+        userFilmProposalCount[msg.sender] += 1;
+
+        emit FilmProposalCreated(filmId, msg.sender);     
+    }
+
+    function proposalFilmUpdate(
+        uint256 _filmId, 
+        uint256[] memory _nftRight,
+        uint256[] memory _sharePercents,
+        address[] memory _choiceAuditor,
+        address[] memory _studioPayees,
+        uint256 _gatingType,
+        uint256 _rentPrice,
+        uint256 _raiseAmount,
+        uint256 _fundPeriod,
+        uint256 _fundStage,
+        uint256 _fundType
+    ) external onlyStaker nonReentrant {                
+        require(_nftRight.length > 0, 'proposalUpdate: invalid right');
+        require(_studioPayees.length == _sharePercents.length, 'proposalUpdate: invalid share percent');
+        require(_rentPrice > 0, 'proposalUpdate: invalid rent price');
+        require(_fundStage > 0, 'proposalUpdate: invalid fund stage');
+        if(_fundType > 0) {            
+            require(_fundPeriod > 0, 'proposalUpdate: invalid fund period');
+            require(_raiseAmount > IProperty(DAO_PROPERTY).minDepositAmount(), 'proposalUpdate: invalid raise amount');
+        }
+
+        uint256 totalPercent = 0;
+        for(uint256 i = 0; i < _studioPayees.length; i++) {
+            require(_sharePercents[i] <= 1e10, 'proposalUpdate: over 100%');
+            totalPercent += _sharePercents[i];
+        }
+        require(totalPercent <= 1e10, 'proposalUpdate: total over 100%');
+        
+        Film storage fInfo = filmInfo[_filmId];
+        require(fInfo.status == Helper.Status.LISTED, 'proposalUpdate: Not listed');
+        require(fInfo.studio == msg.sender, 'proposalUpdate: not film owner');
+
         fInfo.nftRight = _nftRight;
         fInfo.gatingType = _gatingType;
         fInfo.sharePercents = _sharePercents;
@@ -161,20 +183,17 @@ contract VabbleDAO is ReentrancyGuard {
         // If proposal is for fund, update "lastfundProposalCreateTime"
         if(fInfo.fundType > 0) IStakingPool(STAKING_POOL).updateLastfundProposalCreateTime(block.timestamp);
 
-        if(_noVote) {
+        if(fInfo.noVote) {
             if(_fundType > 0) {
                 fInfo.status = Helper.Status.APPROVED_FUNDING;
-                approvedFundingFilmIds.push(filmId);
+                approvedFundingFilmIds.push(_filmId);
             } else {
                 fInfo.status = Helper.Status.APPROVED_WITHOUTVOTE;
-                approvedNoVoteFilmIds.push(filmId);
+                approvedNoVoteFilmIds.push(_filmId);
             }            
-        } else {
-            fInfo.status = Helper.Status.LISTED;
-            proposalFilmIds.push(filmId);
-
-            emit FilmProposalCreated(filmId, msg.sender);     
         }        
+
+        emit FilmProposalUpdated(_filmId, msg.sender);     
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
@@ -213,43 +232,43 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmApproved(_filmId);
     }
 
-    /// @notice onlyStudio update multi films with param(payee and share %) after LISTED
-    function updateMultiFilms(
-        bytes[] calldata _updateFilms
-    ) external nonReentrant {
-        require(_updateFilms.length > 0, "updateFilm: Invalid item length");
+    // /// @notice onlyStudio update multi films with param(payee and share %) after LISTED
+    // function updateMultiFilms(
+    //     bytes[] calldata _updateFilms
+    // ) external nonReentrant {
+    //     require(_updateFilms.length > 0, "updateFilm: Invalid item length");
         
-        for(uint256 i = 0; i < _updateFilms.length; i++) {   
-            (
-                uint256 _filmId, 
-                uint256[] memory _sharePercents, 
-                address[] memory _studioPayees
-            ) = abi.decode(_updateFilms[i], (uint256, uint256[], address[]));
+    //     for(uint256 i = 0; i < _updateFilms.length; i++) {   
+    //         (
+    //             uint256 _filmId, 
+    //             uint256[] memory _sharePercents, 
+    //             address[] memory _studioPayees
+    //         ) = abi.decode(_updateFilms[i], (uint256, uint256[], address[]));
 
-            updateFilmShareAndPayee(_filmId, _sharePercents, _studioPayees);
-        }   
-    }
+    //         updateFilmShareAndPayee(_filmId, _sharePercents, _studioPayees);
+    //     }   
+    // }
 
-    function updateFilmShareAndPayee(
-        uint256 _filmId, 
-        uint256[] memory _sharePercents, 
-        address[] memory _studioPayees
-    ) public nonReentrant {        
-        require(_sharePercents.length == _studioPayees.length, "updateFilm: bad array length");
-        require(filmInfo[_filmId].studio == msg.sender, "updateFilm: not film owner");
+    // function updateFilmShareAndPayee(
+    //     uint256 _filmId, 
+    //     uint256[] memory _sharePercents, 
+    //     address[] memory _studioPayees
+    // ) public nonReentrant {        
+    //     require(_sharePercents.length == _studioPayees.length, "updateFilm: bad array length");
+    //     require(filmInfo[_filmId].studio == msg.sender, "updateFilm: not film owner");
 
-        uint256 totalPercent = 0;
-        for(uint256 k = 0; k < _studioPayees.length; k++) {
-            totalPercent += _sharePercents[k];
-        }
-        require(totalPercent <= 1e10, 'updateFilm: total over 100%');
+    //     uint256 totalPercent = 0;
+    //     for(uint256 k = 0; k < _studioPayees.length; k++) {
+    //         totalPercent += _sharePercents[k];
+    //     }
+    //     require(totalPercent <= 1e10, 'updateFilm: total over 100%');
 
-        Film storage fInfo = filmInfo[_filmId];
-        fInfo.studioPayees = _studioPayees;   
-        fInfo.sharePercents = _sharePercents;   
+    //     Film storage fInfo = filmInfo[_filmId];
+    //     fInfo.studioPayees = _studioPayees;   
+    //     fInfo.sharePercents = _sharePercents;   
             
-        emit FilmShareAndPayeeUpdated(msg.sender, _filmId, _sharePercents, _studioPayees);
-    }
+    //     emit FilmShareAndPayeeUpdated(msg.sender, _filmId, _sharePercents, _studioPayees);
+    // }
 
     /// @notice onlyStudio update film rental price and fund period
     function updateFilmPriceAndPeriod(uint256 _filmId, uint256 _rentPrice, uint256 _fundPeriod) external nonReentrant {
@@ -299,7 +318,6 @@ contract VabbleDAO is ReentrancyGuard {
             restAmount -= shareAmount;
         }
 
-        // TODO check ========
         uint256 nftCountOwned = 0;
         uint256[] memory nftList = IFactoryFilmNFT(FILM_NFT_FACTORY).getFilmTokenIdList(_filmId);
         for(uint256 i = 0; i < nftList.length; i++) {
@@ -332,14 +350,20 @@ contract VabbleDAO is ReentrancyGuard {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
         }
         require(msg.sender != address(0) && _amount > 0, "depositToFilm: Zero value");
+        require(filmInfo[_filmId].fundType == 1 || filmInfo[_filmId].fundType == 3, "depositToFilm: not fund type by token");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "depositToFilm: filmId not approved for funding");
-        require(filmInfo[_filmId].fundPeriod >= block.timestamp - filmInfo[_filmId].pApproveTime, "depositToFilm: passed funding period");        
-        require(__checkMinMaxAmount(_filmId, _token, _amount), "depositToFilm: Invalid amount");
+        require(filmInfo[_filmId].fundPeriod >= block.timestamp - filmInfo[_filmId].pApproveTime, "depositToFilm: passed funding period");    
 
-        if(getUserFundAmountPerFilm(msg.sender, _filmId) == 0) {
+        uint256 userFundAmountPerFilm = getUserFundAmountPerFilm(msg.sender, _filmId);
+        uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, IProperty(DAO_PROPERTY).USDC_TOKEN());    
+        uint256 amountOfUser = userFundAmountPerFilm + fundAmount;    
+        require(__checkMinMaxAmount(amountOfUser), "depositToFilm: Invalid amount");
+
+        if(userFundAmountPerFilm == 0) {
             filmInvestorList[_filmId].push(msg.sender);            
             userInvestFilmIds[msg.sender].push(_filmId);
         }
+
         // Return remain ETH to user back if case of ETH
         if(_token == address(0)) {
             require(msg.value >= _amount, "depositToFilm: Insufficient paid");
@@ -386,40 +410,42 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @notice onlyStudio send the 2% of funds to reward pool in VAB if funding meet the raise amount after fund period
     function fundProcess(uint256 _filmId) external nonReentrant {
-        require(filmInfo[_filmId].studio == msg.sender, "fundProcess: Bad studio of this film");
+        require(filmInfo[_filmId].studio == msg.sender, "fundProcess: not film owner");
         require(filmInfo[_filmId].status == Helper.Status.APPROVED_FUNDING, "fundProcess: filmId not approved for funding");
         require(filmInfo[_filmId].fundPeriod < block.timestamp - filmInfo[_filmId].pApproveTime, "fundProcess: funding period");
 
         require(isRaisedFullAmount(_filmId), "fundProcess: fails to meet raise amount");
-                        
+        require(!isFundProcessed[msg.sender][_filmId], "fundProcess: already processed");
+        
         // Send fundFeePercent(2%) to reward pool as VAB token and rest send to studio
-        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
-        Asset[] storage assetArr = assetPerFilm[_filmId];
+        address vabToken = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
+        Asset[] memory assetArr = assetPerFilm[_filmId];
         uint256 rewardSumAmount;
         uint256 rewardAmount;
         for(uint256 i = 0; i < assetArr.length; i++) {                
             rewardAmount = assetArr[i].amount * IProperty(DAO_PROPERTY).fundFeePercent() / 1e10;
-            if(payout_token == assetArr[i].token) {
+            if(vabToken == assetArr[i].token) {
                 rewardSumAmount += rewardAmount;
             } else {
                 if(IERC20(assetArr[i].token).allowance(address(this), UNI_HELPER) == 0) {
                     Helper.safeApprove(assetArr[i].token, UNI_HELPER, IERC20(assetArr[i].token).totalSupply());
                 }
-                bytes memory swapArgs = abi.encode(rewardAmount, assetArr[i].token, payout_token);
+                bytes memory swapArgs = abi.encode(rewardAmount, assetArr[i].token, vabToken);
                 rewardSumAmount += IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             }
             Helper.safeTransfer(assetArr[i].token, msg.sender, (assetArr[i].amount - rewardAmount));
-            assetArr[i].amount = 0;
+            // assetArr[i].amount = 0;
         }
 
         if(rewardSumAmount > 0) {
-            if(IERC20(payout_token).allowance(address(this), STAKING_POOL) == 0) {
-                Helper.safeApprove(payout_token, STAKING_POOL, IERC20(payout_token).totalSupply());
+            if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
+                Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
             }        
             IStakingPool(STAKING_POOL).addRewardToPool(rewardSumAmount);
         }
 
         fundProcessedFilmIds.push(_filmId);
+        isFundProcessed[msg.sender][_filmId] = true;
 
         emit FundFilmProcessed(_filmId);
     }
@@ -431,44 +457,25 @@ contract VabbleDAO is ReentrancyGuard {
 
         require(!isRaisedFullAmount(_filmId), "withdrawFunding: satisfied raise amount");
 
-        Asset[] memory assetArr = assetInfo[_filmId][msg.sender];
+        Asset[] storage assetArr = assetInfo[_filmId][msg.sender];
         for(uint256 i = 0; i < assetArr.length; i++) {   
             if(assetArr[i].token == address(0)) {
                 if(address(this).balance >= assetArr[i].amount) {
                     Helper.safeTransferETH(msg.sender, assetArr[i].amount);
+                    assetArr[i].amount = 0;
                 }                
             } else {
                 if(IERC20(assetArr[i].token).balanceOf(address(this)) >= assetArr[i].amount) {
                     Helper.safeTransfer(assetArr[i].token, msg.sender, assetArr[i].amount);    
+                    assetArr[i].amount = 0;
                 }
             }
         }
     }
 
-    /// @notice Call from WithdrawAllFund() in StakingPool
-    function transferAllFund(address _to, address _vabToken) external nonReentrant {
-        require(msg.sender == STAKING_POOL, "caller is not pool");
-
-        // Transfer VAB token
-        uint256 totalVABAmount = IERC20(_vabToken).balanceOf(address(this));
-        Helper.safeTransfer(_vabToken, _to, totalVABAmount);
-
-        // Transfer Matic/ETH
-        uint256 totalMaticAmount = address(this).balance;
-        Helper.safeTransferETH(_to, totalMaticAmount);
-
-        uint256 tokenAmount;
-        address[] memory assetlist = IOwnablee(OWNABLE).getDepositAssetList();
-        for(uint256 i = 0; i < assetlist.length; i++) {
-            tokenAmount = IERC20(assetlist[i]).balanceOf(address(this));        
-            Helper.safeTransfer(assetlist[i], _to, tokenAmount);
-        }
-        
-    }
-
     /// @notice Check if fund meet raise amount
     function isRaisedFullAmount(uint256 _filmId) public view returns (bool) {
-        uint256 raisedAmount = getRaisedAmountPerFilm(_filmId);
+        uint256 raisedAmount = getRaisedAmountByToken(_filmId) + IFactoryFilmNFT(FILM_NFT_FACTORY).getRaisedAmountByNFT(_filmId);
         if(raisedAmount > 0 && raisedAmount >= filmInfo[_filmId].raiseAmount) {
             return true;
         } else {
@@ -490,11 +497,8 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// @dev Check min & max amount for each token/ETH per film
-    function __checkMinMaxAmount(uint256 _filmId, address _token, uint256 _amount) private view returns (bool passed_) {
-        uint256 userFundAmountPerFilm = getUserFundAmountPerFilm(msg.sender, _filmId);
-        uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, IProperty(DAO_PROPERTY).USDC_TOKEN());    
-        uint256 amountOfUser = userFundAmountPerFilm + fundAmount;
-        if(amountOfUser >= IProperty(DAO_PROPERTY).minDepositAmount() && amountOfUser <= IProperty(DAO_PROPERTY).maxDepositAmount()) {
+    function __checkMinMaxAmount(uint256 _amount) private view returns (bool passed_) {
+        if(_amount >= IProperty(DAO_PROPERTY).minDepositAmount() && _amount <= IProperty(DAO_PROPERTY).maxDepositAmount()) {
             passed_ = true;
         } else {
             passed_ = false;
@@ -517,7 +521,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// @notice Get fund amount in cash(usdc) per film
-    function getRaisedAmountPerFilm(uint256 _filmId) public view returns (uint256 amount_) {
+    function getRaisedAmountByToken(uint256 _filmId) public view returns (uint256 amount_) {
         address usdc_token = IProperty(DAO_PROPERTY).USDC_TOKEN();
         Asset[] memory assetArr = assetPerFilm[_filmId];
         for(uint256 i = 0; i < assetArr.length; i++) {
