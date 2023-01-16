@@ -21,8 +21,9 @@ contract StakingPool is ReentrancyGuard {
     event AllFundWithdraw(address to, uint256 amount);
     event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount);
     event VABDeposited(address customer, uint256 amount);
-    event WithdrawPending(address customer, address token, uint256 amount);  
-    event WithdrawVABTransferred(address customer, address token, uint256 amount);  
+    event WithdrawPending(address customer, uint256 amount);  
+    event PendingWithdrawApproved(address[] customers, uint256[] withdrawAmounts);
+    event PendingWithdrawDenied(address[] customers);
 
     struct Stake {
         uint256 stakeAmount;     // staking amount per staker
@@ -141,6 +142,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.decrement();
             delete stakeInfo[msg.sender];
         } 
+
         emit TokenUnstaked(msg.sender, _amount);
     }
 
@@ -215,7 +217,7 @@ contract StakingPool is ReentrancyGuard {
 
     // =================== Customer deposit/withdraw VAB START =================    
     /// @notice Deposit VAB token from customer for renting the films
-    function depositVAB(uint256 _amount) external nonReentrant {
+    function depositVAB(uint256 _amount) external {
         require(msg.sender != address(0), "depositVAB: Zero address");
         require(_amount > 0, "depositVAB: Zero amount");
 
@@ -227,62 +229,71 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Pending Withdraw VAB token by customer
     function pendingWithdraw(uint256 _amount) external nonReentrant {
-        require(msg.sender != address(0), "pendingWithdraw: Zero address");
-        require(_amount > 0 && _amount <= userRentInfo[msg.sender].vabAmount - userRentInfo[msg.sender].withdrawAmount, "pendingWithdraw: Insufficient VAB amount");
+        require(msg.sender != address(0), "pendingWithdraw: zero address");
+        require(_amount > 0, "pendingWithdraw: zero VAB amount");
         require(!userRentInfo[msg.sender].pending, "pendingWithdraw: already pending status");
+
+        uint256 cAmount = userRentInfo[msg.sender].vabAmount;
+        uint256 wAmount = userRentInfo[msg.sender].withdrawAmount;
+        require(_amount <= cAmount - wAmount, "pendingWithdraw: Insufficient VAB amount");
 
         userRentInfo[msg.sender].withdrawAmount += _amount;
         userRentInfo[msg.sender].pending = true;
 
-        emit WithdrawPending(msg.sender, IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _amount);
+        emit WithdrawPending(msg.sender, _amount);
     }
 
     /// @notice Approve pending-withdraw of given customers by Auditor
-    function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant returns (address[] memory) {
+    function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
         require(_customers.length > 0, "approvePendingWithdraw: No customer");
         
-        address[] memory withdrawer = new address[](_customers.length);
+        uint256[] memory withdrawAmounts = new uint256[](_customers.length);
         // Transfer withdrawable amount to _customers
         for(uint256 i = 0; i < _customers.length; i++) {
-            if(
-                userRentInfo[_customers[i]].withdrawAmount > 0 &&
-                userRentInfo[_customers[i]].withdrawAmount <= userRentInfo[_customers[i]].vabAmount &&
-                userRentInfo[_customers[i]].pending
-            ) {
-                withdrawer[i] = __transferVABWithdraw(_customers[i]);
-            }
+            withdrawAmounts[i] = __transferVABWithdraw(_customers[i]);
         }
-        return withdrawer;
+        
+        emit PendingWithdrawApproved(_customers, withdrawAmounts);
     }
 
     /// @dev Transfer VAB token to user's withdraw request
-    function __transferVABWithdraw(address _to) private returns (address withdrawer_) {
+    function __transferVABWithdraw(address _to) private returns (uint256) {
         uint256 payAmount = userRentInfo[_to].withdrawAmount;
+        require(payAmount > 0, "approveWithdraw: zero withdraw amount");
+        require(payAmount <= userRentInfo[_to].vabAmount, "approveWithdraw: insufficuent amount");
+        require(userRentInfo[_to].pending, "approveWithdraw: no pending");
+
         Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _to, payAmount);
 
         userRentInfo[_to].vabAmount -= payAmount;
         userRentInfo[_to].withdrawAmount = 0;
         userRentInfo[_to].pending = false;
-
-        withdrawer_ = _to;
-        emit WithdrawVABTransferred(_to, IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), payAmount);
+        
+        return payAmount;
     }
 
     /// @notice Deny pending-withdraw of given customers by Auditor
     function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
-        require(_customers.length > 0, "denyPendingWithdraw: No customer");
+        require(_customers.length > 0, "denyWithdraw: bad customers");
 
         // Release withdrawable amount for _customers
         for(uint256 i = 0; i < _customers.length; i++) {
-            if(userRentInfo[_customers[i]].withdrawAmount > 0 && userRentInfo[_customers[i]].pending) {
-                userRentInfo[_customers[i]].withdrawAmount = 0;
-                userRentInfo[_customers[i]].pending = false;
-            }
+            require(userRentInfo[_customers[i]].withdrawAmount > 0, "denyWithdraw: zero withdraw amount");
+            require(userRentInfo[_customers[i]].pending, "denyWithdraw: no pending");
+            
+            userRentInfo[_customers[i]].withdrawAmount = 0;
+            userRentInfo[_customers[i]].pending = false;
         }
+
+        emit PendingWithdrawDenied(_customers);
     } 
     
-    /// @notice Transfer VAB token to user
-    function sendVAB(address _user, address _to, uint256 _amount) external onlyDAO {
+    /// @notice onlyDAO transfer VAB token to user
+    function sendVAB(
+        address _user, 
+        address _to, 
+        uint256 _amount
+    ) external onlyDAO {
         require(userRentInfo[_user].vabAmount >= _amount, "sendVAB: insufficient balance");
 
         Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _to, _amount);
@@ -305,7 +316,10 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Update lastStakedTime for a staker when vote
-    function updateWithdrawableTime(address _user, uint256 _time) external onlyVote {
+    function updateWithdrawableTime(
+        address _user, 
+        uint256 _time
+    ) external onlyVote {
         stakeInfo[_user].withdrawableTime = _time;
     }
 
@@ -315,8 +329,7 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Update lastfundProposalCreateTime for only fund film proposal
-    function updateLastfundProposalCreateTime(uint256 _time) external {
-        require(msg.sender == VABBLE_DAO, "caller is not vabbleDAO contract");
+    function updateLastfundProposalCreateTime(uint256 _time) external onlyDAO {
         lastfundProposalCreateTime = _time;
     }
 

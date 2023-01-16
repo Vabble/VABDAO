@@ -40,8 +40,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     
     uint256[] public categoryList;
     VabbleNFT private subNFTContract;
-    address public subNFTAddress;
 
+    address public subNFTAddress;
     address private OWNABLE;         // Ownablee contract address
     address private UNI_HELPER;      // UniHelper contract address
     address private DAO_PROPERTY;    // Property contract address
@@ -152,7 +152,11 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         }
     }
 
-    function __handleMintPay(address _token, uint256 _period, uint256 _category) private {
+    function __handleMintPay(
+        address _token, 
+        uint256 _period, 
+        uint256 _category
+    ) private {
         uint256 price = mintInfo[_category].mintPrice;
         uint256 expectAmount = getExpectedTokenAmount(_token, _period * price);
         __transferInto(_token, expectAmount);   
@@ -167,7 +171,10 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
     }
 
-    function __transferInto(address _payToken, uint256 _amount) private {
+    function __transferInto(
+        address _payToken, 
+        uint256 _amount
+    ) private {
         // Return remain ETH to user back if case of ETH and Transfer Asset from buyer to this contract
         if(_payToken == address(0)) {
             require(msg.value >= _amount, "handlePay: Insufficient paid");
@@ -213,7 +220,10 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         emit SubscriptionNFTUnLocked(_tokenId, msg.sender);
     }
     
-    function getExpectedTokenAmount(address _token, uint256 _usdcAmount) public view returns (uint256 tokenAmount_) {
+    function getExpectedTokenAmount(
+        address _token, 
+        uint256 _usdcAmount
+    ) public view returns (uint256 tokenAmount_) {
         tokenAmount_ = IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IProperty(DAO_PROPERTY).USDC_TOKEN(), _token);
     }
 

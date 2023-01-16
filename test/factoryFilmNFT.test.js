@@ -152,15 +152,13 @@ describe('FactoryFilmNFT', function () {
   //   const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
   //   const choiceAuditor = [this.auditor.address]
   //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
-  //   const gatingType = getBigNumber(2, 0)
   //   const rentPrice = getBigNumber(20, 6)
   //   const raiseAmount = getBigNumber(15000, 6)
   //   const fundPeriod = getBigNumber(120, 0)
-  //   const fundStage = getBigNumber(2, 0)
   //   const fundType = getBigNumber(0, 0)
-  //   this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)
+  //   // this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)
   //   // Create proposal for a film by studio
-  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate(false, {from: this.studio1.address})
+  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
   //   console.log('=======test-0', this.studio1.address)
   //   const studioFilmId = await this.DAOContract.userFilmProposalIds(this.studio1.address, getBigNumber(0, 0))
   //   console.log('=======test-1', studioFilmId)
@@ -170,30 +168,26 @@ describe('FactoryFilmNFT', function () {
   //     sharePercents, 
   //     choiceAuditor, 
   //     studioPayees, 
-  //     gatingType, 
   //     rentPrice, 
   //     raiseAmount, 
   //     fundPeriod, 
-  //     fundStage, 
   //     fundType,
   //     {from: this.studio1.address}
   //   )
   //   console.log('=======test-2')
 
-  //   this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)
+  //   // this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)
   //   // Create proposal for a film by studio
-  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate(false, {from: this.studio1.address})
+  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
   //   await this.DAOContract.connect(this.studio1).proposalFilmUpdate(
   //     2, 
   //     nftRight, 
   //     sharePercents, 
   //     choiceAuditor, 
   //     studioPayees, 
-  //     gatingType, 
   //     rentPrice, 
   //     raiseAmount, 
   //     fundPeriod, 
-  //     fundStage, 
   //     fundType,
   //     {from: this.studio1.address}
   //   )
@@ -279,49 +273,43 @@ describe('FactoryFilmNFT', function () {
     const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
     const choiceAuditor = [this.auditor.address]
     const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
-    const gatingType = getBigNumber(2, 0)
     const rentPrice = getBigNumber(20, 6)
     const raiseAmount = getBigNumber(150, 6)
     const fundPeriod = getBigNumber(20, 0)
-    const fundStage = getBigNumber(2, 0)
     const fundType = getBigNumber(3, 0)
     
     // Create proposal for a film by studio
-    this.filmPropsoal = getProposalFilm(
-      nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType
-    )
-    await this.DAOContract.connect(this.studio1).proposalFilmCreate(false, {from: this.studio1.address})
+    // this.filmPropsoal = getProposalFilm(
+    //   nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType
+    // )
+    await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
     await this.DAOContract.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(1, 0), 
       nftRight, 
       sharePercents, 
       choiceAuditor, 
       studioPayees, 
-      gatingType, 
       rentPrice, 
       raiseAmount, 
       fundPeriod, 
-      fundStage, 
       fundType,
       {from: this.studio1.address}
     )
 
     // Create proposal for a film by studio
-    this.filmPropsoal = getProposalFilm(
-      nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType
-    )
-    await this.DAOContract.connect(this.studio1).proposalFilmCreate(false, {from: this.studio1.address})
+    // this.filmPropsoal = getProposalFilm(
+    //   nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType
+    // )
+    await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
     await this.DAOContract.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(2, 0), 
       nftRight, 
       sharePercents, 
       choiceAuditor, 
       studioPayees, 
-      gatingType, 
       rentPrice, 
       raiseAmount, 
       fundPeriod, 
-      fundStage, 
       fundType,
       {from: this.studio1.address}
     )
@@ -345,6 +333,7 @@ describe('FactoryFilmNFT', function () {
       this.propertyContract.address,
       {from: this.auditor.address}
     )
+    
     // Staking from customer1,2,3 for vote
     const stakeAmount = getBigNumber(200)
     await this.stakingContract.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
@@ -357,10 +346,10 @@ describe('FactoryFilmNFT', function () {
     await this.stakingContract.connect(this.customer2).depositVAB(getBigNumber(2000), {from: this.customer2.address})
     await this.stakingContract.connect(this.customer3).depositVAB(getBigNumber(3000), {from: this.customer3.address})
     
-    await this.voteContract.connect(this.customer1).voteToFilms(voteData, {from: this.customer1.address}) //1,1,2,3
-    await this.voteContract.connect(this.customer2).voteToFilms(voteData, {from: this.customer2.address}) //1,1,2,3
-    await this.voteContract.connect(this.customer3).voteToFilms(voteData, {from: this.customer3.address}) //1,1,2,3   
-
+    await this.voteContract.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address}) //1,1,2,3
+    await this.voteContract.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address}) //1,1,2,3
+    await this.voteContract.connect(this.customer3).voteToFilms(proposalIds, voteInfos, {from: this.customer3.address}) //1,1,2,3   
+    
     // => Increase next block timestamp for only testing
     const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
     network.provider.send('evm_increaseTime', [period]);

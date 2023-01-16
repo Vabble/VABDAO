@@ -4,17 +4,16 @@ pragma solidity ^0.8.4;
 import "../libraries/Helper.sol";
 
 interface IVabbleDAO {    
-    function getFilmById(uint256 _filmId) external view 
-    returns (
-        uint256[] memory nftRight_,
-        uint256[] memory sharePercents_,
-        address[] memory choiceAuditor_,
-        address[] memory studioPayees_,
-        uint256 gatingType_,
-        uint256 rentPrice_       
-    );
+    // function getFilmById(uint256 _filmId) external view 
+    // returns (
+    //     uint256[] memory nftRight_,
+    //     uint256[] memory sharePercents_,
+    //     address[] memory choiceAuditor_,
+    //     address[] memory studioPayees_,
+    //     uint256 rentPrice_       
+    // );
 
-    function getFilmFund(uint256 _filmId) external view returns (uint256 raiseAmount_,uint256 fundPeriod_,uint256 fundStage_,uint256 fundType_);
+    function getFilmFund(uint256 _filmId) external view returns (uint256 raiseAmount_, uint256 fundPeriod_, uint256 fundType_);
 
     function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_);
     
@@ -28,9 +27,7 @@ interface IVabbleDAO {
 
     function getFilmIds(uint256 _flag) external view returns(uint256[] memory);
 
-    function approveFilm(uint256 _filmId, bool _noFund) external;
-
-    function isForFund(uint256 _filmId) external view returns (bool);
+    function approveFilm(uint256 _filmId) external;
 
     function isRaisedFullAmount(uint256 _filmId) external view returns (bool);
 

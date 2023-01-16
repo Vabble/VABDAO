@@ -12,6 +12,7 @@ import "../interfaces/IStakingPool.sol";
 import "../interfaces/IOwnablee.sol";
 
 contract Property is ReentrancyGuard {
+
     event AuditorProposalCreated(address member);
     event RewardFundProposalCreated(address member);
     event FilmBoardProposalCreated(address member);
@@ -395,7 +396,10 @@ contract Property is ReentrancyGuard {
         emit PropertyProposalCreated(_property, _flag);
     }
 
-    function getProperty(uint256 _index, uint256 _flag) external view returns (uint256 property_) { 
+    function getProperty(
+        uint256 _index, 
+        uint256 _flag
+    ) external view returns (uint256 property_) { 
         require(_flag >= 0 && _index >= 0, "getProperty: Invalid flag");   
         
         property_ = 0;
@@ -444,7 +448,10 @@ contract Property is ReentrancyGuard {
         }                      
     }
 
-    function updateProperty(uint256 _index, uint256 _flag) external onlyVote {
+    function updateProperty(
+        uint256 _index, 
+        uint256 _flag
+    ) external onlyVote {
         require(_flag >= 0 && _index >= 0, "updateProperty: Invalid flag");   
 
         if(_flag == 0) {
@@ -608,20 +615,36 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice Get property proposal created time
-    function getPropertyProposalTime(uint256 _property, uint256 _flag) external view returns (uint256 time_) {
+    function getPropertyProposalTime(
+        uint256 _property, 
+        uint256 _flag
+    ) external view returns (uint256 time_) {
         time_ = propertyProposalInfo[_flag][_property].createTime;
     }
+    
     /// @notice Get agent/board/pool proposal created time
-    function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 time_) {
+    function getGovProposalTime(
+        address _member, 
+        uint256 _flag
+    ) external view returns (uint256 time_) {
         if(_flag == 1) time_ = agentProposalInfo[_member].createTime;
         else if(_flag == 2) time_ = boardProposalInfo[_member].createTime;
         else if(_flag == 3) time_ = rewardProposalInfo[_member].createTime;
     }
 
-    function updatePropertyProposalApproveTime(uint256 _property, uint256 _flag, uint256 _time) external onlyVote {
+    function updatePropertyProposalApproveTime(
+        uint256 _property, 
+        uint256 _flag, 
+        uint256 _time
+    ) external onlyVote {
         propertyProposalInfo[_flag][_property].approveTime = _time;
     }
-    function updateGovProposalApproveTime(address _member, uint256 _flag, uint256 _time) external onlyVote {
+
+    function updateGovProposalApproveTime(
+        address _member, 
+        uint256 _flag, 
+        uint256 _time
+    ) external onlyVote {
         if(_flag == 1) agentProposalInfo[_member].approveTime = _time;
         else if(_flag == 2) boardProposalInfo[_member].approveTime = _time;
         else if(_flag == 3) rewardProposalInfo[_member].approveTime = _time;
@@ -629,7 +652,10 @@ contract Property is ReentrancyGuard {
     
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
-    function updatePropertyForTesting(uint256 _value, uint256 _flag) external onlyAuditor {
+    function updatePropertyForTesting(
+        uint256 _value, 
+        uint256 _flag
+    ) external onlyAuditor {
         require(_value > 0, "test: Zero value");
 
         if(_flag == 0) filmVotePeriod = _value;
@@ -655,7 +681,10 @@ contract Property is ReentrancyGuard {
     }
 
     /// @dev Update the rewardAddress for only testing in the testnet
-    function updateAddressForTesting(address _address, uint _flag) external onlyAuditor {        
+    function updateAddressForTesting(
+        address _address, 
+        uint _flag
+    ) external onlyAuditor {        
         require(_address != address(0), "test: Zero address");
         if(_flag == 0) DAO_FUND_REWARD = _address;            
         else if(_flag == 1) USDC_TOKEN = _address;      

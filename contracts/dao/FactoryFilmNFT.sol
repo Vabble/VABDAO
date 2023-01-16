@@ -110,7 +110,7 @@ contract FactoryFilmNFT {
         address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);
         require(owner == msg.sender, "setMint: not film owner");
 
-        (uint256 raiseAmount, , , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
+        (uint256 raiseAmount, , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         if(fundType > 0) { // case of funding film
             require(_amount * _price * (1 - _feePercent / 1e10) > raiseAmount, "setMint: many amount");
         }
@@ -136,7 +136,7 @@ contract FactoryFilmNFT {
         require(_minAmounts.length == _maxAmounts.length, "setTier: bad maxAmount length");        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "setTier: not film owner");
 
-        (uint256 raiseAmount, uint256 fundPeriod, , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
+        (uint256 raiseAmount, uint256 fundPeriod, uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
         require(fundPeriod < block.timestamp - pApproveTime, "setTier: fund period yet"); 
         require(fundType > 0, "setTier: not fund film"); 
@@ -198,7 +198,7 @@ contract FactoryFilmNFT {
         require(mintInfo[_filmId].maxMintAmount > 0, "mint: no mint info");     
         require(mintInfo[_filmId].maxMintAmount > getTotalSupply(_filmId, 0), "mint: exceed mint amount");        
 
-        (, uint256 fundPeriod, , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
+        (, uint256 fundPeriod, uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         if(fundType > 0) { // case of funding film                    
             require(fundType == 2 || fundType == 3, "mint: not fund type by NFT");
 
@@ -233,7 +233,10 @@ contract FactoryFilmNFT {
         }
     }
 
-    function __handleMintPay(uint256 _filmId, address _payToken) private {
+    function __handleMintPay(
+        uint256 _filmId, 
+        address _payToken
+    ) private {
         uint256 expectAmount = getExpectedTokenAmount(_payToken, mintInfo[_filmId].price);
         __transferIntoThis(_payToken, expectAmount);                        
 
@@ -254,7 +257,10 @@ contract FactoryFilmNFT {
         Helper.safeTransferAsset(_payToken, IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId), expectAmount - feeAmount);
     }
 
-    function __transferIntoThis(address _payToken, uint256 _amount) private {
+    function __transferIntoThis(
+        address _payToken, 
+        uint256 _amount
+    ) private {
         // Return remain ETH to user back if case of ETH and Transfer Asset from buyer to this contract
         if(_payToken == address(0)) {
             require(msg.value >= _amount, "handlePay: Insufficient paid");
@@ -270,7 +276,10 @@ contract FactoryFilmNFT {
     }
 
     /// @dev Add fee amount to rewardPool after swap from uniswap if not VAB token
-    function __addReward(uint256 _feeAmount, address _payToken) private {
+    function __addReward(
+        uint256 _feeAmount, 
+        address _payToken
+    ) private {
         if(_payToken == address(0)) {
             Helper.safeTransferETH(UNI_HELPER, _feeAmount);
         } else {
@@ -304,7 +313,7 @@ contract FactoryFilmNFT {
                 }    
             }            
         }
-        // console.log("sol=>tier::", tier);
+        
         require(tier > 0, "mintTier: bad investor");
         uint256[] memory list = getUserTokenIdList(_filmId, msg.sender, tier);
         require(list.length == 0, "mintTier: already minted"); 
@@ -316,31 +325,52 @@ contract FactoryFilmNFT {
         emit TierERC721Minted(address(t), tokenId);
     }
 
-    function getExpectedTokenAmount(address _token, uint256 _usdcAmount) public view returns (uint256) {
+    function getExpectedTokenAmount(
+        address _token, 
+        uint256 _usdcAmount
+    ) public view returns (uint256) {
         return IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IProperty(DAO_PROPERTY).USDC_TOKEN(), _token); 
     }
 
-    function getNFTOwner(uint256 _filmId, uint256 _tokenId, uint256 _tier) external view returns (address) {
+    function getNFTOwner(
+        uint256 _filmId, 
+        uint256 _tokenId, 
+        uint256 _tier
+    ) external view returns (address) {
         if(_tier > 0) return tierNFTContract[_filmId][_tier].ownerOf(_tokenId);
         else return filmNFTContract[_filmId].ownerOf(_tokenId);
     }
 
-    function getTotalSupply(uint256 _filmId, uint256 _tier) public view returns (uint256) {
+    function getTotalSupply(
+        uint256 _filmId, 
+        uint256 _tier
+    ) public view returns (uint256) {
         if(_tier > 0) return tierNFTContract[_filmId][_tier].totalSupply();
         else return filmNFTContract[_filmId].totalSupply();
     }
 
-    function getFilmTokenIdList(uint256 _filmId, uint256 _tier) external view returns (uint256[] memory) {
+    function getFilmTokenIdList(
+        uint256 _filmId, 
+        uint256 _tier
+    ) external view returns (uint256[] memory) {
         if(_tier > 0) return tierNFTTokenList[_filmId][_tier];
         else return filmNFTTokenList[_filmId];
     }
 
-    function getUserTokenIdList(uint256 _filmId, address _owner, uint256 _tier) public view returns (uint256[] memory) {
+    function getUserTokenIdList(
+        uint256 _filmId, 
+        address _owner, 
+        uint256 _tier
+    ) public view returns (uint256[] memory) {
         if(_tier > 0) return tierNFTContract[_filmId][_tier].userTokenIdList(_owner);
         else return filmNFTContract[_filmId].userTokenIdList(_owner);
     }
 
-    function getTokenUri(uint256 _filmId, uint256 _tokenId, uint256 _tier) external view returns (string memory) {
+    function getTokenUri(
+        uint256 _filmId, 
+        uint256 _tokenId, 
+        uint256 _tier
+    ) external view returns (string memory) {
         if(_tier > 0) return tierNFTContract[_filmId][_tier].tokenURI(_tokenId);
         else return filmNFTContract[_filmId].tokenURI(_tokenId);
     }
