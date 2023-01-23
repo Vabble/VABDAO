@@ -87,7 +87,7 @@ o UniHelper (0x07ED7EeD59E73fE83de882C43D221c45b38B9127), skipping.
 o Vote (0xB8775DeEcB569cd0C6b1b54E55C1aEC3D24044D0)                 // initializeVote()
 
 
-// 2023-01-17 Polygon(Mumbai testnet)
+// 2023-01-23 Polygon(Mumbai testnet)
 - FactoryFilmNFT (0x8E9521b6369149f3D18Fd9B473f27de5705AE54f)       // initializeFactory(), setBaseURI()
 - FactorySubNFT (0x049e1a0ff342AA0340D5b9E07eF4FB808556F6ab)        // initializeFactory(), setBaseURI()
 o Ownablee (0x42a6b905e2B07b04b34A57Aba7D85659470c80D7), skipping.  // setupVote(), addDepositAsset()
@@ -95,7 +95,7 @@ o Ownablee (0x42a6b905e2B07b04b34A57Aba7D85659470c80D7), skipping.  // setupVote
 - StakingPool (0x2F582F7d1930c601E0Cb417e3f93A67B6575aAC3)          // initializePool()
 - Subscription (0xF5Ca8F0617a63D147787A3923c50d7971535D39f) 
 o UniHelper (0x83677A945c254E9fc6300D2C4d6255535104C5A2)
-- VabbleDAO (0xb1F53533a5E1228B02F294d64Cf0263beAA1F7b4) 
+- VabbleDAO (0xaE9B64bA264bf57A70daE42ae828cEe4ed58d904) //0xb1F53533a5E1228B02F294d64Cf0263beAA1F7b4
 o Vote (0x19f8eBc3AfcdbbF8daff8F339A4358C5b2dFaDCF)                 // initializeVote()
 
 

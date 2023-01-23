@@ -16,7 +16,7 @@ import "../interfaces/IFactoryFilmNFT.sol";
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
     
-    event FilmProposalCreated(uint256[] filmIds, bool[] noVotes, address studio);
+    event FilmProposalCreated(uint256[] filmIds, uint256[] noVotes, address studio);
     event FilmProposalUpdated(uint256 indexed filmId, address studio);
     event FilmApproved(uint256 filmId);
     event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents);
@@ -41,8 +41,8 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 fundType;        // Financing Type(None=>0, Token=>1, NFT=>2, NFT & Token=>3)
         uint256 pCreateTime;     // proposal created time(block.timestamp) by studio
         uint256 pApproveTime;    // proposal approved time(block.timestamp) by vote
+        uint256 noVote;          // check if vote need or not. if 0 => false, 1 => true
         address studio;          // Studio Address (Admin of film)
-        bool noVote;             // check if vote need or not
         Helper.Status status;    // status of film
     }
   
@@ -110,13 +110,14 @@ contract VabbleDAO is ReentrancyGuard {
 
     // ======================== Film proposal ==============================
     /// @notice Staker create multi proposal for a lot of films
-    function proposalFilmCreate(bool[] memory _noVotes) external nonReentrant {     
+    // if 0 => false, 1 => true
+    function proposalFilmCreate(uint256[] memory _noVotes) external nonReentrant {     
         require(_noVotes.length > 0, 'proposalFilm: bad length');
 
         uint256 depositAmount = IProperty(DAO_PROPERTY).proposalFeeAmount();
         uint256 expectAmount;
         for(uint256 i = 0; i < _noVotes.length; i++) {
-            if(_noVotes[i]) expectAmount += depositAmount * 2;
+            if(_noVotes[i] == 1) expectAmount += depositAmount * 2;
             else expectAmount += depositAmount;
         }
         require(__isPaidFee(expectAmount), 'proposalFilm: Not paid fee');
@@ -129,7 +130,7 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmProposalCreated(idList, _noVotes, msg.sender);
     }
 
-    function __proposalFilmCreate(bool _noVote) private returns(uint256) {   
+    function __proposalFilmCreate(uint256 _noVote) private returns(uint256) {   
         filmCount.increment();
         uint256 filmId = filmCount.current();
 
@@ -193,7 +194,7 @@ contract VabbleDAO is ReentrancyGuard {
         // If proposal is for fund, update "lastfundProposalCreateTime"
         if(fInfo.fundType > 0) IStakingPool(STAKING_POOL).updateLastfundProposalCreateTime(block.timestamp);
 
-        if(fInfo.noVote) {
+        if(fInfo.noVote == 1) {
             if(_fundType > 0) {
                 fInfo.status = Helper.Status.APPROVED_FUNDING;
                 approvedFundingFilmIds.push(_filmId);

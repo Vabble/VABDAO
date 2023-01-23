@@ -158,7 +158,7 @@ describe('FactoryFilmNFT', function () {
   //   const fundType = getBigNumber(0, 0)
   //   // this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)
   //   // Create proposal for a film by studio
-  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
+  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate([0], {from: this.studio1.address})
   //   console.log('=======test-0', this.studio1.address)
   //   const studioFilmId = await this.DAOContract.userFilmProposalIds(this.studio1.address, getBigNumber(0, 0))
   //   console.log('=======test-1', studioFilmId)
@@ -178,7 +178,7 @@ describe('FactoryFilmNFT', function () {
 
   //   // this.filmPropsoal = getProposalFilm(nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType)
   //   // Create proposal for a film by studio
-  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
+  //   await this.DAOContract.connect(this.studio1).proposalFilmCreate([0], {from: this.studio1.address})
   //   await this.DAOContract.connect(this.studio1).proposalFilmUpdate(
   //     2, 
   //     nftRight, 
@@ -282,7 +282,7 @@ describe('FactoryFilmNFT', function () {
     // this.filmPropsoal = getProposalFilm(
     //   nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType
     // )
-    await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
+    await this.DAOContract.connect(this.studio1).proposalFilmCreate([0], {from: this.studio1.address})
     await this.DAOContract.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(1, 0), 
       nftRight, 
@@ -300,7 +300,7 @@ describe('FactoryFilmNFT', function () {
     // this.filmPropsoal = getProposalFilm(
     //   nftRight, sharePercents, choiceAuditor, studioPayees, gatingType, rentPrice, raiseAmount, fundPeriod, fundStage, fundType
     // )
-    await this.DAOContract.connect(this.studio1).proposalFilmCreate([false], {from: this.studio1.address})
+    await this.DAOContract.connect(this.studio1).proposalFilmCreate([0], {from: this.studio1.address})
     await this.DAOContract.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(2, 0), 
       nftRight, 
