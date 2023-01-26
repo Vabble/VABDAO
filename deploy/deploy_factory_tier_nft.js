@@ -3,13 +3,15 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deployer } = await getNamedAccounts();
 
   this.Ownablee = await deployments.get('Ownablee');  
-  this.UniHelper = await deployments.get('UniHelper');
+  this.VabbleDAO = await deployments.get('VabbleDAO');
+  this.VabbleFunding = await deployments.get('VabbleFunding');
 
-  await deploy('FactoryFilmNFT', {
+  await deploy('FactoryTierNFT', {
     from: deployer,
     args: [
       this.Ownablee.address,
-      this.UniHelper.address
+      this.VabbleDAO.address,
+      this.VabbleFunding.address
     ],
     log: true,
     deterministicDeployment: false,
@@ -17,6 +19,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   }); 
 };
 
-module.exports.id = 'deploy_factory_film_nft'
-module.exports.tags = ['FactoryFilmNFT'];
-module.exports.dependencies = ['Ownablee', 'UniHelper'];
+module.exports.id = 'deploy_factory_tier_nft'
+module.exports.tags = ['FactoryTierNFT'];
+module.exports.dependencies = ['Ownablee', 'VabbleDAO', 'VabbleFunding'];

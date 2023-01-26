@@ -39,9 +39,6 @@ interface IProperty {
     function addFilmBoardMember(address _member) external;
     function isBoardWhitelist(address _member) external view returns (uint256);
 
-    function USDC_TOKEN() external view returns (address);
-    function PAYOUT_TOKEN() external view returns (address);
-
     function getPropertyProposalTime(uint256 _property, uint256 _flag) external view returns (uint256 time_);
     function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 time_);
     function updatePropertyProposalApproveTime(uint256 _property, uint256 _flag, uint256 _time) external;

@@ -44,7 +44,6 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     address public subNFTAddress;
     address private OWNABLE;         // Ownablee contract address
     address private UNI_HELPER;      // UniHelper contract address
-    address private DAO_PROPERTY;    // Property contract address
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -52,20 +51,15 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     receive() external payable {}
-    constructor(address _ownableContract) {
-        require(_ownableContract != address(0), "ownableContract: Zero address");
-        OWNABLE = _ownableContract; 
+    constructor(
+        address _ownable,        
+        address _uniHelper
+    ) {
+        require(_ownable != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownable; 
+        require(_uniHelper != address(0), "uniHelperContract: Zero address");
+        UNI_HELPER = _uniHelper;   
     }
-
-    function initializeFactory(
-        address _uniHelperContract,
-        address _daoProperty
-    ) external onlyAuditor {  
-        require(_uniHelperContract != address(0), "uniHelperContract: Zero address");
-        UNI_HELPER = _uniHelperContract;   
-        require(_daoProperty != address(0), "daoProperty: Zero address");
-        DAO_PROPERTY = _daoProperty; 
-    } 
 
     /// @notice Set baseURI by Auditor.
     function setBaseURI(string memory _baseUri) external onlyAuditor {
@@ -110,7 +104,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256 _subPeriod, 
         uint256 _category
     ) public payable nonReentrant {
-        if(_token != IProperty(DAO_PROPERTY).PAYOUT_TOKEN()) {
+        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN()) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "mint: not allowed asset"); 
         }
         require(subNFTAddress != address(0), "mint: not deploy yet");        
@@ -164,7 +158,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         // Send ETH from this contract to UNI_HELPER contract
         if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount);
 
-        address usdcToken = IProperty(DAO_PROPERTY).USDC_TOKEN();        
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();        
         bytes memory swapArgs = abi.encode(expectAmount, _token, usdcToken);
         uint256 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);                
         // Transfer USDC to wallet
@@ -224,7 +218,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         address _token, 
         uint256 _usdcAmount
     ) public view returns (uint256 tokenAmount_) {
-        tokenAmount_ = IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IProperty(DAO_PROPERTY).USDC_TOKEN(), _token);
+        tokenAmount_ = IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _token);
     }
 
     function getNFTOwner(uint256 _tokenId) external view returns (address owner_) {

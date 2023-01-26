@@ -8,6 +8,7 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
+ import "hardhat/console.sol";
 
 contract Vote is ReentrancyGuard {
 
@@ -78,23 +79,23 @@ contract Vote is ReentrancyGuard {
         _;
     }
 
-    constructor(address _ownableContract) {
-        require(_ownableContract != address(0), "ownableContract: Zero address");
-        OWNABLE = _ownableContract; 
+    constructor(address _ownable) {
+        require(_ownable != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownable; 
     }
 
     /// @notice Initialize Vote
     function initializeVote(
         address _vabbleDAO,
         address _stakingPool,
-        address _daoProperty
+        address _property
     ) external onlyAuditor {
         require(_vabbleDAO != address(0), "initializeVote: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO;        
         require(_stakingPool != address(0), "initializeVote: Zero stakingPool address");
         STAKING_POOL = _stakingPool;
-        require(_daoProperty != address(0), "initializeVote: Zero filmBoard address");
-        DAO_PROPERTY = _daoProperty;
+        require(_property != address(0), "initializeVote: Zero property address");
+        DAO_PROPERTY = _property;
            
         isInitialized = true;
     }        
@@ -125,6 +126,7 @@ contract Vote is ReentrancyGuard {
         require(status == Helper.Status.LISTED, "Not listed");        
 
         (uint256 pCreateTime, ) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
+        require(pCreateTime > 0, "not updated");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), pCreateTime), "film elapsed vote period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);

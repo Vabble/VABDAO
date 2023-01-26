@@ -9,6 +9,7 @@ import "../interfaces/IVote.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
+import "../interfaces/IVabbleFunding.sol";
 
 contract StakingPool is ReentrancyGuard {
     
@@ -41,6 +42,7 @@ contract StakingPool is ReentrancyGuard {
     address private immutable OWNABLE;     // Ownablee contract address
     address private VOTE;                  // vote contract address
     address private VABBLE_DAO;            // VabbleDAO contract address
+    address private FUNDING;               // Funding contract address
     address private DAO_PROPERTY;          // Property contract address
         
     uint256 public totalStakingAmount;   // 
@@ -67,23 +69,26 @@ contract StakingPool is ReentrancyGuard {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not auditor");
         _;
     }
-    constructor(address _ownableContract) {
-        require(_ownableContract != address(0), "ownableContract: Zero address");
-        OWNABLE = _ownableContract;  
+    constructor(address _ownable) {
+        require(_ownable != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownable;    
     }
 
     /// @notice Initialize Vote
     function initializePool(
         address _vabbleDAO,
-        address _voteContract,
-        address _daoProperty
+        address _funding,
+        address _property,
+        address _vote
     ) external onlyAuditor {
         require(_vabbleDAO != address(0), "initializePool: Zero vabbleDAO address");
-        VABBLE_DAO = _vabbleDAO;
-        require(_voteContract != address(0), "initializePool: Zero voteContract address");
-        VOTE = _voteContract;    
-        require(_daoProperty != address(0), "initializePool: Zero propertyContract address");
-        DAO_PROPERTY = _daoProperty;            
+        VABBLE_DAO = _vabbleDAO; 
+        require(_funding != address(0), "initializePool: Zero funding address");
+        FUNDING = _funding;    
+        require(_property != address(0), "initializePool: Zero propertyContract address");
+        DAO_PROPERTY = _property;   
+        require(_vote != address(0), "initializePool: Zero voteContract address");
+        VOTE = _vote;                  
 
         isInitialized = true;
     }    
@@ -92,7 +97,7 @@ contract StakingPool is ReentrancyGuard {
     function addRewardToPool(uint256 _amount) external {
         require(_amount > 0, 'addRewardToPool: Zero amount');
 
-        Helper.safeTransferFrom(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
+        Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
         totalRewardAmount += _amount;
 
         emit RewardAdded(totalRewardAmount, _amount);
@@ -103,7 +108,7 @@ contract StakingPool is ReentrancyGuard {
         require(isInitialized, "stakeVAB: Should be initialized");
         require(msg.sender != address(0) && _amount > 0, "stakeVAB: Zero value");
 
-        Helper.safeTransferFrom(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
+        Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
 
         Stake storage si = stakeInfo[msg.sender];
         if(si.stakeAmount == 0 && si.stakeTime == 0) {
@@ -134,7 +139,7 @@ contract StakingPool is ReentrancyGuard {
         }
 
         // Next, unstake
-        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, _amount);        
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);        
         si.stakeAmount -= _amount;        
         totalStakingAmount -= _amount;
 
@@ -177,7 +182,7 @@ contract StakingPool is ReentrancyGuard {
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
             uint256 voteStatus = IVote(VOTE).getFundingIdVoteStatusPerUser(_customer, filmIds[i]);    
-            bool isRaised = IVabbleDAO(VABBLE_DAO).isRaisedFullAmount(filmIds[i]);
+            bool isRaised = IVabbleFunding(FUNDING).isRaisedFullAmount(filmIds[i]);
             if((voteStatus == 1 && isRaised) || (voteStatus == 2 && !isRaised)) { 
                 extraRewardAmount += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
             }
@@ -203,7 +208,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @dev Transfer reward amount
     function __withdrawReward(uint256 _amount) private {
-        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, _amount);        
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);        
         totalRewardAmount -= _amount;
         receivedRewardAmount[msg.sender] += _amount;
 
@@ -221,7 +226,7 @@ contract StakingPool is ReentrancyGuard {
         require(msg.sender != address(0), "depositVAB: Zero address");
         require(_amount > 0, "depositVAB: Zero amount");
 
-        Helper.safeTransferFrom(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
+        Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
         userRentInfo[msg.sender].vabAmount += _amount;
 
         emit VABDeposited(msg.sender, _amount);
@@ -263,7 +268,7 @@ contract StakingPool is ReentrancyGuard {
         require(payAmount <= userRentInfo[_to].vabAmount, "approveWithdraw: insufficuent amount");
         require(userRentInfo[_to].pending, "approveWithdraw: no pending");
 
-        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _to, payAmount);
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _to, payAmount);
 
         userRentInfo[_to].vabAmount -= payAmount;
         userRentInfo[_to].withdrawAmount = 0;
@@ -296,7 +301,7 @@ contract StakingPool is ReentrancyGuard {
     ) external onlyDAO {
         require(userRentInfo[_user].vabAmount >= _amount, "sendVAB: insufficient balance");
 
-        Helper.safeTransfer(IProperty(DAO_PROPERTY).PAYOUT_TOKEN(), _to, _amount);
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _to, _amount);
         userRentInfo[_user].vabAmount -= _amount;
     }
 
@@ -305,7 +310,7 @@ contract StakingPool is ReentrancyGuard {
         address to = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
         require(to != address(0), 'withdrawAllFund: Zero address');
 
-        address vabToken = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         uint256 poolBalance = IERC20(vabToken).balanceOf(address(this));        
         require(totalRewardAmount <= poolBalance, "withdrawAllFund: insufficient balance");
 

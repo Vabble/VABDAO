@@ -35,22 +35,22 @@ contract Subscription is ReentrancyGuard {
     receive() external payable {}
 
     constructor(
-        address _ownableContract,
-        address _uniHelperContract,
-        address _daoProperty
+        address _ownable,
+        address _uniHelper,
+        address _property
     ) {        
-        require(_ownableContract != address(0), "ownableContract: zero address");
-        OWNABLE = _ownableContract;  
-        require(_uniHelperContract != address(0), "uniHelperContract: zero address");
-        UNI_HELPER = _uniHelperContract;      
-        require(_daoProperty != address(0), "daoProperty: zero address");
-        DAO_PROPERTY = _daoProperty; 
+        require(_ownable != address(0), "ownableContract: zero address");
+        OWNABLE = _ownable;  
+        require(_uniHelper != address(0), "uniHelperContract: zero address");
+        UNI_HELPER = _uniHelper;      
+        require(_property != address(0), "daoProperty: zero address");
+        DAO_PROPERTY = _property; 
     }
 
     // ============= 0. Subscription by token and NFT. ===========    
     /// @notice active subscription(pay $1 monthly as ETH/USDC/USDT/VAB...) for renting the films
     function activeSubscription(address _token, uint256 _period) public payable nonReentrant {
-        if(_token != IProperty(DAO_PROPERTY).PAYOUT_TOKEN()) {
+        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN()) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset"); 
         }
         
@@ -70,8 +70,8 @@ contract Subscription is ReentrancyGuard {
         }
 
         uint256 usdcAmount;
-        address usdc_token = IProperty(DAO_PROPERTY).USDC_TOKEN();
-        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
+        address usdc_token = IOwnablee(OWNABLE).USDC_TOKEN();
+        address payout_token = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         // if token is VAB, send USDC(convert from VAB to USDC) to wallet
         if(_token == payout_token) {
             bytes memory swapArgs = abi.encode(_expectAmount, _token, usdc_token);
@@ -120,8 +120,8 @@ contract Subscription is ReentrancyGuard {
     function getExpectedSubscriptionAmount(address _token, uint256 _period) public view returns(uint256 expectAmount_) {
         require(_period > 0, "getExpectedSubscriptionAmount: Zero period");
 
-        address usdc_token = IProperty(DAO_PROPERTY).USDC_TOKEN();
-        address payout_token = IProperty(DAO_PROPERTY).PAYOUT_TOKEN();
+        address usdc_token = IOwnablee(OWNABLE).USDC_TOKEN();
+        address payout_token = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
         if(_token == payout_token) {
             expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, usdc_token, _token);

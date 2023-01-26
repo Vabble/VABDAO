@@ -3,11 +3,13 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deployer } = await getNamedAccounts();
 
   this.Ownablee = await deployments.get('Ownablee');  
+  this.UniHelper = await deployments.get('UniHelper');
 
   await deploy('FactorySubNFT', {
     from: deployer,
     args: [
-      this.Ownablee.address
+      this.Ownablee.address,
+      this.UniHelper.address
     ],
     log: true,
     deterministicDeployment: false,
@@ -17,4 +19,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_factory_sub_nft'
 module.exports.tags = ['FactorySubNFT'];
-module.exports.dependencies = ['Ownablee'];
+module.exports.dependencies = ['Ownablee', 'UniHelper'];

@@ -1,24 +1,23 @@
-module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
+module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const { CONFIG, NETWORK } = require('../scripts/utils');
   
   this.Ownablee = await deployments.get('Ownablee');
   this.UniHelper = await deployments.get('UniHelper');
-  this.Vote = await deployments.get('Vote');
   this.StakingPool = await deployments.get('StakingPool');
   this.Property = await deployments.get('Property');
-  this.FactoryFilmNFT = await deployments.get('FactoryFilmNFT');
+  this.FilmNFTFactory = await deployments.get('FactoryFilmNFT');
+  this.VabbleDAO = await deployments.get('VabbleDAO');
   
-  await deploy('VabbleDAO', {
+  await deploy('VabbleFunding', {
     from: deployer,
     args: [
       this.Ownablee.address,      // Ownablee contract
       this.UniHelper.address,     // UniHelper contract
-      this.Vote.address,          // Vote contract
       this.StakingPool.address,   // StakingPool contract
       this.Property.address,      // Property contract
-      this.FactoryFilmNFT.address // film NFT Factory contract
+      this.FilmNFTFactory.address,// film NFT Factory contract
+      this.VabbleDAO.address      // VabbleDAO contract
     ],
     log: true,
     deterministicDeployment: false,
@@ -26,6 +25,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   });  
 };
 
-module.exports.id = 'deploy_vabble_dao'
-module.exports.tags = ['VabbleDAO'];
-module.exports.dependencies = ['Ownablee', 'UniHelper', 'Vote', 'StakingPool', 'Property', 'FactoryFilmNFT'];
+module.exports.id = 'deploy_vabble_funding'
+module.exports.tags = ['VabbleFunding'];
+module.exports.dependencies = ['Ownablee', 'UniHelper', 'StakingPool', 'Property', 'FactoryFilmNFT', 'VabbleDAO'];

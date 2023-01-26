@@ -12,4 +12,7 @@ interface IOwnablee {
     function getDepositAssetList() external view returns (address[] memory);
 
     function VAB_WALLET() external view returns (address);
+    
+    function USDC_TOKEN() external view returns (address);
+    function PAYOUT_TOKEN() external view returns (address);
 }

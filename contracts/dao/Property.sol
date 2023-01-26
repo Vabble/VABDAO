@@ -32,8 +32,6 @@ contract Property is ReentrancyGuard {
     address private immutable VOTE;           // Vote contract address
     address private immutable STAKING_POOL;   // StakingPool contract address
     address private immutable UNI_HELPER;     // UniHelper contract address
-    address public PAYOUT_TOKEN;          // VAB token       
-    address public USDC_TOKEN;            // USDC token 
     address public DAO_FUND_REWARD;       // address for sending the DAO rewards fund
 
     uint256 public filmVotePeriod;       // 0 - film vote period
@@ -111,25 +109,19 @@ contract Property is ReentrancyGuard {
     }
 
     constructor(
-        address _payoutToken,
-        address _ownableContract,
-        address _voteContract,
-        address _stakingContract,
-        address _uniHelperContract,
-        address _usdcToken
+        address _ownable,
+        address _uniHelper,
+        address _vote,
+        address _staking
     ) {
-        require(_payoutToken != address(0), "payoutToken: Zero address");
-        PAYOUT_TOKEN = _payoutToken;    
-        require(_ownableContract != address(0), "ownableContract: Zero address");
-        OWNABLE = _ownableContract;  
-        require(_voteContract != address(0), "voteContract: Zero address");
-        VOTE = _voteContract;
-        require(_stakingContract != address(0), "stakingContract: Zero address");
-        STAKING_POOL = _stakingContract;
-        require(_uniHelperContract != address(0), "uniHelperContract: Zero address");
-        UNI_HELPER = _uniHelperContract;          
-        require(_usdcToken != address(0), "usdcToken: Zero address");
-        USDC_TOKEN = _usdcToken;
+        require(_ownable != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownable;  
+        require(_uniHelper != address(0), "uniHelperContract: Zero address");
+        UNI_HELPER = _uniHelper;
+        require(_vote != address(0), "voteContract: Zero address");
+        VOTE = _vote;
+        require(_staking != address(0), "stakingContract: Zero address");
+        STAKING_POOL = _staking;       
 
         filmVotePeriod = 10 days;   
         boardVotePeriod = 14 days;
@@ -148,11 +140,13 @@ contract Property is ReentrancyGuard {
         maxMintFeePercent = 10 * 1e8;    // 10%
         minStakerCountPercent = 5 * 1e8; // 5%(1% = 1e8, 100%=1e10)
 
-        proposalFeeAmount = 20 * (10**IERC20Metadata(_usdcToken).decimals());   // amount in cash(usd dollar - $20)
-        minDepositAmount = 50 * (10**IERC20Metadata(_usdcToken).decimals());    // amount in cash(usd dollar - $50)
-        maxDepositAmount = 5000 * (10**IERC20Metadata(_usdcToken).decimals());  // amount in cash(usd dollar - $5000)
-        availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(_payoutToken).decimals()); // 75M        
-        subscriptionAmount = 1 * (10**IERC20Metadata(_usdcToken).decimals());   // amount in cash(usd dollar - $1)
+        address usdcToken = IOwnablee(_ownable).USDC_TOKEN();
+        address vabToken = IOwnablee(_ownable).PAYOUT_TOKEN();
+        proposalFeeAmount = 20 * (10**IERC20Metadata(usdcToken).decimals());   // amount in cash(usd dollar - $20)
+        minDepositAmount = 50 * (10**IERC20Metadata(usdcToken).decimals());    // amount in cash(usd dollar - $50)
+        maxDepositAmount = 5000 * (10**IERC20Metadata(usdcToken).decimals());  // amount in cash(usd dollar - $5000)
+        availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 75M        
+        subscriptionAmount = 1 * (10**IERC20Metadata(usdcToken).decimals());   // amount in cash(usd dollar - $1)
         minVoteCount = 5;
     }
 
@@ -184,12 +178,14 @@ contract Property is ReentrancyGuard {
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
-    function __isPaidFee(uint256 _payAmount) private returns(bool) {    
-        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(_payAmount, USDC_TOKEN, PAYOUT_TOKEN);
+    function __isPaidFee(uint256 _payAmount) private returns(bool) {         
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();   
+        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(_payAmount, usdcToken, vabToken);
         if(expectVABAmount > 0) {
-            Helper.safeTransferFrom(PAYOUT_TOKEN, msg.sender, address(this), expectVABAmount);
-            if(IERC20(PAYOUT_TOKEN).allowance(address(this), STAKING_POOL) == 0) {
-                Helper.safeApprove(PAYOUT_TOKEN, STAKING_POOL, IERC20(PAYOUT_TOKEN).totalSupply());
+            Helper.safeTransferFrom(vabToken, msg.sender, address(this), expectVABAmount);
+            if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
+                Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
             }  
             IStakingPool(STAKING_POOL).addRewardToPool(expectVABAmount);
             return true;
@@ -681,14 +677,8 @@ contract Property is ReentrancyGuard {
     }
 
     /// @dev Update the rewardAddress for only testing in the testnet
-    function updateAddressForTesting(
-        address _address, 
-        uint _flag
-    ) external onlyAuditor {        
-        require(_address != address(0), "test: Zero address");
-        if(_flag == 0) DAO_FUND_REWARD = _address;            
-        else if(_flag == 1) USDC_TOKEN = _address;      
-        else if(_flag == 2) PAYOUT_TOKEN = _address;
+    function updateDAOFundForTesting(address _address) external onlyAuditor {        
+        DAO_FUND_REWARD = _address;    
     }
         
 }

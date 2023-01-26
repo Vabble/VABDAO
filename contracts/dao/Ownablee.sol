@@ -8,6 +8,8 @@ contract Ownablee {
 
     address public auditor;
     address public VAB_WALLET;           // Vabble wallet
+    address public PAYOUT_TOKEN;          // VAB token       
+    address public USDC_TOKEN;            // USDC token 
     address private VOTE;                // vote contract address
     address[] private depositAssetList;
     
@@ -23,11 +25,19 @@ contract Ownablee {
         _;
     }
 
-    constructor(address _vabbleWallet) {
+    constructor(
+        address _vabbleWallet,
+        address _payoutToken,
+        address _usdcToken
+    ) {
         auditor = msg.sender;
 
         require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
         VAB_WALLET = _vabbleWallet; 
+        require(_payoutToken != address(0), "payoutToken: Zero address");
+        PAYOUT_TOKEN = _payoutToken;    
+        require(_usdcToken != address(0), "usdcToken: Zero address");
+        USDC_TOKEN = _usdcToken;
     }
     
     function setupVote(address _voteContract) external onlyAuditor {
