@@ -199,6 +199,58 @@ describe('StakingPool', function () {
     this.events = [];
   });
 
+  it('Staking and unstaking, withdraw VAB token with min value', async function () {   
+    // Staking VAB token
+    await expect(
+      this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(1, 16), {from: this.customer1.address})
+    ).to.be.revertedWith('stakeVAB: less amount than 0.01');
+
+    await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+    expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(2, 16))
+    
+    console.log('===isInitialized::', await this.StakingPool.isInitialized())
+    // unstaking VAB token
+    await expect(
+      this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+    ).to.be.revertedWith('unstakeVAB: lock period yet');
+        
+    // => Increase next block timestamp for only testing
+    const period = 31 * 24 * 3600; // lockPeriod = 30 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
+
+    await this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+    console.log('===isInitialized::', 'ok')
+    expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(0)
+
+    //========= withdrawReward
+    await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+
+    // => Increase next block timestamp for only testing
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
+
+    const rewardA = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    let totalReward = await this.StakingPool.totalRewardAmount()
+    console.log('===rewardAmount::', rewardA.toString(), totalReward.toString())
+    await expect(
+      this.StakingPool.connect(this.customer1).withdrawReward({from: this.customer1.address})
+    ).to.be.revertedWith('withdrawReward: Insufficient total reward amount');
+
+    
+    // Add reward from auditor
+    const rewardAmount = getBigNumber(100)
+    await this.StakingPool.connect(this.auditor).addRewardToPool(rewardAmount, {from: this.auditor.address})
+    expect(await this.StakingPool.totalRewardAmount()).to.be.equal(rewardAmount)
+
+    await expect(
+      this.StakingPool.connect(this.customer1).withdrawReward({from: this.customer1.address})
+    ).to.emit(this.StakingPool, 'RewardWithdraw').withArgs(this.customer1.address, rewardA);
+
+    totalReward = await this.StakingPool.totalRewardAmount()
+    console.log('===rewardAmount::', rewardA.toString(), totalReward.toString())
+  });
+
   it('Staking and unstaking VAB token', async function () {   
     // Staking VAB token
     await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(100), {from: this.customer1.address})

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../libraries/Helper.sol";
@@ -106,7 +107,10 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Staking VAB token by staker
     function stakeVAB(uint256 _amount) public nonReentrant {
         require(isInitialized, "stakeVAB: Should be initialized");
+
+        uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
         require(msg.sender != address(0) && _amount > 0, "stakeVAB: Zero value");
+        require(_amount > minAmount, "stakeVAB: less amount than 0.01");
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
 
@@ -157,7 +161,8 @@ contract StakingPool is ReentrancyGuard {
         require(block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
 
         uint256 rewardAmount = calcRewardAmount(msg.sender);
-        require(totalRewardAmount >= rewardAmount && rewardAmount > 0, "withdrawReward: Insufficient total reward amount");
+        require(rewardAmount > 0, "withdrawReward: Insufficient reward amount");
+        require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
         __withdrawReward(rewardAmount);
     }
@@ -166,6 +171,9 @@ contract StakingPool is ReentrancyGuard {
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
         Stake storage si = stakeInfo[_customer];
         require(si.stakeAmount > 0, "calcRewardAmount: Not staker");
+
+        uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
+        require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
 
         // Get proposal count started in withdrawable period of customer
         uint256 proposalCount = 0;     
