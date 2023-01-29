@@ -99,6 +99,23 @@ o UniHelper (0x83677A945c254E9fc6300D2C4d6255535104C5A2)
 o Vote (0x19f8eBc3AfcdbbF8daff8F339A4358C5b2dFaDCF)                 // initializeVote()
 
 
+
+
+// 2023-01-29 Polygon(Mumbai testnet)
+FactoryFilmNFT (0x56D79b6EB22C3a88da3A2502850DD8fB89F91E80)         // initializeFactory(), setBaseURI()
+FactorySubNFT (0x608bC9e36717E5c69233C81f566D7a47a217C032)          // setBaseURI()
+FactoryTierNFT (0x6066f6b3A893AD449862D6C80e310Befca09ff11)         // setBaseURI()
+Ownablee (0xfCdEED0e6f7aA0611db21Cd2edd6DCaF649C82e4)               // setupVote(), addDepositAsset()
+Property (0x756C4A9938b92796dF338631F8fe8D6662100F39)
+StakingPool (0xAf8f21a8DA68B4a83f3BBDe1D6cC97E99877EC34)            // initializePool()
+Subscription (0xaD394391676903833B3613DFC7AC20F670d6b7F4)
+UniHelper (0x83677A945c254E9fc6300D2C4d6255535104C5A2)
+VabbleDAO (0xC5F59f741B18E3e856Cfe1434Ca7e79257BCf755)
+VabbleFunding (0xe0Fcc40D5Fc275B4bA64cF99BEB4402a99236EAA)
+Vote (0xE4714B36f92C5c661aADbddC1eb6C8D1f6CF2081)                   // initializeVote()
+
+
+
 ** 
 Auditor wallet address: 0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1
 USDC: 0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c    -6   totalSupply: 1000000000000
