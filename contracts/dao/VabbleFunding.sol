@@ -83,7 +83,10 @@ contract VabbleFunding is ReentrancyGuard {
         require(fundPeriod >= block.timestamp - pApproveTime, "depositToFilm: passed funding period");    
 
         uint256 userFundAmountPerFilm = getUserFundAmountPerFilm(msg.sender, _filmId);
-        uint256 fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, IOwnablee(OWNABLE).USDC_TOKEN());    
+        uint256 fundAmount = _amount;
+        if(_token != IOwnablee(OWNABLE).USDC_TOKEN()) {
+            fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, IOwnablee(OWNABLE).USDC_TOKEN());    
+        }
         uint256 amountOfUser = userFundAmountPerFilm + fundAmount;    
         require(__checkMinMaxAmount(amountOfUser), "depositToFilm: Invalid amount");
 
@@ -239,30 +242,30 @@ contract VabbleFunding is ReentrancyGuard {
         address _customer, 
         uint256 _filmId
     ) public view returns (uint256 amount_) {
-        address usdc_token = IOwnablee(OWNABLE).USDC_TOKEN();
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
         Asset[] memory assetArr = assetInfo[_filmId][_customer];
         for(uint256 i = 0; i < assetArr.length; i++) {
             if(assetArr[i].amount == 0) continue;
 
-            if(assetArr[i].token == usdc_token) {
+            if(assetArr[i].token == usdcToken) {
                 amount_ += assetArr[i].amount;
             } else {
-                amount_ += IUniHelper(UNI_HELPER).expectedAmount(assetArr[i].amount, assetArr[i].token, usdc_token);
+                amount_ += IUniHelper(UNI_HELPER).expectedAmount(assetArr[i].amount, assetArr[i].token, usdcToken);
             }
         }
     }
 
     /// @notice Get fund amount in cash(usdc) per film
     function getRaisedAmountByToken(uint256 _filmId) public view returns (uint256 amount_) {
-        address usdc_token = IOwnablee(OWNABLE).USDC_TOKEN();
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
         Asset[] memory assetArr = assetPerFilm[_filmId];
         for(uint256 i = 0; i < assetArr.length; i++) {
             if(assetArr[i].amount == 0) continue;
 
-            if(assetArr[i].token == usdc_token) {
+            if(assetArr[i].token == usdcToken) {
                 amount_ += assetArr[i].amount;
             } else {
-                amount_ += IUniHelper(UNI_HELPER).expectedAmount(assetArr[i].amount, assetArr[i].token, usdc_token);
+                amount_ += IUniHelper(UNI_HELPER).expectedAmount(assetArr[i].amount, assetArr[i].token, usdcToken);
             }
         }
     }

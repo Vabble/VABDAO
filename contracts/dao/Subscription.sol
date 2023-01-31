@@ -70,13 +70,13 @@ contract Subscription is ReentrancyGuard {
         }
 
         uint256 usdcAmount;
-        address usdc_token = IOwnablee(OWNABLE).USDC_TOKEN();
-        address payout_token = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         // if token is VAB, send USDC(convert from VAB to USDC) to wallet
-        if(_token == payout_token) {
-            bytes memory swapArgs = abi.encode(_expectAmount, _token, usdc_token);
+        if(_token == vabToken) {
+            bytes memory swapArgs = abi.encode(_expectAmount, _token, usdcToken);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
-            Helper.safeTransfer(usdc_token, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
+            Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
         } 
         // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC) to wallet
         else {            
@@ -84,22 +84,22 @@ contract Subscription is ReentrancyGuard {
             // Send ETH from this contract to UNI_HELPER contract
             if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, amount60); // 60%
             
-            bytes memory swapArgs = abi.encode(amount60, _token, payout_token);
+            bytes memory swapArgs = abi.encode(amount60, _token, vabToken);
             uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);            
             // Transfer VAB to wallet
-            Helper.safeTransfer(payout_token, IOwnablee(OWNABLE).VAB_WALLET(), vabAmount);
+            Helper.safeTransfer(vabToken, IOwnablee(OWNABLE).VAB_WALLET(), vabAmount);
 
-            if(_token == usdc_token) {
+            if(_token == usdcToken) {
                 usdcAmount = _expectAmount - amount60;
             } else {
                 // Send ETH from this contract to UNI_HELPER contract
                 if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, _expectAmount - amount60); // 40%
                 
-                bytes memory swapArgs1 = abi.encode(_expectAmount - amount60, _token, usdc_token);
+                bytes memory swapArgs1 = abi.encode(_expectAmount - amount60, _token, usdcToken);
                 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
             }
             // Transfer USDC to wallet
-            Helper.safeTransfer(usdc_token, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
+            Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
         }        
         
         UserSubscription storage subscription = subscriptionInfo[msg.sender];
@@ -120,15 +120,15 @@ contract Subscription is ReentrancyGuard {
     function getExpectedSubscriptionAmount(address _token, uint256 _period) public view returns(uint256 expectAmount_) {
         require(_period > 0, "getExpectedSubscriptionAmount: Zero period");
 
-        address usdc_token = IOwnablee(OWNABLE).USDC_TOKEN();
-        address payout_token = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
-        if(_token == payout_token) {
-            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, usdc_token, _token);
-        } else if(_token == usdc_token) {
+        if(_token == vabToken) {
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, usdcToken, _token);
+        } else if(_token == usdcToken) {
             expectAmount_ = scriptAmount;
         } else {            
-            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, usdc_token, _token);
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, usdcToken, _token);
         }
     }
 

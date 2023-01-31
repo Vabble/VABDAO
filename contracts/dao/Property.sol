@@ -129,7 +129,7 @@ contract Property is ReentrancyGuard {
         disputeGracePeriod = 30 days;  
         propertyVotePeriod = 10 days;
         rewardVotePeriod = 30 days;
-        lockPeriod = 30 days;
+        lockPeriod = 10 minutes; //30 days;
         maxAllowPeriod = 90 days;        
 
         boardVoteWeight = 30 * 1e8;      // 30% (1% = 1e8)
@@ -147,7 +147,7 @@ contract Property is ReentrancyGuard {
         maxDepositAmount = 5000 * (10**IERC20Metadata(usdcToken).decimals());  // amount in cash(usd dollar - $5000)
         availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 75M        
         subscriptionAmount = 1 * (10**IERC20Metadata(usdcToken).decimals());   // amount in cash(usd dollar - $1)
-        minVoteCount = 5;
+        minVoteCount = 3;//5;
     }
 
     /// =================== proposals for replacing auditor ==============

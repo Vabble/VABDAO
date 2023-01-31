@@ -218,8 +218,11 @@ contract VabbleDAO is ReentrancyGuard {
             if(_noVotes[i] == 1) _usdcAmount += feeAmount * 2;
             else _usdcAmount += feeAmount;
         }
-
-        uint256 expectTokenAmount = IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _dToken);
+        
+        uint256 expectTokenAmount = _usdcAmount;
+        if(_dToken != IOwnablee(OWNABLE).USDC_TOKEN()) {
+            expectTokenAmount = IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _dToken);
+        }
         Helper.safeTransferFrom(_dToken, msg.sender, address(this), expectTokenAmount);
 
         // Send ETH from this contract to UNI_HELPER contract

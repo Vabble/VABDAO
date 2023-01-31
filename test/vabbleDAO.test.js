@@ -130,6 +130,7 @@ describe('VabbleDAO', function () {
       this.Property.address,
     )
 
+    await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address, this.USDC.address, this.EXM.address], {from: this.auditor.address})
     expect(await this.Ownablee.auditor()).to.be.equal(this.auditor.address);
         
     // ====== VAB
@@ -188,6 +189,31 @@ describe('VabbleDAO', function () {
     await this.EXM.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000));
     await this.EXM.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000));
 
+    // ====== USDC
+    const USDCBalance = await this.USDC.balanceOf(this.auditor.address)
+    console.log('====usdcBalance::', USDCBalance.toString())
+    // Transfering USDC token to user1, 2, 3                                            897497 291258
+    await this.USDC.connect(this.auditor).transfer(this.customer1.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.customer2.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.customer3.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    // Transfering USDC token to studio1, 2, 3
+    await this.USDC.connect(this.auditor).transfer(this.studio1.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.studio2.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.studio3.address, getBigNumber(50000, 6), {from: this.auditor.address});
+
+    // Approve to transfer USDC token for each user, studio to DAO, StakingPool
+    await this.USDC.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));   
+
+    await this.USDC.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(10000000, 6));
+
+    await this.USDC.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+
     // Staking VAB token
     await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(40000000), {from: this.customer1.address})
     await this.StakingPool.connect(this.customer2).stakeVAB(getBigNumber(40000000), {from: this.customer2.address})
@@ -220,10 +246,10 @@ describe('VabbleDAO-test-1', function () {
     const fundType = getBigNumber(3, 0)
     
     // Create proposal for a film by studio
-    let tx = await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(noVotes, this.vabToken.address, {from: this.studio1.address})
+    let tx = await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(noVotes, this.USDC.address, {from: this.studio1.address})
     this.events = (await tx.wait()).events;
-    // console.log('=====events-0::', this.events)
-    expect(this.events[6].args[2]).to.be.equal(this.studio1.address)
+    console.log('=====events-0::', this.events)
+    expect(this.events[15].args[2]).to.be.equal(this.studio1.address)
     const proposalIds_1 = await this.VabbleDAO.getFilmIds(1);
     expect(proposalIds_1.length).to.be.equal(noVotes.length)
 

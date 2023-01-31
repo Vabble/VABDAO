@@ -255,8 +255,11 @@ contract FactoryFilmNFT {
     function getExpectedTokenAmount(
         address _token, 
         uint256 _usdcAmount
-    ) public view returns (uint256) {
-        return IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _token); 
+    ) public view returns (uint256 amount_) {
+        amount_ = _usdcAmount;
+        if(_token != IOwnablee(OWNABLE).USDC_TOKEN()) {
+            amount_ = IUniHelper(UNI_HELPER).expectedAmount(_usdcAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _token); 
+        }
     }
 
     function getNFTOwner(
