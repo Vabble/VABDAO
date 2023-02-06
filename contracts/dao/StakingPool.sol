@@ -11,6 +11,7 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFunding.sol";
+import "hardhat/console.sol";
 
 contract StakingPool is ReentrancyGuard {
     
@@ -20,6 +21,7 @@ contract StakingPool is ReentrancyGuard {
     event TokenUnstaked(address unstaker, uint256 unStakeAmount);
     event LockTimeUpdated(uint256 lockTime);
     event RewardWithdraw(address staker, uint256 rewardAmount);
+    event RewardContinued(address staker, uint256 isCompound);
     event AllFundWithdraw(address to, uint256 amount);
     event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount);
     event VABDeposited(address customer, uint256 amount);
@@ -155,21 +157,46 @@ contract StakingPool is ReentrancyGuard {
         emit TokenUnstaked(msg.sender, _amount);
     }
 
-    /// @notice Withdraw reward
-    function withdrawReward() external nonReentrant {
+    /// @notice Withdraw reward.  isCompound=1 => compound reward, isCompound=0 => withdraw
+    function withdrawReward(uint256 _isCompound) external nonReentrant {
         require(stakeInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
         require(block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
-
+        
         uint256 rewardAmount = calcRewardAmount(msg.sender);
-        require(rewardAmount > 0, "withdrawReward: Insufficient reward amount");
-        require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
+        if(_isCompound == 1) {
+            Stake storage si = stakeInfo[msg.sender];
+            si.stakeAmount = si.stakeAmount + rewardAmount;
+            si.stakeTime = block.timestamp;
+            si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
 
-        __withdrawReward(rewardAmount);
+            IVote(VOTE).removeFundingFilmIdsPerUser(msg.sender);
+
+            emit RewardContinued(msg.sender, _isCompound);
+        } else {
+            require(rewardAmount > 0, "withdrawReward: zero reward amount");
+            require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
+
+            __withdrawReward(rewardAmount);
+        }
+    }
+
+    /// @dev Transfer reward amount
+    function __withdrawReward(uint256 _amount) private {
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);        
+        totalRewardAmount -= _amount;
+        receivedRewardAmount[msg.sender] += _amount;
+
+        stakeInfo[msg.sender].stakeTime = block.timestamp;
+        stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+
+        IVote(VOTE).removeFundingFilmIdsPerUser(msg.sender);
+        
+        emit RewardWithdraw(msg.sender, _amount);
     }
 
     /// @notice Calculate reward amount and extra reward amount for funding film vote
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
-        Stake storage si = stakeInfo[_customer];
+        Stake memory si = stakeInfo[_customer];
         require(si.stakeAmount > 0, "calcRewardAmount: Not staker");
 
         uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
@@ -184,8 +211,10 @@ contract StakingPool is ReentrancyGuard {
         }
 
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 timeVal = (block.timestamp - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
+        // uint256 timeVal = (block.timestamp - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
+        uint256 timeVal = IProperty(DAO_PROPERTY).lockPeriod() * 1e4 / 1 days;
         uint256 rewardAmount = si.stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
+
         uint256 extraRewardAmount;
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
@@ -202,7 +231,8 @@ contract StakingPool is ReentrancyGuard {
                 rewardAmount = 0;
                 extraRewardAmount = 0;
             } else {
-                rewardAmount = rewardAmount * (si.voteCount * 1e4) / (proposalCount * 1e4);
+                uint256 countVal = (si.voteCount * 1e4) / proposalCount;
+                rewardAmount = rewardAmount * countVal / 1e4;
             }
         }
         
@@ -212,20 +242,6 @@ contract StakingPool is ReentrancyGuard {
         }        
 
         amount_ = rewardAmount + extraRewardAmount;
-    }
-
-    /// @dev Transfer reward amount
-    function __withdrawReward(uint256 _amount) private {
-        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);        
-        totalRewardAmount -= _amount;
-        receivedRewardAmount[msg.sender] += _amount;
-
-        stakeInfo[msg.sender].stakeTime = block.timestamp;
-        stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
-
-        IVote(VOTE).removeFundingFilmIdsPerUser(msg.sender);
-        
-        emit RewardWithdraw(msg.sender, _amount);
     }
 
     // =================== Customer deposit/withdraw VAB START =================    
