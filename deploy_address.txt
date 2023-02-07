@@ -115,7 +115,6 @@ VabbleFunding (0xe0Fcc40D5Fc275B4bA64cF99BEB4402a99236EAA)
 Vote (0xE4714B36f92C5c661aADbddC1eb6C8D1f6CF2081)                   // initializeVote()
 
 
-
 // 2023-01-31 Polygon(Mumbai testnet)
 FactoryFilmNFT (0x59E69c2Fd6124fE41D5ed3Af5B53E57702001177)         // initializeFactory(), setBaseURI()
 FactorySubNFT (0xe584E94dEa8B27464D054b00Ef432715C291E9E1)          // setBaseURI()
@@ -129,6 +128,19 @@ VabbleDAO (0xe5b77d1AD49Ca8E874627AE53cba04F2d5F3101F)
 VabbleFunding (0x6fC1Ec212A41144EceA113e9D6DffB5e693f2cc4)
 Vote (0x8ebe229af7394bdAd267d272dA86472e24d8A820)                   // initializeVote()
 
+
+// 2023-02-07 Polygon(Mumbai testnet)
+FactoryFilmNFT (0x59E69c2Fd6124fE41D5ed3Af5B53E57702001177)         // initializeFactory(), setBaseURI()
+FactorySubNFT (0xe584E94dEa8B27464D054b00Ef432715C291E9E1)          // setBaseURI()
+FactoryTierNFT (0xC44B5Fc2fB31d953e266486426Da540fD6943CDd)         // setBaseURI()
+Ownablee (0xfCdEED0e6f7aA0611db21Cd2edd6DCaF649C82e4)               // setupVote(), addDepositAsset()
+Property (0x806C82E2E4d551078fB177850e308995BC46c01A)
+StakingPool (0x4f4D5e450039dcfb889fE8A92974CaE06D69FbF2)            // initializePool()
+Subscription (0x268956fEdeE1aeC5AFe1376F7434066D8d7Eb2A7)
+UniHelper (0x00575447DB905A088f2839d951948ca8De42999F)
+VabbleDAO (0x0A8958D07b05AF8F26B5D806eA7ee0C6A259c66c)
+VabbleFunding (0xcc2a2C91882387d1C8BfDcff0e5A8fDFeAAEa5d4)
+Vote (0x8ebe229af7394bdAd267d272dA86472e24d8A820)                   // initializeVote()
 
 ** 
 Auditor wallet address: 0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1
