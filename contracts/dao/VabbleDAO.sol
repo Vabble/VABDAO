@@ -256,7 +256,6 @@ contract VabbleDAO is ReentrancyGuard {
             filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;    
             approvedListingFilmIds.push(_filmId);
         }        
-        filmInfo[_filmId].pApproveTime = block.timestamp;
 
         emit FilmApproved(_filmId);
     }

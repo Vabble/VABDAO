@@ -13,19 +13,20 @@ import "../interfaces/IOwnablee.sol";
 
 contract Property is ReentrancyGuard {
 
-    event AuditorProposalCreated(address member);
-    event RewardFundProposalCreated(address member);
-    event FilmBoardProposalCreated(address member);
-    event FilmBoardMemberAdded(address member);
-    event FilmBoardMemberRemoved(address member);
-    event PropertyProposalCreated(uint256 property, uint256 flag);
-    event PropertyUpdated(uint256 property, uint256 flag);
+    event AuditorProposalCreated(address creator, address member, string title, string description);
+    event RewardFundProposalCreated(address creator, address member, string title, string description);
+    event FilmBoardProposalCreated(address creator, address member, string title, string description);
+    event FilmBoardMemberAdded(address caller, address member);
+    event FilmBoardMemberRemoved(address caller, address member);
+    event PropertyProposalCreated(address creator, uint256 property, uint256 flag, string title, string description);
+    event PropertyUpdated(address caller, uint256 property, uint256 flag);
     
     struct Proposal {
         string title;          // proposal title
         string description;    // proposal description
         uint256 createTime;    // proposal created timestamp
         uint256 approveTime;   // proposal approved timestamp
+        address creator;       // proposal creator address
     }
   
     address private immutable OWNABLE;        // Ownablee contract address 
@@ -169,11 +170,12 @@ contract Property is ReentrancyGuard {
         ap.title = _title;
         ap.description = _description;
         ap.createTime = block.timestamp;
+        ap.creator = msg.sender;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit AuditorProposalCreated(_agent);
+        emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
@@ -213,11 +215,12 @@ contract Property is ReentrancyGuard {
         rp.title = _title;
         rp.description = _description;
         rp.createTime = block.timestamp;
+        rp.creator = msg.sender;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit RewardFundProposalCreated(_rewardAddress);
+        emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
     }
 
     /// @notice Set DAO_FUND_REWARD by Vote contract
@@ -259,11 +262,12 @@ contract Property is ReentrancyGuard {
         bp.title = _title;
         bp.description = _description;
         bp.createTime = block.timestamp;
+        bp.creator = msg.sender;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit FilmBoardProposalCreated(_member);
+        emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
     }
 
     /// @notice Add a member to whitelist by Vote contract
@@ -274,7 +278,7 @@ contract Property is ReentrancyGuard {
         filmBoardMembers.push(_member);
         isBoardWhitelist[_member] = 2;
         
-        emit FilmBoardMemberAdded(_member);
+        emit FilmBoardMemberAdded(msg.sender, _member);
     }
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
@@ -291,7 +295,7 @@ contract Property is ReentrancyGuard {
                 filmBoardMembers.pop();
             }
         }
-        emit FilmBoardMemberRemoved(_member);
+        emit FilmBoardMemberRemoved(msg.sender, _member);
     }
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>rewardAddressList, 3=>boardCandidateList, rest=>boardMemberList)
@@ -385,11 +389,12 @@ contract Property is ReentrancyGuard {
         pp.title = _title;
         pp.description = _description;
         pp.createTime = block.timestamp;
+        pp.creator = msg.sender;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit PropertyProposalCreated(_property, _flag);
+        emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
     }
 
     function getProperty(
@@ -452,67 +457,67 @@ contract Property is ReentrancyGuard {
 
         if(_flag == 0) {
             filmVotePeriod = filmVotePeriodList[_index];
-            emit PropertyUpdated(filmVotePeriod, _flag);
+            emit PropertyUpdated(msg.sender, filmVotePeriod, _flag);
         } else if(_flag == 1) {
             agentVotePeriod = agentVotePeriodList[_index];
-            emit PropertyUpdated(agentVotePeriod, _flag);
+            emit PropertyUpdated(msg.sender, agentVotePeriod, _flag);
         } else if(_flag == 2) {
             disputeGracePeriod = disputeGracePeriodList[_index];
-            emit PropertyUpdated(disputeGracePeriod, _flag);
+            emit PropertyUpdated(msg.sender, disputeGracePeriod, _flag);
         } else if(_flag == 3) {
             propertyVotePeriod = propertyVotePeriodList[_index];
-            emit PropertyUpdated(propertyVotePeriod, _flag);
+            emit PropertyUpdated(msg.sender, propertyVotePeriod, _flag);
         } else if(_flag == 4) {
             lockPeriod = lockPeriodList[_index];
-            emit PropertyUpdated(lockPeriod, _flag);
+            emit PropertyUpdated(msg.sender, lockPeriod, _flag);
         } else if(_flag == 5) {
             rewardRate = rewardRateList[_index];
-            emit PropertyUpdated(rewardRate, _flag);
+            emit PropertyUpdated(msg.sender, rewardRate, _flag);
         } else if(_flag == 6) {
             extraRewardRate = extraRewardRateList[_index];
-            emit PropertyUpdated(extraRewardRate, _flag);
+            emit PropertyUpdated(msg.sender, extraRewardRate, _flag);
         } else if(_flag == 7) {
             maxAllowPeriod = maxAllowPeriodList[_index];
-            emit PropertyUpdated(maxAllowPeriod, _flag);        
+            emit PropertyUpdated(msg.sender, maxAllowPeriod, _flag);        
         } else if(_flag == 8) {
             proposalFeeAmount = proposalFeeAmountList[_index];
-            emit PropertyUpdated(proposalFeeAmount, _flag);        
+            emit PropertyUpdated(msg.sender, proposalFeeAmount, _flag);        
         } else if(_flag == 9) {
             fundFeePercent = fundFeePercentList[_index];
-            emit PropertyUpdated(fundFeePercent, _flag);        
+            emit PropertyUpdated(msg.sender, fundFeePercent, _flag);        
         } else if(_flag == 10) {
             minDepositAmount = minDepositAmountList[_index];
-            emit PropertyUpdated(minDepositAmount, _flag);        
+            emit PropertyUpdated(msg.sender, minDepositAmount, _flag);        
         } else if(_flag == 11) {
             maxDepositAmount = maxDepositAmountList[_index];
-            emit PropertyUpdated(maxDepositAmount, _flag);        
+            emit PropertyUpdated(msg.sender, maxDepositAmount, _flag);        
         } else if(_flag == 12) {
             maxMintFeePercent = maxMintFeePercentList[_index];
-            emit PropertyUpdated(maxMintFeePercent, _flag);     
+            emit PropertyUpdated(msg.sender, maxMintFeePercent, _flag);     
         } else if(_flag == 13) {
             minVoteCount = minVoteCountList[_index];
-            emit PropertyUpdated(minVoteCount, _flag);     
+            emit PropertyUpdated(msg.sender, minVoteCount, _flag);     
         } else if(_flag == 14) {
             minStakerCountPercent = minStakerCountPercentList[_index];
-            emit PropertyUpdated(minStakerCountPercent, _flag);     
+            emit PropertyUpdated(msg.sender, minStakerCountPercent, _flag);     
         } else if(_flag == 15) {
             availableVABAmount = availableVABAmountList[_index];
-            emit PropertyUpdated(availableVABAmount, _flag);     
+            emit PropertyUpdated(msg.sender, availableVABAmount, _flag);     
         } else if(_flag == 16) {
             boardVotePeriod = boardVotePeriodList[_index];
-            emit PropertyUpdated(boardVotePeriod, _flag);     
+            emit PropertyUpdated(msg.sender, boardVotePeriod, _flag);     
         } else if(_flag == 17) {
             boardVoteWeight = boardVoteWeightList[_index];
-            emit PropertyUpdated(boardVoteWeight, _flag);     
+            emit PropertyUpdated(msg.sender, boardVoteWeight, _flag);     
         } else if(_flag == 18) {
             rewardVotePeriod = rewardVotePeriodList[_index];
-            emit PropertyUpdated(rewardVotePeriod, _flag);     
+            emit PropertyUpdated(msg.sender, rewardVotePeriod, _flag);     
         } else if(_flag == 19) {
             subscriptionAmount = subscriptionAmountList[_index];
-            emit PropertyUpdated(subscriptionAmount, _flag);     
+            emit PropertyUpdated(msg.sender, subscriptionAmount, _flag);     
         } else if(_flag == 20) {
             boardRewardRate = boardRewardRateList[_index];
-            emit PropertyUpdated(boardRewardRate, _flag);     
+            emit PropertyUpdated(msg.sender, boardRewardRate, _flag);     
         }         
     }
     
@@ -614,18 +619,26 @@ contract Property is ReentrancyGuard {
     function getPropertyProposalTime(
         uint256 _property, 
         uint256 _flag
-    ) external view returns (uint256 time_) {
-        time_ = propertyProposalInfo[_flag][_property].createTime;
+    ) external view returns (uint256 cTime_, uint256 aTime_) {
+        cTime_ = propertyProposalInfo[_flag][_property].createTime;
+        aTime_ = propertyProposalInfo[_flag][_property].approveTime;
     }
     
     /// @notice Get agent/board/pool proposal created time
     function getGovProposalTime(
         address _member, 
         uint256 _flag
-    ) external view returns (uint256 time_) {
-        if(_flag == 1) time_ = agentProposalInfo[_member].createTime;
-        else if(_flag == 2) time_ = boardProposalInfo[_member].createTime;
-        else if(_flag == 3) time_ = rewardProposalInfo[_member].createTime;
+    ) external view returns (uint256 cTime_, uint256 aTime_) {
+        if(_flag == 1) {
+            cTime_ = agentProposalInfo[_member].createTime;
+            aTime_ = agentProposalInfo[_member].approveTime;
+        } else if(_flag == 2) {
+            cTime_ = boardProposalInfo[_member].createTime;
+            aTime_ = boardProposalInfo[_member].approveTime;
+        } else if(_flag == 3) {
+            cTime_ = rewardProposalInfo[_member].createTime;
+            aTime_ = rewardProposalInfo[_member].approveTime;
+        }
     }
 
     function updatePropertyProposalApproveTime(
