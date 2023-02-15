@@ -196,7 +196,15 @@ contract FactoryFilmNFT {
         address _payToken
     ) private {
         uint256 expectAmount = getExpectedTokenAmount(_payToken, mintInfo[_filmId].price);
-        __transferIntoThis(_payToken, expectAmount);                        
+        // Return remain ETH to user back if case of ETH and Transfer Asset from buyer to this contract
+        if(_payToken == address(0)) {
+            require(msg.value >= expectAmount, "handlePay: Insufficient paid");
+            if (msg.value > expectAmount) {
+                Helper.safeTransferETH(msg.sender, msg.value - expectAmount);
+            }
+        } else {
+            Helper.safeTransferFrom(_payToken, msg.sender, address(this), expectAmount);
+        }                       
 
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
@@ -213,24 +221,6 @@ contract FactoryFilmNFT {
 
         // Transfer remain token amount to "film owner" address
         Helper.safeTransferAsset(_payToken, IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId), expectAmount - feeAmount);
-    }
-
-    function __transferIntoThis(
-        address _payToken, 
-        uint256 _amount
-    ) private {
-        // Return remain ETH to user back if case of ETH and Transfer Asset from buyer to this contract
-        if(_payToken == address(0)) {
-            require(msg.value >= _amount, "handlePay: Insufficient paid");
-            if (msg.value > _amount) {
-                Helper.safeTransferETH(msg.sender, msg.value - _amount);
-            }
-        } else {
-            Helper.safeTransferFrom(_payToken, msg.sender, address(this), _amount);
-            if(IERC20(_payToken).allowance(address(this), UNI_HELPER) == 0) {
-                Helper.safeApprove(_payToken, UNI_HELPER, IERC20(_payToken).totalSupply());
-            }
-        }
     }
 
     /// @dev Add fee amount to rewardPool after swap from uniswap if not VAB token

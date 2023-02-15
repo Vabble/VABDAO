@@ -234,8 +234,9 @@ describe('VabbleDAO', function () {
   });
 
 describe('VabbleDAO-test-1', function () {
-  it('Should prospose films by studio', async function () {   
-    const noVotes = [0, 0, 1]
+  it('Should prospose films by studio', async function () {  
+    const noVote1 = 0
+    const noVote2 = 1
     // Create proposal for 2 films by studio    
     const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
     const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
@@ -246,79 +247,25 @@ describe('VabbleDAO-test-1', function () {
     const fundType = getBigNumber(3, 0)
     
     // Create proposal for a film by studio
-    let tx = await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(noVotes, this.USDC.address, {from: this.studio1.address})
+    let tx = await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(
+      nftRight, 
+      sharePercents, 
+      choiceAuditor, 
+      studioPayees, 
+      raiseAmount, 
+      fundPeriod, 
+      fundType,
+      noVote1, 
+      this.USDC.address, 
+      {from: this.studio1.address}
+    )
     this.events = (await tx.wait()).events;
     console.log('=====events-0::', this.events)
     expect(this.events[15].args[2]).to.be.equal(this.studio1.address)
     const proposalIds_1 = await this.VabbleDAO.getFilmIds(1);
-    expect(proposalIds_1.length).to.be.equal(noVotes.length)
+    expect(proposalIds_1[0]).to.be.equal(this.events[15].args[0])
 
     console.log('=====test-10')
-    // Update actors and percents by only Studio
-    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-      getBigNumber(1, 0), 
-      nftRight, 
-      sharePercents, 
-      choiceAuditor, 
-      studioPayees, 
-      raiseAmount, 
-      fundPeriod, 
-      fundType,
-      {from: this.studio1.address}
-    )
-    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-      getBigNumber(2, 0), 
-      nftRight, 
-      sharePercents, 
-      choiceAuditor, 
-      studioPayees, 
-      raiseAmount, 
-      fundPeriod, 
-      fundType,
-      {from: this.studio1.address}
-    )
-    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-      getBigNumber(3, 0), 
-      nftRight, 
-      sharePercents, 
-      choiceAuditor, 
-      studioPayees, 
-      raiseAmount, 
-      fundPeriod, 
-      fundType,
-      {from: this.studio1.address}
-    )
-    
-    // studio3 didn't submit any film proposals so that he cannot update any films too
-    await expect(
-      this.VabbleDAO.connect(this.studio3).proposalFilmUpdate(
-        proposalIds_1[0],
-        nftRight,
-        sharePercents,
-        choiceAuditor,
-        studioPayees,
-        raiseAmount,
-        fundPeriod,
-        fundType, 
-        {from: this.studio3.address}
-      )
-    )
-    .to.be.revertedWith('proposalUpdate: not film owner')
-    console.log('=====test-0')
-
-    const up_tx = await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-      proposalIds_1[0],
-      nftRight,
-      sharePercents,
-      choiceAuditor,
-      studioPayees,
-      raiseAmount,
-      fundPeriod,
-      fundType,  
-      {from: this.studio1.address}
-    )
-    this.events = (await up_tx.wait()).events
-    // console.log('=====events-1::', this.events)
     
     // Get A proposal film information with id
     const proposalFilm = await this.VabbleDAO.getFilmById(proposalIds_1[0])
@@ -326,9 +273,6 @@ describe('VabbleDAO-test-1', function () {
     expect(proposalFilm.nftRight_.length).to.be.equal(nftRight.length)
     const userFilmProposalIds = await this.VabbleDAO.getUserFilmIds(2, this.studio1.address)
     console.log('=====userFilmProposalIds::', userFilmProposalIds)
-
-    expect(this.events[0].args[1]).to.be.equal(this.studio1.address)
-    expect(this.events[0].args[0]).to.be.equal(proposalIds_1[0])
   });  
 })  
 

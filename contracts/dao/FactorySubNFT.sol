@@ -147,40 +147,36 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     function __handleMintPay(
-        address _token, 
+        address _payToken, 
         uint256 _period, 
         uint256 _category
     ) private {
         uint256 price = mintInfo[_category].mintPrice;
-        uint256 expectAmount = getExpectedTokenAmount(_token, _period * price);
-        __transferInto(_token, expectAmount);   
-
-        // Send ETH from this contract to UNI_HELPER contract
-        if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount);
-
-        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();        
-        bytes memory swapArgs = abi.encode(expectAmount, _token, usdcToken);
-        uint256 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);                
-        // Transfer USDC to wallet
-        Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
-    }
-
-    function __transferInto(
-        address _payToken, 
-        uint256 _amount
-    ) private {
+        uint256 expectAmount = getExpectedTokenAmount(_payToken, _period * price);
         // Return remain ETH to user back if case of ETH and Transfer Asset from buyer to this contract
         if(_payToken == address(0)) {
-            require(msg.value >= _amount, "handlePay: Insufficient paid");
-            if (msg.value > _amount) {
-                Helper.safeTransferETH(msg.sender, msg.value - _amount);
+            require(msg.value >= expectAmount, "handlePay: Insufficient paid");
+            if (msg.value > expectAmount) {
+                Helper.safeTransferETH(msg.sender, msg.value - expectAmount);
             }
+            // Send ETH from this contract to UNI_HELPER contract
+            Helper.safeTransferETH(UNI_HELPER, expectAmount);
         } else {
-            Helper.safeTransferFrom(_payToken, msg.sender, address(this), _amount);
+            Helper.safeTransferFrom(_payToken, msg.sender, address(this), expectAmount);
             if(IERC20(_payToken).allowance(address(this), UNI_HELPER) == 0) {
                 Helper.safeApprove(_payToken, UNI_HELPER, IERC20(_payToken).totalSupply());
             }
+        } 
+
+        uint256 usdcAmount = expectAmount;
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();                
+        if(_payToken != usdcToken) {
+            bytes memory swapArgs = abi.encode(expectAmount, _payToken, usdcToken);
+            usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);                
         }
+        
+        // Transfer USDC to wallet
+        Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
     }
 
     /// @notice Lock subscription NFT for some period (transfer nft from owner wallet to this contract)
