@@ -299,12 +299,12 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>rewardAddressList, 3=>boardCandidateList, rest=>boardMemberList)
-    function getGovProposalList(uint256 _flag, uint256 _pageNumber, uint256 _pageSize) external view returns (address[] memory) {      
+    function getGovProposalList(uint256 _flag, uint256 _pageNumber, uint256 _pageSize) external view returns (address[] memory) {  
+    require(_pageNumber >= 0, "Page number cannot be negative");
+    require(_pageSize >= 0, "Page size cannot be negative");    
           if (_pageSize == 0) {
             _pageSize = 10; // default to 10 if page size is not specified
         }
-    require(_pageNumber >= 0, "Page number cannot be negative");
-    require(_pageSize >= 0, "Page size cannot be negative");
         uint256 startIndex = _pageNumber * _pageSize;
         uint256 endIndex = startIndex + _pageSize;  
         if(_flag == 1) return sliceArray(agentList, startIndex, endIndex);
@@ -598,11 +598,11 @@ contract Property is ReentrancyGuard {
     // }
 
 function getPropertyProposalList(uint256 _flag, uint256 _pageNumber, uint256 _pageSize) public view returns (uint256[] memory _list) {
+    require(_pageNumber >= 0, "Page number cannot be negative");
+    require(_pageSize >= 0, "Page size cannot be negative");
          if (_pageSize == 0) {
             _pageSize = 10; // default to 10 if page size is not specified
         }
-    require(_pageNumber >= 0, "Page number cannot be negative");
-    require(_pageSize >= 0, "Page size cannot be negative");
         uint256 startIndex = _pageNumber * _pageSize;
         uint256 endIndex = startIndex + _pageSize;
         if(_flag == 0) _list = sliceArray(filmVotePeriodList, startIndex, endIndex);
