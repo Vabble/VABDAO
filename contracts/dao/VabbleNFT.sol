@@ -6,20 +6,16 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract VabbleNFT is ERC721, ERC721Enumerable {    
-    
+contract VabbleNFT is ERC721, ERC721Enumerable {
     using Counters for Counters.Counter;
     using Strings for uint256;
 
     Counters.Counter private nftCount;
-    string public baseUri;                     // Base URI       
+    string public baseUri; // Base URI
 
     receive() external payable {}
-    constructor(
-        string memory _baseUri,
-        string memory _name,
-        string memory _symbol
-    ) ERC721(_name, _symbol) {
+
+    constructor(string memory _baseUri, string memory _name, string memory _symbol) ERC721(_name, _symbol) {
         baseUri = _baseUri;
     }
 
@@ -34,17 +30,17 @@ contract VabbleNFT is ERC721, ERC721Enumerable {
         uint256 batchSize
     ) internal virtual override(ERC721Enumerable, ERC721) {
         super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
-    }  
+    }
 
     function mintTo(address _to) public payable returns (uint256) {
         uint256 newTokenId = __getNextTokenId();
         _safeMint(_to, newTokenId);
-        
+
         return newTokenId;
     }
 
     /// @dev Generate tokenId(film nft=>odd, subscription nft=>even)
-    function __getNextTokenId() private returns (uint256 newTokenId_) {        
+    function __getNextTokenId() private returns (uint256 newTokenId_) {
         nftCount.increment();
         newTokenId_ = nftCount.current();
     }
@@ -56,7 +52,7 @@ contract VabbleNFT is ERC721, ERC721Enumerable {
         return string(abi.encodePacked(baseUri, _tokenId.toString(), ".json"));
     }
 
-    function transferNFT(uint256 _tokenId, address _to) external {        
+    function transferNFT(uint256 _tokenId, address _to) external {
         address seller = ownerOf(_tokenId);
         transferFrom(seller, _to, _tokenId);
     }
@@ -67,7 +63,7 @@ contract VabbleNFT is ERC721, ERC721Enumerable {
             _tokensOfOwner[i] = tokenOfOwnerByIndex(_owner, i);
         }
     }
-    
+
     /// @notice Return total minited NFT count
     function totalSupply() public view override returns (uint256) {
         return nftCount.current();

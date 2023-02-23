@@ -299,11 +299,18 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>rewardAddressList, 3=>boardCandidateList, rest=>boardMemberList)
-    function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
-        if(_flag == 1) return agentList;
-        else if(_flag == 2) return rewardAddressList;
-        else if(_flag == 3) return filmBoardCandidates;
-        else return filmBoardMembers;
+    function getGovProposalList(uint256 _flag, uint256 _pageNumber, uint256 _pageSize) external view returns (address[] memory) {      
+          if (_pageSize == 0) {
+            _pageSize = 10; // default to 10 if page size is not specified
+        }
+    require(_pageNumber >= 0, "Page number cannot be negative");
+    require(_pageSize >= 0, "Page size cannot be negative");
+        uint256 startIndex = _pageNumber * _pageSize;
+        uint256 endIndex = startIndex + _pageSize;  
+        if(_flag == 1) return sliceArray(agentList, startIndex, endIndex);
+        else if(_flag == 2) return sliceArray(rewardAddressList, startIndex, endIndex);
+        else if(_flag == 3) return sliceArray(filmBoardCandidates, startIndex, endIndex);
+        else return sliceArray(filmBoardMembers, startIndex, endIndex);
     }    
 
     // ===================properties proposal ====================
@@ -590,30 +597,52 @@ contract Property is ReentrancyGuard {
     //     } 
     // }
 
-    /// @notice Get property proposal list
-    function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list) {
-        if(_flag == 0) _list = filmVotePeriodList;
-        else if(_flag == 1) _list = agentVotePeriodList;
-        else if(_flag == 2) _list = disputeGracePeriodList;
-        else if(_flag == 3) _list = propertyVotePeriodList;
-        else if(_flag == 4) _list = lockPeriodList;
-        else if(_flag == 5) _list = rewardRateList;
-        else if(_flag == 6) _list = extraRewardRateList;
-        else if(_flag == 7) _list = maxAllowPeriodList;
-        else if(_flag == 8) _list = proposalFeeAmountList;
-        else if(_flag == 9) _list = fundFeePercentList;
-        else if(_flag == 10) _list = minDepositAmountList;
-        else if(_flag == 11) _list = maxDepositAmountList;
-        else if(_flag == 12) _list = maxMintFeePercentList;
-        else if(_flag == 13) _list = minVoteCountList;        
-        else if(_flag == 14) _list = minStakerCountPercentList;     
-        else if(_flag == 15) _list = availableVABAmountList;     
-        else if(_flag == 16) _list = boardVotePeriodList;     
-        else if(_flag == 17) _list = boardVoteWeightList;     
-        else if(_flag == 18) _list = rewardVotePeriodList;     
-        else if(_flag == 19) _list = subscriptionAmountList;     
-        else if(_flag == 20) _list = boardRewardRateList;                                   
+function getPropertyProposalList(uint256 _flag, uint256 _pageNumber, uint256 _pageSize) public view returns (uint256[] memory _list) {
+         if (_pageSize == 0) {
+            _pageSize = 10; // default to 10 if page size is not specified
+        }
+    require(_pageNumber >= 0, "Page number cannot be negative");
+    require(_pageSize >= 0, "Page size cannot be negative");
+        uint256 startIndex = _pageNumber * _pageSize;
+        uint256 endIndex = startIndex + _pageSize;
+        if(_flag == 0) _list = sliceArray(filmVotePeriodList, startIndex, endIndex);
+        else if(_flag == 1) _list = sliceArray(agentVotePeriodList, startIndex, endIndex);
+        else if(_flag == 2) _list = sliceArray(disputeGracePeriodList, startIndex, endIndex);
+        else if(_flag == 3) _list = sliceArray(propertyVotePeriodList, startIndex, endIndex);
+        else if(_flag == 4) _list = sliceArray(lockPeriodList, startIndex, endIndex);
+        else if(_flag == 5) _list = sliceArray(rewardRateList, startIndex, endIndex);
+        else if(_flag == 6) _list = sliceArray(extraRewardRateList, startIndex, endIndex);
+        else if(_flag == 7) _list = sliceArray(maxAllowPeriodList, startIndex, endIndex);
+        else if(_flag == 8) _list = sliceArray(proposalFeeAmountList, startIndex, endIndex);
+        else if(_flag == 9) _list = sliceArray(fundFeePercentList, startIndex, endIndex);
+        else if(_flag == 10) _list = sliceArray(minDepositAmountList, startIndex, endIndex);
+        else if(_flag == 11) _list = sliceArray(maxDepositAmountList, startIndex, endIndex);
+        else if(_flag == 12) _list = sliceArray(maxMintFeePercentList, startIndex, endIndex);
+        else if(_flag == 13) _list = sliceArray(minVoteCountList, startIndex, endIndex);        
+        else if(_flag == 14) _list = sliceArray(minStakerCountPercentList, startIndex, endIndex);     
+        else if(_flag == 15) _list = sliceArray(availableVABAmountList, startIndex, endIndex);     
+        else if(_flag == 16) _list = sliceArray(boardVotePeriodList, startIndex, endIndex);     
+        else if(_flag == 17) _list = sliceArray(boardVoteWeightList, startIndex, endIndex);     
+        else if(_flag == 18) _list = sliceArray(rewardVotePeriodList, startIndex, endIndex);     
+        else if(_flag == 19) _list = sliceArray(subscriptionAmountList, startIndex, endIndex);     
+        else if(_flag == 20) _list = sliceArray(boardRewardRateList, startIndex, endIndex);                                   
     }
+
+function sliceArray(uint256[] memory arr, uint256 startIndex, uint256 endIndex) private pure returns (uint256[] memory) {
+        require(endIndex > startIndex, "Invalid page range");
+        uint256 len = arr.length;
+        if (startIndex >= len) {
+            return new uint256[](0);
+        }
+        uint256 sliceLength = (len < endIndex) ? len - startIndex : endIndex - startIndex;
+        uint256[] memory slicedArr = new uint256[](sliceLength);
+        for (uint256 i = 0; i < sliceLength; i++) {
+            slicedArr[i] = arr[startIndex + i];
+        }
+        return slicedArr
+}
+
+
 
     /// @notice Get property proposal created time
     function getPropertyProposalTime(
