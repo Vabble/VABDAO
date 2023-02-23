@@ -14,9 +14,9 @@ import "../interfaces/IVabbleDAO.sol";
 
 contract VabbleFunding is ReentrancyGuard {
     
-    event DepositedTokenToFilm(address customer, address token, uint256 amount, uint256 filmId);
-    event FundFilmProcessed(uint256 filmId);
-    event FundWithdrawed(uint256 filmId, address customer);
+    event DepositedTokenToFilm(address customer, address token, uint256 amount, uint256 filmId, uint256 depositTime);
+    event FundFilmProcessed(uint256 filmId, address studio, uint256 processTime);
+    event FundWithdrawed(uint256 filmId, address customer, uint256 withdrawTime);
     
     struct Asset {
         address token;   // token address
@@ -108,7 +108,7 @@ contract VabbleFunding is ReentrancyGuard {
         }            
         __assignToken(_filmId, _token, _amount);
 
-        emit DepositedTokenToFilm(msg.sender, _token, _amount, _filmId);
+        emit DepositedTokenToFilm(msg.sender, _token, _amount, _filmId, block.timestamp);
     }    
 
     /// @dev Update/Add user fund amount
@@ -184,7 +184,7 @@ contract VabbleFunding is ReentrancyGuard {
         fundProcessedFilmIds.push(_filmId);
         isFundProcessed[msg.sender][_filmId] = true;
 
-        emit FundFilmProcessed(_filmId);
+        emit FundFilmProcessed(_filmId, msg.sender, block.timestamp);
     }
 
     /// @notice Investor can withdraw fund after fund period if funding fails to meet the raise amount
@@ -213,7 +213,7 @@ contract VabbleFunding is ReentrancyGuard {
             }
         }
 
-        emit FundWithdrawed(_filmId, msg.sender);
+        emit FundWithdrawed(_filmId, msg.sender, block.timestamp);
     }
 
     /// @dev Check min & max amount for each token/ETH per film

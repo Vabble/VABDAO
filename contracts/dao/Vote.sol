@@ -12,15 +12,15 @@ import "../interfaces/IOwnablee.sol";
 
 contract Vote is ReentrancyGuard {
 
-    event FilmVoted(address voter, uint256[] filmIds, uint256[] voteInfos);
-    event AuditorReplaced(address auditor);
-    event VotedToAgent(address voter, address agent, uint256 voteInfo);
-    event VotedToProperty(address voter, uint256 flag, uint256 propertyVal, uint256 voteInfo);
-    event VotedToRewardAddress(address voter, address rewardAddress, uint256 voteInfo);
-    event VotedToFilmBoard(address voter, address candidate, uint256 voteInfo);
-    event AddedFilmBoard(address boardMember);
-    event AddedPoolAddress(address pool);
-    event UpdatedProperty(uint256 whichProperty, uint256 propertyValue);
+    event FilmVoted(address voter, uint256[] filmIds, uint256[] voteInfos, uint256 voteTime);
+    event AuditorReplaced(address auditor, address user, uint256 replaceTime);
+    event VotedToAgent(address voter, address agent, uint256 voteInfo, uint256 voteTime);
+    event VotedToProperty(address voter, uint256 flag, uint256 propertyVal, uint256 voteInfo, uint256 voteTime);
+    event VotedToRewardAddress(address voter, address rewardAddress, uint256 voteInfo, uint256 voteTime);
+    event VotedToFilmBoard(address voter, address candidate, uint256 voteInfo, uint256 voteTime);
+    event AddedFilmBoard(address boardMember, address user, uint256 addTime);
+    event AddedPoolAddress(address pool, address user, uint256 addTime);
+    event UpdatedProperty(uint256 whichProperty, uint256 propertyValue, address user, uint256 addTime);
     
     struct Voting {
         uint256 stakeAmount_1;  // staking amount of voter with status(yes)
@@ -111,7 +111,7 @@ contract Vote is ReentrancyGuard {
             __voteToFilm(_filmIds[i], _voteInfos[i]);
         }        
 
-        emit FilmVoted(msg.sender, _filmIds, _voteInfos);
+        emit FilmVoted(msg.sender, _filmIds, _voteInfos, block.timestamp);
     }
 
     function __voteToFilm(
@@ -122,7 +122,7 @@ contract Vote is ReentrancyGuard {
         require(!isAttendToFilmVote[msg.sender][_filmId], "_voteToFilm: Already voted");    
 
         Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
-        require(status == Helper.Status.LISTED, "Not listed");        
+        require(status == Helper.Status.UPDATED, "Not updated");        
 
         (uint256 pCreateTime, ) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
         require(pCreateTime > 0, "not updated");
@@ -257,7 +257,7 @@ contract Vote is ReentrancyGuard {
             IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
         }
 
-        emit VotedToAgent(msg.sender, _agent, _voteInfo);
+        emit VotedToAgent(msg.sender, _agent, _voteInfo, block.timestamp);
     }
 
     /// @notice Replace Auditor based on vote result
@@ -290,7 +290,7 @@ contract Vote is ReentrancyGuard {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_agent, 1, block.timestamp);
             govPassedVoteCount[1] += 1;
 
-            emit AuditorReplaced(_agent);
+            emit AuditorReplaced(_agent, msg.sender, block.timestamp);
         } else {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_agent, 1, 1);
         }
@@ -332,7 +332,7 @@ contract Vote is ReentrancyGuard {
             IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
         }
 
-        emit VotedToFilmBoard(msg.sender, _candidate, _voteInfo);
+        emit VotedToFilmBoard(msg.sender, _candidate, _voteInfo, block.timestamp);
     }
     
     function addFilmBoard(address _member) external onlyStaker nonReentrant {
@@ -352,7 +352,7 @@ contract Vote is ReentrancyGuard {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_member, 2, block.timestamp);
             govPassedVoteCount[3] += 1;
 
-            emit AddedFilmBoard(_member);
+            emit AddedFilmBoard(_member, msg.sender, block.timestamp);
         } else {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_member, 2, 1);
         }        
@@ -392,7 +392,7 @@ contract Vote is ReentrancyGuard {
             IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
         }
 
-        emit VotedToRewardAddress(msg.sender, _rewardAddress, _voteInfo);
+        emit VotedToRewardAddress(msg.sender, _rewardAddress, _voteInfo, block.timestamp);
     }
 
     function setDAORewardAddress(address _rewardAddress) external onlyStaker nonReentrant {
@@ -412,7 +412,7 @@ contract Vote is ReentrancyGuard {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_rewardAddress, 3, block.timestamp);
             govPassedVoteCount[4] += 1;
 
-            emit AddedPoolAddress(_rewardAddress);
+            emit AddedPoolAddress(_rewardAddress, msg.sender, block.timestamp);
         } else {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_rewardAddress, 3, 1);
         }        
@@ -456,7 +456,7 @@ contract Vote is ReentrancyGuard {
             IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
         }
 
-        emit VotedToProperty(msg.sender, _flag, propertyVal, _voteInfo);
+        emit VotedToProperty(msg.sender, _flag, propertyVal, _voteInfo, block.timestamp);
     }
 
     /// @notice Update properties based on vote result(>=51% and stakeAmount of "Yes" > 75m)
@@ -479,7 +479,7 @@ contract Vote is ReentrancyGuard {
             IProperty(DAO_PROPERTY).updatePropertyProposalApproveTime(propertyVal, _flag, block.timestamp);
             govPassedVoteCount[5] += 1;  
 
-            emit UpdatedProperty(_flag, propertyVal);
+            emit UpdatedProperty(_flag, propertyVal, msg.sender, block.timestamp);
         } else {
             IProperty(DAO_PROPERTY).updatePropertyProposalApproveTime(propertyVal, _flag, 1);
         }

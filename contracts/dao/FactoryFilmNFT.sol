@@ -15,9 +15,9 @@ import "./VabbleNFT.sol";
 
 contract FactoryFilmNFT {
 
-    event FilmERC721Created(address nftCreator, address nftContract, uint filmId);
-    event FilmERC721Minted(address nftContract, uint256 tokenId);
-    event MintInfoSetted(address filmOwner, uint filmId, uint tier, uint mintAmount, uint mintPrice, uint feePercent, uint revenuePercent);
+    event FilmERC721Created(address nftCreator, address nftContract, uint filmId, uint deployTime);
+    event FilmERC721Minted(address nftContract, uint256 tokenId, address receiver, uint mintTime);
+    event MintInfoSetted(address filmOwner, uint filmId, uint tier, uint mintAmount, uint mintPrice, uint feePercent, uint revenuePercent, uint setTime);
 
     struct Mint {
         uint256 tier;             // Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
@@ -118,7 +118,7 @@ contract FactoryFilmNFT {
         mInfo.revenuePercent = _revenuePercent; // any %(1% = 1e8, 100% = 1e10)
         mInfo.studio = msg.sender;
 
-        emit MintInfoSetted(msg.sender, _filmId, _tier, _amount, _price, _feePercent, _revenuePercent);
+        emit MintInfoSetted(msg.sender, _filmId, _tier, _amount, _price, _feePercent, _revenuePercent, block.timestamp);
     }    
 
     /// @notice Studio deploy a nft contract per filmId
@@ -142,7 +142,7 @@ contract FactoryFilmNFT {
         nInfo.name = _name;
         nInfo.symbol = _symbol;
         
-        emit FilmERC721Created(msg.sender, address(t), _filmId);
+        emit FilmERC721Created(msg.sender, address(t), _filmId, block.timestamp);
     }  
 
     function mintToBatch(
@@ -188,7 +188,7 @@ contract FactoryFilmNFT {
         uint256 tokenId = t.mintTo(_to);
         filmNFTTokenList[_filmId].push(tokenId);
 
-        emit FilmERC721Minted(address(t), tokenId);
+        emit FilmERC721Minted(address(t), tokenId, _to, block.timestamp);
     }    
 
     function __handleMintPay(

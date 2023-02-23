@@ -11,7 +11,7 @@ import "../interfaces/IOwnablee.sol";
 
 contract Subscription is ReentrancyGuard {
     
-    event SubscriptionActivated(address customer, address token, uint256 period);
+    event SubscriptionActivated(address customer, address token, uint256 period, uint256 activeTime);
 
     address private immutable OWNABLE;      // Ownablee contract address  
     address private immutable UNI_HELPER;   // UniHelper contract
@@ -113,7 +113,7 @@ contract Subscription is ReentrancyGuard {
             subscription.expireTime = block.timestamp + PERIOD_UNIT * _period;
         }
 
-        emit SubscriptionActivated(msg.sender, _token, _period);          
+        emit SubscriptionActivated(msg.sender, _token, _period, block.timestamp);          
     }
 
     /// @notice Expected token amount that user should pay for activing the subscription

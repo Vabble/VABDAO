@@ -14,9 +14,9 @@ import "./VabbleNFT.sol";
 
 contract FactoryTierNFT {
 
-    event TierERC721Created(address nftCreator, address nftContract, uint tier); // if tier > 0 then tierNFTContract
-    event TierERC721Minted(address nftContract, uint256 tokenId);
-    event TierInfoSetted(address filmOwner, uint256 filmId, uint256 tierCount);
+    event TierERC721Created(address nftCreator, address nftContract, uint tier, uint256 deployTime);// if tier > 0 then tierNFTContract
+    event TierERC721Minted(address nftContract, uint256 tokenId, address receiver, uint256 mintTime);
+    event TierInfoSetted(address filmOwner, uint256 filmId, uint256 tierCount, uint256 setTime);
 
     struct TierNFT {
         string name;
@@ -93,7 +93,7 @@ contract FactoryTierNFT {
 
         tierCount[_filmId] = _minAmounts.length;
 
-        emit TierInfoSetted(msg.sender, _filmId, tierCount[_filmId]);
+        emit TierInfoSetted(msg.sender, _filmId, tierCount[_filmId], block.timestamp);
     }
 
     /// @notice Studio deploy a nft contract per filmId
@@ -116,7 +116,7 @@ contract FactoryTierNFT {
         nInfo.name = _name;
         nInfo.symbol = _symbol;
         
-        emit TierERC721Created(msg.sender, address(t), _tier);
+        emit TierERC721Created(msg.sender, address(t), _tier, block.timestamp);
     }  
 
     /// @notice Should be called //before fundProcess() of VabbleDAO contract
@@ -147,7 +147,7 @@ contract FactoryTierNFT {
         uint256 tokenId = t.mintTo(msg.sender);
         tierNFTTokenList[_filmId][tier].push(tokenId);
 
-        emit TierERC721Minted(address(t), tokenId);
+        emit TierERC721Minted(address(t), tokenId, msg.sender, block.timestamp);
     }
 
     /// @notice userTierNFTs

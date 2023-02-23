@@ -13,13 +13,13 @@ import "../interfaces/IOwnablee.sol";
 
 contract Property is ReentrancyGuard {
 
-    event AuditorProposalCreated(address creator, address member, string title, string description);
-    event RewardFundProposalCreated(address creator, address member, string title, string description);
-    event FilmBoardProposalCreated(address creator, address member, string title, string description);
-    event FilmBoardMemberAdded(address caller, address member);
-    event FilmBoardMemberRemoved(address caller, address member);
-    event PropertyProposalCreated(address creator, uint256 property, uint256 flag, string title, string description);
-    event PropertyUpdated(address caller, uint256 property, uint256 flag);
+    event AuditorProposalCreated(address creator, address member, string title, string description, uint256 createTime);
+    event RewardFundProposalCreated(address creator, address member, string title, string description, uint256 createTime);
+    event FilmBoardProposalCreated(address creator, address member, string title, string description, uint256 createTime);
+    event FilmBoardMemberAdded(address caller, address member, uint256 addTime);
+    event FilmBoardMemberRemoved(address caller, address member, uint256 removeTime);
+    event PropertyProposalCreated(address creator, uint256 property, uint256 flag, string title, string description, uint256 createTime);
+    event PropertyUpdated(address caller, uint256 property, uint256 flag, uint256 updateTime);
     
     struct Proposal {
         string title;          // proposal title
@@ -175,7 +175,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
+        emit AuditorProposalCreated(msg.sender, _agent, _title, _description, block.timestamp);
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
@@ -220,7 +220,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
+        emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description, block.timestamp);
     }
 
     /// @notice Set DAO_FUND_REWARD by Vote contract
@@ -267,7 +267,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
+        emit FilmBoardProposalCreated(msg.sender, _member, _title, _description, block.timestamp);
     }
 
     /// @notice Add a member to whitelist by Vote contract
@@ -278,7 +278,7 @@ contract Property is ReentrancyGuard {
         filmBoardMembers.push(_member);
         isBoardWhitelist[_member] = 2;
         
-        emit FilmBoardMemberAdded(msg.sender, _member);
+        emit FilmBoardMemberAdded(msg.sender, _member, block.timestamp);
     }
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
@@ -295,7 +295,7 @@ contract Property is ReentrancyGuard {
                 filmBoardMembers.pop();
             }
         }
-        emit FilmBoardMemberRemoved(msg.sender, _member);
+        emit FilmBoardMemberRemoved(msg.sender, _member, block.timestamp);
     }
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>rewardAddressList, 3=>boardCandidateList, rest=>boardMemberList)
@@ -394,7 +394,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
+        emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description, block.timestamp);
     }
 
     function getProperty(
@@ -457,138 +457,69 @@ contract Property is ReentrancyGuard {
 
         if(_flag == 0) {
             filmVotePeriod = filmVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, filmVotePeriod, _flag);
+            emit PropertyUpdated(msg.sender, filmVotePeriod, _flag, block.timestamp);
         } else if(_flag == 1) {
             agentVotePeriod = agentVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, agentVotePeriod, _flag);
+            emit PropertyUpdated(msg.sender, agentVotePeriod, _flag, block.timestamp);
         } else if(_flag == 2) {
             disputeGracePeriod = disputeGracePeriodList[_index];
-            emit PropertyUpdated(msg.sender, disputeGracePeriod, _flag);
+            emit PropertyUpdated(msg.sender, disputeGracePeriod, _flag, block.timestamp);
         } else if(_flag == 3) {
             propertyVotePeriod = propertyVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, propertyVotePeriod, _flag);
+            emit PropertyUpdated(msg.sender, propertyVotePeriod, _flag, block.timestamp);
         } else if(_flag == 4) {
             lockPeriod = lockPeriodList[_index];
-            emit PropertyUpdated(msg.sender, lockPeriod, _flag);
+            emit PropertyUpdated(msg.sender, lockPeriod, _flag, block.timestamp);
         } else if(_flag == 5) {
             rewardRate = rewardRateList[_index];
-            emit PropertyUpdated(msg.sender, rewardRate, _flag);
+            emit PropertyUpdated(msg.sender, rewardRate, _flag, block.timestamp);
         } else if(_flag == 6) {
             extraRewardRate = extraRewardRateList[_index];
-            emit PropertyUpdated(msg.sender, extraRewardRate, _flag);
+            emit PropertyUpdated(msg.sender, extraRewardRate, _flag, block.timestamp);
         } else if(_flag == 7) {
             maxAllowPeriod = maxAllowPeriodList[_index];
-            emit PropertyUpdated(msg.sender, maxAllowPeriod, _flag);        
+            emit PropertyUpdated(msg.sender, maxAllowPeriod, _flag, block.timestamp);        
         } else if(_flag == 8) {
             proposalFeeAmount = proposalFeeAmountList[_index];
-            emit PropertyUpdated(msg.sender, proposalFeeAmount, _flag);        
+            emit PropertyUpdated(msg.sender, proposalFeeAmount, _flag, block.timestamp);        
         } else if(_flag == 9) {
             fundFeePercent = fundFeePercentList[_index];
-            emit PropertyUpdated(msg.sender, fundFeePercent, _flag);        
+            emit PropertyUpdated(msg.sender, fundFeePercent, _flag, block.timestamp);        
         } else if(_flag == 10) {
             minDepositAmount = minDepositAmountList[_index];
-            emit PropertyUpdated(msg.sender, minDepositAmount, _flag);        
+            emit PropertyUpdated(msg.sender, minDepositAmount, _flag, block.timestamp);        
         } else if(_flag == 11) {
             maxDepositAmount = maxDepositAmountList[_index];
-            emit PropertyUpdated(msg.sender, maxDepositAmount, _flag);        
+            emit PropertyUpdated(msg.sender, maxDepositAmount, _flag, block.timestamp);        
         } else if(_flag == 12) {
             maxMintFeePercent = maxMintFeePercentList[_index];
-            emit PropertyUpdated(msg.sender, maxMintFeePercent, _flag);     
+            emit PropertyUpdated(msg.sender, maxMintFeePercent, _flag, block.timestamp);     
         } else if(_flag == 13) {
             minVoteCount = minVoteCountList[_index];
-            emit PropertyUpdated(msg.sender, minVoteCount, _flag);     
+            emit PropertyUpdated(msg.sender, minVoteCount, _flag, block.timestamp);     
         } else if(_flag == 14) {
             minStakerCountPercent = minStakerCountPercentList[_index];
-            emit PropertyUpdated(msg.sender, minStakerCountPercent, _flag);     
+            emit PropertyUpdated(msg.sender, minStakerCountPercent, _flag, block.timestamp);     
         } else if(_flag == 15) {
             availableVABAmount = availableVABAmountList[_index];
-            emit PropertyUpdated(msg.sender, availableVABAmount, _flag);     
+            emit PropertyUpdated(msg.sender, availableVABAmount, _flag, block.timestamp);     
         } else if(_flag == 16) {
             boardVotePeriod = boardVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, boardVotePeriod, _flag);     
+            emit PropertyUpdated(msg.sender, boardVotePeriod, _flag, block.timestamp);     
         } else if(_flag == 17) {
             boardVoteWeight = boardVoteWeightList[_index];
-            emit PropertyUpdated(msg.sender, boardVoteWeight, _flag);     
+            emit PropertyUpdated(msg.sender, boardVoteWeight, _flag, block.timestamp);     
         } else if(_flag == 18) {
             rewardVotePeriod = rewardVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, rewardVotePeriod, _flag);     
+            emit PropertyUpdated(msg.sender, rewardVotePeriod, _flag, block.timestamp);     
         } else if(_flag == 19) {
             subscriptionAmount = subscriptionAmountList[_index];
-            emit PropertyUpdated(msg.sender, subscriptionAmount, _flag);     
+            emit PropertyUpdated(msg.sender, subscriptionAmount, _flag, block.timestamp);     
         } else if(_flag == 20) {
             boardRewardRate = boardRewardRateList[_index];
-            emit PropertyUpdated(msg.sender, boardRewardRate, _flag);     
+            emit PropertyUpdated(msg.sender, boardRewardRate, _flag, block.timestamp);     
         }         
     }
-    
-    // function removeProperty(uint256 _index, uint256 _flag) external onlyVote {   
-    //     require(_flag >= 0 && _index >= 0, "removeProperty: Invalid flag");   
-
-    //     if(_flag == 0) {  
-    //         filmVotePeriodList[_index] = filmVotePeriodList[filmVotePeriodList.length - 1];
-    //         filmVotePeriodList.pop();
-    //     } else if(_flag == 1) {
-    //         agentVotePeriodList[_index] = agentVotePeriodList[agentVotePeriodList.length - 1];
-    //         agentVotePeriodList.pop();
-    //     } else if(_flag == 2) {
-    //         disputeGracePeriodList[_index] = disputeGracePeriodList[disputeGracePeriodList.length - 1];
-    //         disputeGracePeriodList.pop();
-    //     } else if(_flag == 3) {
-    //         propertyVotePeriodList[_index] = propertyVotePeriodList[propertyVotePeriodList.length - 1];
-    //         propertyVotePeriodList.pop();
-    //     } else if(_flag == 4) {
-    //         lockPeriodList[_index] = lockPeriodList[lockPeriodList.length - 1];
-    //         lockPeriodList.pop();
-    //     } else if(_flag == 5) {
-    //         rewardRateList[_index] = rewardRateList[rewardRateList.length - 1];
-    //         rewardRateList.pop();
-    //     } else if(_flag == 6) {
-    //         extraRewardRateList[_index] = extraRewardRateList[extraRewardRateList.length - 1];
-    //         extraRewardRateList.pop();
-    //     } else if(_flag == 7) {
-    //         maxAllowPeriodList[_index] = maxAllowPeriodList[maxAllowPeriodList.length - 1];
-    //         maxAllowPeriodList.pop();
-    //     } else if(_flag == 8) {
-    //         proposalFeeAmountList[_index] = proposalFeeAmountList[proposalFeeAmountList.length - 1];
-    //         proposalFeeAmountList.pop();
-    //     } else if(_flag == 9) {
-    //         fundFeePercentList[_index] = fundFeePercentList[fundFeePercentList.length - 1];
-    //         fundFeePercentList.pop();
-    //     } else if(_flag == 10) {
-    //         minDepositAmountList[_index] = minDepositAmountList[minDepositAmountList.length - 1];
-    //         minDepositAmountList.pop();
-    //     } else if(_flag == 11) {
-    //         maxDepositAmountList[_index] = maxDepositAmountList[maxDepositAmountList.length - 1];
-    //         maxDepositAmountList.pop();
-    //     } else if(_flag == 12) {
-    //         maxMintFeePercentList[_index] = maxMintFeePercentList[maxMintFeePercentList.length - 1];
-    //         maxMintFeePercentList.pop();
-    //     } else if(_flag == 13) {
-    //         minVoteCountList[_index] = minVoteCountList[minVoteCountList.length - 1];
-    //         minVoteCountList.pop();
-    //     } else if(_flag == 14) {
-    //         minStakerCountPercentList[_index] = minStakerCountPercentList[minStakerCountPercentList.length - 1];
-    //         minStakerCountPercentList.pop();
-    //     } else if(_flag == 15) {
-    //         availableVABAmountList[_index] = availableVABAmountList[availableVABAmountList.length - 1];
-    //         availableVABAmountList.pop();
-    //     } else if(_flag == 16) {
-    //         boardVotePeriodList[_index] = boardVotePeriodList[boardVotePeriodList.length - 1];
-    //         boardVotePeriodList.pop();
-    //     } else if(_flag == 17) {
-    //         boardVoteWeightList[_index] = boardVoteWeightList[boardVoteWeightList.length - 1];
-    //         boardVoteWeightList.pop();
-    //     } else if(_flag == 18) {
-    //         rewardVotePeriodList[_index] = rewardVotePeriodList[rewardVotePeriodList.length - 1];
-    //         rewardVotePeriodList.pop();
-    //     } else if(_flag == 19) {
-    //         subscriptionAmountList[_index] = subscriptionAmountList[subscriptionAmountList.length - 1];
-    //         subscriptionAmountList.pop();
-    //     } else if(_flag == 20) {
-    //         boardRewardRateList[_index] = boardRewardRateList[boardRewardRateList.length - 1];
-    //         boardRewardRateList.pop();
-    //     } 
-    // }
 
     /// @notice Get property proposal list
     function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list) {
