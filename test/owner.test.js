@@ -216,6 +216,11 @@ describe('Ownablee', function () {
     expect(depositAssets[0]).to.be.equal(CONFIG.mumbai.exmAddress);  
     expect(depositAssets[1]).to.be.equal(CONFIG.mumbai.daiAddress);  
     expect(depositAssets[2]).to.be.equal(CONFIG.mumbai.vabToken);  
+
+    const assetList1 = [CONFIG.addressZero]
+    await this.Ownablee.addDepositAsset(assetList1);    
+    depositAssets = await this.Ownablee.getDepositAssetList();
+    console.log('=====asset list-1::', depositAssets)
     
   });
 });

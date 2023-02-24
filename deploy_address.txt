@@ -194,6 +194,7 @@ WMATIC: 0x1fE108421Bc27B98aD52ae78dD8A3D7aB4199A00  -18
 
 USDC:USDT = 10000:10000 (1:1)    => uniswap
 USDC:VAB  = 10000:1000000(1:100) => uniswap
+USDT:VAB  = 10000:1000000(1:100) => uniswap
 VAB:WMATIC= 500000:1000(500:1)   => uniswap
 USDC:WMATIC = 50000:10000(5:1)   => uniswap
 MATIC:USDC = 1:500               => sushiswap
