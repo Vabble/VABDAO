@@ -4,8 +4,13 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
   this.Ownablee = await deployments.get('Ownablee');  
   this.UniHelper = await deployments.get('UniHelper');
+  
+  this.VabbleDAO = await deployments.get('VabbleDAO');
+  this.VabbleFunding = await deployments.get('VabbleFunding');
+  this.StakingPool = await deployments.get('StakingPool');
+  this.Property = await deployments.get('Property');
 
-  await deploy('FactoryFilmNFT', {
+  const deployContract = await deploy('FactoryFilmNFT', {
     from: deployer,
     args: [
       this.Ownablee.address,
@@ -15,6 +20,11 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     deterministicDeployment: false,
     skipIfAlreadyDeployed: false,
   }); 
+  
+  const contract = await ethers.getContractAt('FactoryFilmNFT', deployContract.address)
+  await (await contract.initializeFactory(
+    this.VabbleDAO.address, this.VabbleFunding.address, this.StakingPool.address, this.Property.address)
+  ).wait();
 };
 
 module.exports.id = 'deploy_factory_film_nft'

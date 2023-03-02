@@ -152,6 +152,66 @@ describe('FactoryFilmNFT', function () {
     await this.vabToken.connect(this.studio2).approve(this.Subscription.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio3).approve(this.Subscription.address, getBigNumber(100000000));
 
+    // ====== EXM
+    // Transfering EXM token to user1, 2, 3
+    await this.EXM.connect(this.auditor).transfer(this.customer1.address, getBigNumber(5000), {from: this.auditor.address});
+    await this.EXM.connect(this.auditor).transfer(this.customer2.address, getBigNumber(5000), {from: this.auditor.address});
+    await this.EXM.connect(this.auditor).transfer(this.customer3.address, getBigNumber(5000), {from: this.auditor.address});
+    // Transfering EXM token to studio1, 2, 3
+    await this.EXM.connect(this.auditor).transfer(this.studio1.address, getBigNumber(5000), {from: this.auditor.address});
+    await this.EXM.connect(this.auditor).transfer(this.studio2.address, getBigNumber(5000), {from: this.auditor.address});
+    await this.EXM.connect(this.auditor).transfer(this.studio3.address, getBigNumber(5000), {from: this.auditor.address});
+
+    // Approve to transfer EXM token for each user, studio to DAO, StakingPool
+    await this.EXM.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(100000));
+    await this.EXM.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(100000));
+    await this.EXM.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000));   
+
+    await this.EXM.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(100000));
+    await this.EXM.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(100000));
+    await this.EXM.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(100000));
+
+    await this.EXM.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(100000));
+    await this.EXM.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000));
+    await this.EXM.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000));
+
+    // ====== USDC
+    const USDCBalance = await this.USDC.balanceOf(this.auditor.address)
+    console.log('====usdcBalance::', USDCBalance.toString())
+    // Transfering USDC token to user1, 2, 3                                            897497 291258
+    await this.USDC.connect(this.auditor).transfer(this.customer1.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.customer2.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.customer3.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    // Transfering USDC token to studio1, 2, 3
+    await this.USDC.connect(this.auditor).transfer(this.studio1.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.studio2.address, getBigNumber(50000, 6), {from: this.auditor.address});
+    await this.USDC.connect(this.auditor).transfer(this.studio3.address, getBigNumber(50000, 6), {from: this.auditor.address});
+
+    // Approve to transfer USDC token for each user, studio to DAO, StakingPool
+    await this.USDC.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));   
+
+    await this.USDC.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(10000000, 6));
+
+    await this.USDC.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
+
+    await this.USDC.connect(this.studio1).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.studio2).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.studio3).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
+    
+    await this.USDC.connect(this.customer1).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer2).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
+    await this.USDC.connect(this.customer3).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
+
+    await this.Ownablee.connect(this.auditor).addDepositAsset(
+      [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
+    )
+
     // Initialize StakingPool
     await this.StakingPool.connect(this.auditor).initializePool(
       this.VabbleDAO.address,
@@ -181,39 +241,35 @@ describe('FactoryFilmNFT', function () {
   //   await this.FilmNFT.connect(this.auditor).setBaseURI('https://ipfs.io/ipfs/', {from: this.auditor.address})
   //   await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address], {from: this.auditor.address})
 
-  //   const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
+  //   const title = 'film title - 1'
+  //   const desc = 'film description - 1'
   //   const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-  //   const choiceAuditor = [this.auditor.address]
   //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
-  //   const raiseAmount = getBigNumber(15000, 6)
-  //   const fundPeriod = getBigNumber(120, 0)
-  //   const fundType = getBigNumber(0, 0)
+  //   const raiseAmount = getBigNumber(150, 6)
+  //   const fundPeriod = getBigNumber(20, 0)
+  //   const fundType = getBigNumber(3, 0)
+    
   //   // Create proposal for a film by studio
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate([0], this.vabToken.address, {from: this.studio1.address})
-  //   console.log('=======test-0', this.studio1.address)
-  //   const studioFilmId = await this.VabbleDAO.userFilmProposalIds(this.studio1.address, getBigNumber(0, 0))
-  //   console.log('=======test-1', studioFilmId)
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, this.USDC.address, {from: this.studio1.address})
   //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     studioFilmId, 
-  //     nftRight, 
+  //     getBigNumber(1, 0), 
+  //     title,
+  //     desc,
   //     sharePercents, 
-  //     choiceAuditor, 
-  //     studioPayees, 
+  //     studioPayees,  
   //     raiseAmount, 
   //     fundPeriod, 
   //     fundType,
   //     {from: this.studio1.address}
   //   )
-  //   console.log('=======test-2')
 
-  //   // Create proposal for a film by studio
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate([0], this.vabToken.address, {from: this.studio1.address})
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, this.USDC.address, {from: this.studio1.address})
   //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     2, 
-  //     nftRight, 
+  //     getBigNumber(2, 0), 
+  //     title,
+  //     desc,
   //     sharePercents, 
-  //     choiceAuditor, 
-  //     studioPayees, 
+  //     studioPayees,  
   //     raiseAmount, 
   //     fundPeriod, 
   //     fundType,
@@ -261,12 +317,64 @@ describe('FactoryFilmNFT', function () {
   //   expect(mInfo.feePercent_).to.be.equal(getBigNumber(2, 8))
   //   expect(mInfo.revenuePercent_).to.be.equal(getBigNumber(1, 8))
     
-  //   console.log('=====mintInfo::', mInfo.studio_, mInfo.nft_)
+  //     //===================== Vote to film
+  //   const proposalIds = [1, 2]
+  //   const voteInfos = [1, 1];
+    
+  //   // Initialize Vote contract
+  //   await this.Vote.connect(this.auditor).initializeVote(
+  //     this.VabbleDAO.address,
+  //     this.StakingPool.address,
+  //     this.Property.address,
+  //   )
+    
+  //   // Initialize StakingPool
+  //   await this.StakingPool.connect(this.auditor).initializePool(
+  //     this.VabbleDAO.address,
+  //     this.VabbleFunding.address,
+  //     this.Property.address,
+  //     this.Vote.address,
+  //     {from: this.auditor.address}
+  //   )
+    
+  //   // Staking from customer1,2,3 for vote
+  //   const stakeAmount = getBigNumber(200)
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+  //   await this.StakingPool.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
+  //   await this.StakingPool.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
+       
+  //   // Deposit to contract(VAB amount : 100, 200, 300)
+  //   await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(1000), {from: this.customer1.address})
+  //   await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(2000), {from: this.customer2.address})
+  //   await this.StakingPool.connect(this.customer3).depositVAB(getBigNumber(3000), {from: this.customer3.address})
+    
+  //   await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address}) //1,1,2,3
+  //   await this.Vote.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address}) //1,1,2,3
+  //   await this.Vote.connect(this.customer3).voteToFilms(proposalIds, voteInfos, {from: this.customer3.address}) //1,1,2,3   
+    
+  //   // => Increase next block timestamp for only testing
+  //   const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+
+  //   // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+  //   await this.Property.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
+
+  //   const approveData = [getBigNumber(1, 0), getBigNumber(2, 0)]
+  //   await this.Vote.connect(this.studio1).approveFilms(approveData, {from: this.studio1.address})
+
+  //   const film1_status = await this.VabbleDAO.getFilmStatus(getBigNumber(1,0))
+  //   const film2_status = await this.VabbleDAO.getFilmStatus(getBigNumber(2,0))
+  //   console.log('=====test::', film1_status, film2_status)
+  //   //================= vote end =========
+
+  //   const ethVal = ethers.utils.parseEther('1')
   //   const ttx = await this.FilmNFT.connect(this.customer1).mint(
-  //     getBigNumber(1,0), this.auditor.address, this.vabToken.address, {from: this.customer1.address}
+  //     getBigNumber(1,0), this.auditor.address, CONFIG.addressZero, {from: this.customer1.address, value: ethVal}
   //   )    
   //   this.events = (await ttx.wait()).events
-  //   const argss = this.events[9].args;
+  //   const argss = this.events[11].args;
   //   console.log('====argss::', argss.nftContract, argss.tokenId)
   //   expect(mInfo.nft_).to.be.equal(argss.nftContract)
 
@@ -296,33 +404,35 @@ describe('FactoryFilmNFT', function () {
 
     await this.TierNFT.connect(this.auditor).setBaseURI('https://ipfs.io/ipfs/', {from: this.auditor.address})
 
-    const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
+    const title = 'film title - 1'
+    const desc = 'film description - 1'
     const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-    const choiceAuditor = [this.auditor.address]
     const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
     const raiseAmount = getBigNumber(150, 6)
     const fundPeriod = getBigNumber(20, 0)
     const fundType = getBigNumber(3, 0)
     
     // Create proposal for a film by studio
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate([0, 0], this.vabToken.address, {from: this.studio1.address})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, this.USDC.address, {from: this.studio1.address})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(1, 0), 
-      nftRight, 
+      title,
+      desc,
       sharePercents, 
-      choiceAuditor, 
-      studioPayees, 
+      studioPayees,  
       raiseAmount, 
       fundPeriod, 
       fundType,
       {from: this.studio1.address}
     )
+
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, this.USDC.address, {from: this.studio1.address})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(2, 0), 
-      nftRight, 
+      title,
+      desc,
       sharePercents, 
-      choiceAuditor, 
-      studioPayees, 
+      studioPayees,  
       raiseAmount, 
       fundPeriod, 
       fundType,
@@ -382,15 +492,16 @@ describe('FactoryFilmNFT', function () {
     //================= vote end =========
 
     const depositAmount = getBigNumber(100000)
-    const depositAmount1 = getBigNumber(10000)
+    const ethVal = ethers.utils.parseEther('1')
     await this.VabbleFunding.connect(this.customer1).depositToFilm(
-      proposalIds[0], depositAmount1, this.vabToken.address, {from: this.customer1.address}
+      proposalIds[0], ethVal, CONFIG.addressZero, {from: this.customer1.address, value: ethVal}
     )
     await this.VabbleFunding.connect(this.customer2).depositToFilm(
       proposalIds[0], depositAmount, this.vabToken.address, {from: this.customer2.address}
     )
+    const depositAmount1 = getBigNumber(1000, 6)
     await this.VabbleFunding.connect(this.customer3).depositToFilm(
-      proposalIds[0], depositAmount, this.vabToken.address, {from: this.customer3.address}
+      proposalIds[0], depositAmount1, this.USDC.address, {from: this.customer3.address}
     )
 
     // => Increase next block timestamp for only testing

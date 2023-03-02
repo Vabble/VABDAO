@@ -14,7 +14,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     this.usdc = CONFIG.polygon.usdcAdress
   }
 
-  await deploy('Ownablee', {
+  this.Vote = await deployments.get('Vote');
+
+  const deployContract = await deploy('Ownablee', {
     from: deployer,
     args: [
       CONFIG.daoWalletAddress,
@@ -25,6 +27,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     deterministicDeployment: false,
     skipIfAlreadyDeployed: false,
   });
+
+  const contract = await ethers.getContractAt('Ownablee', deployContract.address)
+  await (await contract.setupVote(this.Vote.address)).wait();
 };
 
 module.exports.id = 'deploy_ownablee'

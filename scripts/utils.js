@@ -77,9 +77,9 @@ const TOKEN_TYPE = {
 
 const STATUS = {
   LISTED: 0,
-  APPROVED_LISTING: 1,
-  APPROVED_FUNDING: 2,
-  APPROVED_WITHOUTVOTE: 3
+  UPDATED: 1,
+  APPROVED_LISTING: 2,
+  APPROVED_FUNDING: 3,
 };
 
 ///=================== start==

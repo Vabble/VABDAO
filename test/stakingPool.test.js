@@ -267,7 +267,6 @@ describe('StakingPool', function () {
 
     const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
     const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-    const choiceAuditor = [this.auditor.address]
     const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
     const raiseAmount = getBigNumber(150, 6)
     const fundPeriod = getBigNumber(20, 0)
@@ -279,7 +278,6 @@ describe('StakingPool', function () {
       getBigNumber(1, 0), 
       nftRight, 
       sharePercents, 
-      choiceAuditor, 
       studioPayees, 
       raiseAmount, 
       fundPeriod, 
@@ -290,7 +288,6 @@ describe('StakingPool', function () {
       getBigNumber(2, 0), 
       nftRight, 
       sharePercents, 
-      choiceAuditor, 
       studioPayees, 
       raiseAmount, 
       fundPeriod, 
@@ -415,7 +412,6 @@ describe('StakingPool', function () {
   //   // Create proposal for 2 films by studio    
   //   const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
   //   const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-  //   const choiceAuditor = [this.auditor.address]
   //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
   //   const raiseAmount = getBigNumber(150, 6)
   //   const fundPeriod = getBigNumber(20, 0)
@@ -427,7 +423,6 @@ describe('StakingPool', function () {
   //     getBigNumber(1, 0), 
   //     nftRight, 
   //     sharePercents, 
-  //     choiceAuditor, 
   //     studioPayees, 
   //     raiseAmount, 
   //     fundPeriod, 
@@ -438,7 +433,6 @@ describe('StakingPool', function () {
   //     getBigNumber(2, 0), 
   //     nftRight, 
   //     sharePercents, 
-  //     choiceAuditor, 
   //     studioPayees, 
   //     raiseAmount, 
   //     fundPeriod, 
@@ -591,7 +585,6 @@ describe('StakingPool', function () {
   //   // Create proposal for 2 funding films by studio    
   //   const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
   //   const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-  //   const choiceAuditor = [this.auditor.address]
   //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
   //   const raiseAmount = getBigNumber(150, 6)
   //   const fundPeriod = getBigNumber(20, 0)
@@ -603,7 +596,6 @@ describe('StakingPool', function () {
   //     getBigNumber(1, 0), 
   //     nftRight, 
   //     sharePercents, 
-  //     choiceAuditor, 
   //     studioPayees, 
   //     raiseAmount, 
   //     fundPeriod, 
@@ -614,7 +606,6 @@ describe('StakingPool', function () {
   //     getBigNumber(2, 0), 
   //     nftRight, 
   //     sharePercents, 
-  //     choiceAuditor, 
   //     studioPayees, 
   //     raiseAmount, 
   //     fundPeriod, 
@@ -684,7 +675,6 @@ describe('StakingPool', function () {
   //   const {
   //     nftRight_,
   //     sharePercents_,
-  //     choiceAuditor_,
   //     studioPayees_,
   //     gatingType_,
   //     rentPrice_,

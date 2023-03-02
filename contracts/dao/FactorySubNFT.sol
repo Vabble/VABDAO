@@ -104,7 +104,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256 _subPeriod, 
         uint256 _category
     ) public payable nonReentrant {
-        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN()) {
+        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() || _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "mint: not allowed asset"); 
         }
         require(subNFTAddress != address(0), "mint: not deploy yet");        

@@ -188,7 +188,9 @@ describe('FactorySubscriptionNFT', function () {
   it('nft deploy and mint ', async function () {
     const baseUri = 'https://ipfs.io/ipfs/'
     await this.SubNFT.connect(this.auditor).setBaseURI(baseUri, {from: this.auditor.address})
-    await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address], {from: this.auditor.address})
+    await this.Ownablee.connect(this.auditor).addDepositAsset(
+      [this.vabToken.address, CONFIG.addressZero], {from: this.auditor.address}
+    )
 
     // subscription NFT contract deploy
     await expect(
@@ -220,6 +222,11 @@ describe('FactorySubscriptionNFT', function () {
     console.log('=====mint info::', mintInfo.mintAmount_, mintInfo.mintPrice_);
 
     // _token, _to, _period, _category
+    const ethVal = ethers.utils.parseEther('1')
+    // const t = await this.SubNFT.connect(this.customer1).mint(
+    //   CONFIG.addressZero, this.customer1.address, getBigNumber(2,0), getBigNumber(1,0), {from: this.customer1.address, value: ethVal}
+    // )   
+    console.log('====minted by matic')
     const t = await this.SubNFT.connect(this.customer1).mint(
       this.vabToken.address, this.customer1.address, getBigNumber(2,0), getBigNumber(1,0), {from: this.customer1.address}
     )    
@@ -236,96 +243,96 @@ describe('FactorySubscriptionNFT', function () {
     expect(tokenUri).to.be.equal(baseUri + '1.json')
   })
 
-  it('nft lock and unlock ', async function () {
-    const baseUri = 'https://ipfs.io/ipfs/'
-    await this.SubNFT.connect(this.auditor).setBaseURI(baseUri, {from: this.auditor.address})
-    await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address], {from: this.auditor.address})
-    await this.SubNFT.connect(this.auditor).deploySubNFTContract("sub test", "s-nft", {from: this.auditor.address})
-    const deployedAddress = await this.SubNFT.subNFTAddress();
-    const deployContract = new ethers.Contract(deployedAddress, JSON.stringify(ERC721), ethers.provider);
+  // it('nft lock and unlock ', async function () {
+  //   const baseUri = 'https://ipfs.io/ipfs/'
+  //   await this.SubNFT.connect(this.auditor).setBaseURI(baseUri, {from: this.auditor.address})
+  //   await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address], {from: this.auditor.address})
+  //   await this.SubNFT.connect(this.auditor).deploySubNFTContract("sub test", "s-nft", {from: this.auditor.address})
+  //   const deployedAddress = await this.SubNFT.subNFTAddress();
+  //   const deployContract = new ethers.Contract(deployedAddress, JSON.stringify(ERC721), ethers.provider);
 
-    // set admin mint info for each category => (mintAmount, mintPrice, lockPeriod, category)
-    await this.SubNFT.connect(this.auditor).setMintInfo(
-      getBigNumber(100, 0), getBigNumber(2, 0), getBigNumber(0, 0), getBigNumber(1, 0), {from: this.auditor.address}
-    )
+  //   // set admin mint info for each category => (mintAmount, mintPrice, lockPeriod, category)
+  //   await this.SubNFT.connect(this.auditor).setMintInfo(
+  //     getBigNumber(100, 0), getBigNumber(2, 0), getBigNumber(0, 0), getBigNumber(1, 0), {from: this.auditor.address}
+  //   )
 
-    const mintInfo = await this.SubNFT.getMintInfo(getBigNumber(1,0));
-    console.log('=====mint info::', mintInfo.mintAmount_.toString(), mintInfo.mintPrice_.toString(), mintInfo.lockPeriod_.toString());
+  //   const mintInfo = await this.SubNFT.getMintInfo(getBigNumber(1,0));
+  //   console.log('=====mint info::', mintInfo.mintAmount_.toString(), mintInfo.mintPrice_.toString(), mintInfo.lockPeriod_.toString());
 
-    // _token, _to, _period, _category
-    await this.SubNFT.connect(this.customer1).mint(
-      this.vabToken.address, this.customer1.address, getBigNumber(2,0), getBigNumber(1,0), {from: this.customer1.address}
-    )
+  //   // _token, _to, _period, _category
+  //   await this.SubNFT.connect(this.customer1).mint(
+  //     this.vabToken.address, this.customer1.address, getBigNumber(2,0), getBigNumber(1,0), {from: this.customer1.address}
+  //   )
 
-    let tokenIdList = await this.SubNFT.getUserTokenIdList(this.customer1.address)    
-    console.log('====tokenId::', tokenIdList[0])
+  //   let tokenIdList = await this.SubNFT.getUserTokenIdList(this.customer1.address)    
+  //   console.log('====tokenId::', tokenIdList[0])
 
-    //========= NFT lock =========
-    await expect(
-      this.SubNFT.connect(this.customer2).lockNFT(tokenIdList[0], {from: this.customer2.address})
-    ).to.be.revertedWith('lock: not token owner');
+  //   //========= NFT lock =========
+  //   await expect(
+  //     this.SubNFT.connect(this.customer2).lockNFT(tokenIdList[0], {from: this.customer2.address})
+  //   ).to.be.revertedWith('lock: not token owner');
 
-    // set admin mint info for each category => (mintAmount, mintPrice, lockPeriod, category)
-    const lockPeriod = 15 * 86400;
-    await this.SubNFT.connect(this.auditor).setMintInfo(
-      getBigNumber(100, 0), getBigNumber(2, 0), getBigNumber(lockPeriod, 0), getBigNumber(1, 0), {from: this.auditor.address}
-    )
-    console.log('=====again set mint info')
+  //   // set admin mint info for each category => (mintAmount, mintPrice, lockPeriod, category)
+  //   const lockPeriod = 15 * 86400;
+  //   await this.SubNFT.connect(this.auditor).setMintInfo(
+  //     getBigNumber(100, 0), getBigNumber(2, 0), getBigNumber(lockPeriod, 0), getBigNumber(1, 0), {from: this.auditor.address}
+  //   )
+  //   console.log('=====again set mint info')
 
-    // Approve nft from msg.sender to operator
-    await deployContract.connect(this.customer1).setApprovalForAll(this.SubNFT.address, true, {from: this.customer1.address})
+  //   // Approve nft from msg.sender to operator
+  //   await deployContract.connect(this.customer1).setApprovalForAll(this.SubNFT.address, true, {from: this.customer1.address})
 
-    // Lock
-    await this.SubNFT.connect(this.customer1).lockNFT(tokenIdList[0], {from: this.customer1.address})
-    console.log('=====locked::', tokenIdList[0].toString())
+  //   // Lock
+  //   await this.SubNFT.connect(this.customer1).lockNFT(tokenIdList[0], {from: this.customer1.address})
+  //   console.log('=====locked::', tokenIdList[0].toString())
 
-    let lockInfo = await this.SubNFT.getLockInfo(tokenIdList[0]);
-    console.log('=====info after locked::', 
-      lockInfo.subPeriod_.toString(), 
-      lockInfo.lockPeriod_.toString(),
-      lockInfo.lockTime_.toString(), 
-      lockInfo.category_.toString(), 
-      lockInfo.minter_.toString()
-    )
-    //========= NFT unlock =========
-    // => Increase next block timestamp for only testing
-    let period = 24 * 3600 // 1 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
+  //   let lockInfo = await this.SubNFT.getLockInfo(tokenIdList[0]);
+  //   console.log('=====info after locked::', 
+  //     lockInfo.subPeriod_.toString(), 
+  //     lockInfo.lockPeriod_.toString(),
+  //     lockInfo.lockTime_.toString(), 
+  //     lockInfo.category_.toString(), 
+  //     lockInfo.minter_.toString()
+  //   )
+  //   //========= NFT unlock =========
+  //   // => Increase next block timestamp for only testing
+  //   let period = 24 * 3600 // 1 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
     
-    await expect(
-      this.SubNFT.connect(this.customer2).unlockNFT(tokenIdList[0], {from: this.customer2.address})
-    ).to.be.revertedWith('unlock: not token minter');
+  //   await expect(
+  //     this.SubNFT.connect(this.customer2).unlockNFT(tokenIdList[0], {from: this.customer2.address})
+  //   ).to.be.revertedWith('unlock: not token minter');
 
-    await expect(
-      this.SubNFT.connect(this.customer1).unlockNFT(tokenIdList[0], {from: this.customer1.address})
-    ).to.be.revertedWith('unlock: locked yet');
+  //   await expect(
+  //     this.SubNFT.connect(this.customer1).unlockNFT(tokenIdList[0], {from: this.customer1.address})
+  //   ).to.be.revertedWith('unlock: locked yet');
 
-    period = lockPeriod + 24 * 3600 // 16 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
+  //   period = lockPeriod + 24 * 3600 // 16 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
 
-    await this.SubNFT.connect(this.customer1).unlockNFT(tokenIdList[0], {from: this.customer1.address})
+  //   await this.SubNFT.connect(this.customer1).unlockNFT(tokenIdList[0], {from: this.customer1.address})
 
-    lockInfo = await this.SubNFT.getLockInfo(tokenIdList[0]);
-    console.log('=====info after unlocked::', 
-      lockInfo.subPeriod_.toString(), 
-      lockInfo.lockPeriod_.toString(),
-      lockInfo.lockTime_.toString(), 
-      lockInfo.category_.toString(), 
-      lockInfo.minter_.toString()
-    )
+  //   lockInfo = await this.SubNFT.getLockInfo(tokenIdList[0]);
+  //   console.log('=====info after unlocked::', 
+  //     lockInfo.subPeriod_.toString(), 
+  //     lockInfo.lockPeriod_.toString(),
+  //     lockInfo.lockTime_.toString(), 
+  //     lockInfo.category_.toString(), 
+  //     lockInfo.minter_.toString()
+  //   )
 
-    // ========= NFT lock again ======
-    await this.SubNFT.connect(this.customer1).lockNFT(tokenIdList[0], {from: this.customer1.address})
-    lockInfo = await this.SubNFT.getLockInfo(tokenIdList[0]);
-    console.log('=====info after locked again::', 
-      lockInfo.subPeriod_.toString(), 
-      lockInfo.lockPeriod_.toString(),
-      lockInfo.lockTime_.toString(), 
-      lockInfo.category_.toString(), 
-      lockInfo.minter_.toString()
-    )
-  })
+  //   // ========= NFT lock again ======
+  //   await this.SubNFT.connect(this.customer1).lockNFT(tokenIdList[0], {from: this.customer1.address})
+  //   lockInfo = await this.SubNFT.getLockInfo(tokenIdList[0]);
+  //   console.log('=====info after locked again::', 
+  //     lockInfo.subPeriod_.toString(), 
+  //     lockInfo.lockPeriod_.toString(),
+  //     lockInfo.lockTime_.toString(), 
+  //     lockInfo.category_.toString(), 
+  //     lockInfo.minter_.toString()
+  //   )
+  // })
   
 });

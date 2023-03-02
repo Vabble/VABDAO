@@ -96,7 +96,6 @@ There are two types of NFTs.
           - Two ways a film can be funded:
             - 1. Community Vote.
             - 2. No Vote
-              - If the studio decides to add the film to funding without a vote, this will still be approved, but will be with a different status APPROVED_WITHOUTVOTE
               - An additional fee of double the price of the proposal. Example: $100 worth of VAB for a voted proposal $200 of VAB for a non-voted proposal (Gets paid back into the rewards pool).
         - If the vote is for simply listing a film on the platform without needing funding and passes with majority vote by film board members and stakers, the status of the film can be listed in the smart contract.
 

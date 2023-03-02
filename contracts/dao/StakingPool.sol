@@ -11,7 +11,6 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFunding.sol";
-import "hardhat/console.sol";
 
 contract StakingPool is ReentrancyGuard {
     

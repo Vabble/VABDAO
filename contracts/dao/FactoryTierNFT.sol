@@ -122,6 +122,7 @@ contract FactoryTierNFT {
     /// @notice Should be called //before fundProcess() of VabbleDAO contract
     function mintTierNft(uint256 _filmId) public {        
         require(tierCount[_filmId] > 0, "mintTier: not set tier");
+        require(IVabbleDAO(VABBLE_DAO).isEnabledClaimer(_filmId), "deployTier: not allow to mint tierNft");
 
         uint256 tier = 0;
         uint256 fund = IVabbleFunding(FUNDING).getUserFundAmountPerFilm(msg.sender, _filmId);

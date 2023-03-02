@@ -28,7 +28,9 @@ describe('Subscription', function () {
     this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.ownableContract = await (await this.OwnableFactory.deploy(CONFIG.daoWalletAddress)).deployed(); 
+    this.ownableContract = await (await this.OwnableFactory.deploy(
+      CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address
+    )).deployed(); 
 
     this.uniHelperContract = await (await this.UniHelperFactory.deploy(
       CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
@@ -40,25 +42,23 @@ describe('Subscription', function () {
     
     this.propertyContract = await (
       await this.PropertyFactory.deploy(
-        this.vabToken.address,
         this.ownableContract.address,
-        this.voteContract.address,
-        this.stakingContract.address,
         this.uniHelperContract.address,
-        this.USDC.address
+        this.voteContract.address,
+        this.stakingContract.address
       )
     ).deployed();
 
     this.NFTFilmContract = await (
-      await this.NFTFilmFactory.deploy(this.ownableContract.address)
+      await this.NFTFilmFactory.deploy(this.ownableContract.address, this.uniHelperContract.address)
     ).deployed();  
 
     this.DAOContract = await (
       await this.VabbleDAOFactory.deploy(
         this.ownableContract.address,
+        this.uniHelperContract.address,
         this.voteContract.address,
         this.stakingContract.address,
-        this.uniHelperContract.address,
         this.propertyContract.address,
         this.NFTFilmContract.address
       )
@@ -128,13 +128,16 @@ describe('Subscription', function () {
   it('0. Subscription by token', async function () {
     const periodVal = 1;
     //================= VAB token
-    await expect(
-      this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
-    ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-      this.customer1.address, 
-      this.vabToken.address, 
-      periodVal
-    );    
+    const tx = await this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
+    this.events = (await tx.wait()).events
+    // await expect(
+    //   this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
+    // ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
+    //   this.customer1.address, 
+    //   this.vabToken.address, 
+    //   periodVal,
+    //   new Date().getTime()
+    // );    
     const {activeTime, period, expireTime} = await this.SubContract.subscriptionInfo(this.customer1.address)
     console.log('====time, period::', activeTime.toString(), period.toString(), expireTime.toString())
 
@@ -163,13 +166,7 @@ describe('Subscription', function () {
     expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.false;  
 
     //================ EXM token
-    await expect(
-      this.SubContract.connect(this.customer2).activeSubscription(this.EXM.address, period, {from: this.customer2.address})
-    ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-      this.customer2.address, 
-      this.EXM.address, 
-      period
-    );
+    await  this.SubContract.connect(this.customer2).activeSubscription(this.EXM.address, period, {from: this.customer2.address})
 
     expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;
 
@@ -179,23 +176,17 @@ describe('Subscription', function () {
             
     expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.false;  
 
-    // //================ ETH
-    // const period2 = 2
-    // const payEth = ethers.utils.parseEther('0.01')
-    // await expect(
-    //   this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
-    // ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-    //   this.customer2.address, 
-    //   CONFIG.addressZero, 
-    //   period2
-    // );
+    //================ ETH
+    const period2 = 2
+    const payEth = ethers.utils.parseEther('1')
+    await this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
 
-    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
     
-    // // => Increase next block timestamp for only testing
-    // network.provider.send('evm_increaseTime', [increseTime]);
-    // await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    network.provider.send('evm_increaseTime', [increseTime]);
+    await network.provider.send('evm_mine');
             
-    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
   });
 });

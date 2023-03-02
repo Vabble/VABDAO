@@ -69,7 +69,7 @@ contract VabbleFunding is ReentrancyGuard {
         uint256 _amount, 
         address _token
     ) external payable {
-        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN()) {
+        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() || _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
         }
         require(msg.sender != address(0) && _amount > 0, "depositToFilm: Zero value");
@@ -87,7 +87,7 @@ contract VabbleFunding is ReentrancyGuard {
         if(_token != IOwnablee(OWNABLE).USDC_TOKEN()) {
             fundAmount = IUniHelper(UNI_HELPER).expectedAmount(_amount, _token, IOwnablee(OWNABLE).USDC_TOKEN());    
         }
-        uint256 amountOfUser = userFundAmountPerFilm + fundAmount;    
+        uint256 amountOfUser = userFundAmountPerFilm + fundAmount;  
         require(__checkMinMaxAmount(amountOfUser), "depositToFilm: Invalid amount");
 
         if(userFundAmountPerFilm == 0) {
@@ -101,11 +101,10 @@ contract VabbleFunding is ReentrancyGuard {
             if (msg.value > _amount) {
                 Helper.safeTransferETH(msg.sender, msg.value - _amount);
             }
+        } else {
+            Helper.safeTransferFrom(_token, msg.sender, address(this), _amount);
         }
         
-        if(_token != address(0)) {
-            Helper.safeTransferFrom(_token, msg.sender, address(this), _amount);
-        }            
         __assignToken(_filmId, _token, _amount);
 
         emit DepositedTokenToFilm(msg.sender, _token, _amount, _filmId, block.timestamp);
@@ -164,13 +163,17 @@ contract VabbleFunding is ReentrancyGuard {
             if(vabToken == assetArr[i].token) {
                 rewardSumAmount += rewardAmount;
             } else {
-                if(IERC20(assetArr[i].token).allowance(address(this), UNI_HELPER) == 0) {
-                    Helper.safeApprove(assetArr[i].token, UNI_HELPER, IERC20(assetArr[i].token).totalSupply());
-                }
+                if(assetArr[i].token == address(0)) {
+                    Helper.safeTransferETH(UNI_HELPER, rewardAmount);
+                } else {
+                    if(IERC20(assetArr[i].token).allowance(address(this), UNI_HELPER) == 0) {
+                        Helper.safeApprove(assetArr[i].token, UNI_HELPER, IERC20(assetArr[i].token).totalSupply());
+                    }
+                }                
                 bytes memory swapArgs = abi.encode(rewardAmount, assetArr[i].token, vabToken);
                 rewardSumAmount += IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             }
-            Helper.safeTransfer(assetArr[i].token, msg.sender, (assetArr[i].amount - rewardAmount));
+            Helper.safeTransferAsset(assetArr[i].token, msg.sender, (assetArr[i].amount - rewardAmount));
             // assetArr[i].amount = 0;
         }
 
