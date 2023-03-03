@@ -16,7 +16,7 @@ import "../interfaces/IFactoryFilmNFT.sol";
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 
-    event FilmProposalCreated(uint256 filmId, uint256 noVote, address studio, uint256 createTime);
+    event FilmProposalCreated(uint256 filmId, uint256 noVote, uint256 fundType, address studio, uint256 createTime);
     event FilmProposalUpdated(uint256 filmId, uint256 fundType, address studio, uint256 updateTime);     
     event FilmApproved(uint256 filmId, uint256 fundType, uint256 approveTime);
     event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime);
@@ -112,7 +112,7 @@ contract VabbleDAO is ReentrancyGuard {
         proposalFilmIds.push(filmId);
         userFilmProposalIds[msg.sender].push(filmId);
 
-        emit FilmProposalCreated(filmId, _noVote, msg.sender, block.timestamp);
+        emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender, block.timestamp);
     }
     function proposalFilmUpdate(
         uint256 _filmId, 
