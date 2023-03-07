@@ -13,9 +13,7 @@ interface IVabbleDAO {
 
     function getFilmProposalTime(uint256 _filmId) external view returns (uint256 cTime_, uint256 aTime_);
 
-    function setFilmProposalApproveTime(uint256 _filmId, uint256 _time) external;
-
-    function approveFilm(uint256 _filmId) external;
+    function approveFilmByVote(uint256 _filmId, uint256 _flag) external;
 
     function isEnabledClaimer(uint256 _filmId) external view returns (bool enable_);
 }

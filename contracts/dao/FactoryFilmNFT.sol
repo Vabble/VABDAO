@@ -129,6 +129,15 @@ contract FactoryFilmNFT {
     ) public {        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "deployNFT: not film owner");
 
+        (, uint256 fundPeriod, uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
+        require(fundType == 2 || fundType == 3, "deployNFT: not fund type by NFT");
+
+        Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
+        require(status == Helper.Status.APPROVED_FUNDING, "deployNFT: filmId not approved for funding");
+
+        (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
+        require(fundPeriod >= block.timestamp - pApproveTime, "deployNFT: passed funding period"); 
+
         VabbleNFT t = new VabbleNFT(baseUri, _name, _symbol);
         filmNFTContract[_filmId] = t;
 
@@ -168,19 +177,6 @@ contract FactoryFilmNFT {
         }
         require(mintInfo[_filmId].maxMintAmount > 0, "mint: no mint info");     
         require(mintInfo[_filmId].maxMintAmount > getTotalSupply(_filmId), "mint: exceed mint amount");        
-
-        (, uint256 fundPeriod, uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
-        if(fundType > 0) { // case of funding film                    
-            require(fundType == 2 || fundType == 3, "mint: not fund type by NFT");
-
-            Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
-            require(status == Helper.Status.APPROVED_FUNDING, "mint: filmId not approved for funding");
-
-            (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
-            require(fundPeriod >= block.timestamp - pApproveTime, "mint: passed funding period"); 
-
-            filmFundRaiseByNFT[_filmId] += mintInfo[_filmId].price;
-        }
         
         __handleMintPay(_filmId, _payToken);    
 

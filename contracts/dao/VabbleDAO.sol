@@ -17,8 +17,7 @@ contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 
     event FilmProposalCreated(uint256 filmId, uint256 noVote, uint256 fundType, address studio, uint256 createTime);
-    event FilmProposalUpdated(uint256 filmId, uint256 fundType, address studio, uint256 updateTime);     
-    event FilmApproved(uint256 filmId, uint256 fundType, uint256 approveTime);
+    event FilmProposalUpdated(uint256 filmId, uint256 fundType, address studio, uint256 updateTime);  
     event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime);
     event FilmFundPeriodUpdated(uint256 filmId, address studio, uint256 fundPeriod, uint256 updateTime);
     
@@ -205,19 +204,23 @@ contract VabbleDAO is ReentrancyGuard {
     } 
 
     /// @notice Approve a film for funding/listing from vote contract
-    function approveFilm(uint256 _filmId) external onlyVote {
-        require(_filmId > 0, "ApproveFilm: Invalid filmId"); 
+    function approveFilmByVote(uint256 _filmId, uint256 _flag) external onlyVote {
+        require(_filmId > 0, "approveFilmByVote: Invalid filmId"); 
+
+        filmInfo[_filmId].pApproveTime = block.timestamp;
 
         (, , uint256 fundType) = getFilmFund(_filmId);
-        if(fundType > 0) { // in case of fund film
-            filmInfo[_filmId].status = Helper.Status.APPROVED_FUNDING;
-            approvedFundingFilmIds.push(_filmId);
+        if(_flag == 0) {
+            if(fundType > 0) { // in case of fund film
+                filmInfo[_filmId].status = Helper.Status.APPROVED_FUNDING;
+                approvedFundingFilmIds.push(_filmId);
+            } else {
+                filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;    
+                approvedListingFilmIds.push(_filmId);
+            }        
         } else {
-            filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;    
-            approvedListingFilmIds.push(_filmId);
-        }        
-
-        emit FilmApproved(_filmId, fundType, block.timestamp);
+            filmInfo[_filmId].status = Helper.Status.REJECTED;
+        } 
     }
 
     /// @notice onlyStudio update film fund period
@@ -251,13 +254,13 @@ contract VabbleDAO is ReentrancyGuard {
         address _user, 
         uint256 _filmId, 
         uint256 _watchPercent,
-        uint256 _rentPrice
+        uint256 _rentPrice  // vab amount from offchain
     ) private {          
         Film memory fInfo = filmInfo[_filmId];
         require(fInfo.status == Helper.Status.APPROVED_LISTING, "setFinalFilm: bad film status");
                   
         // Transfer VAB to payees based on share(%) and watch(%)
-        uint256 payout = __getPayoutFor(_rentPrice, _watchPercent);
+        uint256 payout = _rentPrice * _watchPercent / 1e10;
         uint256 userVAB = IStakingPool(STAKING_POOL).getRentVABAmount(_user);
         require(payout > 0 && userVAB >= payout, "setFinalFilm: insufficient balance");
 
@@ -291,15 +294,6 @@ contract VabbleDAO is ReentrancyGuard {
 
         userFinalFilmIds[_user].push(_filmId);
     }     
-
-    /// @dev Get payout(VAB) amount based on watched percent for a film
-    function __getPayoutFor(uint256 _rentPrice, uint256 _percent) private view returns(uint256) {
-        uint256 usdcAmount = _rentPrice * _percent / 1e10;
-        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
-
-        return IUniHelper(UNI_HELPER).expectedAmount(usdcAmount, usdcToken, vabToken);
-    }
 
     /// @dev For transferring to Studio, Get share amount based on share percent
     function __getShareAmount(
@@ -351,16 +345,11 @@ contract VabbleDAO is ReentrancyGuard {
         filmInfo[_filmId].enableClaimer = _enable;
     }
 
-    /// @notice Set film proposal approved time based on Id
-    function setFilmProposalApproveTime(uint256 _filmId, uint256 _time) external onlyVote {
-        filmInfo[_filmId].pApproveTime = _time;
-    }
-
     /// @notice Get film Ids
     function getFilmIds(uint256 _flag) external view returns (uint256[] memory) {        
         if(_flag == 1) return proposalFilmIds;
         else if(_flag == 2) return approvedListingFilmIds;        
-        else if(_flag == 3) return approvedFundingFilmIds;
+        else return approvedFundingFilmIds;
     }
 
     function getUserFilmIds(uint256 _flag, address _user) external view returns (uint256[] memory) {        

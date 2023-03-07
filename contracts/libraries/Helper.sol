@@ -11,7 +11,8 @@ library Helper {
         LISTED,              // proposal created by studio
         UPDATED,             // proposal updated by studio
         APPROVED_LISTING,    // approved for listing by vote from VAB holders(staker)
-        APPROVED_FUNDING    // approved for funding by vote from VAB holders(staker)
+        APPROVED_FUNDING,    // approved for funding by vote from VAB holders(staker)
+        REJECTED             // rejected by vote from VAB holders(staker)
     }
 
     enum TokenType {

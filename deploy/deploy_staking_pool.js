@@ -4,10 +4,10 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
   this.Ownablee = await deployments.get('Ownablee');  
 
-  this.VabbleDAO = await deployments.get('VabbleDAO');
-  this.VabbleFunding = await deployments.get('VabbleFunding');
-  this.Property = await deployments.get('Property');
-  this.Vote = await deployments.get('Vote');
+  // this.VabbleDAO = await deployments.get('VabbleDAO');
+  // this.VabbleFunding = await deployments.get('VabbleFunding');
+  // this.Property = await deployments.get('Property');
+  // this.Vote = await deployments.get('Vote');
 
   const deployContract = await deploy('StakingPool', {
     from: deployer,
@@ -19,10 +19,10 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     skipIfAlreadyDeployed: false,
   });
 
-  const contract = await ethers.getContractAt('StakingPool', deployContract.address)
-  await (await contract.initializePool(
-    this.VabbleDAO.address, this.VabbleFunding.address, this.Property.address, this.Vote.address)
-  ).wait();
+  // const contract = await ethers.getContractAt('StakingPool', deployContract.address)
+  // await (await contract.initializePool(
+  //   this.VabbleDAO.address, this.VabbleFunding.address, this.Property.address, this.Vote.address)
+  // ).wait();
 
 };
 

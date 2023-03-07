@@ -26,7 +26,8 @@ contract Property is ReentrancyGuard {
         string description;    // proposal description
         uint256 createTime;    // proposal created timestamp
         uint256 approveTime;   // proposal approved timestamp
-        address creator;       // proposal creator address
+        address creator;       // proposal creator address        
+        Helper.Status status;  // status of proposal
     }
   
     address private immutable OWNABLE;        // Ownablee contract address 
@@ -124,12 +125,12 @@ contract Property is ReentrancyGuard {
         require(_staking != address(0), "stakingContract: Zero address");
         STAKING_POOL = _staking;       
 
-        filmVotePeriod = 10 days;   
-        boardVotePeriod = 14 days;
-        agentVotePeriod = 10 days;
+        filmVotePeriod = 10 minutes; // 10 days;   
+        boardVotePeriod = 10 minutes; // 14 days;
+        agentVotePeriod = 10 minutes; // 10 days;
         disputeGracePeriod = 30 days;  
-        propertyVotePeriod = 10 days;
-        rewardVotePeriod = 30 days;
+        propertyVotePeriod = 10 minutes; // 10 days;
+        rewardVotePeriod = 10 minutes; // 30 days;
         lockPeriod = 10 minutes; //30 days;
         maxAllowPeriod = 90 days;        
 
@@ -148,7 +149,7 @@ contract Property is ReentrancyGuard {
         maxDepositAmount = 5000 * (10**IERC20Metadata(usdcToken).decimals());  // amount in cash(usd dollar - $5000)
         availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 75M        
         subscriptionAmount = 1 * (10**IERC20Metadata(usdcToken).decimals());   // amount in cash(usd dollar - $1)
-        minVoteCount = 3;//5;
+        minVoteCount = 1;//5;
     }
 
     /// =================== proposals for replacing auditor ==============
@@ -171,6 +172,7 @@ contract Property is ReentrancyGuard {
         ap.description = _description;
         ap.createTime = block.timestamp;
         ap.creator = msg.sender;
+        ap.status = Helper.Status.LISTED;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
@@ -216,6 +218,7 @@ contract Property is ReentrancyGuard {
         rp.description = _description;
         rp.createTime = block.timestamp;
         rp.creator = msg.sender;
+        rp.status = Helper.Status.LISTED;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
@@ -263,6 +266,7 @@ contract Property is ReentrancyGuard {
         bp.description = _description;
         bp.createTime = block.timestamp;
         bp.creator = msg.sender;
+        bp.status = Helper.Status.LISTED;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
@@ -390,6 +394,7 @@ contract Property is ReentrancyGuard {
         pp.description = _description;
         pp.createTime = block.timestamp;
         pp.creator = msg.sender;
+        pp.status = Helper.Status.LISTED;
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
@@ -575,19 +580,31 @@ contract Property is ReentrancyGuard {
     function updatePropertyProposalApproveTime(
         uint256 _property, 
         uint256 _flag, 
-        uint256 _time
+        uint256 _approveStatus
     ) external onlyVote {
-        propertyProposalInfo[_flag][_property].approveTime = _time;
+        propertyProposalInfo[_flag][_property].approveTime = block.timestamp;
+        if(_approveStatus == 1) propertyProposalInfo[_flag][_property].status = Helper.Status.UPDATED;
+        else propertyProposalInfo[_flag][_property].status = Helper.Status.REJECTED;
     }
 
     function updateGovProposalApproveTime(
         address _member, 
         uint256 _flag, 
-        uint256 _time
+        uint256 _approveStatus
     ) external onlyVote {
-        if(_flag == 1) agentProposalInfo[_member].approveTime = _time;
-        else if(_flag == 2) boardProposalInfo[_member].approveTime = _time;
-        else if(_flag == 3) rewardProposalInfo[_member].approveTime = _time;
+        if(_flag == 1) {
+            agentProposalInfo[_member].approveTime = block.timestamp;
+            if(_approveStatus == 1) agentProposalInfo[_member].status = Helper.Status.UPDATED;
+            else agentProposalInfo[_member].status = Helper.Status.REJECTED;
+        } else if(_flag == 2) {
+            boardProposalInfo[_member].approveTime = block.timestamp;
+            if(_approveStatus == 1) boardProposalInfo[_member].status = Helper.Status.UPDATED;
+            else boardProposalInfo[_member].status = Helper.Status.REJECTED;
+        } else if(_flag == 3) {
+            rewardProposalInfo[_member].approveTime = block.timestamp;
+            if(_approveStatus == 1) rewardProposalInfo[_member].status = Helper.Status.UPDATED;
+            else rewardProposalInfo[_member].status = Helper.Status.REJECTED;
+        }
     }
     
     ///================ @dev Update the property value for only testing in the testnet

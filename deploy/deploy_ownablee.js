@@ -14,7 +14,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     this.usdc = CONFIG.polygon.usdcAdress
   }
 
-  this.Vote = await deployments.get('Vote');
+  // this.Vote = await deployments.get('Vote');
 
   const deployContract = await deploy('Ownablee', {
     from: deployer,
@@ -28,8 +28,8 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     skipIfAlreadyDeployed: false,
   });
 
-  const contract = await ethers.getContractAt('Ownablee', deployContract.address)
-  await (await contract.setupVote(this.Vote.address)).wait();
+  // const contract = await ethers.getContractAt('Ownablee', deployContract.address)
+  // await (await contract.setupVote(this.Vote.address)).wait();
 };
 
 module.exports.id = 'deploy_ownablee'
