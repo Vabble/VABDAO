@@ -172,7 +172,7 @@ contract FactoryFilmNFT {
         address _to, 
         address _payToken
     ) public payable {
-        if(_payToken != IOwnablee(OWNABLE).PAYOUT_TOKEN() || _payToken != address(0)) {
+        if(_payToken != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _payToken != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_payToken), "mint: not allowed asset");    
         }
         require(mintInfo[_filmId].maxMintAmount > 0, "mint: no mint info");     

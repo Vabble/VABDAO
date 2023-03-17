@@ -247,9 +247,11 @@ describe('VabbleDAO-test-1', function () {
     const raiseAmount = getBigNumber(150, 6)
     const fundPeriod = getBigNumber(20, 0)
     const fundType = getBigNumber(3, 0)
-    
+    const enableClaimer = getBigNumber(0, 0)
+    const enableClaimer1 = getBigNumber(1, 0)
+
     // Create proposal for a film by studio
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, this.USDC.address, {from: this.studio1.address})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.USDC.address, {from: this.studio1.address})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(1, 0), 
       title,
@@ -258,11 +260,11 @@ describe('VabbleDAO-test-1', function () {
       studioPayees,  
       raiseAmount, 
       fundPeriod, 
-      fundType,
+      enableClaimer1,
       {from: this.studio1.address}
     )
 
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, this.EXM.address, {from: this.studio1.address})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(1, 0, this.EXM.address, {from: this.studio1.address})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(2, 0), 
       title,
@@ -271,12 +273,12 @@ describe('VabbleDAO-test-1', function () {
       studioPayees,  
       raiseAmount, 
       fundPeriod, 
-      fundType,
+      enableClaimer,
       {from: this.studio1.address}
     )
     
     const ethVal = ethers.utils.parseEther('1')
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(2, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(3, 0), 
       title,
@@ -285,7 +287,7 @@ describe('VabbleDAO-test-1', function () {
       studioPayees,  
       raiseAmount, 
       fundPeriod, 
-      fundType,
+      enableClaimer,
       {from: this.studio1.address}
     )
 
@@ -294,6 +296,10 @@ describe('VabbleDAO-test-1', function () {
     // Get A proposal film information with id
     const proposalFilm = await this.VabbleDAO.filmInfo(getBigNumber(1, 0))
     console.log('=====proposalFilm::', proposalFilm)
+    const proposalFilmShare = await this.VabbleDAO.getFilmShare(getBigNumber(1, 0))
+    // console.log('=====proposalFilmShare::', proposalFilmShare)
+    const isEnableClaim = await this.VabbleDAO.isEnabledClaimer(getBigNumber(1, 0))
+    console.log('=====isEnableClaim::', isEnableClaim)
   });  
 })  
 

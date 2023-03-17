@@ -8,11 +8,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library Helper {
     enum Status {
-        LISTED,              // proposal created by studio
-        UPDATED,             // proposal updated by studio
-        APPROVED_LISTING,    // approved for listing by vote from VAB holders(staker)
-        APPROVED_FUNDING,    // approved for funding by vote from VAB holders(staker)
-        REJECTED             // rejected by vote from VAB holders(staker)
+        LISTED,              //0 proposal created by studio
+        UPDATED,             //1 proposal updated by studio
+        APPROVED_LISTING,    //2 approved for listing by vote from VAB holders(staker)
+        APPROVED_FUNDING,    //3 approved for funding by vote from VAB holders(staker)
+        REJECTED             //4 rejected by vote from VAB holders(staker)
     }
 
     enum TokenType {

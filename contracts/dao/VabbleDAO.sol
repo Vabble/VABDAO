@@ -123,6 +123,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _fundPeriod,
         uint256 _enableClaimer
     ) public {                
+        require(_studioPayees.length > 0, 'proposalUpdate: empty payees');
         require(_studioPayees.length == _sharePercents.length, 'proposalUpdate: invalid share percent');
 
         Film storage fInfo = filmInfo[_filmId];
@@ -324,6 +325,16 @@ contract VabbleDAO is ReentrancyGuard {
         raiseAmount_ = filmInfo[_filmId].raiseAmount;
         fundPeriod_ = filmInfo[_filmId].fundPeriod;
         fundType_ = filmInfo[_filmId].fundType;
+    }
+
+    /// @notice Get film fund info based on Id
+    function getFilmShare(uint256 _filmId) external view 
+    returns (
+        uint256[] memory sharePercents_, 
+        address[] memory studioPayees_
+    ) {
+        sharePercents_ = filmInfo[_filmId].sharePercents;
+        studioPayees_ = filmInfo[_filmId].studioPayees;
     }
 
     /// @notice Get film proposal created time based on Id

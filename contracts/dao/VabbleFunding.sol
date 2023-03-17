@@ -69,7 +69,7 @@ contract VabbleFunding is ReentrancyGuard {
         uint256 _amount, 
         address _token
     ) external payable {
-        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() || _token != address(0)) {
+        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
         }
         require(msg.sender != address(0) && _amount > 0, "depositToFilm: Zero value");
