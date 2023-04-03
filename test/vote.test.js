@@ -389,7 +389,14 @@ describe('Vote', function () {
     const proposalInfo = await this.propertyContract.propertyProposalInfo(flag, propertyVal)
     console.log('=====proposalInfo::', proposalInfo)
     
-
+    // TODO
+    const voteResult = await this.voteContract.propertyVoting(flag, propertyVal);
+    console.log('=====voteResult-0::', voteResult[0].toString())
+    console.log('=====voteResult-1::', voteResult[1].toString())
+    console.log('=====voteResult-2::', voteResult[2].toString())
+    console.log('=====voteResult-3::', voteResult[3].toString())
+    console.log('=====voteResult-4::', voteResult[4].toString())
+    console.log('=====voteResult-5::', voteResult[5].toString())
 
     // 2 =================== proposalProperty(rewardRate) ======================
     await this.stakingContract.connect(this.customer1).stakeVAB(getBigNumber(30000000), {from: this.customer1.address})

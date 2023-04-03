@@ -27,14 +27,18 @@ contract Vote is ReentrancyGuard {
         uint256 stakeAmount_1;  // staking amount of voter with status(yes)
         uint256 stakeAmount_2;  // staking amount of voter with status(no)
         uint256 stakeAmount_3;  // staking amount of voter with status(abstain)
-        uint256 voteCount;      // number of accumulated votes
+        uint256 voteCount_1;    // number of accumulated votes(yes)
+        uint256 voteCount_2;    // number of accumulated votes(no)
+        uint256 voteCount_3;    // number of accumulated votes(abstain)
     }
 
     struct AgentVoting {
         uint256 stakeAmount_1;    // staking amount of voter with status(yes)
         uint256 stakeAmount_2;    // staking amount of voter with status(no)
         uint256 stakeAmount_3;    // staking amount of voter with status(abstain)
-        uint256 voteCount;        // number of accumulated votes
+        uint256 voteCount_1;      // number of accumulated votes(yes)
+        uint256 voteCount_2;      // number of accumulated votes(no)
+        uint256 voteCount_3;      // number of accumulated votes(abstain)
         uint256 disputeStartTime; // dispute vote start time for an agent
         uint256 disputeVABAmount; // VAB voted dispute
     }
@@ -138,14 +142,15 @@ contract Vote is ReentrancyGuard {
         }
 
         Voting storage fv = filmVoting[_filmId];
-        fv.voteCount++;
-
         if(_voteInfo == 1) {
             fv.stakeAmount_1 += stakeAmount;   // Yes
+            fv.voteCount_1++;
         } else if(_voteInfo == 2) {
             fv.stakeAmount_2 += stakeAmount;   // No
+            fv.voteCount_2++;
         } else {
             fv.stakeAmount_3 += stakeAmount;   // Abstain
+            fv.voteCount_3++;
         }
 
         userFilmVoteCount[msg.sender] += 1;
@@ -191,16 +196,18 @@ contract Vote is ReentrancyGuard {
         
         (, , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         uint256 reason = 0;
-        if(
-            fv.voteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
-            fv.stakeAmount_1 > fv.stakeAmount_2 + fv.stakeAmount_3
-        ) {
+        uint256 totalVoteCount = fv.voteCount_1 + fv.voteCount_2 + fv.voteCount_3;
+        if(totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && fv.stakeAmount_1 > fv.stakeAmount_2) {
             reason = 0;
-        } else if(fv.voteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
-            reason = 1;
-        } else if(fv.stakeAmount_1 <= fv.stakeAmount_2 + fv.stakeAmount_3) {
-            reason = 2;
-        }     
+        } else {
+            if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
+                reason = 1;
+            } else if(fv.stakeAmount_1 <= fv.stakeAmount_2) {
+                reason = 2;
+            } else {
+                reason = 10;
+            } 
+        }  
 
         IVabbleDAO(VABBLE_DAO).approveFilmByVote(_filmId, reason);
 
@@ -220,10 +227,10 @@ contract Vote is ReentrancyGuard {
         require(pCreateTime > 0, "voteToAgent: no proposal");
 
         AgentVoting storage av = agentVoting[_agent];
-
+        uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2 + av.voteCount_3;
         if(_flag == 1) {
             require(_voteInfo == 2, "voteToAgent: invalid vote value");
-            require(av.voteCount > 0, "voteToAgent: no voter");          
+            require(totalVoteCount > 0, "voteToAgent: no voter");          
             require(!__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), pCreateTime), "agent vote period yet");  
 
             if(av.disputeVABAmount == 0) {
@@ -239,16 +246,18 @@ contract Vote is ReentrancyGuard {
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
         if(_voteInfo == 1) {
             av.stakeAmount_1 += stakeAmount;
+            av.voteCount_1++;
         } else if(_voteInfo == 2) {
             if(_flag == 1) av.disputeVABAmount += stakeAmount;
-            else av.stakeAmount_2 += stakeAmount;
+            else {
+                av.stakeAmount_2 += stakeAmount;
+                av.voteCount_2++;
+            }
         } else {
             av.stakeAmount_3 += stakeAmount;
+            av.voteCount_3++;
         }
         
-        if(_flag != 1) {
-            av.voteCount++;        
-        }
         userGovernVoteCount[msg.sender] += 1;
 
         isAttendToAgentVote[msg.sender][_agent] = true;
@@ -283,10 +292,11 @@ contract Vote is ReentrancyGuard {
         }
 
         uint256 reason = 0;
+        uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2 + av.voteCount_3;
         // must be over 51%, staking amount must be over 75m, dispute staking amount must be less than 150m
         if(
-            av.voteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
-            av.stakeAmount_1 > av.stakeAmount_2 + av.stakeAmount_3 &&
+            totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
+            av.stakeAmount_1 > av.stakeAmount_2 &&
             av.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() &&
             av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
@@ -296,14 +306,16 @@ contract Vote is ReentrancyGuard {
         } else {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_agent, 1, 0);
 
-            if(av.voteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
+            if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
                 reason = 1;
-            } else if(av.stakeAmount_1 <= av.stakeAmount_2 + av.stakeAmount_3) {
+            } else if(av.stakeAmount_1 <= av.stakeAmount_2) {
                 reason = 2;
             } else if(av.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
                 reason = 3;
             } else if(av.disputeVABAmount >= 2 * IProperty(DAO_PROPERTY).availableVABAmount()) {
                 reason = 4;
+            } else {
+                reason = 10;
             }
         }
         emit AuditorReplaced(_agent, msg.sender, block.timestamp, reason);
@@ -321,16 +333,18 @@ contract Vote is ReentrancyGuard {
         require(pCreateTime > 0, "voteToFilmBoard: no proposal");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).boardVotePeriod(), pCreateTime), "filmBoard elapsed vote period");
         
-        Voting storage fbp = filmBoardVoting[_candidate];     
-        fbp.voteCount++;
-
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
+        
+        Voting storage fbp = filmBoardVoting[_candidate];     
         if(_voteInfo == 1) {
             fbp.stakeAmount_1 += stakeAmount; // Yes
+            fbp.voteCount_1++;
         } else if(_voteInfo == 2) {
             fbp.stakeAmount_2 += stakeAmount; // No
+            fbp.voteCount_2++;
         } else {
             fbp.stakeAmount_3 += stakeAmount; // Abstain
+            fbp.voteCount_3++;
         }
 
         userGovernVoteCount[msg.sender] += 1;
@@ -356,9 +370,10 @@ contract Vote is ReentrancyGuard {
 
         uint256 reason = 0;
         Voting storage fbp = filmBoardVoting[_member];
+        uint256 totalVoteCount = fbp.voteCount_1 + fbp.voteCount_2 + fbp.voteCount_3;
         if(
-            fbp.voteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
-            fbp.stakeAmount_1 > fbp.stakeAmount_2 + fbp.stakeAmount_3 &&
+            totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
+            fbp.stakeAmount_1 > fbp.stakeAmount_2 &&
             fbp.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IProperty(DAO_PROPERTY).addFilmBoardMember(_member);   
@@ -367,12 +382,14 @@ contract Vote is ReentrancyGuard {
         } else {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_member, 2, 0);
 
-            if(fbp.voteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
+            if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
                 reason = 1;
-            } else if(fbp.stakeAmount_1 <= fbp.stakeAmount_2 + fbp.stakeAmount_3) {
+            } else if(fbp.stakeAmount_1 <= fbp.stakeAmount_2) {
                 reason = 2;
             } else if(fbp.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
                 reason = 3;
+            } else {
+                reason = 10;
             }
         }        
         emit FilmBoardAdded(_member, msg.sender, block.timestamp, reason);
@@ -388,16 +405,18 @@ contract Vote is ReentrancyGuard {
         require(pCreateTime > 0, "voteToRewardAddress: no proposal");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).rewardVotePeriod(), pCreateTime), "reward elapsed vote period");
         
-        Voting storage rav = rewardAddressVoting[_rewardAddress];
-        rav.voteCount++;
-
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
+
+        Voting storage rav = rewardAddressVoting[_rewardAddress];
         if(_voteInfo == 1) {
             rav.stakeAmount_1 += stakeAmount;   // Yes
+            rav.voteCount_1++;
         } else if(_voteInfo == 2) {
             rav.stakeAmount_2 += stakeAmount;   // No
+            rav.voteCount_2++;
         } else {
             rav.stakeAmount_3 += stakeAmount;   // Abstain
+            rav.voteCount_3++;
         }
 
         userGovernVoteCount[msg.sender] += 1;
@@ -423,10 +442,11 @@ contract Vote is ReentrancyGuard {
         
         uint256 reason = 0;
         Voting storage rav = rewardAddressVoting[_rewardAddress];
+        uint256 totalVoteCount = rav.voteCount_1 + rav.voteCount_2 + rav.voteCount_3;
         if(
-            rav.voteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&    // Less than limit count
-            rav.stakeAmount_1 > rav.stakeAmount_2 + rav.stakeAmount_3 &&      // less 51%
-            rav.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()  // less than permit amount
+            totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&       // Less than limit count
+            rav.stakeAmount_1 > rav.stakeAmount_2 &&                         // less 51%
+            rav.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() // less than permit amount
         ) {
             IProperty(DAO_PROPERTY).setRewardAddress(_rewardAddress);
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_rewardAddress, 3, 1);
@@ -434,12 +454,14 @@ contract Vote is ReentrancyGuard {
         } else {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_rewardAddress, 3, 0);
 
-            if(rav.voteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
+            if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
                 reason = 1;
-            } else if(rav.stakeAmount_1 <= rav.stakeAmount_2 + rav.stakeAmount_3) {
+            } else if(rav.stakeAmount_1 <= rav.stakeAmount_2) {
                 reason = 2;
             } else if(rav.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
                 reason = 3;
+            } else {
+                reason = 10;
             }
         }        
         emit PoolAddressAdded(_rewardAddress, msg.sender, block.timestamp, reason);
@@ -459,16 +481,18 @@ contract Vote is ReentrancyGuard {
         require(pCreateTime > 0, "voteToProperty: no proposal");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), pCreateTime), "property elapsed vote period");
 
-        Voting storage pv = propertyVoting[_flag][propertyVal];
-        pv.voteCount++;
-
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
+
+        Voting storage pv = propertyVoting[_flag][propertyVal];
         if(_voteInfo == 1) {
             pv.stakeAmount_1 += stakeAmount;
+            pv.voteCount_1++;
         } else if(_voteInfo == 2) {
             pv.stakeAmount_2 += stakeAmount;
+            pv.voteCount_2++;
         } else {
             pv.stakeAmount_3 += stakeAmount;
+            pv.voteCount_3++;
         }
         
         userGovernVoteCount[msg.sender] += 1;
@@ -497,9 +521,10 @@ contract Vote is ReentrancyGuard {
 
         uint256 reason = 0;
         Voting storage pv = propertyVoting[_flag][propertyVal];
+        uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2 + pv.voteCount_3;
         if(
-            pv.voteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
-            pv.stakeAmount_1 > pv.stakeAmount_2 + pv.stakeAmount_3 &&
+            totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
+            pv.stakeAmount_1 > pv.stakeAmount_2 &&
             pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IProperty(DAO_PROPERTY).updateProperty(_propertyIndex, _flag);    
@@ -508,12 +533,14 @@ contract Vote is ReentrancyGuard {
         } else {
             IProperty(DAO_PROPERTY).updatePropertyProposalApproveTime(propertyVal, _flag, 0);
 
-            if(pv.voteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
+            if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
                 reason = 1;
-            } else if(pv.stakeAmount_1 <= pv.stakeAmount_2 + pv.stakeAmount_3) {
+            } else if(pv.stakeAmount_1 <= pv.stakeAmount_2) {
                 reason = 2;
             } else if(pv.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
                 reason = 3;
+            } else {
+                reason = 10;
             }
         }
         emit PropertyUpdated(_flag, propertyVal, msg.sender, block.timestamp, reason);
