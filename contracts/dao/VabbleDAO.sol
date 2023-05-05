@@ -1,3 +1,14 @@
+// ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+// 88             88            B8         B8         B8
+//  88           88             88         88         88
+//   88         88              88         88         88 
+//    88       88   .d88888b.   88b8888b.  88b8888b.  88  .d88888b. 
+//     88     88    88'   `88   88'   `88  88'   `88  88  88'   `8b
+//      88   88     88     88   88     88  88     88  88  88b8888P`
+//       88 88      88.   .88   88.   .88  88.   .88  88  88.   
+//        88        `88888P`88  BBP88888'  BBP88888`  88  `888888P
+// ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.4;
@@ -38,7 +49,10 @@ contract VabbleDAO is ReentrancyGuard {
     mapping(address => uint256[]) private userFinalFilmIds;
     mapping(address => uint256[]) private userFilmProposalIds;        // (studio => filmId list)
     mapping(address => uint256[]) private userApprovedFilmIds;        // (studio => filmId list)
-    
+    mapping(uint256 => uint256) private finalVABPayout;           // (filmId => VAB amount)
+
+    uint256 public lastRunTime;
+
     Counters.Counter public filmCount;          // filmId is from No.1
 
     modifier onlyVote() {
@@ -123,7 +137,6 @@ contract VabbleDAO is ReentrancyGuard {
         if(_studioPayees.length == 1) totalPercent = _sharePercents[0];
         else {
             for(uint256 i = 0; i < _studioPayees.length; i++) {
-                require(_sharePercents[i] < 1e10 && _sharePercents[i] > 0, 'proposalUpdate: over 100%');
                 totalPercent += _sharePercents[i];
             }
         }
@@ -227,68 +240,85 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmFundPeriodUpdated(_filmId, msg.sender, _fundPeriod, block.timestamp);
     }   
 
-    /// @notice Set final films for a customer with watched percents
+    /// @notice Set final films for a customer with watched 
+    // Auditor call this function per month
     function setFinalFilms(        
         address[] memory _users,
-        uint256[] memory _filmIds,
-        uint256[] memory _watchPercents,
-        uint256[] memory _rentPrices
+        bytes32[] memory _kData,
+        uint256[] memory _payouts // VAB to payees based on share(%) and watch(%) from offchain
     ) external onlyAuditor nonReentrant {
-        require(_filmIds.length > 0 && _filmIds.length == _watchPercents.length, "setFinalFilms: bad length");
-        require(_rentPrices.length == _watchPercents.length, "setFinalFilms: bad rent price length");
+        // require(block.timestamp - lastRunTime >= 30 days, "Allow update monthly");
 
-        for(uint256 i = 0; i < _filmIds.length; i++) {        
-            __setFinalFilm(_users[i], _filmIds[i], _watchPercents[i], _rentPrices[i]);
+        require(_kData.length > 0 && _kData.length == _payouts.length, "setFinalFilms: bad length");
+        require(_users.length == _payouts.length, "setFinalFilms: bad user length");
+
+        uint256[] memory idList = new uint256[](_kData.length);
+        for(uint256 i = 0; i < _kData.length; i++) {     
+            idList[i] = __setFinalFilm(_users[i], _kData[i], _payouts[i]);
         }
 
-        emit FinalFilmSetted(_users, _filmIds, _watchPercents, _rentPrices, block.timestamp);
+        // TODO  ==================================================
+        __finalPaymentProcess(idList);
+        
+        lastRunTime = block.timestamp;
     }
     
     function __setFinalFilm(
         address _user, 
-        uint256 _filmId, 
-        uint256 _watchPercent,
-        uint256 _rentPrice  // vab amount from offchain
-    ) private {          
-        IVabbleDAO.Film memory fInfo = filmInfo[_filmId];
-        require(fInfo.status == Helper.Status.APPROVED_LISTING, "setFinalFilm: bad film status");
-                  
-        // Transfer VAB to payees based on share(%) and watch(%)
-        uint256 payout = _rentPrice * _watchPercent / 1e10;
-        uint256 userVAB = IStakingPool(STAKING_POOL).getRentVABAmount(_user);
-        require(payout > 0 && userVAB >= payout, "setFinalFilm: insufficient balance");
-
-        uint256 restAmount = payout;
-        for(uint256 k = 0; k < fInfo.studioPayees.length; k++) {
-            uint256 shareAmount = payout * fInfo.sharePercents[k] / 1e10;
-            IStakingPool(STAKING_POOL).sendVAB(_user, fInfo.studioPayees[k], shareAmount);
-            restAmount -= shareAmount;
+        bytes32 _kData, 
+        uint256 _payout  
+    ) private returns (uint256) {     
+        uint256 filmId = 0;
+        for(uint256 i = 1; i <= filmCount.current(); i++) {   
+            if(keccak256(abi.encodePacked(i, _user)) == _kData) filmId = i;
         }
 
-        uint256 nftCountOwned = 0;
-        uint256[] memory nftList = IFactoryFilmNFT(FILM_NFT_FACTORY).getFilmTokenIdList(_filmId);
+        IVabbleDAO.Film memory fInfo = filmInfo[filmId];
+        require(fInfo.status == Helper.Status.APPROVED_LISTING, "Not approved listing film");
+                  
+        uint256 userVAB = IStakingPool(STAKING_POOL).getRentVABAmount(_user);
+        require(_payout > 0 && userVAB >= _payout, "setFinalFilm: insufficient balance");
+
+        IStakingPool(STAKING_POOL).sendVAB(_user, address(this), _payout);
+        finalVABPayout[filmId] += _payout;
+
+        //======= Process of Revenue
+        uint256 nftCountOwned;
+        uint256[] memory nftList = IFactoryFilmNFT(FILM_NFT_FACTORY).getFilmTokenIdList(filmId);
         for(uint256 i = 0; i < nftList.length; i++) {
-            if(IERC721(FILM_NFT_FACTORY).ownerOf(nftList[i]) == _user) {
-                nftCountOwned += 1;
-            }
+            if(IERC721(FILM_NFT_FACTORY).ownerOf(nftList[i]) == _user) nftCountOwned += 1;
         }        
 
-        ( , , , , uint256 revenuePercent, ,) = IFactoryFilmNFT(FILM_NFT_FACTORY).getMintInfo(_filmId);
-        if(nftCountOwned > 0 && revenuePercent > 0) {
-            uint256 revenueAmount = restAmount * revenuePercent / 1e10;
-            revenueAmount *= nftCountOwned;
-            require(restAmount >= revenueAmount, "setFinalFilm: insufficient revenueAmount"); 
-
+        ( , , , , uint256 revenuePercent, ,) = IFactoryFilmNFT(FILM_NFT_FACTORY).getMintInfo(filmId);
+        uint256 revenueAmount = _payout * (revenuePercent / 1e10) * nftCountOwned;
+        if(_payout >= revenueAmount && revenueAmount > 0) {
             // Transfer revenue amount to user if user fund to this film throughout NFT mint
-            IStakingPool(STAKING_POOL).sendVAB(_user, _user, revenueAmount);
-            restAmount -= revenueAmount;
+            IStakingPool(STAKING_POOL).sendRevenueVAB(_user, revenueAmount);
         }        
-        // Transfer remain amount to film owner
-        IStakingPool(STAKING_POOL).sendVAB(_user, fInfo.studio, restAmount);
 
-        userFinalFilmIds[_user].push(_filmId);
+        userFinalFilmIds[_user].push(filmId);
+
+        return filmId;
     }     
 
+    function __finalPaymentProcess(uint256[] memory _filmIds) private {
+
+        IVabbleDAO.Film memory fInfo;
+        uint256 _id;
+
+        for(uint256 p = 0; p < _filmIds.length; p++) {
+            _id = _filmIds[p];
+            if(finalVABPayout[_id] == 0) continue;
+
+            fInfo = filmInfo[_id];
+            for(uint256 k = 0; k < fInfo.studioPayees.length; k++) {
+                uint256 shareAmount = finalVABPayout[_id] * fInfo.sharePercents[k] / 1e10;
+                Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), fInfo.studioPayees[k], shareAmount);
+            }
+
+            finalVABPayout[_id] = 0;
+        }
+    }
     /// @dev For transferring to Studio, Get share amount based on share percent
     function __getShareAmount(
         uint256 _payout, 

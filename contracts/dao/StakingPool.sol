@@ -144,6 +144,9 @@ contract StakingPool is ReentrancyGuard {
 
         // Next, unstake
         Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);        
+
+        si.stakeTime = block.timestamp;
+        si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
         si.stakeAmount -= _amount;        
         totalStakingAmount -= _amount;
 
@@ -209,16 +212,15 @@ contract StakingPool is ReentrancyGuard {
         }
 
         // Get time with accuracy(10**4) from after lockPeriod 
-        // uint256 timeVal = (block.timestamp - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
-        uint256 timeVal = IProperty(DAO_PROPERTY).lockPeriod() * 1e4 / 1 days;
-        uint256 rewardAmount = si.stakeAmount * timeVal * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
+        uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
+        uint256 rewardAmount = si.stakeAmount * period * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
 
         uint256 extraRewardAmount;
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
             uint256 voteStatus = IVote(VOTE).getFundingIdVoteStatusPerUser(_customer, filmIds[i]);    
             bool isRaised = IVabbleFunding(FUNDING).isRaisedFullAmount(filmIds[i]);
-            if((voteStatus == 1 && isRaised) || (voteStatus == 2 && !isRaised)) { 
+            if((voteStatus == 1 && isRaised) || (voteStatus > 1 && !isRaised)) { 
                 extraRewardAmount += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
             }
         } 
@@ -242,6 +244,45 @@ contract StakingPool is ReentrancyGuard {
         amount_ = rewardAmount + extraRewardAmount;
     }
 
+    /// @notice Calculate APR for staking rewards
+    function calculateAPR( 
+        uint256 _period,        // ex: 2 days / 32 days / 365 days
+        uint256 _stakeAmount,   // ex: 100 VAB
+        uint256 _proposalCount,
+        uint256 _voteCount,
+        uint256 _voteCountForFund,
+        bool isBoardMember      // filmboard member or not
+    ) public view returns (uint256 amount_) {
+        require(_period > 0, "apr: zero period");
+        require(_stakeAmount > 0, "apr: zero staker");
+        require(_proposalCount >= _voteCount, "apr: bad vote count");
+        require(_voteCount >= _voteCountForFund, "apr: bad fund vote count");
+
+        // Annual rate = daily rate x period(ex: 365)
+        uint256 rewardAmount = _stakeAmount * _period * IProperty(DAO_PROPERTY).rewardRate() / 1e10;
+        
+        uint256 pExtraRate = (IProperty(DAO_PROPERTY).extraRewardRate() / 1e10) * _period;
+        uint256 extraRewardAmount = _voteCountForFund * totalRewardAmount * pExtraRate;
+        
+        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
+        if(_proposalCount > 0) {
+            if(_voteCount == 0) {
+                rewardAmount = 0;
+                extraRewardAmount = 0;
+            } else {
+                uint256 countVal = (_voteCount * 1e4) / _proposalCount;
+                rewardAmount = rewardAmount * countVal / 1e4;
+            }
+        }
+        
+        // If customer is film board member, more rewards(25%)
+        if(isBoardMember) {            
+            rewardAmount += rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+        }        
+
+        amount_ = rewardAmount + extraRewardAmount;
+    }
+    
     // =================== Customer deposit/withdraw VAB START =================    
     /// @notice Deposit VAB token from customer for renting the films
     function depositVAB(uint256 _amount) external {
@@ -325,6 +366,18 @@ contract StakingPool is ReentrancyGuard {
 
         Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _to, _amount);
         userRentInfo[_user].vabAmount -= _amount;
+    }
+
+    /// @notice onlyDAO transfer VAB token to user
+    function sendRevenueVAB(
+        address _to, 
+        uint256 _amount
+    ) external onlyDAO {
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        uint256 poolBalance = IERC20(vabToken).balanceOf(address(this)); 
+        require(poolBalance >= _amount, "sendRevenueVAB: insufficient balance");
+
+        Helper.safeTransfer(vabToken, _to, _amount);
     }
 
     /// @notice Transfer DAO all fund to new contract or something

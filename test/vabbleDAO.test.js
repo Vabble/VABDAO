@@ -359,7 +359,10 @@ describe('VabbleDAO-test-5', function () {
     const enableClaimer = getBigNumber(0, 0)
     const enableClaimer1 = getBigNumber(1, 0)
 
+    // *** fundType=0 => approve list,  fundType>0 => approve fund ***
+
     // Create proposal for a film by studio
+    // fundType=0 => approve list
     await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.USDC.address, {from: this.studio1.address})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(1, 0), 
@@ -373,7 +376,8 @@ describe('VabbleDAO-test-5', function () {
       {from: this.studio1.address}
     )
 
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(1, 0, this.EXM.address, {from: this.studio1.address})
+    // fundType=0 => approve list
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.EXM.address, {from: this.studio1.address})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(2, 0), 
       title2,
@@ -386,8 +390,9 @@ describe('VabbleDAO-test-5', function () {
       {from: this.studio1.address}
     )
     
+    // fundType=1 => approve fund
     let ethVal = ethers.utils.parseEther('1')
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(2, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(1, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(3, 0), 
       title3,
@@ -400,6 +405,7 @@ describe('VabbleDAO-test-5', function () {
       {from: this.studio1.address}
     )
 
+    // fundType=2 => approve fund
     await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(2, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(4, 0), 
@@ -431,7 +437,7 @@ describe('VabbleDAO-test-5', function () {
     await this.Vote.connect(this.customer3).voteToFilms(proposalIds, voteInfos, {from: this.customer3.address}) //1,1,2,3
 
     // => Increase next block timestamp for only testing
-    const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
+    let period = 10 * 24 * 3600; // filmVotePeriod = 10 days
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
 
@@ -446,66 +452,51 @@ describe('VabbleDAO-test-5', function () {
     const a_1 = this.events[1].args
     const a_2 = this.events[2].args
     const a_3 = this.events[3].args
-    console.log("====event-0::", a_0.filmId.toString(), a_0.reason.toString())  
-    console.log("====event-1::", a_1.filmId.toString(), a_1.reason.toString())  
-    console.log("====event-2::", a_2.filmId.toString(), a_2.reason.toString())  
-    console.log("====event-3::", a_3.filmId.toString(), a_3.reason.toString())  
+    // console.log("====event-0::", a_0.filmId.toString(), a_0.reason.toString())  
+    // console.log("====event-1::", a_1.filmId.toString(), a_1.reason.toString())  
+    // console.log("====event-2::", a_2.filmId.toString(), a_2.reason.toString())  
+    // console.log("====event-3::", a_3.filmId.toString(), a_3.reason.toString())  
 
     const filmData = await this.VabbleDAO.getUserFilmListForMigrate(this.studio1.address)
-    console.log("====filmData::", JSON.stringify(filmData))  
+    // console.log("====filmData::", JSON.stringify(filmData))  
 
 
-    // // Add deposit assets by Auditor
-    // // const assetList = [CONFIG.addressZero, CONFIG.mumbai.usdcAdress, CONFIG.mumbai.vabToken, CONFIG.mumbai.daiAddress, CONFIG.mumbai.exmAddress]
-    // const assetList = [this.EXM.address, this.vabToken.address, this.USDC.address]
-    // await this.Ownablee.connect(this.auditor).addDepositAsset(assetList, {from: this.auditor.address})
-    // expect(await this.Ownablee.isDepositAsset(assetList[0])).to.be.true
-    // expect(await this.Ownablee.isDepositAsset(assetList[1])).to.be.true
-    // expect(await this.Ownablee.isDepositAsset(assetList[2])).to.be.true
+    // TODO test keccak
+    console.log("=============================================")  
+    await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(10000), {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(15000), {from: this.customer2.address})
 
-    // // 5. Deposit to film 
-    // // 5-1. Id(1) from customer1
-    // const customer1_0 = await this.EXM.balanceOf(this.customer1.address)
-    // const depositAmount = getBigNumber(2000) //30 090270812437311936 600 
-    // await this.VabbleFunding.connect(this.customer1).depositToFilm(
-    //   proposalIds[1], depositAmount, this.EXM.address, {from: this.customer1.address}
-    // )
+    const approvedListIds = await this.VabbleDAO.getFilmIds(2); // 
+    console.log("====approvedListIds::", approvedListIds)  
 
-    // const raiseAmount_0 = await this.VabbleFunding.getRaisedAmountByToken(proposalIds[1])    
-    // console.log("====raiseAmount_0::", raiseAmount_0.toString())  
-
-    // const customer1_1 = await this.EXM.balanceOf(this.customer1.address) 
-    // console.log("====customer1_1::", customer1_0.toString(), customer1_1.toString())  
-    // expect(BigNumber.from(customer1_0.toString()).sub(BigNumber.from(customer1_1.toString()))).to.be.equal(depositAmount)
+    const kData11 = ethers.utils.solidityKeccak256(["uint256", "address"], [1, this.customer1.address])
+    const kData12 = ethers.utils.solidityKeccak256(["uint256", "address"], [1, this.customer2.address])
+    const kData21 = ethers.utils.solidityKeccak256(["uint256", "address"], [2, this.customer1.address])
+    const kData22 = ethers.utils.solidityKeccak256(["uint256", "address"], [2, this.customer2.address])
     
-    // // 5-2. Id(1) from customer2
-    // tx = await this.VabbleDAO.connect(this.customer2).depositToFilm(
-    //   proposalIds[1], depositAmount, this.EXM.address, {from: this.customer2.address}
-    // )
-    // const raiseAmount_1 = await this.VabbleFunding.getRaisedAmountByToken(proposalIds[1])  
-    // console.log("====raiseAmount_1::", raiseAmount_1.toString())  
+    const tx = await this.VabbleDAO.setFinalFilms(
+      [this.customer1.address, this.customer2.address, this.customer1.address, this.customer2.address], 
+      [kData11, kData12, kData21, kData22], 
+      [getBigNumber(200), getBigNumber(500), getBigNumber(800), getBigNumber(500)]
+    )
 
-    // // => Increase next block timestamp
-    // const fPeriod = 40 * 24 * 3600; // 40 days
-    // network.provider.send('evm_increaseTime', [fPeriod]);
-    // await network.provider.send('evm_mine'); 
+    const cur_user1VAB = await this.StakingPool.getRentVABAmount(this.customer1.address)
+    const cur_user2VAB = await this.StakingPool.getRentVABAmount(this.customer2.address)
+    console.log("====tx::", cur_user1VAB.toString(), cur_user2VAB.toString())  
 
-    // // 8. fundProcess
-    // // 8-1. Get total reward amount in the StakingPool
-    // const totalRewardAmount_0 = await this.StakingPool.totalRewardAmount()  
-    // console.log("====totalRewardAmount_0::", totalRewardAmount_0.toString())  
-    
+    const VABBalance = await this.vabToken.balanceOf(this.VabbleDAO.address)
+    console.log('====VABBalance::', VABBalance.toString())
 
-    // // 8-2. Call the fundProcess() for film-1
-    // tx = await this.VabbleDAO.connect(this.studio1).fundProcess(proposalIds[1], {from: this.studio1.address})
-    // this.events = (await tx.wait()).events
-    // // console.log("====events::", this.events)  
-    // args = this.events[13].args
-    // expect(args.filmId).to.be.equal(proposalIds[1])
+    // => Increase next block timestamp for only testing
+    period = 31 * 24 * 3600; // 31 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
 
-    // // 8-3. Check changed reward amount in the StakingPool
-    // const totalRewardAmount_1 = await this.StakingPool.totalRewardAmount()
-    // console.log("====totalRewardAmount_1::", totalRewardAmount_1.toString())
+    const tx1 = await this.VabbleDAO.setFinalFilms(
+      [this.customer1.address, this.customer2.address], 
+      [kData11, kData22], 
+      [getBigNumber(200), getBigNumber(500)]
+    )
   });
 })
 });

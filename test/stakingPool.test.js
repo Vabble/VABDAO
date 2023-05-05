@@ -216,11 +216,27 @@ describe('StakingPool', function () {
 
     const stakingInfo1 = await this.StakingPool.stakeInfo(this.customer1.address)
     let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount-start::', userRewardAmount.toString())
+
+    let aprAmount = await this.StakingPool.calcAPR(this.customer1.address, getBigNumber(365, 0), 0, 0, 0)
+    let aprAnyAmount = await this.StakingPool.calculateAPR(
+      getBigNumber(20000), getBigNumber(365, 0), 100, 60, 30, false
+    )
+
+    console.log('===userRewardAmount-start::', aprAnyAmount.toString())
+    // 0.248000000000000000 => 2000 staked
+    // 2.920000000000000000 => 2000 staked
+    // 29.200000000000000000 => 20000 staked
+
+    // 21.900000000000000000 => 20000 staked
+
+
     // =========== withdrawReward with option - 1
-    await expect(
-      this.StakingPool.connect(this.customer1).withdrawReward(1, {from: this.customer1.address})
-    ).to.emit(this.StakingPool, 'RewardContinued').withArgs(this.customer1.address, 1);
+    let txx = await this.StakingPool.connect(this.customer1).withdrawReward(1, {from: this.customer1.address})
+    this.events = (await txx.wait()).events
+    let rargs = this.events[0].args
+    expect(rargs.staker).to.be.equal(this.customer1.address)
+    expect(rargs.isCompound).to.be.equal(1)
+    // console.log('====withdraw ragrs::', rargs.conTime.toString())
     
     const stakingInfo2 = await this.StakingPool.stakeInfo(this.customer1.address)
     expect(stakingInfo2.stakeAmount).to.be.equal(BigNumber.from(userRewardAmount).add(stakingInfo1.stakeAmount))
@@ -237,9 +253,11 @@ describe('StakingPool', function () {
     await network.provider.send('evm_mine');
 
     userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    await expect(
-      this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-    ).to.emit(this.StakingPool, 'RewardWithdraw').withArgs(this.customer1.address, userRewardAmount);
+    txx = await this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
+    this.events = (await txx.wait()).events
+    rargs = this.events[1].args
+    expect(rargs.staker).to.be.equal(this.customer1.address)
+    expect(rargs.rewardAmount).to.be.equal(userRewardAmount)
 
     const stakingInfo3 = await this.StakingPool.stakeInfo(this.customer1.address)
     expect(stakingInfo2.stakeAmount).to.be.equal(stakingInfo3.stakeAmount)
@@ -271,9 +289,23 @@ describe('StakingPool', function () {
     const raiseAmount = getBigNumber(150, 6)
     const fundPeriod = getBigNumber(20, 0)
     const fundType = getBigNumber(3, 0)
-    
+    const title4 = 'film title - 4'
+    const desc4 = 'film description - 4'
     // Create proposal for a film by studio
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate([0, 0], this.vabToken.address, {from: this.studio1.address})
+    let ethVal = ethers.utils.parseEther('1')
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+      getBigNumber(4, 0), 
+      title4,
+      desc4,
+      sharePercents, 
+      studioPayees,  
+      raiseAmount, 
+      fundPeriod, 
+      enableClaimer,
+      {from: this.studio1.address}
+    )
+    
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(1, 0), 
       nftRight, 
