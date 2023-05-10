@@ -566,8 +566,9 @@ contract Vote is ReentrancyGuard {
         return fundingFilmIdsPerUser[_staker];
     }
 
-    /// @notice Delete all funding filmIds per User
+    /// @notice Delete all funding filmIds per User from only StakingPool contract
     function removeFundingFilmIdsPerUser(address _staker) external {
+        require(msg.sender == STAKING_POOL, "caller is not StakingPool contract");
         delete fundingFilmIdsPerUser[_staker];
     }
 

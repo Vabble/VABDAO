@@ -358,26 +358,21 @@ contract StakingPool is ReentrancyGuard {
     
     /// @notice onlyDAO transfer VAB token to user
     function sendVAB(
-        address _user, 
+        address[] memory _users, 
         address _to, 
-        uint256 _amount
-    ) external onlyDAO {
-        require(userRentInfo[_user].vabAmount >= _amount, "sendVAB: insufficient balance");
+        uint256[] memory _amounts
+    ) external onlyDAO returns (uint256) {
+        uint256 sum;
+        for(uint256 i = 0; i < _users.length; i++) {  
+            require(userRentInfo[_users[i]].vabAmount >= _amounts[i], "sendVAB: insufficient balance");
 
-        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _to, _amount);
-        userRentInfo[_user].vabAmount -= _amount;
-    }
+            userRentInfo[_users[i]].vabAmount -= _amounts[i];
+            sum += _amounts[i];
+        }
 
-    /// @notice onlyDAO transfer VAB token to user
-    function sendRevenueVAB(
-        address _to, 
-        uint256 _amount
-    ) external onlyDAO {
-        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-        uint256 poolBalance = IERC20(vabToken).balanceOf(address(this)); 
-        require(poolBalance >= _amount, "sendRevenueVAB: insufficient balance");
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _to, sum);
 
-        Helper.safeTransfer(vabToken, _to, _amount);
+        return sum;
     }
 
     /// @notice Transfer DAO all fund to new contract or something

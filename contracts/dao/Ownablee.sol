@@ -2,15 +2,19 @@
 
 pragma solidity ^0.8.4;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../libraries/Helper.sol";
+
 contract Ownablee {
     
     event VABWalletChanged(address wallet);
 
     address public auditor;
     address public VAB_WALLET;           // Vabble wallet
-    address public PAYOUT_TOKEN;          // VAB token       
-    address public USDC_TOKEN;            // USDC token 
-    address private VOTE;                // vote contract address
+    address public PAYOUT_TOKEN;         // VAB token       
+    address public USDC_TOKEN;           // USDC token 
+    address private VOTE;                // Vote contract address
+    address private VABBLE_DAO;          // VabbleDAO contract address
     address[] private depositAssetList;
     
     mapping(address => bool) private allowAssetToDeposit;
@@ -22,6 +26,11 @@ contract Ownablee {
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
+        _;
+    }
+
+    modifier onlyDAO() {
+        require(msg.sender == VABBLE_DAO, "caller is not the DAO contract");
         _;
     }
 
@@ -40,9 +49,14 @@ contract Ownablee {
         USDC_TOKEN = _usdcToken;
     }
     
-    function setupVote(address _voteContract) external onlyAuditor {
-        require(_voteContract != address(0), "setupVote: Zero voteContract address");
-        VOTE = _voteContract;    
+    function setup(
+        address _vote,
+        address _dao
+    ) external onlyAuditor {
+        require(_vote != address(0), "setupVote: bad Vote Contract address");
+        VOTE = _vote;    
+        require(_dao != address(0), "setupVote: bad VabbleDAO contract address");
+        VABBLE_DAO = _dao;    
     }    
     
     function transferAuditor(address _newAuditor) external onlyAuditor {
@@ -99,4 +113,10 @@ contract Ownablee {
 
         emit VABWalletChanged(_wallet);
     } 
+
+    function addToStudioPool(uint256 _amount) external onlyDAO {
+        require(IERC20(PAYOUT_TOKEN).balanceOf(address(this)) >= _amount, "addToStudioPool: insufficient edge pool");
+
+        Helper.safeTransfer(PAYOUT_TOKEN, VABBLE_DAO, _amount);
+    }
 }

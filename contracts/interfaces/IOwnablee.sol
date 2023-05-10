@@ -14,5 +14,8 @@ interface IOwnablee {
     function VAB_WALLET() external view returns (address);
     
     function USDC_TOKEN() external view returns (address);
+
     function PAYOUT_TOKEN() external view returns (address);
+
+    function addToStudioPool(uint256 _amount) external;
 }

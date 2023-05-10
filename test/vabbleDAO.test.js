@@ -133,6 +133,9 @@ describe('VabbleDAO', function () {
     await this.Ownablee.connect(this.auditor).addDepositAsset(
       [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
     )
+    await this.Ownablee.connect(this.auditor).setup(
+      this.Vote.address, this.VabbleDAO.address, {from: this.auditor.address}
+    )
     expect(await this.Ownablee.auditor()).to.be.equal(this.auditor.address);
         
     // ====== VAB
@@ -461,42 +464,78 @@ describe('VabbleDAO-test-5', function () {
     // console.log("====filmData::", JSON.stringify(filmData))  
 
 
-    // TODO test keccak
-    console.log("=============================================")  
+    // TODO test allocate, setFinalFilms
+    console.log("====================== Deposit =======================")  
     await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(10000), {from: this.customer1.address})
     await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(15000), {from: this.customer2.address})
 
     const approvedListIds = await this.VabbleDAO.getFilmIds(2); // 
     console.log("====approvedListIds::", approvedListIds)  
 
-    const kData11 = ethers.utils.solidityKeccak256(["uint256", "address"], [1, this.customer1.address])
-    const kData12 = ethers.utils.solidityKeccak256(["uint256", "address"], [1, this.customer2.address])
-    const kData21 = ethers.utils.solidityKeccak256(["uint256", "address"], [2, this.customer1.address])
-    const kData22 = ethers.utils.solidityKeccak256(["uint256", "address"], [2, this.customer2.address])
+    let VABInStudioPool = await this.vabToken.balanceOf(this.VabbleDAO.address)
+    console.log('====start-VABInStudioPool::', VABInStudioPool.toString())
+    let VABInEdgePool = await this.vabToken.balanceOf(this.Ownablee.address)
+    console.log('====start-VABInEdgePool::', VABInEdgePool.toString())
+
+    // Allocate to EdgePool
+    await expect(
+      this.VabbleDAO.connect(this.auditor).allocateToPool(
+        [this.customer1.address, this.customer2.address],
+        [getBigNumber(500), getBigNumber(1000)],
+        1,
+        {from: this.auditor.address})
+    ).to.emit(this.VabbleDAO, 'AllocatedToPool').withArgs(
+      [this.customer1.address, this.customer2.address],
+      [getBigNumber(500), getBigNumber(1000)],
+      1
+    );
+    VABInEdgePool = await this.vabToken.balanceOf(this.Ownablee.address)
+    console.log('====VABInEdgePool after allocate(500, 1000)::', VABInEdgePool.toString())
     
+    // Allocate to StudioPool
+    await expect(
+      this.VabbleDAO.connect(this.auditor).allocateToPool(
+        [this.customer1.address, this.customer2.address],
+        [getBigNumber(500), getBigNumber(1000)],
+        2,
+        {from: this.auditor.address})
+    ).to.emit(this.VabbleDAO, 'AllocatedToPool').withArgs(
+      [this.customer1.address, this.customer2.address],
+      [getBigNumber(500), getBigNumber(1000)],
+      2
+    );
+    VABInStudioPool = await this.vabToken.balanceOf(this.VabbleDAO.address)
+    console.log('====VABInStudioPool after allocate(500, 1000)::', VABInStudioPool.toString())
+        
     const tx = await this.VabbleDAO.setFinalFilms(
-      [this.customer1.address, this.customer2.address, this.customer1.address, this.customer2.address], 
-      [kData11, kData12, kData21, kData22], 
-      [getBigNumber(200), getBigNumber(500), getBigNumber(800), getBigNumber(500)]
+      [getBigNumber(1,0), getBigNumber(2,0)], 
+      [getBigNumber(200), getBigNumber(300)]
     )
 
     const cur_user1VAB = await this.StakingPool.getRentVABAmount(this.customer1.address)
     const cur_user2VAB = await this.StakingPool.getRentVABAmount(this.customer2.address)
-    console.log("====tx::", cur_user1VAB.toString(), cur_user2VAB.toString())  
+    console.log("====User balance in StakingPool::", cur_user1VAB.toString(), cur_user2VAB.toString())  
 
-    const VABBalance = await this.vabToken.balanceOf(this.VabbleDAO.address)
-    console.log('====VABBalance::', VABBalance.toString())
+    VABInStudioPool = await this.vabToken.balanceOf(this.VabbleDAO.address)
+    console.log('====VABInStudioPool after setFinalFilms(200, 300)::', VABInStudioPool.toString())
 
     // => Increase next block timestamp for only testing
-    period = 31 * 24 * 3600; // 31 days
+    period = 30 * 24 * 3600; // 31 days
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
 
+    await this.VabbleDAO.connect(this.auditor).allocateFromEdgePool(getBigNumber(1000), {from: this.auditor.address})
+    VABInEdgePool = await this.vabToken.balanceOf(this.Ownablee.address)
+    console.log('====VABInEdgePool after allocateFromEdgePool(1000)::', VABInEdgePool.toString())
+    VABInStudioPool = await this.vabToken.balanceOf(this.VabbleDAO.address)
+    console.log('====VABInStudioPool after allocateFromEdgePool(1000)::', VABInStudioPool.toString())
+
     const tx1 = await this.VabbleDAO.setFinalFilms(
-      [this.customer1.address, this.customer2.address], 
-      [kData11, kData22], 
+      [getBigNumber(1,0), getBigNumber(2,0)], 
       [getBigNumber(200), getBigNumber(500)]
     )
+    VABInStudioPool = await this.vabToken.balanceOf(this.VabbleDAO.address)
+    console.log('====final-VABInStudioPool after setFinalFilms(200, 500)::', VABInStudioPool.toString())
   });
 })
 });
