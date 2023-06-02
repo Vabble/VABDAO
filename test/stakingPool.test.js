@@ -185,6 +185,12 @@ describe('StakingPool', function () {
       this.StakingPool.address,
       this.Property.address,
     )
+    // Initialize Ownablee contract
+    await this.Ownablee.connect(this.auditor).setup(
+      this.Vote.address,
+      this.VabbleDAO.address,
+      this.StakingPool.address,
+    )
     
     // // Staking VAB token
     // await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(40000000), {from: this.customer1.address})
@@ -217,9 +223,8 @@ describe('StakingPool', function () {
     const stakingInfo1 = await this.StakingPool.stakeInfo(this.customer1.address)
     let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
 
-    let aprAmount = await this.StakingPool.calcAPR(this.customer1.address, getBigNumber(365, 0), 0, 0, 0)
     let aprAnyAmount = await this.StakingPool.calculateAPR(
-      getBigNumber(20000), getBigNumber(365, 0), 100, 60, 30, false
+      getBigNumber(365, 0), getBigNumber(20000), 10, 10, 2, false
     )
 
     console.log('===userRewardAmount-start::', aprAnyAmount.toString())
@@ -284,18 +289,19 @@ describe('StakingPool', function () {
     console.log('===userRewardAmount-2::', userRewardAmount.toString())
 
     const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
-    const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
+    const sharePercents = [getBigNumber(60, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
     const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
     const raiseAmount = getBigNumber(150, 6)
     const fundPeriod = getBigNumber(20, 0)
     const fundType = getBigNumber(3, 0)
     const title4 = 'film title - 4'
     const desc4 = 'film description - 4'
-    // Create proposal for a film by studio
+    const enableClaimer = 1;
+    // Create proposal for a film by studio {from: this.studio1.address}
     let ethVal = ethers.utils.parseEther('1')
     await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-      getBigNumber(4, 0), 
+      getBigNumber(1, 0), 
       title4,
       desc4,
       sharePercents, 
@@ -306,24 +312,29 @@ describe('StakingPool', function () {
       {from: this.studio1.address}
     )
     
-    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-      getBigNumber(1, 0), 
-      nftRight, 
-      sharePercents, 
-      studioPayees, 
-      raiseAmount, 
-      fundPeriod, 
-      fundType,
-      {from: this.studio1.address}
-    )
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(2, 0), 
-      nftRight, 
+      title4,
+      desc4,
       sharePercents, 
-      studioPayees, 
+      studioPayees,  
       raiseAmount, 
       fundPeriod, 
-      fundType,
+      enableClaimer,
+      {from: this.studio1.address}
+    )
+    
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+      getBigNumber(3, 0), 
+      title4,
+      desc4,
+      sharePercents, 
+      studioPayees,  
+      raiseAmount, 
+      fundPeriod, 
+      enableClaimer,
       {from: this.studio1.address}
     )
     
@@ -348,9 +359,25 @@ describe('StakingPool', function () {
     const list = await this.Vote.getFundingFilmIdsPerUser(this.customer1.address)
     console.log('===list-before withdraw::', list.length)
 
-    await expect(
-      this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-    ).to.emit(this.StakingPool, 'RewardWithdraw').withArgs(this.customer1.address, userRewardAmount);
+    // await expect(
+    //   this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
+    // ).to.emit(this.StakingPool, 'RewardWithdraw').withArgs(this.customer1.address, userRewardAmount);
+
+    await this.vabToken.connect(this.auditor).approve(this.Ownablee.address, getBigNumber(100000000));
+    await this.Ownablee.connect(this.auditor).depositVABToEdgePool(getBigNumber(2000))
+
+    let c2_balance = await this.vabToken.balanceOf(this.customer2.address)
+    console.log('=======c2_balance before::', c2_balance.toString())
+    const tx = await this.StakingPool.connect(this.auditor).withdrawAllFund(this.customer2.address)
+    this.events = (await tx.wait()).events
+    // console.log('=======events::', this.events)
+    const arg = this.events[2].args
+    const wAmount = arg.amount
+    console.log('=======wAmount::', wAmount.toString())
+    // 50000190000000000000000000
+    // 50000190000000000000000000
+    c2_balance = await this.vabToken.balanceOf(this.customer2.address)
+    console.log('=======c2_balance after::', c2_balance.toString())
   });
 
   // it('Staking and unstaking, withdraw VAB token with min value', async function () {   

@@ -41,4 +41,6 @@ interface IVabbleDAO {
     );
 
     function getUserFilmListForMigrate(address _user) external view returns (Film[] memory filmList_);
+
+    function withdrawVABFromStudioPool(address _to) external returns (uint256);
 }

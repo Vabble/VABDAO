@@ -57,14 +57,18 @@ contract VabbleDAO is ReentrancyGuard {
 
     Counters.Counter public filmCount;          // filmId is from No.1
 
-    modifier onlyVote() {
-        require(msg.sender == VOTE, "caller is not the vote contract");
-        _;
-    }
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
         _;
     }  
+    modifier onlyVote() {
+        require(msg.sender == VOTE, "caller is not the vote contract");
+        _;
+    }
+    modifier onlyStakingPool() {
+        require(msg.sender == STAKING_POOL, "caller is not the StakingPool contract");
+        _;
+    }
 
     receive() external payable {}
     
@@ -242,7 +246,7 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmFundPeriodUpdated(_filmId, msg.sender, _fundPeriod, block.timestamp);
     }   
 
-    /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO)
+    /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO) by Auditor
     // _which = 1 => to EdgePool, _which = 2 => to StudioPool
     function allocateToPool(
         address[] memory _users,
@@ -259,12 +263,17 @@ contract VabbleDAO is ReentrancyGuard {
         }
 
         for(uint256 i = 0; i < _users.length; i++) {   
-            if(_which == 1) edgePoolUsers.push(_users[i]);
-            else studioPoolUsers.push(_users[i]);
+            if(_which == 1) {
+                edgePoolUsers.push(_users[i]);
+            } else {
+                studioPoolUsers.push(_users[i]);
+            }
         }
 
         emit AllocatedToPool(_users, _amounts, _which);
     }
+
+    /// @notice Allocate VAB from EdgePool(Ownable) to StudioPool(VabbleDAO) by Auditor
     function allocateFromEdgePool(uint256 _amount) external onlyAuditor nonReentrant {
         IOwnablee(OWNABLE).addToStudioPool(_amount);
         StudioPool += _amount;
@@ -274,6 +283,21 @@ contract VabbleDAO is ReentrancyGuard {
         }
 
         delete edgePoolUsers;
+    }
+
+    /// @notice Withdraw VAB token from StudioPool(VabbleDAO) to V2 by StakingPool contract
+    function withdrawVABFromStudioPool(address _to) external onlyStakingPool returns (uint256) {
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();    
+        uint256 poolBalance = IERC20(vabToken).balanceOf(address(this));    
+
+        if(poolBalance >= StudioPool && StudioPool > 0) {
+            Helper.safeTransfer(vabToken, _to, poolBalance);
+            
+            StudioPool = 0;
+            delete studioPoolUsers;
+        }
+        
+        return poolBalance;
     }
 
     /// @notice Set final films for a customer with watched 

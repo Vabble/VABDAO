@@ -30,8 +30,8 @@ contract StakingPool is ReentrancyGuard {
     struct Stake {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
-        uint256 stakeTime;       // last staked time(here, means the time that staker withdrawable time)
-        uint256 voteCount;       //
+        uint256 stakeTime;       
+        uint256 voteCount;       
     }
 
     struct UserRent {
@@ -41,9 +41,9 @@ contract StakingPool is ReentrancyGuard {
     }
 
     address private immutable OWNABLE;     // Ownablee contract address
-    address private VOTE;                  // vote contract address
+    address private VOTE;                  // Vote contract address
     address private VABBLE_DAO;            // VabbleDAO contract address
-    address private FUNDING;               // Funding contract address
+    address private VABBLE_FUNDING;        // VabbleFunding contract address
     address private DAO_PROPERTY;          // Property contract address
         
     uint256 public totalStakingAmount;   // 
@@ -85,7 +85,7 @@ contract StakingPool is ReentrancyGuard {
         require(_vabbleDAO != address(0), "initializePool: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO; 
         require(_funding != address(0), "initializePool: Zero funding address");
-        FUNDING = _funding;    
+        VABBLE_FUNDING = _funding;    
         require(_property != address(0), "initializePool: Zero propertyContract address");
         DAO_PROPERTY = _property;   
         require(_vote != address(0), "initializePool: Zero voteContract address");
@@ -219,7 +219,7 @@ contract StakingPool is ReentrancyGuard {
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
         for(uint256 i = 0; i < filmIds.length; i++) { 
             uint256 voteStatus = IVote(VOTE).getFundingIdVoteStatusPerUser(_customer, filmIds[i]);    
-            bool isRaised = IVabbleFunding(FUNDING).isRaisedFullAmount(filmIds[i]);
+            bool isRaised = IVabbleFunding(VABBLE_FUNDING).isRaisedFullAmount(filmIds[i]);
             if((voteStatus == 1 && isRaised) || (voteStatus > 1 && !isRaised)) { 
                 extraRewardAmount += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() / 1e10;       
             }
@@ -244,7 +244,7 @@ contract StakingPool is ReentrancyGuard {
         amount_ = rewardAmount + extraRewardAmount;
     }
 
-    /// @notice Calculate APR for staking rewards
+    /// @notice Calculate APR(Annual Percentage Rate) for staking rewards
     function calculateAPR( 
         uint256 _period,        // ex: 2 days / 32 days / 365 days
         uint256 _stakeAmount,   // ex: 100 VAB
@@ -375,19 +375,29 @@ contract StakingPool is ReentrancyGuard {
         return sum;
     }
 
-    /// @notice Transfer DAO all fund to new contract or something
+    /// @notice Transfer DAO all fund to V2
+    // After call this function, users should be available to withdraw his funds deposited
     function withdrawAllFund() public onlyAuditor {
         address to = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
         require(to != address(0), 'withdrawAllFund: Zero address');
 
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-        uint256 poolBalance = IERC20(vabToken).balanceOf(address(this));        
-        require(totalRewardAmount <= poolBalance, "withdrawAllFund: insufficient balance");
 
-        Helper.safeTransfer(vabToken, to, totalRewardAmount);
-        totalRewardAmount = 0;        
+        uint256 sumAmount;
+        // Transfer rewards of Staking Pool        
+        if(IERC20(vabToken).balanceOf(address(this)) >= totalRewardAmount && totalRewardAmount > 0) {
+            Helper.safeTransfer(vabToken, to, totalRewardAmount);
+            sumAmount += totalRewardAmount;
+            totalRewardAmount = 0;     
+        }        
         
-        emit AllFundWithdraw(to, totalRewardAmount);
+        // Transfer VAB of Edge Pool(Ownable)
+        sumAmount += IOwnablee(OWNABLE).withdrawVABFromEdgePool(to);
+        
+        // Transfer VAB of Studio Pool(VabbleDAO)
+        sumAmount += IVabbleDAO(VABBLE_DAO).withdrawVABFromStudioPool(to);
+        
+        emit AllFundWithdraw(to, sumAmount);
     }
 
     /// @notice Update lastStakedTime for a staker when vote

@@ -18,4 +18,6 @@ interface IOwnablee {
     function PAYOUT_TOKEN() external view returns (address);
 
     function addToStudioPool(uint256 _amount) external;
+
+    function withdrawVABFromEdgePool(address _to) external returns (uint256);
 }

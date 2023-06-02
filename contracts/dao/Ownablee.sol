@@ -13,8 +13,10 @@ contract Ownablee {
     address public VAB_WALLET;           // Vabble wallet
     address public PAYOUT_TOKEN;         // VAB token       
     address public USDC_TOKEN;           // USDC token 
+
     address private VOTE;                // Vote contract address
     address private VABBLE_DAO;          // VabbleDAO contract address
+    address private STAKING_POOL;        // StakingPool contract address
     address[] private depositAssetList;
     
     mapping(address => bool) private allowAssetToDeposit;
@@ -23,14 +25,16 @@ contract Ownablee {
         require(msg.sender == auditor, "caller is not the auditor");
         _;
     }
-
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
         _;
     }
-
     modifier onlyDAO() {
         require(msg.sender == VABBLE_DAO, "caller is not the DAO contract");
+        _;
+    }
+    modifier onlyStakingPool() {
+        require(msg.sender == STAKING_POOL, "caller is not the StakingPool contract");
         _;
     }
 
@@ -51,12 +55,15 @@ contract Ownablee {
     
     function setup(
         address _vote,
-        address _dao
+        address _dao,
+        address _stakingPool
     ) external onlyAuditor {
         require(_vote != address(0), "setupVote: bad Vote Contract address");
         VOTE = _vote;    
         require(_dao != address(0), "setupVote: bad VabbleDAO contract address");
         VABBLE_DAO = _dao;    
+        require(_stakingPool != address(0), "setupVote: bad StakingPool contract address");
+        STAKING_POOL = _stakingPool;    
     }    
     
     function transferAuditor(address _newAuditor) external onlyAuditor {
@@ -118,5 +125,21 @@ contract Ownablee {
         require(IERC20(PAYOUT_TOKEN).balanceOf(address(this)) >= _amount, "addToStudioPool: insufficient edge pool");
 
         Helper.safeTransfer(PAYOUT_TOKEN, VABBLE_DAO, _amount);
+    }
+
+    /// @notice Deposit VAB token from Auditor to EdgePool
+    function depositVABToEdgePool(uint256 _amount) external onlyAuditor {
+        require(_amount > 0, "depositVABToEdgePool: Zero amount");
+
+        Helper.safeTransferFrom(PAYOUT_TOKEN, msg.sender, address(this), _amount);
+    }
+
+    /// @notice Withdraw VAB token from EdgePool to V2
+    function withdrawVABFromEdgePool(address _to) external onlyStakingPool returns (uint256) {
+        uint256 poolBalance = IERC20(PAYOUT_TOKEN).balanceOf(address(this));
+        if(poolBalance > 0) {
+            Helper.safeTransfer(PAYOUT_TOKEN, _to, poolBalance);
+        }
+        return poolBalance;
     }
 }
