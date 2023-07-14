@@ -20,20 +20,6 @@ const CONFIG = {
       router: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
     },
   },
-  rinkeby: {
-    usdcAdress: "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926", // usdc in rinkeby    
-    daiAddress: "0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735", // dai in rinkeby
-    vabToken: "0x7e8a9cB60E99baF479FECCb4a29C33caaEeb1c52",   // vab in rinkeby
-    exmAddress: "0x6dB7315f4A296E47Eee37Ebb6871091dF5c2c40F", // exm in rinkeby
-    uniswap: { //Mainnet, kovan, rinkeby ...
-      factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-      router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
-    },
-    sushiswap: { // Ethereum testnet(Rinkeby/Kovan/../), Polygon(all), Avalance(all), Arbitrum(Mainnet)
-      factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
-      router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
-    },
-  },
   polygon: {
     usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     vabToken: "",
@@ -80,6 +66,12 @@ const STATUS = {
   UPDATED: 1,
   APPROVED_LISTING: 2,
   APPROVED_FUNDING: 3,
+};
+
+const DISCOUNT = {
+  month3: 11,
+  month6: 22,
+  month12: 25,
 };
 
 ///=================== start==
@@ -251,6 +243,7 @@ module.exports = {
   CONFIG,
   TOKEN_TYPE,
   STATUS,
+  DISCOUNT,
   getBigNumber,
   getSignatures,
   getByteFilm,

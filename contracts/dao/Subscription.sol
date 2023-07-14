@@ -18,6 +18,7 @@ contract Subscription is ReentrancyGuard {
     address private immutable DAO_PROPERTY; // Property contract
 
     uint256 private constant PERIOD_UNIT = 30 days; // 30 days
+    uint256[] private discountList;    
 
     struct UserSubscription {
         uint256 activeTime;       // active time
@@ -37,7 +38,8 @@ contract Subscription is ReentrancyGuard {
     constructor(
         address _ownable,
         address _uniHelper,
-        address _property
+        address _property,
+        uint256[] memory _discountPercents
     ) {        
         require(_ownable != address(0), "ownableContract: zero address");
         OWNABLE = _ownable;  
@@ -45,6 +47,8 @@ contract Subscription is ReentrancyGuard {
         UNI_HELPER = _uniHelper;      
         require(_property != address(0), "daoProperty: zero address");
         DAO_PROPERTY = _property; 
+        require(_discountPercents.length == 3, "discountList: bad length");
+        discountList = _discountPercents;
     }
 
     // ============= 0. Subscription by token and NFT. ===========    
@@ -123,6 +127,17 @@ contract Subscription is ReentrancyGuard {
         address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
+        
+        if(_period < 3) {
+            scriptAmount = scriptAmount;
+        } else if(_period >= 3 && _period < 6) {
+            scriptAmount = scriptAmount * (100 - discountList[0]) * 1e8 / 1e10;
+        } else if(_period >= 6 && _period < 12) {
+            scriptAmount = scriptAmount * (100 - discountList[1]) * 1e8 / 1e10;
+        } else {
+            scriptAmount = scriptAmount * (100 - discountList[2]) * 1e8 / 1e10;
+        }
+
         if(_token == vabToken) {
             expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, usdcToken, _token);
         } else if(_token == usdcToken) {
@@ -137,4 +152,15 @@ contract Subscription is ReentrancyGuard {
         if(subscriptionInfo[_customer].expireTime > block.timestamp) active_ = true;
         else active_ = false;
     }  
+
+    /// @notice Add discount percents(3 months, 6 months, 12 months) from Auditor
+    function addDiscountPercent(uint256[] memory _discountPercents) external onlyAuditor {
+        require(_discountPercents.length == 3, "discountList: bad length");
+        discountList = _discountPercents;
+    }
+
+    /// @notice get discount percent list
+    function getDiscountPercentList() external view returns(uint256[] memory list_) {
+        list_ = discountList;
+    } 
 }

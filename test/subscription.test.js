@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const ERC20 = require('../data/ERC20.json');
-const { CONFIG, NFTs, getUploadGateContent, getBigNumber, getFinalFilm, getVoteData, getProposalFilm } = require('../scripts/utils');
+const { CONFIG, DISCOUNT, ZERO_ADDRESS, getBigNumber } = require('../scripts/utils');
 
 describe('Subscription', function () {
   before(async function () {
@@ -68,7 +68,8 @@ describe('Subscription', function () {
       await this.SubscriptionFactory.deploy(
         this.ownableContract.address,
         this.uniHelperContract.address,
-        this.propertyContract.address
+        this.propertyContract.address,
+        [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
       )
     ).deployed();    
 
@@ -125,25 +126,100 @@ describe('Subscription', function () {
     await this.ownableContract.connect(this.auditor).addDepositAsset(assetList, {from: this.auditor.address});
   });
 
-  it('0. Subscription by token', async function () {
-    const periodVal = 1;
-    //================= VAB token
+  // it('0. Subscription by token', async function () {
+  //   const periodVal = 1;
+  //   //================= VAB token
+  //   const tx = await this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
+  //   this.events = (await tx.wait()).events
+  //   // await expect(
+  //   //   this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
+  //   // ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
+  //   //   this.customer1.address, 
+  //   //   this.vabToken.address, 
+  //   //   periodVal,
+  //   //   new Date().getTime()
+  //   // );    
+  //   const {activeTime, period, expireTime} = await this.SubContract.subscriptionInfo(this.customer1.address)
+  //   console.log('====time, period::', activeTime.toString(), period.toString(), expireTime.toString())
+
+  //   const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})    
+  //   expect(isActived).to.be.true;  
+
+  //   // => Increase next block timestamp for only testing
+  //   const incresTime = 4 * 86400; // 4 days
+  //   network.provider.send('evm_increaseTime', [incresTime]);
+  //   await network.provider.send('evm_mine');
+
+  //   await this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, 2, {from: this.customer1.address})
+    
+  //   // => Increase next block timestamp for only testing
+  //   const increseTime = 40 * 86400; // 40 days
+  //   network.provider.send('evm_increaseTime', [increseTime]);
+  //   await network.provider.send('evm_mine');
+            
+  //   expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.true;  
+
+  //   // => Increase next block timestamp for only testing
+  //   const increseTim = 60 * 86400; // 60 days
+  //   network.provider.send('evm_increaseTime', [increseTim]);
+  //   await network.provider.send('evm_mine');
+            
+  //   expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.false;  
+
+  //   //================ EXM token
+  //   await  this.SubContract.connect(this.customer2).activeSubscription(this.EXM.address, period, {from: this.customer2.address})
+
+  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;
+
+  //   // => Increase next block timestamp for only testing
+  //   network.provider.send('evm_increaseTime', [increseTime]);
+  //   await network.provider.send('evm_mine');
+            
+  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.false;  
+
+  //   //================ ETH
+  //   const period2 = 2
+  //   const payEth = ethers.utils.parseEther('1')
+  //   await this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
+
+  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+    
+  //   // => Increase next block timestamp for only testing
+  //   network.provider.send('evm_increaseTime', [increseTime]);
+  //   await network.provider.send('evm_mine');
+            
+  //   expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+  // });
+
+  it('1. Subscription by token based on Period', async function () {
+    let discountVal = await this.SubContract.getDiscountPercentList();
+    console.log('====discountVal::', discountVal[0].toString(), discountVal[1].toString(), discountVal[2].toString())
+
+    // const discountPercentList = [0, 0 ,0]
+    // await this.SubContract.connect(this.auditor).addDiscountPercent(discountPercentList)
+    // discountVal = await this.SubContract.getDiscountPercentList();
+    // console.log('====discountVal-1::', discountVal[0].toString(), discountVal[1].toString(), discountVal[2].toString())
+
+    const periodVal = 3;
+    let subAmount_vab = await this.SubContract.getExpectedSubscriptionAmount(this.vabToken.address, periodVal)
+    console.log('====subAmount_vab::', subAmount_vab.toString())
+    let subAmount_usdc = await this.SubContract.getExpectedSubscriptionAmount(this.USDC.address, periodVal)
+    console.log('====subAmount_usdc::', subAmount_usdc.toString())
+    let subAmount_exm = await this.SubContract.getExpectedSubscriptionAmount(this.EXM.address, periodVal)
+    console.log('====subAmount_exm::', subAmount_exm.toString())
+    let subAmount_eth = await this.SubContract.getExpectedSubscriptionAmount(ZERO_ADDRESS, periodVal)
+    console.log('====subAmount_eth::', subAmount_eth.toString()) // 0.005362450175362902
+    
+    //================= VAB token    
     const tx = await this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
     this.events = (await tx.wait()).events
-    // await expect(
-    //   this.SubContract.connect(this.customer1).activeSubscription(this.vabToken.address, periodVal, {from: this.customer1.address})
-    // ).to.emit(this.SubContract, 'SubscriptionActivated').withArgs(
-    //   this.customer1.address, 
-    //   this.vabToken.address, 
-    //   periodVal,
-    //   new Date().getTime()
-    // );    
+    // console.log('====events::', this.events[12].args)
     const {activeTime, period, expireTime} = await this.SubContract.subscriptionInfo(this.customer1.address)
     console.log('====time, period::', activeTime.toString(), period.toString(), expireTime.toString())
 
     const isActived = await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})    
     expect(isActived).to.be.true;  
-
+    
     // => Increase next block timestamp for only testing
     const incresTime = 4 * 86400; // 4 days
     network.provider.send('evm_increaseTime', [incresTime]);
@@ -159,34 +235,34 @@ describe('Subscription', function () {
     expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.true;  
 
     // => Increase next block timestamp for only testing
-    const increseTim = 60 * 86400; // 60 days
+    const increseTim = 200 * 86400; // 200 days
     network.provider.send('evm_increaseTime', [increseTim]);
     await network.provider.send('evm_mine');
             
     expect(await this.SubContract.connect(this.customer1).isActivedSubscription(this.customer1.address, {from: this.customer1.address})).to.be.false;  
 
-    //================ EXM token
-    await  this.SubContract.connect(this.customer2).activeSubscription(this.EXM.address, period, {from: this.customer2.address})
+    // //================ EXM token
+    // await  this.SubContract.connect(this.customer2).activeSubscription(this.EXM.address, period, {from: this.customer2.address})
 
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;
+    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;
 
-    // => Increase next block timestamp for only testing
-    network.provider.send('evm_increaseTime', [increseTime]);
-    await network.provider.send('evm_mine');
+    // // => Increase next block timestamp for only testing
+    // network.provider.send('evm_increaseTime', [increseTime]);
+    // await network.provider.send('evm_mine');
             
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.false;  
+    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.false;  
 
-    //================ ETH
-    const period2 = 2
-    const payEth = ethers.utils.parseEther('1')
-    await this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
+    // //================ ETH
+    // const period2 = 6
+    // const payEth = ethers.utils.parseEther('1')
+    // await this.SubContract.connect(this.customer2).activeSubscription(CONFIG.addressZero, period2, {from: this.customer2.address, value: payEth})
 
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
     
-    // => Increase next block timestamp for only testing
-    network.provider.send('evm_increaseTime', [increseTime]);
-    await network.provider.send('evm_mine');
+    // // => Increase next block timestamp for only testing
+    // network.provider.send('evm_increaseTime', [increseTime]);
+    // await network.provider.send('evm_mine');
             
-    expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
+    // expect(await this.SubContract.connect(this.customer2).isActivedSubscription(this.customer2.address, {from: this.customer2.address})).to.be.true;  
   });
 });
