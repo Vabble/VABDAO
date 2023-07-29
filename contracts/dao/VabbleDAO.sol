@@ -24,7 +24,6 @@ import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IFactoryFilmNFT.sol";
 import "../interfaces/IVabbleDAO.sol";
-import "hardhat/console.sol";
 
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;

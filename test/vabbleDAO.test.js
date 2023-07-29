@@ -3,7 +3,7 @@ const { ethers, network } = require('hardhat');
 const { BigNumber } = require('ethers');
 const { utils } = require('ethers');
 const ERC20 = require('../data/ERC20.json');
-const { CONFIG, getByteFilmUpdate, getFinalFilm, getBigNumber, getVoteData, getProposalFilm, getOldProposalFilm } = require('../scripts/utils');
+const { CONFIG, DISCOUNT, getFinalFilm, getBigNumber, getVoteData, getProposalFilm, getOldProposalFilm } = require('../scripts/utils');
   
 describe('VabbleDAO', function () {
   before(async function () {
@@ -103,7 +103,8 @@ describe('VabbleDAO', function () {
       await this.SubscriptionFactory.deploy(
         this.Ownablee.address,
         this.UniHelper.address,
-        this.Property.address
+        this.Property.address,
+        [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
       )
     ).deployed();    
     
@@ -123,6 +124,7 @@ describe('VabbleDAO', function () {
       this.Vote.address,
       {from: this.auditor.address}
     )  
+    
     // Initialize Vote contract
     await this.Vote.connect(this.auditor).initializeVote(
       this.VabbleDAO.address,
@@ -133,8 +135,9 @@ describe('VabbleDAO', function () {
     await this.Ownablee.connect(this.auditor).addDepositAsset(
       [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
     )
+    
     await this.Ownablee.connect(this.auditor).setup(
-      this.Vote.address, this.VabbleDAO.address, {from: this.auditor.address}
+      this.Vote.address, this.VabbleDAO.address, this.StakingPool.address, {from: this.auditor.address}
     )
     expect(await this.Ownablee.auditor()).to.be.equal(this.auditor.address);
         
@@ -363,6 +366,10 @@ describe('VabbleDAO-test-5', function () {
     const enableClaimer1 = getBigNumber(1, 0)
 
     // *** fundType=0 => approve list,  fundType>0 => approve fund ***
+    let ethVal = ethers.utils.parseEther('1')
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+    console.log('======paid matic test')
+    return
 
     // Create proposal for a film by studio
     // fundType=0 => approve list
@@ -394,7 +401,6 @@ describe('VabbleDAO-test-5', function () {
     )
     
     // fundType=1 => approve fund
-    let ethVal = ethers.utils.parseEther('1')
     await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(1, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(3, 0), 

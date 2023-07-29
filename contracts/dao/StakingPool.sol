@@ -11,6 +11,7 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFunding.sol";
+import "hardhat/console.sol";
 
 contract StakingPool is ReentrancyGuard {
     
@@ -211,9 +212,11 @@ contract StakingPool is ReentrancyGuard {
             }
         }
 
+        uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
+        
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
-        uint256 rewardAmount = si.stakeAmount * period * IProperty(DAO_PROPERTY).rewardRate() / 1e10 / 1e4;
+        uint256 rewardAmount = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
 
         uint256 extraRewardAmount;
         uint256[] memory filmIds = IVote(VOTE).getFundingFilmIdsPerUser(_customer); 
@@ -239,9 +242,15 @@ contract StakingPool is ReentrancyGuard {
         // If customer is film board member, more rewards(25%)
         if(IProperty(DAO_PROPERTY).isBoardWhitelist(_customer) == 2) {            
             rewardAmount += rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
-        }        
-
+        } 
         amount_ = rewardAmount + extraRewardAmount;
+    }
+
+    function __rewardPercent(uint256 _stakingAmount) private view returns (uint256 percent_) {
+        uint256 poolPercent = _stakingAmount * 1e10 / totalStakingAmount; 
+        // 500 * 1e10 / 1000 = 50*1e8 = 50% 
+        percent_ = IProperty(DAO_PROPERTY).rewardRate() * poolPercent / 1e10;
+        // 0.025*1e8 * 50*1e8 / 1e10 = 0.0125*1e8 = 0.0125%
     }
 
     /// @notice Calculate APR(Annual Percentage Rate) for staking rewards
@@ -259,7 +268,10 @@ contract StakingPool is ReentrancyGuard {
         require(_voteCount >= _voteCountForFund, "apr: bad fund vote count");
 
         // Annual rate = daily rate x period(ex: 365)
-        uint256 rewardAmount = _stakeAmount * _period * IProperty(DAO_PROPERTY).rewardRate() / 1e10;
+        uint256 rewardPercent = __rewardPercent(_stakeAmount); // 0.0125*1e8 = 0.0125%        
+        uint256 rewardAmount = totalRewardAmount * rewardPercent * _period / 1e10;
+
+        // uint256 rewardAmount = _stakeAmount * _period * IProperty(DAO_PROPERTY).rewardRate() / 1e10;
         
         uint256 pExtraRate = (IProperty(DAO_PROPERTY).extraRewardRate() / 1e10) * _period;
         uint256 extraRewardAmount = _voteCountForFund * totalRewardAmount * pExtraRate;

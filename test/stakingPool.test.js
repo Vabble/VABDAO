@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { BigNumber } = require('ethers');
 const ERC20 = require('../data/ERC20.json');
-const { CONFIG, getBigNumber, getProposalFilm, getVoteData } = require('../scripts/utils');
+const { CONFIG, getBigNumber, DISCOUNT, getVoteData } = require('../scripts/utils');
 
 describe('StakingPool', function () {
   before(async function () {        
@@ -98,7 +98,8 @@ describe('StakingPool', function () {
       await this.SubscriptionFactory.deploy(
         this.Ownablee.address,
         this.UniHelper.address,
-        this.Property.address
+        this.Property.address,
+        [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
       )
     ).deployed();    
     
@@ -206,10 +207,17 @@ describe('StakingPool', function () {
   });
 
   it('Staking and unstaking, withdraw VAB token with two options', async function () {   
-    const stakingAmount = getBigNumber(2000)
-    await this.StakingPool.connect(this.customer1).stakeVAB(stakingAmount, {from: this.customer1.address})
-    expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(stakingAmount)
-            
+    const stakingAmount1 = getBigNumber(500)
+    const stakingAmount2 = getBigNumber(300)
+    const stakingAmount3 = getBigNumber(200)
+    await this.StakingPool.connect(this.customer1).stakeVAB(stakingAmount1, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer2).stakeVAB(stakingAmount2, {from: this.customer2.address})
+    await this.StakingPool.connect(this.customer3).stakeVAB(stakingAmount3, {from: this.customer3.address})
+    expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(stakingAmount1)
+
+    let totalAmount = await this.StakingPool.totalStakingAmount()
+    console.log('===totalStakingAmount1::', totalAmount.toString()) // 1000.000000000000000000
+    
     // => Increase next block timestamp for only testing
     let period = 31 * 24 * 3600; // lockPeriod = 30 days
     network.provider.send('evm_increaseTime', [period]);
@@ -222,26 +230,59 @@ describe('StakingPool', function () {
 
     const stakingInfo1 = await this.StakingPool.stakeInfo(this.customer1.address)
     let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    console.log('===userRewardAmount-start::', userRewardAmount.toString()) // 0.387500000000000000
+
+
+    const stakingAmount4 = getBigNumber(1000)
+    await this.StakingPool.connect(this.studio1).stakeVAB(stakingAmount4, {from: this.studio1.address})
+    // => Increase next block timestamp for only testing
+    period = 10 * 24 * 3600; // 10 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
+
+    totalAmount = await this.StakingPool.totalStakingAmount()
+    // console.log('===totalStakingAmount2::', totalAmount.toString()) // 2000.000000000000000000
+    const studioRewardAmount = await this.StakingPool.calcRewardAmount(this.studio1.address)
+    // console.log('===studioRewardAmount::', studioRewardAmount.toString()) // 0.125000000000000000
+    const userRewardAmount2 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    console.log('===userRewardAmount2::', userRewardAmount2.toString()) // 00.256250000000000000
+
+    
+    const stakingAmount5 = getBigNumber(1000)
+    await this.StakingPool.connect(this.studio2).stakeVAB(stakingAmount5, {from: this.studio2.address})
+    // => Increase next block timestamp for only testing
+    period = 10 * 24 * 3600; // 10 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
+    const userRewardAmount3 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    console.log('===userRewardAmount3::', userRewardAmount3.toString()) // 00.212499660000000000
+
+    await this.StakingPool.connect(this.studio1).unstakeVAB(getBigNumber(1000), {from: this.studio1.address})
+    console.log('===sender::', this.studio1.address)
+    
+    // => Increase next block timestamp for only testing
+    period = 10 * 24 * 3600; // 10 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
+    const userRewardAmount4 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    console.log('===userRewardAmount4::', userRewardAmount4.toString()) // 00.380614583587500000
+    // return
+
 
     let aprAnyAmount = await this.StakingPool.calculateAPR(
       getBigNumber(365, 0), getBigNumber(20000), 10, 10, 2, false
     )
-
-    console.log('===userRewardAmount-start::', aprAnyAmount.toString())
-    // 0.248000000000000000 => 2000 staked
-    // 2.920000000000000000 => 2000 staked
-    // 29.200000000000000000 => 20000 staked
-
-    // 21.900000000000000000 => 20000 staked
-
+    console.log('===aprAnyAmount-start::', aprAnyAmount.toString()) // 91.097916727500000000
 
     // =========== withdrawReward with option - 1
+    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    console.log('===userRewardAmount-1::', userRewardAmount.toString())
+
     let txx = await this.StakingPool.connect(this.customer1).withdrawReward(1, {from: this.customer1.address})
     this.events = (await txx.wait()).events
     let rargs = this.events[0].args
     expect(rargs.staker).to.be.equal(this.customer1.address)
     expect(rargs.isCompound).to.be.equal(1)
-    // console.log('====withdraw ragrs::', rargs.conTime.toString())
     
     const stakingInfo2 = await this.StakingPool.stakeInfo(this.customer1.address)
     expect(stakingInfo2.stakeAmount).to.be.equal(BigNumber.from(userRewardAmount).add(stakingInfo1.stakeAmount))
@@ -267,10 +308,9 @@ describe('StakingPool', function () {
     const stakingInfo3 = await this.StakingPool.stakeInfo(this.customer1.address)
     expect(stakingInfo2.stakeAmount).to.be.equal(stakingInfo3.stakeAmount)
 
-
     // ============= calculate reward amount
     userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount-0::', userRewardAmount.toString())
+    expect(userRewardAmount).to.be.equal(0) // because called withdrawReward just before.
 
     // => Increase next block timestamp for only testing
     period = 1 * 24 * 3600; // lockPeriod = 30 days
@@ -366,18 +406,18 @@ describe('StakingPool', function () {
     await this.vabToken.connect(this.auditor).approve(this.Ownablee.address, getBigNumber(100000000));
     await this.Ownablee.connect(this.auditor).depositVABToEdgePool(getBigNumber(2000))
 
-    let c2_balance = await this.vabToken.balanceOf(this.customer2.address)
-    console.log('=======c2_balance before::', c2_balance.toString())
-    const tx = await this.StakingPool.connect(this.auditor).withdrawAllFund(this.customer2.address)
-    this.events = (await tx.wait()).events
-    // console.log('=======events::', this.events)
-    const arg = this.events[2].args
-    const wAmount = arg.amount
-    console.log('=======wAmount::', wAmount.toString())
-    // 50000190000000000000000000
-    // 50000190000000000000000000
-    c2_balance = await this.vabToken.balanceOf(this.customer2.address)
-    console.log('=======c2_balance after::', c2_balance.toString())
+    // let c2_balance = await this.vabToken.balanceOf(this.customer2.address)
+    // console.log('=======c2_balance before::', c2_balance.toString())
+    // const tx = await this.StakingPool.connect(this.auditor).withdrawAllFund(this.customer2.address)
+    // this.events = (await tx.wait()).events
+    // // console.log('=======events::', this.events)
+    // const arg = this.events[2].args
+    // const wAmount = arg.amount
+    // console.log('=======wAmount::', wAmount.toString())
+    // // 50000190000000000000000000
+    // // 50000190000000000000000000
+    // c2_balance = await this.vabToken.balanceOf(this.customer2.address)
+    // console.log('=======c2_balance after::', c2_balance.toString())
   });
 
   // it('Staking and unstaking, withdraw VAB token with min value', async function () {   

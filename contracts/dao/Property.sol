@@ -135,7 +135,7 @@ contract Property is ReentrancyGuard {
         maxAllowPeriod = 90 days;        
 
         boardVoteWeight = 30 * 1e8;      // 30% (1% = 1e8)
-        rewardRate = 40000;              // 0.0004% (1% = 1e8, 100%=1e10)
+        rewardRate = 2500000; //40000;              // 0.0004% (1% = 1e8, 100%=1e10) // 2500000(0.025%)
         extraRewardRate = 10000;         // 0.0001% (1% = 1e8, 100%=1e10)
         boardRewardRate = 25 * 1e8;      // 25%
         fundFeePercent = 2 * 1e8;        // percent(2%) 
@@ -148,7 +148,7 @@ contract Property is ReentrancyGuard {
         minDepositAmount = 50 * (10**IERC20Metadata(usdcToken).decimals());    // amount in cash(usd dollar - $50)
         maxDepositAmount = 5000 * (10**IERC20Metadata(usdcToken).decimals());  // amount in cash(usd dollar - $5000)
         availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 75M        
-        subscriptionAmount = 1 * (10**IERC20Metadata(usdcToken).decimals());   // amount in cash(usd dollar - $1)
+        subscriptionAmount = 299 * (10**IERC20Metadata(usdcToken).decimals()) / 100;   // amount in cash(usd dollar - $2.99)
         minVoteCount = 1;//5;
     }
 
