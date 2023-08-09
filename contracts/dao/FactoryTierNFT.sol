@@ -28,7 +28,8 @@ contract FactoryTierNFT {
         uint256 minAmount;    // invested max amount(ex: $50)
     }
     
-    string public baseUri;    // Base URI    
+    string public baseUri;                     // Base URI    
+    string public collectionUri;               // Collection URI  
 
     mapping(address => TierNFT) public nftInfo;             // (nft address => TierNFT)
     mapping(address => address[]) private userTierNFTs;          // (user => tier nft address list)
@@ -62,8 +63,18 @@ contract FactoryTierNFT {
     }
 
     /// @notice Set baseURI by Auditor.
-    function setBaseURI(string memory _baseUri) external onlyAuditor {
+    function setBaseURI(
+        string memory _baseUri,
+        string memory _collectionUri
+    ) external onlyAuditor {
+        bytes memory baseUriByte = bytes(_baseUri);
+        require(baseUriByte.length > 0, "empty baseUri");
+
+        bytes memory collectionUriByte = bytes(_collectionUri);
+        require(collectionUriByte.length > 0, "empty collectionUri");
+
         baseUri = _baseUri;
+        collectionUri = _collectionUri;
     }
 
     /// @notice onlyStudio set tier info for his films
@@ -107,7 +118,7 @@ contract FactoryTierNFT {
         require(_tier > 0, "deployTier: zero tier");
         require(tierInfo[_filmId][_tier].minAmount > 0, "deployTier: not set tier");
 
-        VabbleNFT t = new VabbleNFT(baseUri, _name, _symbol);
+        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol);
         tierNFTContract[_filmId][_tier] = t;
 
         userTierNFTs[msg.sender].push(address(t));             

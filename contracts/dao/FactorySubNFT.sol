@@ -32,6 +32,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
     
     string public baseUri;                     // Base URI    
+    string public collectionUri;               // Collection URI   
 
     mapping(uint256 => Mint) private mintInfo;              // (category => AdminMint)
     mapping(uint256 => Lock) private lockInfo;        // (tokenId => SubLock)
@@ -62,8 +63,18 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     /// @notice Set baseURI by Auditor.
-    function setBaseURI(string memory _baseUri) external onlyAuditor {
+    function setBaseURI(
+        string memory _baseUri,        
+        string memory _collectionUri
+    ) external onlyAuditor {
+        bytes memory baseUriByte = bytes(_baseUri);
+        require(baseUriByte.length > 0, "empty baseUri");
+
+        bytes memory collectionUriByte = bytes(_collectionUri);
+        require(collectionUriByte.length > 0, "empty collectionUri");
+
         baseUri = _baseUri;
+        collectionUri = _collectionUri;
     }
 
     /// @notice Set subscription nft mint information by Auditor.
@@ -90,7 +101,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         string memory _symbol
     ) public onlyAuditor {   
 
-        subNFTContract = new VabbleNFT(baseUri, _name, _symbol);
+        subNFTContract = new VabbleNFT(baseUri, collectionUri, _name, _symbol);
 
         subNFTAddress = address(subNFTContract);
 

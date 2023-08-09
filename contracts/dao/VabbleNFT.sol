@@ -3,27 +3,31 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract VabbleNFT is ERC721, ERC721Enumerable {    
+contract VabbleNFT is ERC2981, ERC721Enumerable {    
     
     using Counters for Counters.Counter;
     using Strings for uint256;
 
     Counters.Counter private nftCount;
-    string public baseUri;                     // Base URI       
+    string public baseUri;                     // Base URI      
+    string public collectionUri;               // Collection URI   
 
     receive() external payable {}
     constructor(
         string memory _baseUri,
+        string memory _collectionUri,
         string memory _name,
         string memory _symbol
     ) ERC721(_name, _symbol) {
         baseUri = _baseUri;
+        collectionUri = _collectionUri;
     }
-
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable, ERC721) returns (bool) {
+    
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable, ERC2981) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
@@ -32,9 +36,18 @@ contract VabbleNFT is ERC721, ERC721Enumerable {
         address to,
         uint256 firstTokenId,
         uint256 batchSize
-    ) internal virtual override(ERC721Enumerable, ERC721) {
+    ) internal virtual override(ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }  
+
+    function contractURI() public view returns (string memory) {
+        return collectionUri;
+    }
+
+    // function contractURI() public pure returns (string memory) {
+    //     string memory json = '{"name":"Command+AAA","description":"This is test command+aaa collection","external_url":"https://openseacreatures.io/3","image":"https://i.seadn.io/gcs/files/fd08b4a340be10b6af307d7f68542976.png","banner":"https://storage.googleapis.com/opensea-prod.appspot.com/puffs/3.png","seller_fee_basis_points":100,"fee_recipient":"0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1"}';
+    //     return string.concat("data:application/json;utf8,", json);
+    // }
 
     function mintTo(address _to) public payable returns (uint256) {
         uint256 newTokenId = __getNextTokenId();

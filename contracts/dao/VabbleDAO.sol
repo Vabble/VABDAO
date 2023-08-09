@@ -42,19 +42,22 @@ contract VabbleDAO is ReentrancyGuard {
     address public immutable FILM_NFT_FACTORY;  
     
     uint256[] private proposalFilmIds;    
+    uint256[] private updatedProposalFilmIds;    
     uint256[] private approvedFundingFilmIds;
     uint256[] private approvedListingFilmIds;
     address[] private studioPoolUsers;            // (which => user list)
     address[] private edgePoolUsers;              // (which => user list)
 
     mapping(uint256 => IVabbleDAO.Film) public filmInfo;              // Each film information(filmId => Film)
+    mapping(address => uint256[]) private userUpdatedFilmProposalIds; // (studio => filmId list)
     mapping(address => uint256[]) private userFilmProposalIds;        // (studio => filmId list)
     mapping(address => uint256[]) private userApprovedFilmIds;        // (studio => filmId list)    
 
     uint256 public StudioPool; 
     uint256 public finalFilmCalledTime;
 
-    Counters.Counter public filmCount;          // filmId is from No.1
+    Counters.Counter public filmCount;          // created filmId is from No.1
+    Counters.Counter public updatedFilmCount;   // updated filmId is from No.1
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -160,6 +163,10 @@ contract VabbleDAO is ReentrancyGuard {
         fInfo.pCreateTime = block.timestamp;
         fInfo.studio = msg.sender;
         fInfo.status = Helper.Status.UPDATED;
+
+        updatedFilmCount.increment();
+        updatedProposalFilmIds.push(_filmId);
+        userUpdatedFilmProposalIds[msg.sender].push(_filmId);
 
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp); // add timestap to array for calculating rewards
 
@@ -421,11 +428,13 @@ contract VabbleDAO is ReentrancyGuard {
     function getFilmIds(uint256 _flag) external view returns (uint256[] memory list_) {        
         if(_flag == 1) list_ = proposalFilmIds;
         else if(_flag == 2) list_ = approvedListingFilmIds;        
-        else if(_flag == 3) list_ = approvedFundingFilmIds;
+        else if(_flag == 3) list_ = approvedFundingFilmIds;        
+        else if(_flag == 4) list_ = updatedProposalFilmIds;
     }
 
-    function getUserFilmIds(uint256 _flag, address _user) external view returns (uint256[] memory list_) {        
-        if(_flag == 2) list_ = userFilmProposalIds[_user];
+    function getUserFilmIds(uint256 _flag, address _user) external view returns (uint256[] memory list_) {           
+        if(_flag == 1) list_ = userUpdatedFilmProposalIds[_user];
+        else if(_flag == 2) list_ = userFilmProposalIds[_user];
         else if(_flag == 3) list_ = userApprovedFilmIds[_user];
     }
 
