@@ -134,6 +134,9 @@ contract VabbleDAO is ReentrancyGuard {
     ) public {                
         require(_studioPayees.length > 0, 'proposalUpdate: empty payees');
         require(_studioPayees.length == _sharePercents.length, 'proposalUpdate: invalid share percent');
+        
+        bytes memory titleByte = bytes(_title);
+        require(titleByte.length > 0, "proposalUpdate: empty title");
 
         IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
         if(fInfo.fundType > 0) {            

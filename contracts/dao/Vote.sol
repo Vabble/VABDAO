@@ -64,9 +64,9 @@ contract Vote is ReentrancyGuard {
     mapping(address => uint256) public userGovernVoteCount; //(user => governance vote count)
     mapping(uint256 => uint256) public govPassedVoteCount;  //(flag => pased vote count) 1: agent, 2: disput, 3: board, 4: pool, 5: property    
     mapping(address => uint256) private lastVoteTime;        // (staker => block.timestamp) for removing filmboard member
-    // For extra reward
-    mapping(address => uint256[]) private fundingFilmIdsPerUser;                         // (staker => filmId[] for only funding)
-    mapping(address => mapping(uint256 => uint256)) private fundingIdsVoteStatusPerUser; // (staker => (filmId => voteInfo) for only funing) 1,2,3
+    // // For extra reward
+    // mapping(address => uint256[]) private listingFilmIdsPerUser;                         // (staker => filmId[] for only listing)
+    // mapping(address => mapping(uint256 => uint256)) private listingIdsVoteStatusPerUser; // (staker => (filmId => voteInfo) for only listing) 1,2,3
         
     modifier initialized() {
         require(isInitialized, "Need initialized!");
@@ -121,6 +121,7 @@ contract Vote is ReentrancyGuard {
     ) private {
         require(msg.sender != IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId), "filmVote: film owner");
         require(!isAttendToFilmVote[msg.sender][_filmId], "_voteToFilm: Already voted");    
+        require(_voteInfo == 1 || _voteInfo == 2 || _voteInfo == 3, "_voteToFilm: bad vote info");    
 
         Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
         require(status == Helper.Status.UPDATED, "Not updated");        
@@ -131,14 +132,14 @@ contract Vote is ReentrancyGuard {
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
         (, , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
-        if(fundType > 0) { // in case of fund film
-            // If film is for funding and voter is film board member, more weight(30%) per vote
+        if(fundType == 0) { // in case of distribution(list) film
+            // If film is for listing and voter is film board member, more weight(30%) per vote
             if(IProperty(DAO_PROPERTY).isBoardWhitelist(msg.sender) == 2) {
                 stakeAmount *= (IProperty(DAO_PROPERTY).boardVoteWeight() + 1e10) / 1e10; // (30+100)/100=1.3
             }
-            //For extra reward in funding film case
-            fundingFilmIdsPerUser[msg.sender].push(_filmId);
-            fundingIdsVoteStatusPerUser[msg.sender][_filmId] = _voteInfo;
+            // //For extra reward in listing film case
+            // listingFilmIdsPerUser[msg.sender].push(_filmId);
+            // listingIdsVoteStatusPerUser[msg.sender][_filmId] = _voteInfo;
         }
 
         Voting storage fv = filmVoting[_filmId];
@@ -221,7 +222,8 @@ contract Vote is ReentrancyGuard {
         uint256 _flag     //  flag=1 => dispute vote
     ) external onlyStaker initialized nonReentrant {       
         require(!isAttendToAgentVote[msg.sender][_agent], "voteToAgent: Already voted");
-        require(msg.sender != _agent, "voteToAgent: self voted");
+        require(msg.sender != _agent, "voteToAgent: self voted");    
+        require(_voteInfo == 1 || _voteInfo == 2 || _voteInfo == 3, "voteToAgent: bad vote info");  
         
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getGovProposalTime(_agent, 1);
         require(pCreateTime > 0, "voteToAgent: no proposal");
@@ -327,6 +329,7 @@ contract Vote is ReentrancyGuard {
     ) external onlyStaker initialized nonReentrant {
         require(IProperty(DAO_PROPERTY).isBoardWhitelist(_candidate) == 1, "voteToFilmBoard: Not candidate");
         require(!isAttendToBoardVote[msg.sender][_candidate], "voteToFilmBoard: Already voted");   
+        require(_voteInfo == 1 || _voteInfo == 2 || _voteInfo == 3, "voteToFilmBoard: bad vote info");  
         require(msg.sender != _candidate, "voteToFilmBoard: self voted");   
 
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getGovProposalTime(_candidate, 2);
@@ -398,7 +401,8 @@ contract Vote is ReentrancyGuard {
     ///@notice Stakers vote to proposal for setup the address to reward DAO fund
     function voteToRewardAddress(address _rewardAddress, uint256 _voteInfo) external onlyStaker initialized nonReentrant {
         require(IProperty(DAO_PROPERTY).isRewardWhitelist(_rewardAddress) == 1, "voteToRewardAddress: Not candidate");
-        require(!isAttendToRewardAddressVote[msg.sender][_rewardAddress], "voteToRewardAddress: Already voted");     
+        require(!isAttendToRewardAddressVote[msg.sender][_rewardAddress], "voteToRewardAddress: Already voted");   
+        require(_voteInfo == 1 || _voteInfo == 2 || _voteInfo == 3, "voteToRewardAddress: bad vote info");    
         require(msg.sender != _rewardAddress, "voteToRewardAddress: self voted");       
 
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getGovProposalTime(_rewardAddress, 3);
@@ -475,7 +479,8 @@ contract Vote is ReentrancyGuard {
     ) external onlyStaker initialized nonReentrant {
         uint256 propertyVal = IProperty(DAO_PROPERTY).getProperty(_propertyIndex, _flag);
         require(propertyVal > 0, "voteToProperty: no proposal");
-        require(!isAttendToPropertyVote[_flag][msg.sender][propertyVal], "voteToProperty: Already voted");
+        require(!isAttendToPropertyVote[_flag][msg.sender][propertyVal], "voteToProperty: Already voted"); 
+        require(_voteInfo == 1 || _voteInfo == 2 || _voteInfo == 3, "voteToProperty: bad vote info");    
         
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getPropertyProposalTime(propertyVal, _flag);
         require(pCreateTime > 0, "voteToProperty: no proposal");
@@ -553,24 +558,25 @@ contract Vote is ReentrancyGuard {
         if(_period >= block.timestamp - _startTime) return true;
         else return false;
     }
-    /// @notice Get funding filmId voteStatus per User
-    function getFundingIdVoteStatusPerUser(
-        address _staker, 
-        uint256 _filmId
-    ) external view returns(uint256) {
-        return fundingIdsVoteStatusPerUser[_staker][_filmId];
-    }
 
-    /// @notice Get funding filmIds per User
-    function getFundingFilmIdsPerUser(address _staker) external view returns(uint256[] memory) {
-        return fundingFilmIdsPerUser[_staker];
-    }
+    // /// @notice Get listing filmId voteStatus per User
+    // function getListingIdVoteStatusPerUser(
+    //     address _staker, 
+    //     uint256 _filmId
+    // ) external view returns(uint256) {
+    //     return listingIdsVoteStatusPerUser[_staker][_filmId];
+    // }
 
-    /// @notice Delete all funding filmIds per User from only StakingPool contract
-    function removeFundingFilmIdsPerUser(address _staker) external {
-        require(msg.sender == STAKING_POOL, "caller is not StakingPool contract");
-        delete fundingFilmIdsPerUser[_staker];
-    }
+    // /// @notice Get listing filmIds per User
+    // function getListingFilmIdsPerUser(address _staker) external view returns(uint256[] memory) {
+    //     return listingFilmIdsPerUser[_staker];
+    // }
+
+    // /// @notice Delete all listing filmIds per User from only StakingPool contract
+    // function removeListingFilmIdsPerUser(address _staker) external {
+    //     require(msg.sender == STAKING_POOL, "caller is not StakingPool contract");
+    //     delete listingFilmIdsPerUser[_staker];
+    // }
 
     /// @notice Update last vote time for removing filmboard member
     function getLastVoteTime(address _member) external view returns (uint256 time_) {

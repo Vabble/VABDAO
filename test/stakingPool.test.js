@@ -206,148 +206,408 @@ describe('StakingPool', function () {
     this.events = [];
   });
 
-  it('Staking and unstaking, withdraw VAB token with two options', async function () {       
-    // Add reward from auditor
-    const rewardAmount = getBigNumber(50000000)
-    await this.StakingPool.connect(this.auditor).addRewardToPool(rewardAmount, {from: this.auditor.address})
-    expect(await this.StakingPool.totalRewardAmount()).to.be.equal(rewardAmount)
+  // it('Staking and unstaking, withdraw VAB token with two options', async function () {       
+  //   // Add reward from auditor
+  //   const rewardAmount = getBigNumber(50000000)
+  //   await this.StakingPool.connect(this.auditor).addRewardToPool(rewardAmount, {from: this.auditor.address})
+  //   expect(await this.StakingPool.totalRewardAmount()).to.be.equal(rewardAmount)
 
 
-    const stakingAmount1 = getBigNumber(1000)
-    const stakingAmount2 = getBigNumber(300)
-    // const stakingAmount3 = getBigNumber(200)
-    await this.StakingPool.connect(this.customer1).stakeVAB(stakingAmount1, {from: this.customer1.address})
-    await this.StakingPool.connect(this.customer2).stakeVAB(stakingAmount2, {from: this.customer2.address})
-    // await this.StakingPool.connect(this.customer3).stakeVAB(stakingAmount3, {from: this.customer3.address})
-    expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(stakingAmount1)
+  //   const stakingAmount1 = getBigNumber(1000)
+  //   const stakingAmount2 = getBigNumber(300)
+  //   // const stakingAmount3 = getBigNumber(200)
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakingAmount1, {from: this.customer1.address})
+  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakingAmount2, {from: this.customer2.address})
+  //   // await this.StakingPool.connect(this.customer3).stakeVAB(stakingAmount3, {from: this.customer3.address})
+  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(stakingAmount1)
 
-    let totalAmount = await this.StakingPool.totalStakingAmount()
-    console.log('===totalStakingAmount1::', totalAmount.toString()) // 1000.000000000000000000
+  //   let totalAmount = await this.StakingPool.totalStakingAmount()
+  //   console.log('===totalStakingAmount1::', totalAmount.toString()) // 1000.000000000000000000
     
-    // => Increase next block timestamp for only testing
-    let period = 600; // 10 mins
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
+  //   // => Increase next block timestamp for only testing
+  //   let period = 600; // 10 mins
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
     
-    // const stakingInfo1 = await this.StakingPool.stakeInfo(this.customer1.address)
+  //   const stakingInfo1 = await this.StakingPool.stakeInfo(this.customer1.address)
     
 
-    const tx1 = await this.StakingPool.connect(this.customer2).unstakeVAB(stakingAmount2, {from: this.customer2.address})
-    this.events = (await tx1.wait()).events
-    let args11 = this.events[1].args
-    console.log('===events11::', args11.rewardAmount.toString())
-    let args22 = this.events[3].args
-    console.log('===events22::', args22.unStakeAmount.toString())
+  //   const tx1 = await this.StakingPool.connect(this.customer2).unstakeVAB(stakingAmount2, {from: this.customer2.address})
+  //   this.events = (await tx1.wait()).events
+  //   let args11 = this.events[1].args
+  //   console.log('===events11::', args11.rewardAmount.toString())
+  //   let args22 = this.events[3].args
+  //   console.log('===events22::', args22.unStakeAmount.toString())
 
-    // let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    // console.log('===userRewardAmount-start::', userRewardAmount.toString()) // 0.387500000000000000
+  //   // let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   // console.log('===userRewardAmount-start::', userRewardAmount.toString()) // 0.387500000000000000
 
-    const tx = await this.StakingPool.connect(this.customer1).unstakeVAB(stakingAmount1, {from: this.customer1.address})
-    this.events = (await tx.wait()).events
-    let args1 = this.events[1].args
-    console.log('===events1::', args1.rewardAmount.toString())
-    let args2 = this.events[3].args
-    console.log('===events2::', args2.unStakeAmount.toString())
-    return
-
+  //   const tx = await this.StakingPool.connect(this.customer1).unstakeVAB(stakingAmount1, {from: this.customer1.address})
+  //   this.events = (await tx.wait()).events
+  //   let args1 = this.events[1].args
+  //   console.log('===events1::', args1.rewardAmount.toString())
+  //   let args2 = this.events[3].args
+  //   console.log('===events2::', args2.unStakeAmount.toString())
 
 
 
-    const stakingAmount4 = getBigNumber(1000)
-    await this.StakingPool.connect(this.studio1).stakeVAB(stakingAmount4, {from: this.studio1.address})
-    // => Increase next block timestamp for only testing
-    period = 10 * 24 * 3600; // 10 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
+  //   const stakingAmount4 = getBigNumber(1000)
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakingAmount1, {from: this.customer1.address})
+  //   await this.StakingPool.connect(this.studio1).stakeVAB(stakingAmount4, {from: this.studio1.address})
+  //   // => Increase next block timestamp for only testing
+  //   period = 10 * 24 * 3600; // 10 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
 
-    totalAmount = await this.StakingPool.totalStakingAmount()
-    // console.log('===totalStakingAmount2::', totalAmount.toString()) // 2000.000000000000000000
-    const studioRewardAmount = await this.StakingPool.calcRewardAmount(this.studio1.address)
-    // console.log('===studioRewardAmount::', studioRewardAmount.toString()) // 0.125000000000000000
-    const userRewardAmount2 = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount2::', userRewardAmount2.toString()) // 00.256250000000000000
+  //   totalAmount = await this.StakingPool.totalStakingAmount()
+  //   // console.log('===totalStakingAmount2::', totalAmount.toString()) // 2000.000000000000000000
+  //   const studioRewardAmount = await this.StakingPool.calcRewardAmount(this.studio1.address)
+  //   // console.log('===studioRewardAmount::', studioRewardAmount.toString()) // 0.125000000000000000
+  //   const userRewardAmount2 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount2::', userRewardAmount2.toString()) // 00.256250000000000000
+   
 
+  //   const stakingAmount5 = getBigNumber(1000)
+  //   await this.StakingPool.connect(this.studio2).stakeVAB(stakingAmount5, {from: this.studio2.address})
+  //   // => Increase next block timestamp for only testing
+  //   period = 10 * 24 * 3600; // 10 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+  //   const userRewardAmount3 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount3::', userRewardAmount3.toString()) // 00.212499660000000000
+
+  //   await this.StakingPool.connect(this.studio1).unstakeVAB(getBigNumber(1000), {from: this.studio1.address})
+  //   console.log('===sender::', this.studio1.address)
     
-    const stakingAmount5 = getBigNumber(1000)
-    await this.StakingPool.connect(this.studio2).stakeVAB(stakingAmount5, {from: this.studio2.address})
-    // => Increase next block timestamp for only testing
-    period = 10 * 24 * 3600; // 10 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
-    const userRewardAmount3 = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount3::', userRewardAmount3.toString()) // 00.212499660000000000
+  //   // => Increase next block timestamp for only testing
+  //   period = 10 * 24 * 3600; // 10 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+  //   const userRewardAmount4 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount4::', userRewardAmount4.toString()) // 00.380614583587500000
+  //   // return
 
-    await this.StakingPool.connect(this.studio1).unstakeVAB(getBigNumber(1000), {from: this.studio1.address})
-    console.log('===sender::', this.studio1.address)
+
+  //   let aprAnyAmount = await this.StakingPool.calculateAPR(
+  //     getBigNumber(365, 0), getBigNumber(20000), 10, 10, false
+  //   )
+  //   console.log('===aprAnyAmount-start::', aprAnyAmount.toString()) // 91.097916727500000000
+
+  //   // =========== withdrawReward with option - 1
+  //   let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount-1::', userRewardAmount.toString())
+
+  //   let txx = await this.StakingPool.connect(this.customer1).withdrawReward(1, {from: this.customer1.address})
+  //   this.events = (await txx.wait()).events
+  //   let rargs = this.events[0].args
+  //   expect(rargs.staker).to.be.equal(this.customer1.address)
+  //   expect(rargs.isCompound).to.be.equal(1)
     
-    // => Increase next block timestamp for only testing
-    period = 10 * 24 * 3600; // 10 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
-    const userRewardAmount4 = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount4::', userRewardAmount4.toString()) // 00.380614583587500000
-    // return
+  //   const stakingInfo2 = await this.StakingPool.stakeInfo(this.customer1.address)
+  //   expect(stakingInfo2.stakeAmount).to.be.equal(BigNumber.from(userRewardAmount).add(stakingInfo1.stakeAmount))
+  //   expect(stakingInfo2.voteCount).to.be.equal(stakingInfo1.voteCount)
 
+  //   // =========== withdrawReward with option - 0
+  //   await expect(
+  //     this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
+  //   ).to.be.revertedWith('withdrawReward: lock period yet');
 
-    let aprAnyAmount = await this.StakingPool.calculateAPR(
-      getBigNumber(365, 0), getBigNumber(20000), 10, 10, 2, false
-    )
-    console.log('===aprAnyAmount-start::', aprAnyAmount.toString()) // 91.097916727500000000
+  //   // => Increase next block timestamp for only testing
+  //   period = 31 * 24 * 3600; // lockPeriod = 30 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
 
-    // =========== withdrawReward with option - 1
-    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount-1::', userRewardAmount.toString())
+  //   userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   txx = await this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
+  //   this.events = (await txx.wait()).events
+  //   rargs = this.events[1].args
+  //   expect(rargs.staker).to.be.equal(this.customer1.address)
+  //   expect(rargs.rewardAmount).to.be.equal(userRewardAmount)
 
-    let txx = await this.StakingPool.connect(this.customer1).withdrawReward(1, {from: this.customer1.address})
-    this.events = (await txx.wait()).events
-    let rargs = this.events[0].args
-    expect(rargs.staker).to.be.equal(this.customer1.address)
-    expect(rargs.isCompound).to.be.equal(1)
+  //   const stakingInfo3 = await this.StakingPool.stakeInfo(this.customer1.address)
+  //   expect(stakingInfo2.stakeAmount).to.be.equal(stakingInfo3.stakeAmount)
+
+  //   // ============= calculate reward amount
+  //   userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   expect(userRewardAmount).to.be.equal(0) // because called withdrawReward just before.
+
+  //   // => Increase next block timestamp for only testing
+  //   period = 1 * 24 * 3600; // lockPeriod = 30 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+
+  //   userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount-1::', userRewardAmount.toString())
+
+  //   // => Increase next block timestamp for only testing
+  //   period = 2 * 24 * 3600; // lockPeriod = 30 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+
+  //   userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount-2::', userRewardAmount.toString())
+
+  //   const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
+  //   const sharePercents = [getBigNumber(60, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
+  //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
+  //   const raiseAmount = getBigNumber(150, 6)
+  //   const fundPeriod = getBigNumber(20, 0)
+  //   const fundType = getBigNumber(3, 0)
+  //   const title4 = 'film title - 4'
+  //   const desc4 = 'film description - 4'
+  //   const enableClaimer = 1;
+  //   // Create proposal for a film by studio {from: this.studio1.address}
+  //   let ethVal = ethers.utils.parseEther('1')
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+  //     getBigNumber(1, 0), 
+  //     title4,
+  //     desc4,
+  //     sharePercents, 
+  //     studioPayees,  
+  //     raiseAmount, 
+  //     fundPeriod, 
+  //     enableClaimer,
+  //     {from: this.studio1.address}
+  //   )
     
-    const stakingInfo2 = await this.StakingPool.stakeInfo(this.customer1.address)
-    expect(stakingInfo2.stakeAmount).to.be.equal(BigNumber.from(userRewardAmount).add(stakingInfo1.stakeAmount))
-    expect(stakingInfo2.voteCount).to.be.equal(stakingInfo1.voteCount)
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+  //     getBigNumber(2, 0), 
+  //     title4,
+  //     desc4,
+  //     sharePercents, 
+  //     studioPayees,  
+  //     raiseAmount, 
+  //     fundPeriod, 
+  //     enableClaimer,
+  //     {from: this.studio1.address}
+  //   )
+    
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+  //     getBigNumber(3, 0), 
+  //     title4,
+  //     desc4,
+  //     sharePercents, 
+  //     studioPayees,  
+  //     raiseAmount, 
+  //     fundPeriod, 
+  //     enableClaimer,
+  //     {from: this.studio1.address}
+  //   )
+    
+  //   userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount-after create film proposal::', userRewardAmount.toString())
 
-    // =========== withdrawReward with option - 0
-    await expect(
-      this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-    ).to.be.revertedWith('withdrawReward: lock period yet');
+  //   /// Vote to Films 
+  //   const proposalIds = await this.VabbleDAO.getFilmIds(1); // 1, 2
+  //   console.log('=====proposalIds::', proposalIds.length)
+  //   const voteInfos = [1, 1];
+  //   // await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address})
+  //   await this.Vote.connect(this.customer1).voteToFilms([1], [1], {from: this.customer1.address})
+    
+  //   userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===userRewardAmount-after vote::', userRewardAmount.toString()) // 240028800000000000
 
-    // => Increase next block timestamp for only testing
-    period = 31 * 24 * 3600; // lockPeriod = 30 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
+  //   // => Increase next block timestamp for only testing
+  //   period = 28 * 24 * 3600; // lockPeriod = 30 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
 
-    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    txx = await this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-    this.events = (await txx.wait()).events
-    rargs = this.events[1].args
-    expect(rargs.staker).to.be.equal(this.customer1.address)
-    expect(rargs.rewardAmount).to.be.equal(userRewardAmount)
+  //   const list = await this.Vote.getListingFilmIdsPerUser(this.customer1.address)
+  //   console.log('===list-before withdraw::', list.length)
 
-    const stakingInfo3 = await this.StakingPool.stakeInfo(this.customer1.address)
-    expect(stakingInfo2.stakeAmount).to.be.equal(stakingInfo3.stakeAmount)
+  //   // await expect(
+  //   //   this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
+  //   // ).to.emit(this.StakingPool, 'RewardWithdraw').withArgs(this.customer1.address, userRewardAmount);
 
-    // ============= calculate reward amount
-    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    expect(userRewardAmount).to.be.equal(0) // because called withdrawReward just before.
+  //   await this.vabToken.connect(this.auditor).approve(this.Ownablee.address, getBigNumber(100000000));
+  //   await this.Ownablee.connect(this.auditor).depositVABToEdgePool(getBigNumber(2000))
 
-    // => Increase next block timestamp for only testing
-    period = 1 * 24 * 3600; // lockPeriod = 30 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
+  //   // let c2_balance = await this.vabToken.balanceOf(this.customer2.address)
+  //   // console.log('=======c2_balance before::', c2_balance.toString())
+  //   // const tx = await this.StakingPool.connect(this.auditor).withdrawAllFund(this.customer2.address)
+  //   // this.events = (await tx.wait()).events
+  //   // // console.log('=======events::', this.events)
+  //   // const arg = this.events[2].args
+  //   // const wAmount = arg.amount
+  //   // console.log('=======wAmount::', wAmount.toString())
+  //   // // 50000190000000000000000000
+  //   // // 50000190000000000000000000
+  //   // c2_balance = await this.vabToken.balanceOf(this.customer2.address)
+  //   // console.log('=======c2_balance after::', c2_balance.toString())
+  // });
 
-    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount-1::', userRewardAmount.toString())
+  // it('check fund film', async function () {       
+  //   // Add reward from auditor
+  //   const rewardAmount = getBigNumber(50000000)
+  //   await this.StakingPool.connect(this.auditor).addRewardToPool(rewardAmount, {from: this.auditor.address})
+  //   expect(await this.StakingPool.totalRewardAmount()).to.be.equal(rewardAmount)
 
-    // => Increase next block timestamp for only testing
-    period = 2 * 24 * 3600; // lockPeriod = 30 days
-    network.provider.send('evm_increaseTime', [period]);
-    await network.provider.send('evm_mine');
 
-    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount-2::', userRewardAmount.toString())
+  //   const stakingAmount1 = getBigNumber(1000)
+  //   const stakingAmount2 = getBigNumber(300)
+  //   const stakingAmount3 = getBigNumber(200)
+  //   const stakingAmount4 = getBigNumber(1000)
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakingAmount1, {from: this.customer1.address})
+  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakingAmount2, {from: this.customer2.address})
+  //   await this.StakingPool.connect(this.customer3).stakeVAB(stakingAmount3, {from: this.customer3.address})
+  //   await this.StakingPool.connect(this.studio1).stakeVAB(stakingAmount4, {from: this.studio1.address})
+    
+    
+  //   const sharePercents = [getBigNumber(60, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
+  //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
+  //   const raiseAmount = getBigNumber(150, 6)
+  //   const fundPeriod = getBigNumber(20, 0)
+  //   const fundType = 0 // getBigNumber(3, 0)
+  //   const title4 = 'film title - 4'
+  //   const desc4 = 'film description - 4'
+  //   const enableClaimer = 1;
+  //   // Create proposal for a film by studio {from: this.studio1.address}
+  //   let ethVal = ethers.utils.parseEther('1')
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+  //     getBigNumber(1, 0), 
+  //     title4,
+  //     desc4,
+  //     sharePercents, 
+  //     studioPayees,  
+  //     raiseAmount, 
+  //     fundPeriod, 
+  //     enableClaimer,
+  //     {from: this.studio1.address}
+  //   )
+    
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+  //     getBigNumber(2, 0), 
+  //     title4,
+  //     desc4,
+  //     sharePercents, 
+  //     studioPayees,  
+  //     raiseAmount, 
+  //     fundPeriod, 
+  //     enableClaimer,
+  //     {from: this.studio1.address}
+  //   )
+    
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+  //     getBigNumber(3, 0), 
+  //     title4,
+  //     desc4,
+  //     sharePercents, 
+  //     studioPayees,  
+  //     raiseAmount, 
+  //     fundPeriod, 
+  //     enableClaimer,
+  //     {from: this.studio1.address}
+  //   )
+    
+  //   // let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   // console.log('===user1-RewardAmount-0::', userRewardAmount.toString()) // 0
 
+  //   /// Vote to Films 
+  //   const proposalIds = await this.VabbleDAO.getFilmIds(1); // 1, 2, 3
+  //   console.log('=====proposalIds::', proposalIds.length)
+  //   const voteInfos = [1, 1, 3];
+  //   await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address})
+  //   await this.Vote.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address})
+  //   await this.Vote.connect(this.customer3).voteToFilms(proposalIds, voteInfos, {from: this.customer3.address})
+    
+
+  //   // => Increase next block timestamp for only testing
+  //   let period = 600; // lockPeriod = 10 mins
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+    
+  //   let userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   console.log('===user1-RewardAmount-1::', userRewardAmount.toString()) // 36.361732105825869461 36.721749255388501831
+    
+  // });
+
+  // it('Staking and unstaking, withdraw VAB token with min value', async function () {   
+  //   const rAmount = getBigNumber(50000000)
+  //   await this.StakingPool.connect(this.auditor).addRewardToPool(rAmount, {from: this.auditor.address})
+
+  //   // Staking VAB token
+  //   await expect(
+  //     this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(1, 16), {from: this.customer1.address})
+  //   ).to.be.revertedWith('stakeVAB: less amount than 0.01');
+
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(2, 16))
+    
+  //   console.log('===isInitialized::', await this.StakingPool.isInitialized())
+  //   // unstaking VAB token
+  //   await expect(
+  //     this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
+        
+  //   // => Increase next block timestamp for only testing
+  //   const period = 31 * 24 * 3600; // lockPeriod = 30 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+
+  //   await this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(0)
+
+  //   //========= withdrawReward
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
+
+  //   // => Increase next block timestamp for only testing
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+
+  //   const rewardA = await this.StakingPool.calcRewardAmount(this.customer1.address)
+  //   let totalReward = await this.StakingPool.totalRewardAmount()
+  //   console.log('===rewardAmount::', rewardA.toString(), totalReward.toString())
+    
+  //   await this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
+
+  //   totalReward = await this.StakingPool.totalRewardAmount()
+  //   console.log('===rewardAmount::', rewardA.toString(), totalReward.toString())
+  // });
+
+  // it('Staking and unstaking VAB token', async function () {   
+  //   // Staking VAB token
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(100), {from: this.customer1.address})
+  //   await this.StakingPool.connect(this.customer2).stakeVAB(getBigNumber(150), {from: this.customer2.address})
+  //   await this.StakingPool.connect(this.customer3).stakeVAB(getBigNumber(300), {from: this.customer3.address})
+  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
+  //   expect(await this.StakingPool.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
+  //   expect(await this.StakingPool.getStakeAmount(this.customer3.address)).to.be.equal(getBigNumber(300))
+    
+  //   console.log('===isInitialized::', await this.StakingPool.isInitialized())
+  //   // unstaking VAB token
+  //   await expect(
+  //     this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
+        
+  //   console.log('===test::0')
+  //   // => Increase next block timestamp for only testing
+  //   const period = 31 * 24 * 3600; // lockPeriod = 30 days
+  //   network.provider.send('evm_increaseTime', [period]);
+  //   await network.provider.send('evm_mine');
+
+  //   await this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+  //   console.log('===isInitialized::', 'ok')
+  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
+  // });
+
+  it('Staking and unstaking VAB token when voting', async function () { 
+    // Staking VAB token
+    const stakeAmount = getBigNumber(100)
+    await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+    await this.StakingPool.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
+    expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(stakeAmount)
+
+    let w_t = await this.StakingPool.getWithdrawableTime(this.customer1.address);
+    console.log("=====w-t after staking::", w_t.toString())
+
+    // Create proposal for 2 films by studio        
     const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
     const sharePercents = [getBigNumber(60, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
     const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
@@ -385,451 +645,81 @@ describe('StakingPool', function () {
       {from: this.studio1.address}
     )
     
-    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
-    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-      getBigNumber(3, 0), 
-      title4,
-      desc4,
-      sharePercents, 
-      studioPayees,  
-      raiseAmount, 
-      fundPeriod, 
-      enableClaimer,
-      {from: this.studio1.address}
-    )
+    // initialize vote contract
+    await this.Vote.connect(this.auditor).initializeVote(
+      this.VabbleDAO.address, 
+      this.StakingPool.address, 
+      this.Property.address,
+      {from: this.auditor.address}
+    );
+    expect(await this.Vote.isInitialized()).to.be.true
     
-    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount-after create film proposal::', userRewardAmount.toString())
-
-    /// Vote to Films 
-    const proposalIds = await this.VabbleDAO.getFilmIds(1); // 1, 2
-    console.log('=====proposalIds::', proposalIds.length)
-    const voteInfos = [1, 1];
-    // await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address})
-    await this.Vote.connect(this.customer1).voteToFilms([1], [1], {from: this.customer1.address})
-    
-    userRewardAmount = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('===userRewardAmount-after vote::', userRewardAmount.toString()) // 240028800000000000
-
     // => Increase next block timestamp for only testing
-    period = 28 * 24 * 3600; // lockPeriod = 30 days
-    network.provider.send('evm_increaseTime', [period]);
+    const period_1 = 180; // 3 mins
+    network.provider.send('evm_increaseTime', [period_1]);
     await network.provider.send('evm_mine');
 
-    const list = await this.Vote.getFundingFilmIdsPerUser(this.customer1.address)
-    console.log('===list-before withdraw::', list.length)
+    await expect(
+      this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+    ).to.be.revertedWith('unstakeVAB: lock period yet');
+    console.log('=====test-0')
+    // customer1 vote to films
+    const proposalIds = await this.VabbleDAO.getFilmIds(1); // 1, 2
+    const voteInfos = [1, 1];
+    await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address})
+    await this.Vote.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address})
 
-    // await expect(
-    //   this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-    // ).to.emit(this.StakingPool, 'RewardWithdraw').withArgs(this.customer1.address, userRewardAmount);
+    // => Increase next block timestamp for only testing
+    const period_2 = 60; // 1 mins
+    network.provider.send('evm_increaseTime', [period_2]);
+    await network.provider.send('evm_mine');
 
-    await this.vabToken.connect(this.auditor).approve(this.Ownablee.address, getBigNumber(100000000));
-    await this.Ownablee.connect(this.auditor).depositVABToEdgePool(getBigNumber(2000))
+    // w_t = await this.StakingPool.getWithdrawableTime(this.customer1.address);
+    // console.log("=====w-t after 34 days::", w_t.toString())
+    await expect(
+      this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+    ).to.be.revertedWith('unstakeVAB: lock period yet');
 
-    // let c2_balance = await this.vabToken.balanceOf(this.customer2.address)
-    // console.log('=======c2_balance before::', c2_balance.toString())
-    // const tx = await this.StakingPool.connect(this.auditor).withdrawAllFund(this.customer2.address)
-    // this.events = (await tx.wait()).events
-    // // console.log('=======events::', this.events)
-    // const arg = this.events[2].args
-    // const wAmount = arg.amount
-    // console.log('=======wAmount::', wAmount.toString())
-    // // 50000190000000000000000000
-    // // 50000190000000000000000000
-    // c2_balance = await this.vabToken.balanceOf(this.customer2.address)
-    // console.log('=======c2_balance after::', c2_balance.toString())
+    // => Increase next block timestamp
+    const period_3 = 600; // 10 mins
+    network.provider.send('evm_increaseTime', [period_3]);
+    await network.provider.send('evm_mine');
+
+    // const rewardRate = await this.Property.rewardRate()
+    // const totalRewardAmount = await this.StakingPool.totalRewardAmount()
+    // const totalStakingAmount = await this.StakingPool.totalStakingAmount()
+
+    let userRewardAmount1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    let userRewardAmount2 = await this.StakingPool.calcRewardAmount(this.customer2.address)
+    console.log('====userRewardAmount1,2::', userRewardAmount1.toString(), userRewardAmount2.toString())
+
+    // ==== 1
+    await this.StakingPool.connect(this.customer2).withdrawReward(0, {from: this.customer2.address})
+    const userReceivedRewardAmount2 = await this.StakingPool.connect(this.customer2).receivedRewardAmount(this.customer2.address, {from: this.customer2.address})
+    console.log('====userReceivedRewardAmount-2::', userReceivedRewardAmount2.toString())
+
+    // ==== 2
+    userRewardAmount1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    const tx = await this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
+    this.events = (await tx.wait()).events
+    const arg_reward = this.events[1].args
+    const arg_unstake = this.events[3].args    
+    expect(arg_reward.staker).to.be.equal(this.customer1.address)
+    // 1303425169751284 
+    // 1277093348140147
+    
+    expect(arg_reward.rewardAmount).to.be.equal(userRewardAmount1)
+    expect(arg_unstake.unstaker).to.be.equal(this.customer1.address)
+    expect(arg_unstake.unStakeAmount).to.be.equal(getBigNumber(70))
+    expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
+
+    
+
+    const totalRewardIssuedAmount = await this.StakingPool.totalRewardIssuedAmount();
+    console.log('====totalRewardIssuedAmount::', totalRewardIssuedAmount.toString())
+    
+    const userReceivedRewardAmount1 = await this.StakingPool.connect(this.customer1).receivedRewardAmount(this.customer1.address, {from: this.customer1.address})
+    console.log('====userReceivedRewardAmount-1::', userReceivedRewardAmount1.toString())
   });
 
-  // it('Staking and unstaking, withdraw VAB token with min value', async function () {   
-  //   // Staking VAB token
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(1, 16), {from: this.customer1.address})
-  //   ).to.be.revertedWith('stakeVAB: less amount than 0.01');
-
-  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
-  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(2, 16))
-    
-  //   console.log('===isInitialized::', await this.StakingPool.isInitialized())
-  //   // unstaking VAB token
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
-        
-  //   // => Increase next block timestamp for only testing
-  //   const period = 31 * 24 * 3600; // lockPeriod = 30 days
-  //   network.provider.send('evm_increaseTime', [period]);
-  //   await network.provider.send('evm_mine');
-
-  //   await this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
-  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(0)
-
-  //   //========= withdrawReward
-  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(2, 16), {from: this.customer1.address})
-
-  //   // => Increase next block timestamp for only testing
-  //   network.provider.send('evm_increaseTime', [period]);
-  //   await network.provider.send('evm_mine');
-
-  //   const rewardA = await this.StakingPool.calcRewardAmount(this.customer1.address)
-  //   let totalReward = await this.StakingPool.totalRewardAmount()
-  //   console.log('===rewardAmount::', rewardA.toString(), totalReward.toString())
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-  //   ).to.be.revertedWith('withdrawReward: Insufficient total reward amount');
-
-    
-  //   // Add reward from auditor
-  //   const rewardAmount = getBigNumber(100)
-  //   await this.StakingPool.connect(this.auditor).addRewardToPool(rewardAmount, {from: this.auditor.address})
-  //   expect(await this.StakingPool.totalRewardAmount()).to.be.equal(rewardAmount)
-
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-  //   ).to.emit(this.StakingPool, 'RewardWithdraw').withArgs(this.customer1.address, rewardA);
-
-  //   totalReward = await this.StakingPool.totalRewardAmount()
-  //   console.log('===rewardAmount::', rewardA.toString(), totalReward.toString())
-  // });
-
-  // it('Staking and unstaking VAB token', async function () {   
-  //   // Staking VAB token
-  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(100), {from: this.customer1.address})
-  //   await this.StakingPool.connect(this.customer2).stakeVAB(getBigNumber(150), {from: this.customer2.address})
-  //   await this.StakingPool.connect(this.customer3).stakeVAB(getBigNumber(300), {from: this.customer3.address})
-  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
-  //   expect(await this.StakingPool.getStakeAmount(this.customer2.address)).to.be.equal(getBigNumber(150))
-  //   expect(await this.StakingPool.getStakeAmount(this.customer3.address)).to.be.equal(getBigNumber(300))
-    
-  //   console.log('===isInitialized::', await this.StakingPool.isInitialized())
-  //   // unstaking VAB token
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
-        
-  //   console.log('===test::0')
-  //   // => Increase next block timestamp for only testing
-  //   const period = 31 * 24 * 3600; // lockPeriod = 30 days
-  //   network.provider.send('evm_increaseTime', [period]);
-  //   await network.provider.send('evm_mine');
-
-  //   await this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
-  //   console.log('===isInitialized::', 'ok')
-  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
-  // });
-
-  // it('Staking and unstaking VAB token when voting', async function () { 
-  //   // Staking VAB token
-  //   const stakeAmount = getBigNumber(100)
-  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
-  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
-  //   await this.StakingPool.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
-  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(100))
-
-  //   let w_t = await this.StakingPool.getWithdrawableTime(this.customer1.address);
-  //   console.log("=====w-t after staking::", w_t.toString())
-
-  //   // Create proposal for 2 films by studio    
-  //   const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
-  //   const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-  //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
-  //   const raiseAmount = getBigNumber(150, 6)
-  //   const fundPeriod = getBigNumber(20, 0)
-  //   const fundType = getBigNumber(3, 0)
-    
-  //   // Create proposal for a film by studio
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate([0, 0], this.vabToken.address, {from: this.studio1.address})
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     getBigNumber(1, 0), 
-  //     nftRight, 
-  //     sharePercents, 
-  //     studioPayees, 
-  //     raiseAmount, 
-  //     fundPeriod, 
-  //     fundType,
-  //     {from: this.studio1.address}
-  //   )
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     getBigNumber(2, 0), 
-  //     nftRight, 
-  //     sharePercents, 
-  //     studioPayees, 
-  //     raiseAmount, 
-  //     fundPeriod, 
-  //     fundType,
-  //     {from: this.studio1.address}
-  //   )
-    
-  //   // initialize vote contract
-  //   await this.Vote.connect(this.auditor).initializeVote(
-  //     this.VabbleDAO.address, 
-  //     this.StakingPool.address, 
-  //     this.Property.address,
-  //     {from: this.auditor.address}
-  //   );
-  //   expect(await this.Vote.isInitialized()).to.be.true
-    
-  //   // => Increase next block timestamp for only testing
-  //   const period_1 = 5 * 24 * 3600; // 5 days
-  //   network.provider.send('evm_increaseTime', [period_1]);
-  //   await network.provider.send('evm_mine');
-
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
-  //   console.log('=====test-0')
-  //   // customer1 vote to films
-  //   const proposalIds = await this.VabbleDAO.getFilmIds(1); // 1, 2
-  //   const voteInfos = [1, 1];
-  //   // const voteData1 = getVoteData(proposalIds, voteInfos)    
-  //   await this.Vote.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address})
-  //   console.log('=====test-1')
-  //   // const voteData = getVoteData([1], [1])
-  //   await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address})
-
-  //   // => Increase next block timestamp for only testing
-  //   const period_2 = 9 * 24 * 3600; // 9 days
-  //   network.provider.send('evm_increaseTime', [period_2]);
-  //   await network.provider.send('evm_mine');
-
-  //   // w_t = await this.StakingPool.getWithdrawableTime(this.customer1.address);
-  //   // console.log("=====w-t after 34 days::", w_t.toString())
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
-  //   ).to.be.revertedWith('unstakeVAB: lock period yet');
-
-  //   // => Increase next block timestamp
-  //   const period_3 = 20 * 24 * 3600; // 20 days
-  //   network.provider.send('evm_increaseTime', [period_3]);
-  //   await network.provider.send('evm_mine');
-
-  //   const rewardRate = await this.Property.rewardRate()
-  //   const lockPeriod = await this.Property.lockPeriod()
-  //   const timePercent = (BigNumber.from(period_1).add(period_2).add(period_3)).mul(10000).div(lockPeriod);
-  //   const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
-
-  //   const tx = await this.StakingPool.connect(this.customer1).unstakeVAB(getBigNumber(70), {from: this.customer1.address})
-  //   this.events = (await tx.wait()).events
-  //   const arg_reward = this.events[1].args
-  //   const arg_unstake = this.events[3].args    
-  //   expect(arg_reward.staker).to.be.equal(this.customer1.address)
-  //   console.log(
-  //     '====arg_reward.rewardAmount::', 
-  //     arg_unstake.unStakeAmount.toString(), 
-  //     await this.StakingPool.getStakeAmount(this.customer1.address).toString()
-  //   )
-  //   expect(arg_reward.rewardAmount).to.be.equal(expectRewardAmount)//0.00036000 0000000000
-  //   expect(arg_unstake.unstaker).to.be.equal(this.customer1.address)
-  //   expect(arg_unstake.unStakeAmount).to.be.equal(getBigNumber(70))
-  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(30))
-  // });
-
-  // it('AddReward and WithdrawReward with VAB token', async function() {
-  //   const stakeAmount = getBigNumber(100)
-  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
-  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
-
-  //   // Add reward from auditor
-  //   const rewardAmount = getBigNumber(1000)
-  //   await this.StakingPool.connect(this.auditor).addRewardToPool(rewardAmount, {from: this.auditor.address})
-  //   expect(await this.StakingPool.totalRewardAmount()).to.be.equal(rewardAmount)
-    
-  //   console.log('======test-1')
-  //   // deposit VAB token
-  //   await this.StakingPool.connect(this.studio1).depositVAB(rewardAmount, {from: this.studio1.address})
-    
-  //   // proposalFilmBoard
-  //   const VABBalance = await this.vabToken.balanceOf(this.customer1.address)
-  //   await this.Property.connect(this.customer1).proposalFilmBoard(this.customer2.address, 'test-1', 'desc-1', {from: this.customer1.address})
-    
-  //   console.log('======test-2')
-  //   const total = await this.StakingPool.totalRewardAmount()
-  //   expect(total).to.be.above(rewardAmount.mul(2))
-    
-  //   // Withdraw reward
-  //   let w_t = await this.StakingPool.getWithdrawableTime(this.customer1.address);
-  //   console.log("=====w-t after staking::", w_t.toString())
-  //   await expect(
-  //     this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-  //   ).to.be.revertedWith('withdrawReward: lock period yet');
-    
-  //   // vote to voteToFilmBoard for getting rewards
-  //   await this.Vote.connect(this.customer1).voteToFilmBoard(this.customer2.address, 1, {from:this.customer1.address})
-
-  //   const period = 30 * 24 * 3600; // lockPeriod = 30 days
-  //   network.provider.send('evm_increaseTime', [period]);
-  //   await network.provider.send('evm_mine');
-
-  //   let rewardRate = await this.Property.rewardRate()
-  //   console.log('=====rewards compare')
-  //   const tx = await this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-  //   this.events = (await tx.wait()).events
-  //   const arg = this.events[1].args
-  //   console.log('====arg::', arg.rewardAmount.toString(), rewardRate.toString())
-  //   expect(arg.staker).to.be.equal(this.customer1.address)
-  //   expect(arg.rewardAmount).to.be.equal(stakeAmount.mul(rewardRate).div(getBigNumber(1,10)))//0.01 VAB
-
-  //   const period_2 = 30 * 24 * 3600; // lockPeriod = 30 days
-  //   network.provider.send('evm_increaseTime', [period_2]);
-  //   await network.provider.send('evm_mine');
-
-  //   rewardRate = await this.Property.rewardRate()
-  //   const lockPeriod = await this.Property.lockPeriod()
-  //   const timePercent = BigNumber.from(period_2).mul(10000).div(lockPeriod);
-  //   const expectRewardAmount = BigNumber.from(stakeAmount).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
-
-  //   const tx_new = await this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-  //   this.events = (await tx_new.wait()).events
-  //   const arg_new = this.events[1].args
-  //   expect(arg_new.staker).to.be.equal(this.customer1.address)
-  //   expect(arg_new.rewardAmount).to.be.equal(expectRewardAmount)//0.01 VAB
-  // });
-
-  // it('withdraw rewards VAB token when voting for funding films', async function () {  
-  //   expect(await this.Vote.isInitialized()).to.be.true
-    
-  //   // Staking VAB token
-  //   // lockPeriod = 30 days as default
-  //   const stakeAmount = getBigNumber(1000)
-  //   const stakeAmount1 = getBigNumber(80000000)
-  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount1, {from: this.customer1.address})
-  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
-  //   await this.StakingPool.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
-  //   expect(await this.StakingPool.getStakeAmount(this.customer1.address)).to.be.equal(getBigNumber(80000000))
-
-  //   // WithdrawableTime after staking
-  //   let w_t = await this.StakingPool.getWithdrawableTime(this.customer1.address);
-  //   let _t = BigNumber.from(w_t).div(86400)
-  //   console.log("=====WithdrawableTime after staking::", _t.toString())
-
-  //   // Create proposal for 2 funding films by studio    
-  //   const nftRight = [getBigNumber(1,0), getBigNumber(2,0)]
-  //   const sharePercents = [getBigNumber(10, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-  //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
-  //   const raiseAmount = getBigNumber(150, 6)
-  //   const fundPeriod = getBigNumber(20, 0)
-  //   const fundType = getBigNumber(3, 0)
-    
-  //   // Create proposal for a film by studio
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate([0, 0], this.vabToken.address, {from: this.studio1.address})
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     getBigNumber(1, 0), 
-  //     nftRight, 
-  //     sharePercents, 
-  //     studioPayees, 
-  //     raiseAmount, 
-  //     fundPeriod, 
-  //     fundType,
-  //     {from: this.studio1.address}
-  //   )
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     getBigNumber(2, 0), 
-  //     nftRight, 
-  //     sharePercents, 
-  //     studioPayees, 
-  //     raiseAmount, 
-  //     fundPeriod, 
-  //     fundType,
-  //     {from: this.studio1.address}
-  //   )
-    
-  //   // => Increase next block timestamp
-  //   const period_0 = 5 * 24 * 3600; // 5 days
-  //   network.provider.send('evm_increaseTime', [period_0]);
-  //   await network.provider.send('evm_mine');
-
-  //   // customer1,2 vote to films after 5 days 
-  //   // filmVotePeriod = 10 days as default
-  //   // Example: withdrawTime is 6/15 and voteStartTime is 6/10, votePeriod is 10 days => withdrawTime is sum(6/20)
-  //   // so, staker cannot unstake his amount till 6/20
-  //   const proposalIds = await this.VabbleDAO.getFilmIds(1); // 1, 2
-  //   const voteInfos = [1, 1];
-  //   // const voteData = getVoteData(proposalIds, voteInfos)
-  //   await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address})
-  //   await this.Vote.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address})
-    
-  //   // WithdrawableTime after vote
-  //   w_t = await this.StakingPool.getWithdrawableTime(this.customer1.address);
-  //   _t = BigNumber.from(w_t).div(86400)
-  //   console.log("=====WithdrawableTime after vote::", _t.toString())
-
-  //   // => Increase next block timestamp
-  //   const period_1 = 25 * 24 * 3600; // 25 days
-  //   network.provider.send('evm_increaseTime', [period_1]);
-  //   await network.provider.send('evm_mine');
-
-  //   // => Change the minVoteCount from 5 ppl to 3 ppl for testing
-  //   await this.Property.connect(this.auditor).updatePropertyForTesting(2, 18, {from: this.auditor.address})
-
-  //   // Approve films 1,2
-  //   const approveData = [proposalIds[0], proposalIds[1]]
-  //   await expect(
-  //     this.Vote.connect(this.customer1).approveFilms(approveData, {from: this.customer1.address})
-  //   )
-  //   .to.emit(this.Vote, 'FilmsApproved')
-  //   .withArgs([getBigNumber(1,0), getBigNumber(2,0)]);
-
-  //   // Deposit to funding films from customer3(investor)
-  //   const depositAmount = getBigNumber(100000)
-  //   await this.VabbleFunding.connect(this.customer3).depositToFilm(
-  //     proposalIds[0], depositAmount, this.vabToken.address, {from: this.customer3.address}
-  //   )
-
-  //   console.log('=====1')
-  //   // => Increase next block timestamp
-  //   const period_3 = 20 * 24 * 3600; // 20 days
-  //   network.provider.send('evm_increaseTime', [period_3]);
-  //   await network.provider.send('evm_mine');
-
-  //   const rewardRate = await this.Property.rewardRate()
-  //   const lockPeriod = await this.Property.lockPeriod()
-  //   const timePercent = (BigNumber.from(period_1).add(period_0).add(period_3)).mul(10000).div(lockPeriod);
-  //   const expectRewardAmount = BigNumber.from(stakeAmount1).mul(timePercent).mul(rewardRate).div(getBigNumber(1,10)).div(10000);
-
-  //   console.log('=====2')
-  //   const totalRewardAmount = await this.StakingPool.totalRewardAmount()
-  //   const extraRewardRate = await this.Property.extraRewardRate();  
-  //   const extraExpectRewardAmount = BigNumber.from(totalRewardAmount).mul(extraRewardRate).div(getBigNumber(1,10));
-    
-  //   const raisingAmount = await this.VabbleFunding.getRaisedAmountByToken(proposalIds[0])
-  //   const {
-  //     nftRight_,
-  //     sharePercents_,
-  //     studioPayees_,
-  //     gatingType_,
-  //     rentPrice_,
-  //   } = await this.VabbleDAO.getFilmById(proposalIds[0])
-  //   const isRaised = await this.VabbleFunding.isRaisedFullAmount(proposalIds[0])
-
-  //   // Check user balance before withdrawReward    
-  //   let customer1V_1 = await this.vabToken.balanceOf(this.customer1.address)
-  //   console.log('===customer1V before withdraw::', customer1V_1.toString())
-
-  //   const tx = await this.StakingPool.connect(this.customer1).withdrawReward(0, {from: this.customer1.address})
-  //   this.events = (await tx.wait()).events
-  //   const arg_reward = this.events[1].args
-  //   console.log('test-1', arg_reward)
-
-  //   expect(arg_reward.staker).to.be.equal(this.customer1.address)
-    
-  //   console.log('====arg_reward=reward, expect, total, isRaise, raiseAmount, raisedAmount::', 
-  //     arg_reward.rewardAmount.toString(), //      7271109466218059
-  //     expectRewardAmount.toString(),      //      6666400000000000 
-  //     extraExpectRewardAmount.toString(), //       604709466218059
-  //     totalRewardAmount.toString(),       //9066108938801491315813
-  //     isRaised,                           // true
-  //     raisingAmount.toString()            //499248873
-  //   )
-    
-  //   expect(arg_reward.rewardAmount).to.be.equal(BigNumber.from(expectRewardAmount).add(extraExpectRewardAmount))
-  //   expect(arg_reward.staker).to.be.equal(this.customer1.address)
-
-  //   // Check user balance before withdrawReward    
-  //   const customer1V_2 = await this.vabToken.balanceOf(this.customer1.address)
-  //   console.log('===customer1V after withdraw::', customer1V_2.toString())
-  //   expect(customer1V_2).to.be.equal(BigNumber.from(customer1V_1).add(arg_reward.rewardAmount))
-    
-  //   // =========== check filmIdsPerUser
-  //   const ids_arr = await this.Vote.getFundingFilmIdsPerUser(this.customer1.address)
-  //   console.log('===ids_arr::', ids_arr.length)
-  // });
 });

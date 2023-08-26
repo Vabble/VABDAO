@@ -1,14 +1,8 @@
-const { ethers } = require("hardhat");
-
-module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
+module.exports = async function ({ getNamedAccounts, deployments }) {
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
 
     this.Ownablee = await deployments.get('Ownablee');  
-    
-    // this.VabbleDAO = await deployments.get('VabbleDAO');
-    // this.StakingPool = await deployments.get('StakingPool');
-    // this.Property = await deployments.get('Property');
 
     const deployContract = await deploy('Vote', {
       from: deployer,
@@ -19,9 +13,6 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
       deterministicDeployment: false,
       skipIfAlreadyDeployed: false,
     });
-
-    // const contract = await ethers.getContractAt('Vote', deployContract.address)
-    // await (await contract.initializeVote(this.VabbleDAO.address, this.StakingPool.address, this.Property.address)).wait();
   };
   
   
