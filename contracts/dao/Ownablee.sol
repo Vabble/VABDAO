@@ -7,16 +7,16 @@ import "../libraries/Helper.sol";
 
 contract Ownablee {
     
-    event VABWalletChanged(address wallet);
+    event VABWalletChanged(address indexed wallet);
 
     address public auditor;
     address public VAB_WALLET;           // Vabble wallet
     address public PAYOUT_TOKEN;         // VAB token       
     address public USDC_TOKEN;           // USDC token 
-
     address private VOTE;                // Vote contract address
     address private VABBLE_DAO;          // VabbleDAO contract address
     address private STAKING_POOL;        // StakingPool contract address
+    
     address[] private depositAssetList;
     
     mapping(address => bool) private allowAssetToDeposit;
@@ -76,7 +76,7 @@ contract Ownablee {
         auditor = _newAuditor;
     }
 
-    function addDepositAsset(address[] memory _assetList) external onlyAuditor {
+    function addDepositAsset(address[] calldata _assetList) external onlyAuditor {
         require(_assetList.length > 0, "addDepositAsset: zero list");
 
         for(uint256 i = 0; i < _assetList.length; i++) { 
@@ -87,7 +87,7 @@ contract Ownablee {
         }        
     }
 
-    function removeDepositAsset(address[] memory _assetList) external onlyAuditor {
+    function removeDepositAsset(address[] calldata _assetList) external onlyAuditor {
         require(_assetList.length > 0, "removeDepositAsset: zero list");
         
         for(uint256 i = 0; i < _assetList.length; i++) {

@@ -2,21 +2,17 @@
 
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../libraries/Helper.sol";
-import "../interfaces/IUniHelper.sol";
-import "../interfaces/IStakingPool.sol";
-import "../interfaces/IProperty.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVabbleFunding.sol";
 import "./VabbleNFT.sol";
 
-contract FactoryTierNFT {
+contract FactoryTierNFT is ReentrancyGuard {
 
-    event TierERC721Created(address nftCreator, address nftContract, uint tier, uint256 deployTime);// if tier > 0 then tierNFTContract
-    event TierERC721Minted(address nftContract, uint256 tokenId, address receiver, uint256 mintTime);
-    event TierInfoSetted(address filmOwner, uint256 filmId, uint256 tierCount, uint256 setTime);
+    event TierERC721Created(address nftCreator, address nftContract, uint indexed tier, uint256 deployTime);// if tier > 0 then tierNFTContract
+    event TierERC721Minted(address nftContract, uint256 indexed tokenId, address receiver, uint256 mintTime);
+    event TierInfoSetted(address filmOwner, uint256 indexed filmId, uint256 tierCount, uint256 setTime);
 
     struct TierNFT {
         string name;
@@ -38,9 +34,9 @@ contract FactoryTierNFT {
     mapping(uint256 => mapping(uint256 => VabbleNFT)) public tierNFTContract;  // (filmId => (tier number => nft contract))
     mapping(uint256 => mapping(uint256 => uint256[])) public tierNFTTokenList; // (filmId => (tier number => minted tokenId list))
     
-    address private OWNABLE;         // Ownablee contract address
-    address private VABBLE_DAO;      // VabbleDAO contract address
-    address private FUNDING;         // Funding contract address
+    address private immutable OWNABLE;         // Ownablee contract address
+    address private immutable VABBLE_DAO;      // VabbleDAO contract address
+    address private immutable FUNDING;         // Funding contract address
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -80,8 +76,8 @@ contract FactoryTierNFT {
     /// @notice onlyStudio set tier info for his films
     function setTierInfo(
         uint256 _filmId,
-        uint256[] memory _minAmounts,
-        uint256[] memory _maxAmounts
+        uint256[] calldata _minAmounts,
+        uint256[] calldata _maxAmounts
     ) external {                    
         require(_minAmounts.length > 0, "setTier: bad minAmount length");        
         require(_minAmounts.length == _maxAmounts.length, "setTier: bad maxAmount length");        
@@ -113,7 +109,7 @@ contract FactoryTierNFT {
         uint256 _tier,      // tier = 0 => filmNFT and tier > 0 => tierNFT
         string memory _name,
         string memory _symbol
-    ) public {        
+    ) external nonReentrant {        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "deployTier: not film owner");
         require(_tier > 0, "deployTier: zero tier");
         require(tierInfo[_filmId][_tier].minAmount > 0, "deployTier: not set tier");
@@ -131,7 +127,7 @@ contract FactoryTierNFT {
     }  
 
     /// @notice Should be called //before fundProcess() of VabbleDAO contract
-    function mintTierNft(uint256 _filmId) public {        
+    function mintTierNft(uint256 _filmId) external {        
         require(tierCount[_filmId] > 0, "mintTier: not set tier");
         require(IVabbleDAO(VABBLE_DAO).isEnabledClaimer(_filmId), "deployTier: not allow to mint tierNft");
 

@@ -3,21 +3,20 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleDAO.sol";
-import "../interfaces/IVabbleFunding.sol";
 import "./VabbleNFT.sol";
-// import "hardhat/console.sol";
 
-contract FactoryFilmNFT {
+contract FactoryFilmNFT is ReentrancyGuard {
 
-    event FilmERC721Created(address nftCreator, address nftContract, uint filmId, uint deployTime);
-    event FilmERC721Minted(address nftContract, uint256 tokenId, address receiver, uint mintTime);
-    event MintInfoSetted(address filmOwner, uint filmId, uint tier, uint mintAmount, uint mintPrice, uint feePercent, uint revenuePercent, uint setTime);
+    event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId, uint deployTime);
+    event FilmERC721Minted(address nftContract, uint256 indexed tokenId, address receiver, uint mintTime);
+    event MintInfoSetted(address filmOwner, uint indexed filmId, uint tier, uint mintAmount, uint mintPrice, uint feePercent, uint revenuePercent, uint setTime);
 
     struct Mint {
         uint256 tier;             // Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
@@ -118,7 +117,7 @@ contract FactoryFilmNFT {
 
         (uint256 raiseAmount, , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         if(fundType > 0) { // case of funding film
-            require(_amount * _price * (1 - _feePercent / 1e10) > raiseAmount, "setMint: many amount");
+            require(_amount * _price * (1e10 - _feePercent) / 1e10 > raiseAmount, "setMint: many amount");
         }
 
         Mint storage mInfo = mintInfo[_filmId];
@@ -137,7 +136,7 @@ contract FactoryFilmNFT {
         uint256 _filmId,
         string memory _name,
         string memory _symbol
-    ) public {        
+    ) external nonReentrant {        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "deployNFT: not film owner");
 
         (, uint256 fundPeriod, uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
@@ -166,8 +165,8 @@ contract FactoryFilmNFT {
     }  
 
     function mintToBatch(
-        uint256[] memory _filmIdList, 
-        address[] memory _toList, 
+        uint256[] calldata _filmIdList, 
+        address[] calldata _toList, 
         address _payToken
     ) external {
         require(_toList.length > 0, "mintBatch: zero item length");

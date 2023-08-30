@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IVabbleDAO.sol";
@@ -11,17 +11,16 @@ import "../interfaces/IOwnablee.sol";
 
 contract Vote is ReentrancyGuard {
 
-    event VotedToFilm(address voter, uint256 filmId, uint256 voteInfo, uint256 voteTime);
-    event VotedToAgent(address voter, address agent, uint256 voteInfo, uint256 voteTime);
-    event VotedToProperty(address voter, uint256 flag, uint256 propertyVal, uint256 voteInfo, uint256 voteTime);
-    event VotedToPoolAddress(address voter, address rewardAddress, uint256 voteInfo, uint256 voteTime);
-    event VotedToFilmBoard(address voter, address candidate, uint256 voteInfo, uint256 voteTime);
-       
-    event FilmApproved(uint256 filmId, uint256 fundType, uint256 approveTime, uint256 reason);
-    event AuditorReplaced(address agent, address caller, uint256 replaceTime, uint256 reason);
-    event FilmBoardAdded(address boardMember, address caller, uint256 addTime, uint256 reason);
-    event PoolAddressAdded(address pool, address caller, uint256 addTime, uint256 reason);
-    event PropertyUpdated(uint256 whichProperty, uint256 propertyValue, address caller, uint256 updateTime, uint256 reason);
+    event VotedToFilm(address indexed voter, uint256 indexed filmId, uint256 voteInfo, uint256 voteTime);
+    event VotedToAgent(address indexed voter, address indexed agent, uint256 voteInfo, uint256 voteTime);
+    event VotedToProperty(address indexed voter, uint256 flag, uint256 propertyVal, uint256 voteInfo, uint256 voteTime);
+    event VotedToPoolAddress(address indexed voter, address rewardAddress, uint256 voteInfo, uint256 voteTime);
+    event VotedToFilmBoard(address indexed voter, address candidate, uint256 voteInfo, uint256 voteTime);       
+    event FilmApproved(uint256 indexed filmId, uint256 fundType, uint256 approveTime, uint256 reason);
+    event AuditorReplaced(address indexed agent, address caller, uint256 replaceTime, uint256 reason);
+    event FilmBoardAdded(address indexed boardMember, address caller, uint256 addTime, uint256 reason);
+    event PoolAddressAdded(address indexed pool, address caller, uint256 addTime, uint256 reason);
+    event PropertyUpdated(uint256 indexed whichProperty, uint256 propertyValue, address caller, uint256 updateTime, uint256 reason);
     
     struct Voting {
         uint256 stakeAmount_1;  // staking amount of voter with status(yes)
@@ -64,9 +63,6 @@ contract Vote is ReentrancyGuard {
     mapping(address => uint256) public userGovernVoteCount; //(user => governance vote count)
     mapping(uint256 => uint256) public govPassedVoteCount;  //(flag => pased vote count) 1: agent, 2: disput, 3: board, 4: pool, 5: property    
     mapping(address => uint256) private lastVoteTime;        // (staker => block.timestamp) for removing filmboard member
-    // // For extra reward
-    // mapping(address => uint256[]) private listingFilmIdsPerUser;                         // (staker => filmId[] for only listing)
-    // mapping(address => mapping(uint256 => uint256)) private listingIdsVoteStatusPerUser; // (staker => (filmId => voteInfo) for only listing) 1,2,3
         
     modifier initialized() {
         require(isInitialized, "Need initialized!");
@@ -104,8 +100,8 @@ contract Vote is ReentrancyGuard {
 
     /// @notice Vote to multi films from a staker
     function voteToFilms(
-        uint256[] memory _filmIds, 
-        uint256[] memory _voteInfos
+        uint256[] calldata _filmIds, 
+        uint256[] calldata _voteInfos
     ) external onlyStaker initialized nonReentrant {
         require(_filmIds.length > 0, "voteToFilm: zero length");
         require(_filmIds.length == _voteInfos.length, "voteToFilm: Bad item length");
@@ -135,11 +131,8 @@ contract Vote is ReentrancyGuard {
         if(fundType == 0) { // in case of distribution(list) film
             // If film is for listing and voter is film board member, more weight(30%) per vote
             if(IProperty(DAO_PROPERTY).isBoardWhitelist(msg.sender) == 2) {
-                stakeAmount *= (IProperty(DAO_PROPERTY).boardVoteWeight() + 1e10) / 1e10; // (30+100)/100=1.3
+                stakeAmount = stakeAmount + stakeAmount * IProperty(DAO_PROPERTY).boardVoteWeight() / 1e10; // (30+100)/100=1.3
             }
-            // //For extra reward in listing film case
-            // listingFilmIdsPerUser[msg.sender].push(_filmId);
-            // listingIdsVoteStatusPerUser[msg.sender][_filmId] = _voteInfo;
         }
 
         Voting storage fv = filmVoting[_filmId];
@@ -178,7 +171,7 @@ contract Vote is ReentrancyGuard {
 
     /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by anyone
     // if isFund is true then "APPROVED_FUNDING", if isFund is false then "APPROVED_LISTING"
-    function approveFilms(uint256[] memory _filmIds) external onlyStaker nonReentrant {
+    function approveFilms(uint256[] calldata _filmIds) external onlyStaker nonReentrant {
         require(_filmIds.length > 0, "approveFilms: Invalid items");
 
         for(uint256 i = 0; i < _filmIds.length; i++) {
@@ -187,7 +180,7 @@ contract Vote is ReentrancyGuard {
     }
 
     function __approveFilm(uint256 _filmId) private {
-        Voting storage fv = filmVoting[_filmId];
+        Voting memory fv = filmVoting[_filmId];
         
         // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000, stakeAmount("ABSTAIN") is 500 in 10 days(votePeriod)
         // In this case, Approved since 2000 > 1000 + 500 (it means ">50%") and stakeAmount of "YES" > 75m          
@@ -282,7 +275,7 @@ contract Vote is ReentrancyGuard {
         require(!__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), pCreateTime), "auditor vote period yet"); 
         require(pApproveTime == 0, "auditor already approved"); 
         
-        AgentVoting storage av = agentVoting[_agent];
+        AgentVoting memory av = agentVoting[_agent];
         uint256 disputeTime = av.disputeStartTime;
         if(disputeTime > 0) {
             require(!__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), disputeTime), "auditor grace period yet");            
@@ -372,7 +365,7 @@ contract Vote is ReentrancyGuard {
         require(pApproveTime == 0, "filmBoard already approved");
 
         uint256 reason = 0;
-        Voting storage fbp = filmBoardVoting[_member];
+        Voting memory fbp = filmBoardVoting[_member];
         uint256 totalVoteCount = fbp.voteCount_1 + fbp.voteCount_2 + fbp.voteCount_3;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
@@ -445,7 +438,7 @@ contract Vote is ReentrancyGuard {
         require(pApproveTime == 0, "pool address already approved");
         
         uint256 reason = 0;
-        Voting storage rav = rewardAddressVoting[_rewardAddress];
+        Voting memory rav = rewardAddressVoting[_rewardAddress];
         uint256 totalVoteCount = rav.voteCount_1 + rav.voteCount_2 + rav.voteCount_3;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&       // Less than limit count
@@ -525,7 +518,7 @@ contract Vote is ReentrancyGuard {
         require(pApproveTime == 0, "property already approved");
 
         uint256 reason = 0;
-        Voting storage pv = propertyVoting[_flag][propertyVal];
+        Voting memory pv = propertyVoting[_flag][propertyVal];
         uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2 + pv.voteCount_3;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
@@ -558,25 +551,6 @@ contract Vote is ReentrancyGuard {
         if(_period >= block.timestamp - _startTime) return true;
         else return false;
     }
-
-    // /// @notice Get listing filmId voteStatus per User
-    // function getListingIdVoteStatusPerUser(
-    //     address _staker, 
-    //     uint256 _filmId
-    // ) external view returns(uint256) {
-    //     return listingIdsVoteStatusPerUser[_staker][_filmId];
-    // }
-
-    // /// @notice Get listing filmIds per User
-    // function getListingFilmIdsPerUser(address _staker) external view returns(uint256[] memory) {
-    //     return listingFilmIdsPerUser[_staker];
-    // }
-
-    // /// @notice Delete all listing filmIds per User from only StakingPool contract
-    // function removeListingFilmIdsPerUser(address _staker) external {
-    //     require(msg.sender == STAKING_POOL, "caller is not StakingPool contract");
-    //     delete listingFilmIdsPerUser[_staker];
-    // }
 
     /// @notice Update last vote time for removing filmboard member
     function getLastVoteTime(address _member) external view returns (uint256 time_) {

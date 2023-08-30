@@ -720,6 +720,9 @@ describe('StakingPool', function () {
     
     const userReceivedRewardAmount1 = await this.StakingPool.connect(this.customer1).receivedRewardAmount(this.customer1.address, {from: this.customer1.address})
     console.log('====userReceivedRewardAmount-1::', userReceivedRewardAmount1.toString())
-  });
 
+    // getLimitCount()
+    const val = await this.StakingPool.getLimitCount();
+    console.log('====limitVal:', val.toString())
+  });  
 });

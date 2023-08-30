@@ -11,13 +11,16 @@ import "../interfaces/IOwnablee.sol";
 
 contract Subscription is ReentrancyGuard {
     
-    event SubscriptionActivated(address customer, address token, uint256 period, uint256 activeTime);
+    event SubscriptionActivated(address indexed customer, address token, uint256 period, uint256 activeTime);
 
     address private immutable OWNABLE;      // Ownablee contract address  
     address private immutable UNI_HELPER;   // UniHelper contract
     address private immutable DAO_PROPERTY; // Property contract
 
     uint256 private constant PERIOD_UNIT = 30 days; // 30 days
+    uint256 private constant PERCENT60 = 60 * 1e8;
+    uint256 private constant PERCENT40 = 40 * 1e8;
+    
     uint256[] private discountList;    
 
     struct UserSubscription {
@@ -58,14 +61,14 @@ contract Subscription is ReentrancyGuard {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset"); 
         }
         
-        uint256 _expectAmount = getExpectedSubscriptionAmount(_token, _period);
+        uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
         if(_token == address(0)) {
-            require(msg.value >= _expectAmount, "activeSubscription: Insufficient paid");
-            if (msg.value > _expectAmount) {
-                Helper.safeTransferETH(msg.sender, msg.value - _expectAmount);
+            require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
+            if (msg.value > expectAmount) {
+                Helper.safeTransferETH(msg.sender, msg.value - expectAmount);
             }
         } else {
-            Helper.safeTransferFrom(_token, msg.sender, address(this), _expectAmount); 
+            Helper.safeTransferFrom(_token, msg.sender, address(this), expectAmount); 
 
             // Approve token to send from this contract to UNI_HELPER contract
             if(IERC20(_token).allowance(address(this), UNI_HELPER) == 0) {
@@ -78,13 +81,13 @@ contract Subscription is ReentrancyGuard {
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
         // if token is VAB, send USDC(convert from VAB to USDC) to wallet
         if(_token == vabToken) {
-            bytes memory swapArgs = abi.encode(_expectAmount, _token, usdcToken);
+            bytes memory swapArgs = abi.encode(expectAmount, _token, usdcToken);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
         } 
         // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC) to wallet
         else {            
-            uint256 amount60 = _expectAmount * 60 * 1e8 / 1e10;  
+            uint256 amount60 = expectAmount * PERCENT60 / 1e10;  
             // Send ETH from this contract to UNI_HELPER contract
             if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, amount60); // 60%
             
@@ -94,12 +97,12 @@ contract Subscription is ReentrancyGuard {
             Helper.safeTransfer(vabToken, IOwnablee(OWNABLE).VAB_WALLET(), vabAmount);
 
             if(_token == usdcToken) {
-                usdcAmount = _expectAmount - amount60;
+                usdcAmount = expectAmount - amount60;
             } else {
                 // Send ETH from this contract to UNI_HELPER contract
-                if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, _expectAmount - amount60); // 40%
+                if(_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60); // 40%
                 
-                bytes memory swapArgs1 = abi.encode(_expectAmount - amount60, _token, usdcToken);
+                bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdcToken);
                 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
             }
             // Transfer USDC to wallet
@@ -139,7 +142,7 @@ contract Subscription is ReentrancyGuard {
         }
 
         if(_token == vabToken) {
-            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * 40 * 1e8 / 1e10, usdcToken, _token);
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * PERCENT40 / 1e10, usdcToken, _token);
         } else if(_token == usdcToken) {
             expectAmount_ = scriptAmount;
         } else {            
@@ -154,7 +157,7 @@ contract Subscription is ReentrancyGuard {
     }  
 
     /// @notice Add discount percents(3 months, 6 months, 12 months) from Auditor
-    function addDiscountPercent(uint256[] memory _discountPercents) external onlyAuditor {
+    function addDiscountPercent(uint256[] calldata _discountPercents) external onlyAuditor {
         require(_discountPercents.length == 3, "discountList: bad length");
         discountList = _discountPercents;
     }

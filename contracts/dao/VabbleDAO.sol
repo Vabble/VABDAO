@@ -28,10 +28,10 @@ import "../interfaces/IVabbleDAO.sol";
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 
-    event FilmProposalCreated(uint256 filmId, uint256 noVote, uint256 fundType, address studio, uint256 createTime);
-    event FilmProposalUpdated(uint256 filmId, uint256 fundType, address studio, uint256 updateTime);  
+    event FilmProposalCreated(uint256 indexed filmId, uint256 noVote, uint256 fundType, address studio, uint256 createTime);
+    event FilmProposalUpdated(uint256 indexed filmId, uint256 fundType, address studio, uint256 updateTime);  
     event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime);
-    event FilmFundPeriodUpdated(uint256 filmId, address studio, uint256 fundPeriod, uint256 updateTime);
+    event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod, uint256 updateTime);
     event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
     
     address public immutable OWNABLE;         // Ownablee contract address
@@ -126,8 +126,8 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _filmId, 
         string memory _title,
         string memory _description,
-        uint256[] memory _sharePercents,
-        address[] memory _studioPayees,
+        uint256[] calldata _sharePercents,
+        address[] calldata _studioPayees,
         uint256 _raiseAmount,
         uint256 _fundPeriod,
         uint256 _enableClaimer
@@ -258,8 +258,8 @@ contract VabbleDAO is ReentrancyGuard {
     /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO) by Auditor
     // _which = 1 => to EdgePool, _which = 2 => to StudioPool
     function allocateToPool(
-        address[] memory _users,
-        uint256[] memory _amounts,
+        address[] calldata _users,
+        uint256[] calldata _amounts,
         uint256 _which
     ) external onlyAuditor nonReentrant {
         require(_users.length == _amounts.length, "allocate: bad array");
@@ -312,8 +312,8 @@ contract VabbleDAO is ReentrancyGuard {
     /// @notice Set final films for a customer with watched 
     // Auditor call this function per month
     function setFinalFilms(        
-        uint256[] memory _filmIds,
-        uint256[] memory _payouts // VAB to payees based on share(%) and watch(%) from offchain
+        uint256[] calldata _filmIds,
+        uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
     ) external onlyAuditor nonReentrant {
         require(_filmIds.length > 0 && _filmIds.length == _payouts.length, "final: bad length");
         require(_filmIds.length == studioPoolUsers.length, "final: bad pool users");

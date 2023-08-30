@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -6,16 +7,15 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
-import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "./VabbleNFT.sol";
 
 contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
     event SubscriptionERC721Created(address nftCreator, address nftContract, uint256 deployTime);
-    event SubscriptionERC721Minted(address receiver, uint256 subscriptionPeriod, uint256 tokenId, uint256 mintTime);   
-    event SubscriptionNFTLocked(uint256 tokenId, uint256 lockPeriod, address owner, uint256 lockTime);    
-    event SubscriptionNFTUnLocked(uint256 tokenId, address owner, uint256 unlockTime);
+    event SubscriptionERC721Minted(address receiver, uint256 subscriptionPeriod, uint256 indexed tokenId, uint256 mintTime);   
+    event SubscriptionNFTLocked(uint256 indexed tokenId, uint256 lockPeriod, address owner, uint256 lockTime);    
+    event SubscriptionNFTUnLocked(uint256 indexed tokenId, address owner, uint256 unlockTime);
 
     struct Mint {
         uint256 maxMintAmount;    // mint amount(ex: 10000 nft)
@@ -43,8 +43,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     VabbleNFT private subNFTContract;
 
     address public subNFTAddress;
-    address private OWNABLE;         // Ownablee contract address
-    address private UNI_HELPER;      // UniHelper contract address
+    address private immutable OWNABLE;         // Ownablee contract address
+    address private immutable UNI_HELPER;      // UniHelper contract address
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -99,7 +99,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     function deploySubNFTContract(
         string memory _name,
         string memory _symbol
-    ) public onlyAuditor {   
+    ) external onlyAuditor nonReentrant {   
 
         subNFTContract = new VabbleNFT(baseUri, collectionUri, _name, _symbol);
 
@@ -114,7 +114,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         address _to,
         uint256 _subPeriod, 
         uint256 _category
-    ) public payable nonReentrant {
+    ) public payable {
         if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "mint: not allowed asset"); 
         }
@@ -144,9 +144,9 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     
     function mintToBatch(
         address _token, 
-        address[] memory _toList, 
-        uint256[] memory _periodList, 
-        uint256[] memory _categoryList
+        address[] calldata _toList, 
+        uint256[] calldata _periodList, 
+        uint256[] calldata _categoryList
     ) external {
         require(_toList.length > 0, "batchMint: zero item length");
         require(_toList.length == _periodList.length, "batchMint: bad item-1 length");
@@ -210,7 +210,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         require(address(this) == subNFTContract.ownerOf(_tokenId), "unlock: not token owner"); 
         require(msg.sender == lockInfo[_tokenId].minter, "unlock: not token minter"); 
 
-        Lock storage sInfo = lockInfo[_tokenId];
+        Lock memory sInfo = lockInfo[_tokenId];
         require(block.timestamp > sInfo.lockPeriod + sInfo.lockTime, "unlock: locked yet");
 
         subNFTContract.transferNFT(_tokenId, msg.sender);

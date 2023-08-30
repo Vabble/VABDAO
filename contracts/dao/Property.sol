@@ -13,13 +13,13 @@ import "../interfaces/IOwnablee.sol";
 
 contract Property is ReentrancyGuard {
 
-    event AuditorProposalCreated(address creator, address member, string title, string description, uint256 createTime);
-    event RewardFundProposalCreated(address creator, address member, string title, string description, uint256 createTime);
-    event FilmBoardProposalCreated(address creator, address member, string title, string description, uint256 createTime);
-    event FilmBoardMemberAdded(address caller, address member, uint256 addTime);
-    event FilmBoardMemberRemoved(address caller, address member, uint256 removeTime);
-    event PropertyProposalCreated(address creator, uint256 property, uint256 flag, string title, string description, uint256 createTime);
-    event PropertyUpdated(address caller, uint256 property, uint256 flag, uint256 updateTime);
+    event AuditorProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
+    event RewardFundProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
+    event FilmBoardProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
+    event FilmBoardMemberAdded(address indexed caller, address member, uint256 addTime);
+    event FilmBoardMemberRemoved(address indexed caller, address member, uint256 removeTime);
+    event PropertyProposalCreated(address indexed creator, uint256 property, uint256 flag, string title, string description, uint256 createTime);
+    event PropertyUpdated(address indexed caller, uint256 property, uint256 flag, uint256 updateTime);
     
     struct Proposal {
         string title;          // proposal title
@@ -408,7 +408,6 @@ contract Property is ReentrancyGuard {
     ) external view returns (uint256 property_) { 
         require(_flag >= 0 && _index >= 0, "getProperty: Invalid flag");   
         
-        property_ = 0;
         if(_flag == 0 && filmVotePeriodList.length > 0 && filmVotePeriodList.length > _index) {
             property_ = filmVotePeriodList[_index];
         } else if(_flag == 1 && agentVotePeriodList.length > 0 && agentVotePeriodList.length > _index) {
@@ -451,7 +450,9 @@ contract Property is ReentrancyGuard {
             property_ = subscriptionAmountList[_index];
         } else if(_flag == 20 && boardRewardRateList.length > 0 && boardRewardRateList.length > _index) {
             property_ = boardRewardRateList[_index];
-        }                      
+        } else {
+            property_ = 0;
+        }     
     }
 
     function updateProperty(

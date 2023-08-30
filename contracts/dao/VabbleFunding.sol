@@ -14,9 +14,9 @@ import "../interfaces/IVabbleDAO.sol";
 
 contract VabbleFunding is ReentrancyGuard {
     
-    event DepositedTokenToFilm(address customer, address token, uint256 amount, uint256 filmId, uint256 depositTime);
-    event FundFilmProcessed(uint256 filmId, address studio, uint256 processTime);
-    event FundWithdrawed(uint256 filmId, address customer, uint256 withdrawTime);
+    event DepositedTokenToFilm(address indexed customer, address token, uint256 amount, uint256 indexed filmId, uint256 depositTime);
+    event FundFilmProcessed(uint256 indexed filmId, address indexed studio, uint256 processTime);
+    event FundWithdrawed(uint256 indexed filmId, address indexed customer, uint256 withdrawTime);
     
     struct Asset {
         address token;   // token address
@@ -32,10 +32,10 @@ contract VabbleFunding is ReentrancyGuard {
     
     uint256[] private fundProcessedFilmIds;
     
-    mapping(uint256 => Asset[]) public assetPerFilm;                  // (filmId => Asset[token, amount])
-    mapping(uint256 => mapping(address => Asset[])) public assetInfo; // (filmId => (customer => Asset[token, amount]))
-    mapping(uint256 => address[]) private filmInvestorList;   // (filmId => investor address[])
-    mapping(address => uint256[]) private userInvestFilmIds;  // (user => invest filmId[]) for only approved_funding films
+    mapping(uint256 => Asset[]) public assetPerFilm;                     // (filmId => Asset[token, amount])
+    mapping(uint256 => mapping(address => Asset[])) public assetInfo;    // (filmId => (customer => Asset[token, amount]))
+    mapping(uint256 => address[]) private filmInvestorList;              // (filmId => investor address[])
+    mapping(address => uint256[]) private userInvestFilmIds;             // (user => invest filmId[]) for only approved_funding films
     mapping(address => mapping(uint256 => bool)) public isFundProcessed; // (customer => (filmId => true/false))
     
     receive() external payable {}

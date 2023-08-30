@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -10,21 +11,19 @@ import "../interfaces/IVote.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
-import "../interfaces/IVabbleFunding.sol";
-import "hardhat/console.sol";
 
 contract StakingPool is ReentrancyGuard {
     
     using Counters for Counters.Counter;
 
-    event TokenStaked(address staker, uint256 stakeAmount, uint256 stakeTime, uint256 withdrawableTime);
-    event TokenUnstaked(address unstaker, uint256 unStakeAmount, uint256 unstakeTime);
-    event RewardWithdraw(address staker, uint256 rewardAmount, uint256 withdrawTime);
-    event RewardContinued(address staker, uint256 isCompound, uint256 conTime);
+    event TokenStaked(address indexed staker, uint256 stakeAmount, uint256 stakeTime, uint256 withdrawableTime);
+    event TokenUnstaked(address indexed unstaker, uint256 unStakeAmount, uint256 unstakeTime);
+    event RewardWithdraw(address indexed staker, uint256 rewardAmount, uint256 withdrawTime);
+    event RewardContinued(address indexed staker, uint256 isCompound, uint256 conTime);
     event AllFundWithdraw(address to, uint256 amount);
     event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount, address contributor, uint256 addTime);
-    event VABDeposited(address customer, uint256 amount, uint256 depositTime);
-    event WithdrawPending(address customer, uint256 amount, uint256 pendingTime);  
+    event VABDeposited(address indexed customer, uint256 amount, uint256 depositTime);
+    event WithdrawPending(address indexed customer, uint256 amount, uint256 pendingTime);  
     event PendingWithdrawApproved(address[] customers, uint256[] withdrawAmounts, uint256 approvedTime);
     event PendingWithdrawDenied(address[] customers, uint256 deniedTime);
 
@@ -107,11 +106,11 @@ contract StakingPool is ReentrancyGuard {
     }    
 
     /// @notice Staking VAB token by staker
-    function stakeVAB(uint256 _amount) public nonReentrant {
+    function stakeVAB(uint256 _amount) external nonReentrant {
         require(isInitialized, "stakeVAB: Should be initialized");
+        require(msg.sender != address(0) && _amount > 0, "stakeVAB: Zero value");
 
         uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
-        require(msg.sender != address(0) && _amount > 0, "stakeVAB: Zero value");
         require(_amount > minAmount, "stakeVAB: less amount than 0.01");
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
@@ -215,8 +214,6 @@ contract StakingPool is ReentrancyGuard {
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
         uint256 rewardAmount = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
-
-        // (uint256 extraRewardAmount, ) = checkListFilm(_customer, period);
         
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
         if(proposalCount > 0) {
@@ -230,40 +227,11 @@ contract StakingPool is ReentrancyGuard {
         
         // If customer is film board member, more rewards(25%)
         if(IProperty(DAO_PROPERTY).isBoardWhitelist(_customer) == 2) {            
-            rewardAmount += rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+            rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
         } 
         
         amount_ = rewardAmount;
     }
-    
-    // function checkListFilm(address _customer, uint256 _period) public view returns (uint256 amount_, uint256[] memory filmIds_) {
-    //     require(_customer != address(0), "checkFundFilm: zero address");
-
-    //     uint256 num = 0;
-    //     uint256[] memory filmIds = IVote(VOTE).getListingFilmIdsPerUser(_customer); 
-    //     for(uint256 i = 0; i < filmIds.length; i++) {
-    //         uint256 voteStatus = IVote(VOTE).getListingIdVoteStatusPerUser(_customer, filmIds[i]);     
-    //         bool isGood = IVabbleDAO(VABBLE_DAO).isGoodRevenue(filmIds[i]);    
-    //         if((voteStatus == 1 && isGood) || (voteStatus == 2 && !isGood)) { 
-    //             amount_ += totalRewardAmount * IProperty(DAO_PROPERTY).extraRewardRate() * _period / 1e10 / 1e4;   
-    //             num++;
-    //         }
-    //     } 
-        
-    //     uint256 inx = 0;
-    //     if(num > 0) {
-    //         uint256[] memory ids = new uint256[](num);
-    //         for(uint256 i = 0; i < filmIds.length; i++) {
-    //             uint256 voteStatus = IVote(VOTE).getListingIdVoteStatusPerUser(_customer, filmIds[i]);     
-    //             bool isGood = IVabbleDAO(VABBLE_DAO).isGoodRevenue(filmIds[i]);    
-    //             if((voteStatus == 1 && isGood) || (voteStatus == 2 && !isGood)) { 
-    //                 ids[inx] = filmIds[i];
-    //                 inx++;
-    //             }
-    //         } 
-    //         filmIds_ = ids;
-    //     }        
-    // }
 
     // 500 * 1e10 / 1000 = 50*1e8 = 50% 
     // 0.025*1e8 * 50*1e8 / 1e10 = 0.0125*1e8 = 0.0125%
@@ -279,7 +247,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 _proposalCount,
         uint256 _voteCount,
         bool isBoardMember      // filmboard member or not
-    ) public view returns (uint256 amount_) {
+    ) external view returns (uint256 amount_) {
         require(_period > 0, "apr: zero period");
         require(_stakeAmount > 0, "apr: zero staker");
         require(_proposalCount >= _voteCount, "apr: bad vote count");
@@ -300,7 +268,7 @@ contract StakingPool is ReentrancyGuard {
         
         // If customer is film board member, more rewards(25%)
         if(isBoardMember) {            
-            rewardAmount += rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+            rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
         }        
 
         amount_ = rewardAmount;
@@ -381,9 +349,9 @@ contract StakingPool is ReentrancyGuard {
     
     /// @notice onlyDAO transfer VAB token to user
     function sendVAB(
-        address[] memory _users, 
+        address[] calldata _users, 
         address _to, 
-        uint256[] memory _amounts
+        uint256[] calldata _amounts
     ) external onlyDAO returns (uint256) {
         uint256 sum;
         for(uint256 i = 0; i < _users.length; i++) {  
@@ -400,7 +368,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Transfer DAO all fund to V2
     // After call this function, users should be available to withdraw his funds deposited
-    function withdrawAllFund() public onlyAuditor {
+    function withdrawAllFund() external onlyAuditor nonReentrant {
         address to = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
         require(to != address(0), 'withdrawAllFund: Zero address');
 
@@ -462,11 +430,12 @@ contract StakingPool is ReentrancyGuard {
         uint256 limitPercent = IProperty(DAO_PROPERTY).minStakerCountPercent();
         uint256 minVoteCount = IProperty(DAO_PROPERTY).minVoteCount();
         
-        uint256 limitStakerCount = stakerCount.current() * limitPercent / 1e10;
-        if(limitStakerCount <= minVoteCount) {
+        uint256 limitStakerCount = stakerCount.current() * limitPercent * 1e4 / 1e10;
+        if(limitStakerCount <= minVoteCount * 1e4) {
             count_ = minVoteCount;
         } else {
-            count_ = limitStakerCount;
+            // limitStakerCount=12500 => count=1
+            count_ = limitStakerCount / 1e4;
         }
     }
 

@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { CONFIG, getBigNumber, createMintData, getProposalFilm } = require('../scripts/utils');
+const { CONFIG, DISCOUNT, getBigNumber } = require('../scripts/utils');
 const ERC20 = require('../data/ERC20.json');
 const ERC721 = require('../data/ERC721.json');
 const { BigNumber } = require('ethers');
@@ -99,9 +99,10 @@ describe('FactorySubscriptionNFT', function () {
       await this.SubscriptionFactory.deploy(
         this.Ownablee.address,
         this.UniHelper.address,
-        this.Property.address
+        this.Property.address,
+        [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
       )
-    ).deployed();    
+    ).deployed();  
     
     await this.FilmNFT.connect(this.auditor).initializeFactory(
       this.VabbleDAO.address, 
@@ -183,11 +184,13 @@ describe('FactorySubscriptionNFT', function () {
     expect(await this.Ownablee.auditor()).to.be.equal(this.auditor.address);    
     
     this.events = [];
+    
+    this.bUri = 'https://ipfs.io/ipfs/'
+    this.cUri = 'https://commanda.xyz/api/collection-metadata'
   });
 
   it('nft deploy and mint ', async function () {
-    const baseUri = 'https://ipfs.io/ipfs/'
-    await this.SubNFT.connect(this.auditor).setBaseURI(baseUri, {from: this.auditor.address})
+    await this.SubNFT.connect(this.auditor).setBaseURI(this.bUri, this.cUri, {from: this.auditor.address})
     await this.Ownablee.connect(this.auditor).addDepositAsset(
       [this.vabToken.address, CONFIG.addressZero], {from: this.auditor.address}
     )
@@ -240,12 +243,11 @@ describe('FactorySubscriptionNFT', function () {
     let tokenIdList = await this.SubNFT.getUserTokenIdList(this.SubNFT.address)    
     expect(tokenIdList.length).to.be.equal(getBigNumber(1,0))
     let tokenUri = await this.SubNFT.getTokenUri(tokenIdList[0])  
-    expect(tokenUri).to.be.equal(baseUri + '1.json')
+    expect(tokenUri).to.be.equal(this.bUri + '1.json')
   })
 
   // it('nft lock and unlock ', async function () {
-  //   const baseUri = 'https://ipfs.io/ipfs/'
-  //   await this.SubNFT.connect(this.auditor).setBaseURI(baseUri, {from: this.auditor.address})
+  //   await this.SubNFT.connect(this.auditor).setBaseURI(this.bUri, this.cUri, {from: this.auditor.address})
   //   await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address], {from: this.auditor.address})
   //   await this.SubNFT.connect(this.auditor).deploySubNFTContract("sub test", "s-nft", {from: this.auditor.address})
   //   const deployedAddress = await this.SubNFT.subNFTAddress();

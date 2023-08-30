@@ -47,14 +47,6 @@ interface IUniswapV2Router {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 
-    // function swapTokensForExactTokens(
-    //     uint256 amountOut,
-    //     uint256 amountInMax,
-    //     address[] calldata path,
-    //     address to,
-    //     uint256 deadline
-    // ) external returns (uint256[] memory amounts);
-
     function swapExactETHForTokens( // in=>eth out=>token
         uint256 amountOutMin,
         address[] calldata path,

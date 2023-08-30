@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { CONFIG, getBigNumber } = require('../scripts/utils');
+const { CONFIG, DISCOUNT, getBigNumber } = require('../scripts/utils');
 const ERC20 = require('../data/ERC20.json');
 
 describe('Ownablee', function () {
@@ -96,7 +96,8 @@ describe('Ownablee', function () {
       await this.SubscriptionFactory.deploy(
         this.Ownablee.address,
         this.UniHelper.address,
-        this.Property.address
+        this.Property.address,
+        [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
       )
     ).deployed();    
     
@@ -106,7 +107,7 @@ describe('Ownablee', function () {
       this.StakingPool.address,
       this.Property.address,
       {from: this.auditor.address}
-    );    
+    );
     
 
     // ====== VAB

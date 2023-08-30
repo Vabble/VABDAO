@@ -23,5 +23,5 @@ interface IStakingPool {
 
     function getRentVABAmount(address _user) external view returns(uint256 amount_);
     
-    function sendVAB(address[] memory _users, address _to, uint256[] memory _amounts) external returns (uint256);
+    function sendVAB(address[] calldata _users, address _to, uint256[] calldata _amounts) external returns (uint256);
 }
