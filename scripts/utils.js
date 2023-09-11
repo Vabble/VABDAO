@@ -99,7 +99,7 @@ const FILM_DATA = {
   watchs: [r_number(), r_number(), r_number()],
   sWatchs: [getBigNumber(20, 8), getBigNumber(15, 8), getBigNumber(30, 8)], // 20% 15% 30%
   rentPrice: r_number(),
-  voteItem: [1, 1, 2, 3], // 1=>yes, 2=>no, 3=> abstain
+  voteItem: [1, 1, 2, 1], // 1=>yes, 2=>no
 
   rentPrices : [getBigNumber(100), getBigNumber(200), getBigNumber(300), getBigNumber(400)],
   fundPeriods : [getBigNumber(30 * 86400, 0), getBigNumber(30 * 86400, 0), getBigNumber(60 * 86400, 0), getBigNumber(10 * 86400, 0)],

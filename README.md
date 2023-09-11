@@ -74,7 +74,7 @@ There are two types of NFTs.
 
 ## Voting Options
 - Options
-  - Yes, No and Abstain
+  - Yes, No
 - Count
   - Vote count will be calculated by 5% of VAB stakers(1000 stakers x 5% = 50 ppl) and initial fixed count 5 ppl and these values can be updated by governance vote.
 ## Audit Service (Audit service will submit periodically the audit actions to DAO contract.)

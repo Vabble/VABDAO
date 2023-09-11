@@ -139,7 +139,7 @@ describe('Vote', function () {
     this.fundPeriods = [getBigNumber(20 * 86400, 0), getBigNumber(30 * 86400, 0), getBigNumber(60 * 86400, 0), getBigNumber(10 * 86400, 0)];
     this.filmPropsoal = [];
     this.events = [];
-    this.voteInfo = [1, 2, 3] // yes, no, abstain
+    this.voteInfo = [1, 2, 1] // yes, no
   });
 
   // it('VoteToFilms', async function () {    
@@ -417,8 +417,6 @@ describe('Vote', function () {
     console.log('=====voteResult-1::', voteResult[1].toString())
     console.log('=====voteResult-2::', voteResult[2].toString())
     console.log('=====voteResult-3::', voteResult[3].toString())
-    console.log('=====voteResult-4::', voteResult[4].toString())
-    console.log('=====voteResult-5::', voteResult[5].toString())
 
     // 2 =================== proposalProperty(rewardRate) ======================
     await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(30000000), {from: this.customer1.address})
