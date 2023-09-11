@@ -101,7 +101,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         string memory _symbol
     ) external onlyAuditor nonReentrant {   
 
-        subNFTContract = new VabbleNFT(baseUri, collectionUri, _name, _symbol);
+        subNFTContract = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
 
         subNFTAddress = address(subNFTContract);
 

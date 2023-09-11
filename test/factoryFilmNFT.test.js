@@ -253,164 +253,164 @@ describe('FactoryFilmNFT', function () {
     this.cUri = 'https://commanda.xyz/api/collection-metadata'
   });
 
-  // it('film nft contract deploy and mint, batchmint ', async function () {
-  //   console.log('=====t-0')
-  //   await expect(
-  //       this.FilmNFT.connect(this.studio1).setBaseURI(this.bUri, this.cUri, {from: this.studio1.address})
-  //   ).to.be.revertedWith('caller is not the auditor');
+  it('film nft contract deploy and mint, batchmint ', async function () {
+    console.log('=====t-0')
+    await expect(
+        this.FilmNFT.connect(this.studio1).setBaseURI(this.bUri, this.cUri, {from: this.studio1.address})
+    ).to.be.revertedWith('caller is not the auditor');
 
-  //   await this.FilmNFT.connect(this.auditor).setBaseURI(this.bUri, this.cUri, {from: this.auditor.address})
-  //   await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address], {from: this.auditor.address})
+    await this.FilmNFT.connect(this.auditor).setBaseURI(this.bUri, this.cUri, {from: this.auditor.address})
+    await this.Ownablee.connect(this.auditor).addDepositAsset([this.vabToken.address], {from: this.auditor.address})
 
-  //   const title = 'film title - 1'
-  //   const desc = 'film description - 1'
-  //   const sharePercents = [getBigNumber(50, 8), getBigNumber(15, 8), getBigNumber(35, 8)]
-  //   const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
-  //   const raiseAmount = getBigNumber(150, 6)
-  //   const fundPeriod = getBigNumber(20, 0)
-  //   const fundType1 = 2
-  //   const fundType2 = 3
-  //   const enableClaimer = getBigNumber(0, 0)
-  //   const enableClaimer1 = getBigNumber(1, 0)
-  //   const noVote = 1
+    const title = 'film title - 1'
+    const desc = 'film description - 1'
+    const sharePercents = [getBigNumber(50, 8), getBigNumber(15, 8), getBigNumber(35, 8)]
+    const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
+    const raiseAmount = getBigNumber(150, 6)
+    const fundPeriod = getBigNumber(20, 0)
+    const fundType1 = 2
+    const fundType2 = 3
+    const enableClaimer = getBigNumber(0, 0)
+    const enableClaimer1 = getBigNumber(1, 0)
+    const noVote = 1
     
-  //   // Create proposal for a film by studio
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType1, noVote, this.USDC.address, {from: this.studio1.address})
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     getBigNumber(1, 0), 
-  //     title,
-  //     desc,
-  //     sharePercents, 
-  //     studioPayees,  
-  //     raiseAmount, 
-  //     fundPeriod, 
-  //     enableClaimer1,
-  //     {from: this.studio1.address}
-  //   )
+    // Create proposal for a film by studio
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType1, noVote, this.USDC.address, {from: this.studio1.address})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+      getBigNumber(1, 0), 
+      title,
+      desc,
+      sharePercents, 
+      studioPayees,  
+      raiseAmount, 
+      fundPeriod, 
+      enableClaimer1,
+      {from: this.studio1.address}
+    )
 
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType2, 0, this.USDC.address, {from: this.studio1.address})
-  //   await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-  //     getBigNumber(2, 0), 
-  //     title,
-  //     desc,
-  //     sharePercents, 
-  //     studioPayees,  
-  //     raiseAmount, 
-  //     fundPeriod, 
-  //     enableClaimer,
-  //     {from: this.studio1.address}
-  //   )
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType2, 0, this.USDC.address, {from: this.studio1.address})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+      getBigNumber(2, 0), 
+      title,
+      desc,
+      sharePercents, 
+      studioPayees,  
+      raiseAmount, 
+      fundPeriod, 
+      enableClaimer,
+      {from: this.studio1.address}
+    )
 
-  //   const nftName = 'test nft'
-  //   const nftSymbol = 'TNFT'
-  //   const tx = await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(
-  //     getBigNumber(1,0), nftName, nftSymbol, {from: this.studio1.address}
-  //   )
-  //   this.events = (await tx.wait()).events
-  //   const args = this.events[0].args;
+    const nftName = 'test nft'
+    const nftSymbol = 'TNFT'
+    const tx = await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(
+      getBigNumber(1,0), nftName, nftSymbol, {from: this.studio1.address}
+    )
+    this.events = (await tx.wait()).events
+    const args = this.events[0].args;
 
-  //   const [name, symbol] = await this.FilmNFT.nftInfo(args.nftContract)
-  //   expect(nftName).to.be.equal(name)
-  //   expect(nftSymbol).to.be.equal(symbol)
-  //   console.log('=====nft info::', name, symbol)    
+    const [name, symbol] = await this.FilmNFT.nftInfo(args.nftContract)
+    expect(nftName).to.be.equal(name)
+    expect(nftSymbol).to.be.equal(symbol)
+    console.log('=====nft info::', name, symbol)    
     
-  //   await expect(
-  //     this.FilmNFT.connect(this.studio2).mint(
-  //       getBigNumber(1,0), this.auditor.address, this.vabToken.address, {from: this.studio2.address}
-  //     )
-  //   ).to.be.revertedWith('mint: no mint info');
+    await expect(
+      this.FilmNFT.connect(this.studio2).mint(
+        getBigNumber(1,0), this.auditor.address, this.vabToken.address, {from: this.studio2.address}
+      )
+    ).to.be.revertedWith('mint: no mint info');
 
-  //   // _amount * _price * (1 - _feePercent / 1e10) > raiseAmount
-  //   // 500 * 2*10**6 * (1 - 2*10**8 / 10**10) = 8000 * 20*10**6 * 0.98 //15000 000000 10000 000000
-  //   // _filmId, _tier, _amount, _price, _feePercent, _revenuePercent
-  //   // const mintData1 = createMintData(
-  //   //   getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6), getBigNumber(2, 8), getBigNumber(1, 8)
-  //   // )
-  //   // const mintData2 = createMintData(
-  //   //   getBigNumber(2, 0), getBigNumber(1, 0), getBigNumber(9000, 0), getBigNumber(3, 6), getBigNumber(5, 8), getBigNumber(1, 8)
-  //   // )
-  //   // const mintData = [mintData1, mintData2]
-  //   await this.FilmNFT.connect(this.studio1).setMintInfo(
-  //     getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6), getBigNumber(2, 8), getBigNumber(1, 8), 
-  //     {from: this.studio1.address}
-  //   )
-  //   await this.FilmNFT.connect(this.studio1).setMintInfo(
-  //     getBigNumber(2, 0), getBigNumber(1, 0), getBigNumber(9000, 0), getBigNumber(3, 6), getBigNumber(5, 8), getBigNumber(1, 8), 
-  //     {from: this.studio1.address}
-  //   )
+    // _amount * _price * (1 - _feePercent / 1e10) > raiseAmount
+    // 500 * 2*10**6 * (1 - 2*10**8 / 10**10) = 8000 * 20*10**6 * 0.98 //15000 000000 10000 000000
+    // _filmId, _tier, _amount, _price, _feePercent, _revenuePercent
+    // const mintData1 = createMintData(
+    //   getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6), getBigNumber(2, 8), getBigNumber(1, 8)
+    // )
+    // const mintData2 = createMintData(
+    //   getBigNumber(2, 0), getBigNumber(1, 0), getBigNumber(9000, 0), getBigNumber(3, 6), getBigNumber(5, 8), getBigNumber(1, 8)
+    // )
+    // const mintData = [mintData1, mintData2]
+    await this.FilmNFT.connect(this.studio1).setMintInfo(
+      getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6), getBigNumber(2, 8), getBigNumber(1, 8), 
+      {from: this.studio1.address}
+    )
+    await this.FilmNFT.connect(this.studio1).setMintInfo(
+      getBigNumber(2, 0), getBigNumber(1, 0), getBigNumber(9000, 0), getBigNumber(3, 6), getBigNumber(5, 8), getBigNumber(1, 8), 
+      {from: this.studio1.address}
+    )
 
-  //   const mInfo = await this.FilmNFT.getMintInfo(1)
-  //   expect(mInfo.tier_).to.be.equal(1)
-  //   expect(mInfo.maxMintAmount_).to.be.equal(getBigNumber(8000, 0))
-  //   expect(mInfo.mintPrice_).to.be.equal(getBigNumber(2, 6))
-  //   expect(mInfo.feePercent_).to.be.equal(getBigNumber(2, 8))
-  //   expect(mInfo.revenuePercent_).to.be.equal(getBigNumber(1, 8))
+    const mInfo = await this.FilmNFT.getMintInfo(1)
+    expect(mInfo.tier_).to.be.equal(1)
+    expect(mInfo.maxMintAmount_).to.be.equal(getBigNumber(8000, 0))
+    expect(mInfo.mintPrice_).to.be.equal(getBigNumber(2, 6))
+    expect(mInfo.feePercent_).to.be.equal(getBigNumber(2, 8))
+    expect(mInfo.revenuePercent_).to.be.equal(getBigNumber(1, 8))
     
-  //     //===================== Vote to film
-  //   const proposalIds = [2]
-  //   const voteInfos = [1];    
+      //===================== Vote to film
+    const proposalIds = [2]
+    const voteInfos = [1];    
     
-  //   // Staking from customer1,2,3 for vote
-  //   const stakeAmount = getBigNumber(200)
-  //   await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
-  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
-  //   await this.StakingPool.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
-  //   await this.StakingPool.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
+    // Staking from customer1,2,3 for vote
+    const stakeAmount = getBigNumber(200)
+    await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+    await this.StakingPool.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
+    await this.StakingPool.connect(this.studio1).stakeVAB(stakeAmount, {from: this.studio1.address})
        
-  //   // Deposit to contract(VAB amount : 100, 200, 300)
-  //   await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(1000), {from: this.customer1.address})
-  //   await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(2000), {from: this.customer2.address})
-  //   await this.StakingPool.connect(this.customer3).depositVAB(getBigNumber(3000), {from: this.customer3.address})
+    // Deposit to contract(VAB amount : 100, 200, 300)
+    await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(1000), {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(2000), {from: this.customer2.address})
+    await this.StakingPool.connect(this.customer3).depositVAB(getBigNumber(3000), {from: this.customer3.address})
     
-  //   console.log('=====t-3')    
-  //   await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address}) //1,1,2,3
-  //   await this.Vote.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address}) //1,1,2,3
-  //   await this.Vote.connect(this.customer3).voteToFilms(proposalIds, voteInfos, {from: this.customer3.address}) //1,1,2,3   
+    console.log('=====t-3')    
+    await this.Vote.connect(this.customer1).voteToFilms(proposalIds, voteInfos, {from: this.customer1.address}) //1,1,2,3
+    await this.Vote.connect(this.customer2).voteToFilms(proposalIds, voteInfos, {from: this.customer2.address}) //1,1,2,3
+    await this.Vote.connect(this.customer3).voteToFilms(proposalIds, voteInfos, {from: this.customer3.address}) //1,1,2,3   
     
-  //   // => Increase next block timestamp for only testing
-  //   const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
-  //   network.provider.send('evm_increaseTime', [period]);
-  //   await network.provider.send('evm_mine');
+    // => Increase next block timestamp for only testing
+    const period = 10 * 24 * 3600; // filmVotePeriod = 10 days
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
 
-  //   // => Change the minVoteCount from 5 ppl to 3 ppl for testing
-  //   await this.Property.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
+    // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+    await this.Property.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
 
-  //   console.log('=====t-4')    
-  //   const approveData = [getBigNumber(2, 0)]
-  //   await this.Vote.connect(this.studio1).approveFilms(approveData, {from: this.studio1.address})
+    console.log('=====t-4')    
+    const approveData = [getBigNumber(2, 0)]
+    await this.Vote.connect(this.studio1).approveFilms(approveData, {from: this.studio1.address})
 
-  //   const film1_status = await this.VabbleDAO.getFilmStatus(getBigNumber(1,0))
-  //   const film2_status = await this.VabbleDAO.getFilmStatus(getBigNumber(2,0))
-  //   console.log('=====test::', film1_status, film2_status)
-  //   //================= vote end =========
+    const film1_status = await this.VabbleDAO.getFilmStatus(getBigNumber(1,0))
+    const film2_status = await this.VabbleDAO.getFilmStatus(getBigNumber(2,0))
+    console.log('=====test::', film1_status, film2_status)
+    //================= vote end =========
 
-  //   const ethVal = ethers.utils.parseEther('1')
-  //   const ttx = await this.FilmNFT.connect(this.customer1).mint(
-  //     getBigNumber(1,0), this.auditor.address, CONFIG.addressZero, {from: this.customer1.address, value: ethVal}
-  //   )    
-  //   this.events = (await ttx.wait()).events
-  //   const argss = this.events[11].args;
-  //   console.log('====argss::', argss.nftContract, argss.tokenId)
-  //   expect(mInfo.nft_).to.be.equal(argss.nftContract)
+    const ethVal = ethers.utils.parseEther('1')
+    const ttx = await this.FilmNFT.connect(this.customer1).mint(
+      getBigNumber(1,0), this.auditor.address, CONFIG.addressZero, {from: this.customer1.address, value: ethVal}
+    )    
+    this.events = (await ttx.wait()).events
+    const argss = this.events[11].args;
+    console.log('====argss::', argss.nftContract, argss.tokenId)
+    expect(mInfo.nft_).to.be.equal(argss.nftContract)
 
-  //   const userTokenIdList = await this.FilmNFT.getUserTokenIdList(getBigNumber(1,0), this.auditor.address)
-  //   console.log('====userTokenIdList::', userTokenIdList[0].toString())
-  //   expect(userTokenIdList[0]).to.be.equal(argss.tokenId)
+    const userTokenIdList = await this.FilmNFT.getUserTokenIdList(getBigNumber(1,0), this.auditor.address)
+    console.log('====userTokenIdList::', userTokenIdList[0].toString())
+    expect(userTokenIdList[0]).to.be.equal(argss.tokenId)
 
-  //   // batch mint
-  //   const txx = await this.FilmNFT.connect(this.customer1).mintToBatch(
-  //     [getBigNumber(1,0), getBigNumber(1,0), getBigNumber(1,0)], 
-  //     [this.customer1.address, this.customer2.address, this.customer3.address], 
-  //     this.vabToken.address,
-  //     {from: this.customer1.address}
-  //   )
-  //   this.events = (await txx.wait()).events
-  //   const ar1 = this.events[7].args
-  //   const ar2 = this.events[15].args
-  //   const ar3 = this.events[23].args
+    // batch mint
+    const txx = await this.FilmNFT.connect(this.customer1).mintToBatch(
+      [getBigNumber(1,0), getBigNumber(1,0), getBigNumber(1,0)], 
+      [this.customer1.address, this.customer2.address, this.customer3.address], 
+      this.vabToken.address,
+      {from: this.customer1.address}
+    )
+    this.events = (await txx.wait()).events
+    const ar1 = this.events[7].args
+    const ar2 = this.events[15].args
+    const ar3 = this.events[23].args
 
-  //   console.log('====events::', ar1.tokenId.toString(), ar2.tokenId.toString(), ar3.tokenId.toString())
-  // })
+    console.log('====events::', ar1.tokenId.toString(), ar2.tokenId.toString(), ar3.tokenId.toString())
+  })
 
   it('Tier nft contract deploy and mint', async function () {
     await expect(

@@ -114,7 +114,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         require(_tier > 0, "deployTier: zero tier");
         require(tierInfo[_filmId][_tier].minAmount > 0, "deployTier: not set tier");
 
-        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol);
+        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
         tierNFTContract[_filmId][_tier] = t;
 
         userTierNFTs[msg.sender].push(address(t));             

@@ -148,7 +148,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
         require(fundPeriod >= block.timestamp - pApproveTime, "deployNFT: passed funding period"); 
 
-        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol);
+        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
         filmNFTContract[_filmId] = t;
 
         Mint storage mInfo = mintInfo[_filmId];

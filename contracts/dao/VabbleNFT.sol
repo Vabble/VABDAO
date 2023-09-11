@@ -17,15 +17,19 @@ contract VabbleNFT is ERC2981, ERC721Enumerable {
     string public baseUri;                     // Base URI      
     string public collectionUri;               // Collection URI   
 
+    address public immutable FACTORY;
+
     receive() external payable {}
     constructor(
         string memory _baseUri,
         string memory _collectionUri,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        address _factory
     ) ERC721(_name, _symbol) {
         baseUri = _baseUri;
         collectionUri = _collectionUri;
+        FACTORY = _factory;
     }
     
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable, ERC2981) returns (bool) {
@@ -51,6 +55,9 @@ contract VabbleNFT is ERC2981, ERC721Enumerable {
     // }
 
     function mintTo(address _to) public payable returns (uint256) {
+        require(msg.sender != address(0), "mintTo: caller is zero address");
+        require(msg.sender == FACTORY, "mintTo: caller is not factory contract");
+        
         uint256 newTokenId = __getNextTokenId();
         _safeMint(_to, newTokenId);
         
