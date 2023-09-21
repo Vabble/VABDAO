@@ -363,6 +363,7 @@ contract Vote is ReentrancyGuard {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_member, 2, 1);
             govPassedVoteCount[3] += 1;
         } else {
+            IProperty(DAO_PROPERTY).removeFilmBoardCandidate(_member);
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_member, 2, 0);
 
             if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
@@ -433,6 +434,7 @@ contract Vote is ReentrancyGuard {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_rewardAddress, 3, 1);
             govPassedVoteCount[4] += 1;
         } else {
+            IProperty(DAO_PROPERTY).removeRewardAddressCandidate(_rewardAddress);
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_rewardAddress, 3, 0);
 
             if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {

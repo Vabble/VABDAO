@@ -29,10 +29,12 @@ interface IProperty {
     
     function setRewardAddress(address _rewardAddress) external;    
     function isRewardWhitelist(address _rewardAddress) external view returns (uint256);
+    function removeRewardAddressCandidate(address _rewardAddress) external;    
     function DAO_FUND_REWARD() external view returns (address);
 
     function updateLastVoteTime(address _member) external;
     function addFilmBoardMember(address _member) external;
+    function removeFilmBoardCandidate(address _member) external;
     function isBoardWhitelist(address _member) external view returns (uint256);
 
     function getPropertyProposalTime(uint256 _property, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_);

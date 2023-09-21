@@ -235,6 +235,13 @@ contract Property is ReentrancyGuard {
         DAO_FUND_REWARD = _rewardAddress;
     }
 
+    /// @notice Remove a member from rewardAddress candidate by Vote contract
+    function removeRewardAddressCandidate(address _rewardAddress) external onlyVote nonReentrant {
+        require(isRewardWhitelist[_rewardAddress] == 1, "removeRewardMember: Already address or no candidate");   
+
+        isRewardWhitelist[_rewardAddress] = 0;
+    }
+
     /// @notice Get reward fund proposal title and description
     function getRewardProposalInfo(address _rewardAddress) external view returns (string memory, string memory, uint256) {
         Proposal memory rp = rewardProposalInfo[_rewardAddress];
@@ -276,13 +283,19 @@ contract Property is ReentrancyGuard {
 
     /// @notice Add a member to whitelist by Vote contract
     function addFilmBoardMember(address _member) external onlyVote nonReentrant {
-        require(_member != address(0), "addFilmBoardMember: Zero candidate address");     
         require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
 
         filmBoardMembers.push(_member);
         isBoardWhitelist[_member] = 2;
         
         emit FilmBoardMemberAdded(msg.sender, _member, block.timestamp);
+    }
+
+    /// @notice Remove a member from candidate by Vote contract
+    function removeFilmBoardCandidate(address _member) external onlyVote nonReentrant {
+        require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
+
+        isBoardWhitelist[_member] = 0;
     }
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
