@@ -44,22 +44,6 @@ The project is a decentralized application (DApp) for the Vabble platform, which
 
 ---
 
-## 📦 Features
-
-|    | Feature            | Description                                                                                                             |
-|----|--------------------|-------------------------------------------------------------------------------------------------------------------------|
-| ⚙️ | **Architecture**   | The architectural design of the system could not be determined from the provided information.                         |
-| 📄 | **Documentation**  | The quality and comprehensiveness of the documentation could not be determined from the provided information.          |
-| 🔗 | **Dependencies**   | The external libraries or other systems that this system relies on could not be determined from the provided information. |
-| 🧩 | **Modularity**     | The organization of the system into smaller, interchangeable components could not be determined from the provided information. |
-| 🧪 | **Testing**        | The system's testing strategies and tools could not be determined from the provided information.                         |
-| ⚡️ | **Performance**    | The performance of the system considering speed, efficiency, and resource usage could not be determined from the provided information. |
-| 🔐 | **Security**       | The measures the system uses to protect data and maintain functionality could not be determined from the provided information. |
-| 🔀 | **Version Control**| The system's version control strategies and tools could not be determined from the provided information.                    |
-| 🔌 | **Integrations**   | The interaction of the system with other systems and services could not be determined from the provided information.       |
-| 📶 | **Scalability**    | The system's ability to handle growth could not be determined from the provided information.                               |
-
----
 
 
 ## 📂 Repository Structure
