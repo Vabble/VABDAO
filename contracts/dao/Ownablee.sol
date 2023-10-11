@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.4;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../libraries/Helper.sol";
 
@@ -10,6 +11,7 @@ contract Ownablee {
     event VABWalletChanged(address indexed wallet);
 
     address public auditor;
+    address public deployer;
     address public VAB_WALLET;           // Vabble wallet
     address public PAYOUT_TOKEN;         // VAB token       
     address public USDC_TOKEN;           // USDC token 
@@ -23,6 +25,10 @@ contract Ownablee {
     
     modifier onlyAuditor() {
         require(msg.sender == auditor, "caller is not the auditor");
+        _;
+    }
+    modifier onlyDeployer() {
+        require(msg.sender == deployer, "caller is not the deployer");
         _;
     }
     modifier onlyVote() {
@@ -41,9 +47,14 @@ contract Ownablee {
     constructor(
         address _vabbleWallet,
         address _payoutToken,
-        address _usdcToken
+        address _usdcToken,
+        address _multiSigWallet
     ) {
-        auditor = msg.sender;
+        deployer = msg.sender;
+
+        // TODO - PVE007 updated(add multiSigWallet)
+        require(_multiSigWallet != address(0), "multiSigWallet: Zero address");
+        auditor = _multiSigWallet;
 
         require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
         VAB_WALLET = _vabbleWallet; 
@@ -52,12 +63,15 @@ contract Ownablee {
         require(_usdcToken != address(0), "usdcToken: Zero address");
         USDC_TOKEN = _usdcToken;
     }
-    
+
     function setup(
         address _vote,
         address _dao,
         address _stakingPool
-    ) external onlyAuditor {
+    ) external onlyDeployer {
+        // TODO - N3-3 updated(add below line)
+        require(VABBLE_DAO == address(0), "setupVote: already setup");
+
         require(_vote != address(0), "setupVote: bad Vote Contract address");
         VOTE = _vote;    
         require(_dao != address(0), "setupVote: bad VabbleDAO contract address");
@@ -68,6 +82,7 @@ contract Ownablee {
     
     function transferAuditor(address _newAuditor) external onlyAuditor {
         require(_newAuditor != address(0) && _newAuditor != auditor, "Ownablee: Zero newAuditor address");
+
         auditor = _newAuditor;
     }
 
@@ -86,7 +101,7 @@ contract Ownablee {
             allowAssetToDeposit[_assetList[i]] = true;
         }        
     }
-
+    
     function removeDepositAsset(address[] calldata _assetList) external onlyAuditor {
         require(_assetList.length > 0, "removeDepositAsset: zero list");
         
@@ -99,6 +114,8 @@ contract Ownablee {
                     depositAssetList.pop();
 
                     allowAssetToDeposit[_assetList[i]] = false;
+                    // TODO - N1 updated(add break)
+                    break;
                 }
             }
             

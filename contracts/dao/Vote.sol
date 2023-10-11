@@ -64,8 +64,8 @@ contract Vote is ReentrancyGuard {
         require(isInitialized, "Need initialized!");
         _;
     }
-    modifier onlyAuditor() {
-        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+    modifier onlyDeployer() {
+        require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
         _;
     }
     modifier onlyStaker() {
@@ -83,12 +83,15 @@ contract Vote is ReentrancyGuard {
         address _vabbleDAO,
         address _stakingPool,
         address _property
-    ) external onlyAuditor {
-        require(_vabbleDAO != address(0), "initializeVote: Zero vabbleDAO address");
+    ) external onlyDeployer {
+        // TODO - N3-3 updated(add below line)
+        require(!isInitialized, "initializeVote: already initialized");
+
+        require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "initializeVote: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO;        
-        require(_stakingPool != address(0), "initializeVote: Zero stakingPool address");
+        require(_stakingPool != address(0) && Helper.isContract(_stakingPool), "initializeVote: Zero stakingPool address");
         STAKING_POOL = _stakingPool;
-        require(_property != address(0), "initializeVote: Zero property address");
+        require(_property != address(0) && Helper.isContract(_property), "initializeVote: Zero property address");
         DAO_PROPERTY = _property;
            
         isInitialized = true;
@@ -155,9 +158,7 @@ contract Vote is ReentrancyGuard {
             IStakingPool(STAKING_POOL).updateWithdrawableTime(msg.sender, pCreateTime + IProperty(DAO_PROPERTY).filmVotePeriod());
         }
         // 1++ for calculating the rewards
-        if(withdrawableTime > block.timestamp) {
-            IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
-        }
+        IStakingPool(STAKING_POOL).updateVotedTime(msg.sender, block.timestamp);
         
         emit VotedToFilm(msg.sender, _filmId, _voteInfo, block.timestamp);
     }
@@ -250,9 +251,7 @@ contract Vote is ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        if(IStakingPool(STAKING_POOL).getWithdrawableTime(msg.sender) > block.timestamp) {
-            IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
-        }
+        IStakingPool(STAKING_POOL).updateVotedTime(msg.sender, block.timestamp);
 
         emit VotedToAgent(msg.sender, _agent, _voteInfo, block.timestamp);
     }
@@ -289,6 +288,7 @@ contract Vote is ReentrancyGuard {
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_agent, 1, 1);
             govPassedVoteCount[1] += 1;
         } else {
+            IProperty(DAO_PROPERTY).removeAgent(_agent);
             IProperty(DAO_PROPERTY).updateGovProposalApproveTime(_agent, 1, 0);
 
             if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
@@ -337,9 +337,7 @@ contract Vote is ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        if(IStakingPool(STAKING_POOL).getWithdrawableTime(msg.sender) > block.timestamp) {
-            IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
-        }
+        IStakingPool(STAKING_POOL).updateVotedTime(msg.sender, block.timestamp);
 
         emit VotedToFilmBoard(msg.sender, _candidate, _voteInfo, block.timestamp);
     }
@@ -408,9 +406,7 @@ contract Vote is ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        if(IStakingPool(STAKING_POOL).getWithdrawableTime(msg.sender) > block.timestamp) {
-            IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
-        }
+        IStakingPool(STAKING_POOL).updateVotedTime(msg.sender, block.timestamp);
 
         emit VotedToPoolAddress(msg.sender, _rewardAddress, _voteInfo, block.timestamp);
     }
@@ -483,9 +479,7 @@ contract Vote is ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        if(IStakingPool(STAKING_POOL).getWithdrawableTime(msg.sender) > block.timestamp) {
-            IStakingPool(STAKING_POOL).updateVoteCount(msg.sender);
-        }
+        IStakingPool(STAKING_POOL).updateVotedTime(msg.sender, block.timestamp);
 
         emit VotedToProperty(msg.sender, _flag, propertyVal, _voteInfo, block.timestamp);
     }

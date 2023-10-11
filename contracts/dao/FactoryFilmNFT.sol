@@ -36,12 +36,13 @@ contract FactoryFilmNFT is ReentrancyGuard {
     string public baseUri;                     // Base URI    
     string public collectionUri;               // Collection URI   
 
-    mapping(uint256 => Mint) private mintInfo;              // (filmId => Mint)
-    mapping(address => FilmNFT) public nftInfo;             // (nft address => FilmNFT)
-    mapping(uint256 => uint256[]) private filmNFTTokenList; // (filmId => minted tokenId list)    
-    mapping(uint256 => uint256) private filmFundRaiseByNFT; // (filmId => total fund amount by mint)
+    mapping(uint256 => Mint) private mintInfo;                 // (filmId => Mint)
+    mapping(address => FilmNFT) public nftInfo;                // (nft address => FilmNFT)
+    mapping(uint256 => uint256[]) public filmNFTTokenList;     // (filmId => minted tokenId list)    
     mapping(address => address[]) public studioNFTAddressList;     
-    mapping(uint256 => VabbleNFT) public filmNFTContract; // (filmId => nft contract)
+    mapping(uint256 => VabbleNFT) public filmNFTContract;      // (filmId => nft contract)
+    mapping(uint256 => uint256) private filmFundRaiseByNFT;    // (filmId => total fund amount by mint)
+    mapping(uint256 => mapping(address => uint256[])) private userFilmNFTTokenList; // (filmId => (user => minted tokenId list))    
 
     address private OWNABLE;         // Ownablee contract address
     address private STAKING_POOL;    // StakingPool contract address
@@ -52,6 +53,10 @@ contract FactoryFilmNFT is ReentrancyGuard {
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+        _;
+    }
+    modifier onlyDeployer() {
+        require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
         _;
     }
 
@@ -72,7 +77,9 @@ contract FactoryFilmNFT is ReentrancyGuard {
         address _funding,
         address _staking,        
         address _property
-    ) external onlyAuditor {     
+    ) external onlyDeployer {     
+        require(VABBLE_DAO == address(0), "initializeFactory: already initialized");
+
         require(_vabbleDAO != address(0), "daoContract: Zero address");
         VABBLE_DAO = _vabbleDAO; 
         require(_funding != address(0), "fundingContract: Zero address");
@@ -115,6 +122,9 @@ contract FactoryFilmNFT is ReentrancyGuard {
         address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);
         require(owner == msg.sender, "setMint: not film owner");
 
+        // TODO - PVE005-1 updated(add below line)
+        require(mintInfo[_filmId].price == 0, "setMint: already setup for film");
+
         (uint256 raiseAmount, , uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         if(fundType > 0) { // case of funding film
             require(_amount * _price * (1e10 - _feePercent) / 1e10 > raiseAmount, "setMint: many amount");
@@ -147,6 +157,9 @@ contract FactoryFilmNFT is ReentrancyGuard {
 
         (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
         require(fundPeriod >= block.timestamp - pApproveTime, "deployNFT: passed funding period"); 
+        
+        // TODO - PVE005-2 updated(add below line)
+        require(mintInfo[_filmId].nft == address(0), "deployNFT: already deployed for film");
 
         VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
         filmNFTContract[_filmId] = t;
@@ -163,25 +176,26 @@ contract FactoryFilmNFT is ReentrancyGuard {
         
         emit FilmERC721Created(msg.sender, address(t), _filmId, block.timestamp);
     }  
-
+    
+    // TODO - PVE003 updated(payable)
     function mintToBatch(
         uint256[] calldata _filmIdList, 
         address[] calldata _toList, 
         address _payToken
-    ) external {
+    ) external payable nonReentrant {
         require(_toList.length > 0, "mintBatch: zero item length");
         require(_toList.length == _filmIdList.length, "mintBatch: bad item length");
 
         for(uint256 i; i < _toList.length; i++) {
-            mint(_filmIdList[i], _toList[i], _payToken);
+            __mint(_filmIdList[i], _toList[i], _payToken);
         }
     }
-
-    function mint(
+    // TODO - PVE001 updated(private)
+    function __mint(
         uint256 _filmId, 
         address _to, 
         address _payToken
-    ) public payable {
+    ) private {
         if(_payToken != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _payToken != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_payToken), "mint: not allowed asset");    
         }
@@ -190,9 +204,13 @@ contract FactoryFilmNFT is ReentrancyGuard {
         
         __handleMintPay(_filmId, _payToken);    
 
+        // TODO - PVE006 updated(add below line)
+        filmFundRaiseByNFT[_filmId] += mintInfo[_filmId].price;
+
         VabbleNFT t = filmNFTContract[_filmId];
         uint256 tokenId = t.mintTo(_to);
         filmNFTTokenList[_filmId].push(tokenId);
+        userFilmNFTTokenList[_filmId][_to].push(tokenId);
 
         emit FilmERC721Minted(address(t), tokenId, _to, block.timestamp);
     }    
@@ -269,8 +287,8 @@ contract FactoryFilmNFT is ReentrancyGuard {
         return filmNFTContract[_filmId].totalSupply();
     }
 
-    function getFilmTokenIdList(uint256 _filmId) external view returns (uint256[] memory) {
-        return filmNFTTokenList[_filmId];
+    function getFilmNftTokenIdList(uint256 _filmId, address _user) external view returns (uint256[] memory) {
+        return userFilmNFTTokenList[_filmId][_user];
     }
 
     function getUserTokenIdList(

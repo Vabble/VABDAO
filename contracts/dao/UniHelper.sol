@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IUniswapV2Factory.sol";
+import "../interfaces/IOwnablee.sol";
 
 contract UniHelper {
         
@@ -13,7 +14,15 @@ contract UniHelper {
     address private immutable UNISWAP2_FACTORY;    
     address private immutable SUSHI_FACTORY;
     address private immutable SUSHI_ROUTER;
+    address private OWNABLE;
 
+    mapping(address => bool) public isVabbleContract;
+    bool public isInitialized;         // check if contract initialized or not
+
+    modifier onlyDeployer() {
+        require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
+        _;
+    }
     /// @dev Provides a standard implementation for transferring assets between
     /// the msg.sender and the helper, by wrapping the action.
     modifier transferHandler(bytes memory _encodedArgs) {            
@@ -40,7 +49,8 @@ contract UniHelper {
         address _uniswap2Factory,
         address _uniswap2Router,
         address _sushiswapFactory,
-        address _sushiswapRouter
+        address _sushiswapRouter,
+        address _ownable
     ) {
         require(_uniswap2Factory != address(0), "UniHelper: _uniswap2Factory must not be zero address");
         UNISWAP2_FACTORY = _uniswap2Factory;
@@ -50,6 +60,31 @@ contract UniHelper {
         SUSHI_FACTORY = _sushiswapFactory;    
         require(_sushiswapRouter != address(0), "UniHelper: _sushiswapRouter must not be zero address");
         SUSHI_ROUTER = _sushiswapRouter;  
+        require(_ownable != address(0), "UniHelper: _ownable must not be zero address");
+        OWNABLE = _ownable;  
+    }
+
+    function setWhiteList(
+        address _vabbleDAO,
+        address _vabbleFunding,
+        address _subscription,
+        address _factoryFilm,
+        address _factorySub
+    ) external onlyDeployer {
+        require(!isInitialized, "setWhiteList: already initialized");
+
+        require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "setWhiteList: zero vabbleDAO address");
+        isVabbleContract[_vabbleDAO] = true;
+        require(_vabbleFunding != address(0) && Helper.isContract(_vabbleFunding), "setWhiteList: zero vabble funding address");
+        isVabbleContract[_vabbleFunding] = true;
+        require(_subscription != address(0) && Helper.isContract(_subscription), "setWhiteList: zero subscription address");
+        isVabbleContract[_subscription] = true;
+        require(_factoryFilm != address(0) && Helper.isContract(_factoryFilm), "setWhiteList: zero factory film address");
+        isVabbleContract[_factoryFilm] = true;          
+        require(_factorySub != address(0) && Helper.isContract(_factorySub), "setWhiteList: zero factory sub address");
+        isVabbleContract[_factorySub] = true;  
+        
+        isInitialized = true;
     }
 
     /// @notice Get incoming token amount from deposit token and amount
@@ -119,6 +154,9 @@ contract UniHelper {
             address incomingAsset
         ) = abi.decode(_swapArgs, (uint256, address, address));
 
+        // TODO - PVE002 updated(Sandwich/MEV: update to callable from only related contracts)
+        require(isVabbleContract[msg.sender], "caller is not one of vabble contracts");
+
         (address router, , address weth, address[] memory path) = __checkPool(depositAsset, incomingAsset);        
         require(router != address(0), "swapAsset: No Pool");
 
@@ -132,6 +170,7 @@ contract UniHelper {
         } 
     }
 
+    // TODO - N6 updated(private)
     /// @notice Swap ERC20 Token to ERC20 Token
     function __swapTokenToToken(
         uint256 _depositAmount,
@@ -156,7 +195,7 @@ contract UniHelper {
         uint256 _expectedAmount,
         address _router,
         address[] memory _path
-    ) public payable returns (uint256[] memory amounts_) {
+    ) private returns (uint256[] memory amounts_) {
         require(address(this).balance >= _depositAmount, "swapETHToToken: Insufficient paid");
 
         amounts_ = IUniswapV2Router(_router).swapExactETHForTokens{value: address(this).balance}(

@@ -37,8 +37,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     mapping(uint256 => Mint) private mintInfo;              // (category => AdminMint)
     mapping(uint256 => Lock) private lockInfo;        // (tokenId => SubLock)
     mapping(address => uint256[]) public subNFTTokenList;   // (user => minted tokenId list)
-    mapping(address => address[]) public userNFTContractList; //
-    
+    // TODO - N2-2 updated(remove userNFTContractList)
     uint256[] public categoryList;
     VabbleNFT private subNFTContract;
 
@@ -88,11 +87,14 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         require(_category > 0, "setAdminMint: zero category");
         
         Mint storage amInfo = mintInfo[_category];
+        // TODO - N3 updated(add condition)
+        if(amInfo.maxMintAmount == 0) {
+            categoryList.push(_category);
+        }
+
         amInfo.maxMintAmount = _mintAmount;
         amInfo.mintPrice = _mintPrice;
         amInfo.lockPeriod = _lockPeriod;
-
-        categoryList.push(_category);
     }
 
     /// @notice Audio deploy a nft contract for subscription
@@ -108,13 +110,14 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         emit SubscriptionERC721Created(msg.sender, subNFTAddress, block.timestamp);
     }
 
+    // TODO - PVE001 updated(private)
     /// @notice User mint the subscription NFTs to "_to" address
-    function mint(
+    function __mint(
         address _token, 
         address _to,
         uint256 _subPeriod, 
         uint256 _category
-    ) public payable {
+    ) private {
         if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "mint: not allowed asset"); 
         }
@@ -141,19 +144,19 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         
         emit SubscriptionERC721Minted(receiver, _subPeriod, tokenId, block.timestamp);    
     }
-    
+    // TODO - PVE003 updated(payable)
     function mintToBatch(
         address _token, 
         address[] calldata _toList, 
         uint256[] calldata _periodList, 
         uint256[] calldata _categoryList
-    ) external {
+    ) external payable nonReentrant {
         require(_toList.length > 0, "batchMint: zero item length");
         require(_toList.length == _periodList.length, "batchMint: bad item-1 length");
         require(_toList.length == _categoryList.length, "batchMint: bad item-2 length");
 
         for(uint256 i; i < _toList.length; i++) {
-            mint(_token, _toList[i], _periodList[i], _categoryList[i]);
+            __mint(_token, _toList[i], _periodList[i], _categoryList[i]);
         }
     }
 

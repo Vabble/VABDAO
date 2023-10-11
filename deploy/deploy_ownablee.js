@@ -14,23 +14,22 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     this.usdc = CONFIG.polygon.usdcAdress
   }
 
-  // this.Vote = await deployments.get('Vote');
+  this.MultiSig = await deployments.get('MultiSigWallet');  
 
-  const deployContract = await deploy('Ownablee', {
+  await deploy('Ownablee', {
     from: deployer,
     args: [
       CONFIG.daoWalletAddress,
-      this.vabToken,            // mockVAB
-      this.usdc
+      this.vabToken, 
+      this.usdc,
+      this.MultiSig.address
     ],
     log: true,
     deterministicDeployment: false,
-    skipIfAlreadyDeployed: false,
+    skipIfAlreadyDeployed: true,
   });
-
-  // const contract = await ethers.getContractAt('Ownablee', deployContract.address)
-  // await (await contract.setupVote(this.Vote.address)).wait();
 };
 
 module.exports.id = 'deploy_ownablee'
 module.exports.tags = ['Ownablee'];
+module.exports.dependencies = ['MultiSigWallet'];

@@ -101,8 +101,8 @@ contract Property is ReentrancyGuard {
         require(msg.sender == VOTE, "caller is not the vote contract");
         _;
     }
-    modifier onlyAuditor() {
-        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+    modifier onlyDeployer() {
+        require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
         _;
     }
     modifier onlyStaker() {
@@ -198,6 +198,13 @@ contract Property is ReentrancyGuard {
         }
     }  
 
+    /// @notice Remove a agent from agentList by Vote contract
+    function removeAgent(address _agent) external onlyVote nonReentrant {
+        require(agentProposalInfo[_agent].createTime > 0, "removeAgent: no agent");   
+
+        __removeCandidate(_agent, 1);
+    }
+
     // =================== DAO fund rewards proposal ====================
     function proposalRewardFund(
         address _rewardAddress,
@@ -231,6 +238,7 @@ contract Property is ReentrancyGuard {
         require(_rewardAddress != address(0), "setRewardAddress: Zero address");     
         require(isRewardWhitelist[_rewardAddress] == 1, "setRewardAddress: no proposal address");
 
+        __removeCandidate(_rewardAddress, 2);
         isRewardWhitelist[_rewardAddress] = 2;
         DAO_FUND_REWARD = _rewardAddress;
     }
@@ -239,6 +247,7 @@ contract Property is ReentrancyGuard {
     function removeRewardAddressCandidate(address _rewardAddress) external onlyVote nonReentrant {
         require(isRewardWhitelist[_rewardAddress] == 1, "removeRewardMember: Already address or no candidate");   
 
+        __removeCandidate(_rewardAddress, 2);
         isRewardWhitelist[_rewardAddress] = 0;
     }
 
@@ -286,6 +295,8 @@ contract Property is ReentrancyGuard {
         require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
 
         filmBoardMembers.push(_member);
+        // TODO - N4 updated(add function)
+        __removeCandidate(_member, 3);
         isBoardWhitelist[_member] = 2;
         
         emit FilmBoardMemberAdded(msg.sender, _member, block.timestamp);
@@ -295,6 +306,7 @@ contract Property is ReentrancyGuard {
     function removeFilmBoardCandidate(address _member) external onlyVote nonReentrant {
         require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
 
+        __removeCandidate(_member, 3);
         isBoardWhitelist[_member] = 0;
     }
 
@@ -304,19 +316,16 @@ contract Property is ReentrancyGuard {
         require(maxAllowPeriod < block.timestamp - IVote(VOTE).getLastVoteTime(_member), 'maxAllowPeriod');
         require(maxAllowPeriod > block.timestamp - IStakingPool(STAKING_POOL).lastfundProposalCreateTime(), 'lastfundProposalCreateTime');
 
+        __removeCandidate(_member, 4);
         isBoardWhitelist[_member] = 0;
-    
-        for(uint256 i = 0; i < filmBoardMembers.length; i++) {
-            if(_member == filmBoardMembers[i]) {
-                filmBoardMembers[i] = filmBoardMembers[filmBoardMembers.length - 1];
-                filmBoardMembers.pop();
-            }
-        }
+
         emit FilmBoardMemberRemoved(msg.sender, _member, block.timestamp);
     }
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>rewardAddressList, 3=>boardCandidateList, rest=>boardMemberList)
     function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
+        require(_flag > 0 && _flag < 5, "bad flag");
+
         if(_flag == 1) return agentList;
         else if(_flag == 2) return rewardAddressList;
         else if(_flag == 3) return filmBoardCandidates;
@@ -620,13 +629,50 @@ contract Property is ReentrancyGuard {
             else rewardProposalInfo[_member].status = Helper.Status.REJECTED;
         }
     }
+
+    // flag=1 => filmBoard candidate, flag=2 => rewardAddress candidate, flag=3 => filmBoard member
+    function __removeCandidate(address _candidate, uint256 _flag) private {
+        if(_flag == 1) {        
+            for(uint256 k = 0; k < agentList.length; k++) { 
+                if(_candidate == agentList[k]) {
+                    agentList[k] = agentList[agentList.length - 1];
+                    agentList.pop();
+                    break;
+                }
+            }  
+        } else if(_flag == 2) {
+            for(uint256 k = 0; k < rewardAddressList.length; k++) { 
+                if(_candidate == rewardAddressList[k]) {
+                    rewardAddressList[k] = rewardAddressList[rewardAddressList.length - 1];
+                    rewardAddressList.pop();
+                    break;
+                }
+            }    
+        } else if(_flag == 3) {    
+            for(uint256 k = 0; k < filmBoardCandidates.length; k++) { 
+                if(_candidate == filmBoardCandidates[k]) {
+                    filmBoardCandidates[k] = filmBoardCandidates[filmBoardCandidates.length - 1];
+                    filmBoardCandidates.pop();
+                    break;
+                }
+            }  
+        } else if(_flag == 4) {
+            for(uint256 k = 0; k < filmBoardMembers.length; k++) { 
+                if(_candidate == filmBoardMembers[k]) {
+                    filmBoardMembers[k] = filmBoardMembers[filmBoardMembers.length - 1];
+                    filmBoardMembers.pop();
+                    break;
+                }
+            }    
+        }
+    }
     
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
     function updatePropertyForTesting(
         uint256 _value, 
         uint256 _flag
-    ) external onlyAuditor {
+    ) external onlyDeployer {
         require(_value > 0, "test: Zero value");
 
         if(_flag == 0) filmVotePeriod = _value;
@@ -652,8 +698,7 @@ contract Property is ReentrancyGuard {
     }
 
     /// @dev Update the rewardAddress for only testing in the testnet
-    function updateDAOFundForTesting(address _address) external onlyAuditor {        
+    function updateDAOFundForTesting(address _address) external onlyDeployer {        
         DAO_FUND_REWARD = _address;    
-    }
-        
+    }        
 }

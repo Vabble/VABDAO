@@ -93,6 +93,8 @@ contract FactoryTierNFT is ReentrancyGuard {
         
         for(uint256 i = 0; i < _minAmounts.length; i++) {
             require(_minAmounts[i] > 0, "setTier: zero value");        
+            // TODO - N3-2 updated(add below line)
+            require(_minAmounts[i] < _maxAmounts[i] || _maxAmounts[i] == 0, "setTier: invalid min/max value");        
 
             tierInfo[_filmId][i+1].minAmount = _minAmounts[i];
             tierInfo[_filmId][i+1].maxAmount = _maxAmounts[i];

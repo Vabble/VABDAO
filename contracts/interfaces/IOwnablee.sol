@@ -5,7 +5,11 @@ pragma solidity ^0.8.4;
 interface IOwnablee {  
     function auditor() external view returns (address);
 
+    function deployer() external view returns (address);
+    
     function replaceAuditor(address _newAuditor) external;
+
+    function transferAuditor(address _newAuditor) external;
     
     function isDepositAsset(address _asset) external view returns (bool);
     

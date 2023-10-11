@@ -26,7 +26,9 @@ interface IProperty {
 
     function getProperty(uint256 _propertyIndex, uint256 _flag) external view returns (uint256 property_);
     function updateProperty(uint256 _propertyIndex, uint256 _flag) external;
-    
+
+    function removeAgent(address _agent) external;
+
     function setRewardAddress(address _rewardAddress) external;    
     function isRewardWhitelist(address _rewardAddress) external view returns (uint256);
     function removeRewardAddressCandidate(address _rewardAddress) external;    

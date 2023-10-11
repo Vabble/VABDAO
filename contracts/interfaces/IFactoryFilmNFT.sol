@@ -14,7 +14,7 @@ interface IFactoryFilmNFT {
         address studio_
     );
 
-    function getFilmTokenIdList(uint256 _filmId) external view returns (uint256[] memory);
+    function getFilmNftTokenIdList(uint256 _filmId, address _user) external view returns (uint256[] memory);
 
     function getRaisedAmountByNFT(uint256 _filmId) external view returns (uint256);
 }

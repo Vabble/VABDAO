@@ -30,8 +30,7 @@ contract StakingPool is ReentrancyGuard {
     struct Stake {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
-        uint256 stakeTime;       
-        uint256 voteCount;       
+        uint256 stakeTime;         
     }
 
     struct UserRent {
@@ -43,15 +42,16 @@ contract StakingPool is ReentrancyGuard {
     address private immutable OWNABLE;     // Ownablee contract address
     address private VOTE;                  // Vote contract address
     address private VABBLE_DAO;            // VabbleDAO contract address
-    address private VABBLE_FUNDING;        // VabbleFunding contract address
+    // TODO - N2-3 updated(remove VABBLE_FUNDING)
     address private DAO_PROPERTY;          // Property contract address
         
-    uint256 public totalStakingAmount;   // 
-    uint256 public totalRewardAmount;    // 
-    uint256 public totalRewardIssuedAmount;    // 
-    uint256 public lastfundProposalCreateTime;// funding proposal created time(block.timestamp)
-    bool public isInitialized;           // check if contract initialized or not
-    uint256[] private proposalCreatedTimeList; // need for calculating rewards
+    uint256 public totalStakingAmount;   
+    uint256 public totalRewardAmount;    
+    uint256 public totalRewardIssuedAmount;
+    uint256 public lastfundProposalCreateTime; // funding proposal created time(block.timestamp)
+    bool public isInitialized;                 // check if contract initialized or not
+    uint256[] private proposalCreatedTimeList;                   // need for calculating rewards
+    mapping(address => uint256[]) private proposalVotedTimeList; // need for calculating rewards
     
     mapping(address => Stake) public stakeInfo;
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
@@ -70,7 +70,12 @@ contract StakingPool is ReentrancyGuard {
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not auditor");
         _;
+    }    
+    modifier onlyDeployer() {
+        require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
+        _;
     }
+
     constructor(address _ownable) {
         require(_ownable != address(0), "ownableContract: Zero address");
         OWNABLE = _ownable;    
@@ -79,14 +84,14 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Initialize Vote
     function initializePool(
         address _vabbleDAO,
-        address _funding,
         address _property,
         address _vote
-    ) external onlyAuditor {
+    ) external onlyDeployer {
+        // TODO - N3-3 updated(add below line)
+        require(!isInitialized, "initializePool: already initialized");
+
         require(_vabbleDAO != address(0), "initializePool: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO; 
-        require(_funding != address(0), "initializePool: Zero funding address");
-        VABBLE_FUNDING = _funding;    
         require(_property != address(0), "initializePool: Zero propertyContract address");
         DAO_PROPERTY = _property;   
         require(_vote != address(0), "initializePool: Zero voteContract address");
@@ -104,11 +109,12 @@ contract StakingPool is ReentrancyGuard {
 
         emit RewardAdded(totalRewardAmount, _amount, msg.sender, block.timestamp);
     }    
-
+    
     /// @notice Staking VAB token by staker
     function stakeVAB(uint256 _amount) external nonReentrant {
         require(isInitialized, "stakeVAB: Should be initialized");
-        require(msg.sender != address(0) && _amount > 0, "stakeVAB: Zero value");
+        require(_amount > 0, "stakeVAB: Zero amount");
+        // TODO - N2 updated(remove msg.sender != address(0))
 
         uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
         require(_amount > minAmount, "stakeVAB: less amount than 0.01");
@@ -192,7 +198,7 @@ contract StakingPool is ReentrancyGuard {
         
         emit RewardWithdraw(msg.sender, _amount, block.timestamp);
     }
-
+    // TODO - PVE008 updated(calculate voteCount again)
     /// @notice Calculate reward amount without extra reward amount for listing film vote
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
         Stake memory si = stakeInfo[_customer];
@@ -209,6 +215,14 @@ contract StakingPool is ReentrancyGuard {
             }
         }
 
+        // Get vote count started in withdrawable period of customer
+        uint256 votedCount = 0;     
+        for(uint256 i = 0; i < proposalVotedTimeList[_customer].length; i++) { 
+            if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
+                votedCount += 1;
+            }
+        }
+
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
         
         // Get time with accuracy(10**4) from after lockPeriod 
@@ -217,10 +231,10 @@ contract StakingPool is ReentrancyGuard {
         
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
         if(proposalCount > 0) {
-            if(si.voteCount == 0) {
+            if(votedCount == 0) {
                 rewardAmount = 0;
             } else {
-                uint256 countVal = (si.voteCount * 1e4) / proposalCount;
+                uint256 countVal = (votedCount * 1e4) / proposalCount;
                 rewardAmount = rewardAmount * countVal / 1e4;
             }
         }
@@ -399,9 +413,9 @@ contract StakingPool is ReentrancyGuard {
         stakeInfo[_user].withdrawableTime = _time;
     }
 
-    /// @notice Update lastStakedTime for a staker when vote
-    function updateVoteCount(address _user) external onlyVote {
-        stakeInfo[_user].voteCount += 1;
+    /// @notice Add voted time for a staker when vote
+    function updateVotedTime(address _user, uint256 _time) external onlyVote {
+        proposalVotedTimeList[_user].push(_time);
     }
 
     /// @notice Update lastfundProposalCreateTime for only fund film proposal

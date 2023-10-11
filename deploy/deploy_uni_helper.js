@@ -19,6 +19,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
     this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
   }
+  this.Ownablee = await deployments.get('Ownablee');
 
   await deploy('UniHelper', {
     from: deployer,
@@ -26,7 +27,8 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
       this.uniswapFactory,
       this.uniswapRouter,
       this.sushiswapFactory,
-      this.sushiswapRouter
+      this.sushiswapRouter,
+      this.Ownablee.address
     ],
     log: true,
     deterministicDeployment: false,
@@ -36,3 +38,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_uni_helper'
 module.exports.tags = ['UniHelper'];
+module.exports.dependencies = ['Ownablee'];

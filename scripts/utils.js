@@ -31,6 +31,10 @@ const CONFIG = {
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
       router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
     },
+    sig: {
+      user1: '',
+      user2: ''
+    }
   },
   mumbai: {
     usdcAdress: "0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c",
@@ -46,7 +50,11 @@ const CONFIG = {
     sushiswap: { // Mainnet, Mumbai
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
       router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
-    }, 
+    },     
+    sig: {
+      user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655',
+      user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'
+    }
   },
   uniswapV3: { // All(Ethereum, Polygon, Avalance... and testnets)
     router: '0xE592427A0AEce92De3Edee1F18E0157C05861564'

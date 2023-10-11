@@ -343,35 +343,33 @@ contract VabbleDAO is ReentrancyGuard {
                      
         for(uint256 k = 0; k < fInfo.studioPayees.length; k++) {
             uint256 shareAmount = _payout * fInfo.sharePercents[k] / 1e10;
-            Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), fInfo.studioPayees[k], shareAmount);
+            Helper.safeTransfer(_vabToken, fInfo.studioPayees[k], shareAmount);
         }        
         
         StudioPool -= _payout;        
 
-        __payRevenue(_user, _vabToken, _filmId, _payout);   
+        // TODO - PVE004 updated(revenue check again)
+        uint256[] memory nftList = IFactoryFilmNFT(FILM_NFT_FACTORY).getFilmNftTokenIdList(_filmId, _user);
+        if(nftList.length > 0) {
+            __payRevenue(_user, _vabToken, _filmId, _payout, nftList.length);   
+        }
     }     
-
-    // TODO revenue    
+ 
     // Transfer revenue amount to user if user fund to this film throughout NFT mint
     function __payRevenue(
         address _user,
         address _vabToken,
         uint256 _filmId,
-        uint256 _payout
-    ) private {
-        uint256 nftCountOwned;
-        uint256[] memory nftList = IFactoryFilmNFT(FILM_NFT_FACTORY).getFilmTokenIdList(_filmId);
-        for(uint256 i = 0; i < nftList.length; i++) {
-            if(IERC721(FILM_NFT_FACTORY).ownerOf(nftList[i]) == _user) nftCountOwned += 1;
-        }        
-
+        uint256 _payout,
+        uint256 _nftCountOwned
+    ) private {     
         ( , , , , uint256 revenuePercent, ,) = IFactoryFilmNFT(FILM_NFT_FACTORY).getMintInfo(_filmId);
-        uint256 revenueAmount = nftCountOwned * _payout * revenuePercent / 1e10;
+        uint256 revenueAmount = _nftCountOwned * _payout * revenuePercent / 1e10;
         if(_payout >= revenueAmount && revenueAmount > 0) {
             require(StudioPool >= revenueAmount, "revenue: insufficient studio pool");
             require(IERC20(_vabToken).balanceOf(address(this)) >= revenueAmount, "revenue: insufficient balance");
             
-            Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _user, revenueAmount);
+            Helper.safeTransfer(_vabToken, _user, revenueAmount);
             StudioPool -= revenueAmount; 
         }
     }
