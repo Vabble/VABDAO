@@ -186,6 +186,8 @@ contract FactoryFilmNFT is ReentrancyGuard {
         require(_toList.length > 0, "mintBatch: zero item length");
         require(_toList.length == _filmIdList.length, "mintBatch: bad item length");
 
+        __handleMintPay(_filmIdList, _payToken);    
+
         for(uint256 i; i < _toList.length; i++) {
             __mint(_filmIdList[i], _toList[i], _payToken);
         }
@@ -202,8 +204,6 @@ contract FactoryFilmNFT is ReentrancyGuard {
         require(mintInfo[_filmId].maxMintAmount > 0, "mint: no mint info");     
         require(mintInfo[_filmId].maxMintAmount > getTotalSupply(_filmId), "mint: exceed mint amount");        
         
-        __handleMintPay(_filmId, _payToken);    
-
         // TODO - PVE006 updated(add below line)
         filmFundRaiseByNFT[_filmId] += mintInfo[_filmId].price;
 
@@ -216,10 +216,21 @@ contract FactoryFilmNFT is ReentrancyGuard {
     }    
 
     function __handleMintPay(
-        uint256 _filmId, 
+        uint256[] calldata _filmIdList, 
         address _payToken
     ) private {
-        uint256 expectAmount = getExpectedTokenAmount(_payToken, mintInfo[_filmId].price);
+        uint256 expectAmount;
+        uint256 feeAmount;
+        uint256[] memory restAmounts;
+        for(uint256 i; i < _filmIdList.length; i++) {
+            uint256 eAmount = getExpectedTokenAmount(_payToken, mintInfo[_filmIdList[i]].price);
+            expectAmount += eAmount;
+
+            uint256 fAmount = eAmount * mintInfo[_filmIdList[i]].feePercent / 1e10;
+            feeAmount += fAmount;
+            
+            restAmounts[i] = eAmount - fAmount;
+        }
         // Return remain ETH to user back if case of ETH and Transfer Asset from buyer to this contract
         if(_payToken == address(0)) {
             require(msg.value >= expectAmount, "handlePay: Insufficient paid");
@@ -235,8 +246,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
             Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
         } 
 
-        // Add VAB token to rewardPool after swap feeAmount(2%) from UniswapV2
-        uint256 feeAmount = expectAmount * mintInfo[_filmId].feePercent / 1e10;       
+        // Add VAB token to rewardPool after swap feeAmount(2%) from UniswapV2   
         if(_payToken == vabToken) {
             IStakingPool(STAKING_POOL).addRewardToPool(feeAmount);
         } else {
@@ -244,7 +254,11 @@ contract FactoryFilmNFT is ReentrancyGuard {
         }
 
         // Transfer remain token amount to "film owner" address
-        Helper.safeTransferAsset(_payToken, IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId), expectAmount - feeAmount);
+        for(uint256 i; i < _filmIdList.length; i++) {
+            if(restAmounts[i] > 0) {
+                Helper.safeTransferAsset(_payToken, IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmIdList[i]), restAmounts[i]);
+            }
+        }
     }
 
     /// @dev Add fee amount to rewardPool after swap from uniswap if not VAB token

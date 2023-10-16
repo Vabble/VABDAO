@@ -123,9 +123,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         }
         require(subNFTAddress != address(0), "mint: not deploy yet");        
         require(mintInfo[_category].maxMintAmount > 0, "mint: no admin mint info");
-        require(mintInfo[_category].maxMintAmount > getTotalSupply(), "mint: exceed max mint amount");
-
-        __handleMintPay(_token, _subPeriod, _category);        
+        require(mintInfo[_category].maxMintAmount > getTotalSupply(), "mint: exceed max mint amount");   
 
         uint256 nftLockPeriod = mintInfo[_category].lockPeriod;
         address receiver = _to;
@@ -155,18 +153,24 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         require(_toList.length == _periodList.length, "batchMint: bad item-1 length");
         require(_toList.length == _categoryList.length, "batchMint: bad item-2 length");
 
-        for(uint256 i; i < _toList.length; i++) {
+        __handleMintPay(_token, _periodList, _categoryList);     
+
+        for(uint256 i = 0; i < _toList.length; i++) {
             __mint(_token, _toList[i], _periodList[i], _categoryList[i]);
         }
     }
 
     function __handleMintPay(
         address _payToken, 
-        uint256 _period, 
-        uint256 _category
+        uint256[] calldata _periodList, 
+        uint256[] calldata _categoryList
     ) private {
-        uint256 price = mintInfo[_category].mintPrice;
-        uint256 expectAmount = getExpectedTokenAmount(_payToken, _period * price);
+        uint256 expectAmount;        
+        for(uint256 i = 0; i < _periodList.length; i++) {
+            uint256 price = mintInfo[_categoryList[i]].mintPrice;
+            expectAmount += getExpectedTokenAmount(_payToken, _periodList[i] * price);
+        }
+
         // Return remain ETH to user back if case of ETH and Transfer Asset from buyer to this contract
         if(_payToken == address(0)) {
             require(msg.value >= expectAmount, "handlePay: Insufficient paid");
@@ -182,15 +186,17 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
             }
         } 
 
-        uint256 usdcAmount = expectAmount;
+        uint256 usdcAmount;
         address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();                
-        if(_payToken != usdcToken) {
+        if(_payToken == usdcToken) {
+            usdcAmount = expectAmount;
+        } else {
             bytes memory swapArgs = abi.encode(expectAmount, _payToken, usdcToken);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);                
         }
         
         // Transfer USDC to wallet
-        Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
+        if(usdcAmount > 0) Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
     }
 
     /// @notice Lock subscription NFT for some period (transfer nft from owner wallet to this contract)
