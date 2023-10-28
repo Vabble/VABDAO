@@ -71,6 +71,7 @@ The project is a decentralized application (dApp) that aims to facilitate film f
     │   └── deploy_vote.js
     ├── deploy_address.txt
     ├── hardhat.config.js
+    ├── LICENSE
     ├── package.json
     ├── README.md
     ├── scripts/
