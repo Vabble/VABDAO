@@ -1,8 +1,8 @@
 <div align="center">
 <h1 align="center">
-<img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" width="100" />
+<img src="https://github.com/Vabble/assets/blob/main/logo/Fill/Fill_LogoVabble_128x128.png" width="100" />
 <br>VabbleDAO</h1>
-<h3>◦ Unlocking decentralized possibilities!</h3>
+<h3>◦ Unlocking decentralized media possibilities!</h3>
 <h3>◦ Developed with the software and tools below.</h3>
 
 <p align="center">
