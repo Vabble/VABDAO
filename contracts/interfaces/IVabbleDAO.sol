@@ -14,15 +14,16 @@ interface IVabbleDAO {
         uint256 raiseAmount;     // USDC amount(in cash) studio are seeking to raise for the film
         uint256 fundPeriod;      // how many days(ex: 20 days) to keep the funding pool open        
         uint256 fundType;        // Financing Type(None=>0, Token=>1, NFT=>2, NFT & Token=>3)
+        uint256 rewardPercent;   // reward percent applied to users helped fund film
         uint256 noVote;          // if 0 => false, 1 => true
         uint256 enableClaimer;   // if 0 => false, 1 => true
         uint256 pCreateTime;     // proposal created time(block.timestamp) by studio
         uint256 pApproveTime;    // proposal approved time(block.timestamp) by vote
         address studio;          // studio address(film owner)
         Helper.Status status;    // status of film
-    }
+    }  
 
-    function getFilmFund(uint256 _filmId) external view returns (uint256 raiseAmount_, uint256 fundPeriod_, uint256 fundType_);
+    function getFilmFund(uint256 _filmId) external view returns (uint256 raiseAmount_, uint256 fundPeriod_, uint256 fundType_, uint256 rewardPercent_);
 
     function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_);
     
@@ -42,5 +43,9 @@ interface IVabbleDAO {
 
     function getUserFilmListForMigrate(address _user) external view returns (Film[] memory filmList_);
 
-    function withdrawVABFromStudioPool(address _to) external returns (uint256);
+    function withdrawVABFromStudioPool(address _to) external returns (uint256); 
+
+    
+
+    
 }

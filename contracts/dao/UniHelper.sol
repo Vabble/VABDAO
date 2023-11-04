@@ -66,7 +66,7 @@ contract UniHelper {
 
     function setWhiteList(
         address _vabbleDAO,
-        address _vabbleFunding,
+        address _vabbleFund,
         address _subscription,
         address _factoryFilm,
         address _factorySub
@@ -75,8 +75,8 @@ contract UniHelper {
 
         require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "setWhiteList: zero vabbleDAO address");
         isVabbleContract[_vabbleDAO] = true;
-        require(_vabbleFunding != address(0) && Helper.isContract(_vabbleFunding), "setWhiteList: zero vabble funding address");
-        isVabbleContract[_vabbleFunding] = true;
+        require(_vabbleFund != address(0) && Helper.isContract(_vabbleFund), "setWhiteList: zero vabbleFund address");
+        isVabbleContract[_vabbleFund] = true;
         require(_subscription != address(0) && Helper.isContract(_subscription), "setWhiteList: zero subscription address");
         isVabbleContract[_subscription] = true;
         require(_factoryFilm != address(0) && Helper.isContract(_factoryFilm), "setWhiteList: zero factory film address");

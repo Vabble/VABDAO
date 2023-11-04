@@ -7,7 +7,6 @@ const { BigNumber } = require('ethers');
 describe('FactoryFilmNFT', function () {
   before(async function () {        
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
-    this.VabbleFundingFactory = await ethers.getContractFactory('VabbleFunding');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.VoteFactory = await ethers.getContractFactory('Vote');
@@ -68,23 +67,11 @@ describe('FactoryFilmNFT', function () {
         this.FilmNFT.address
       )
     ).deployed();     
-    
-    this.VabbleFunding = await (
-      await this.VabbleFundingFactory.deploy(
-        this.Ownablee.address,      // Ownablee contract
-        this.UniHelper.address,     // UniHelper contract
-        this.StakingPool.address,   // StakingPool contract
-        this.Property.address,      // Property contract
-        this.FilmNFT.address,// film NFT Factory contract
-        this.VabbleDAO.address 
-      )
-    ).deployed(); 
-    
+        
     this.TierNFT = await (
       await this.FactoryTierNFTFactory.deploy(
         this.Ownablee.address,      // Ownablee contract
-        this.VabbleDAO.address,
-        this.VabbleFunding.address
+        this.VabbleDAO.address
       )
     ).deployed(); 
 
@@ -99,7 +86,6 @@ describe('FactoryFilmNFT', function () {
     
     await this.FilmNFT.connect(this.auditor).initializeFactory(
       this.VabbleDAO.address, 
-      this.VabbleFunding.address,
       this.StakingPool.address,
       this.Property.address,
       {from: this.auditor.address}
@@ -115,7 +101,6 @@ describe('FactoryFilmNFT', function () {
     // Initialize StakingPool
     await this.StakingPool.connect(this.auditor).initializePool(
       this.VabbleDAO.address,
-      this.VabbleFunding.address,
       this.Property.address,
       this.Vote.address,
       {from: this.auditor.address}
@@ -137,10 +122,6 @@ describe('FactoryFilmNFT', function () {
     await this.vabToken.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000000));   
     
-    await this.vabToken.connect(this.customer1).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer2).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer3).approve(this.VabbleFunding.address, getBigNumber(100000000));   
-
     await this.vabToken.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(100000000));
@@ -155,10 +136,6 @@ describe('FactoryFilmNFT', function () {
     await this.vabToken.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000000));    
     
-    await this.vabToken.connect(this.studio1).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.studio2).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.studio3).approve(this.VabbleFunding.address, getBigNumber(100000000));   
-
     await this.vabToken.connect(this.studio1).approve(this.StakingPool.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio2).approve(this.StakingPool.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio3).approve(this.StakingPool.address, getBigNumber(100000000));
@@ -217,14 +194,6 @@ describe('FactoryFilmNFT', function () {
     await this.USDC.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
     await this.USDC.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
 
-    await this.USDC.connect(this.studio1).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
-    await this.USDC.connect(this.studio2).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
-    await this.USDC.connect(this.studio3).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
-    
-    await this.USDC.connect(this.customer1).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
-    await this.USDC.connect(this.customer2).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
-    await this.USDC.connect(this.customer3).approve(this.VabbleFunding.address, getBigNumber(10000000, 6));
-
     await this.Ownablee.connect(this.auditor).addDepositAsset(
       [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
     )
@@ -232,7 +201,6 @@ describe('FactoryFilmNFT', function () {
     // Initialize StakingPool
     await this.StakingPool.connect(this.auditor).initializePool(
       this.VabbleDAO.address,
-      this.VabbleFunding.address,
       this.Property.address,
       this.Vote.address,
       {from: this.auditor.address}
@@ -497,14 +465,14 @@ describe('FactoryFilmNFT', function () {
 
     const depositAmount = getBigNumber(100000)
     const ethVal = ethers.utils.parseEther('1')
-    await this.VabbleFunding.connect(this.customer1).depositToFilm(
+    await this.VabbleDAO.connect(this.customer1).depositToFilm(
       proposalId2, ethVal, CONFIG.addressZero, {from: this.customer1.address, value: ethVal}
     )
-    await this.VabbleFunding.connect(this.customer2).depositToFilm(
+    await this.VabbleDAO.connect(this.customer2).depositToFilm(
       proposalId2, depositAmount, this.vabToken.address, {from: this.customer2.address}
     )
     const depositAmount1 = getBigNumber(1000, 6)
-    await this.VabbleFunding.connect(this.customer3).depositToFilm(
+    await this.VabbleDAO.connect(this.customer3).depositToFilm(
       proposalId2, depositAmount1, this.USDC.address, {from: this.customer3.address}
     )
 

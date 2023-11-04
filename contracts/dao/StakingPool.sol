@@ -81,8 +81,8 @@ contract StakingPool is ReentrancyGuard {
         OWNABLE = _ownable;    
     }
 
-    /// @notice Initialize Vote
-    function initializePool(
+    /// @notice Initialize Pool
+    function initialize(
         address _vabbleDAO,
         address _property,
         address _vote
@@ -240,7 +240,7 @@ contract StakingPool is ReentrancyGuard {
         }
         
         // If customer is film board member, more rewards(25%)
-        if(IProperty(DAO_PROPERTY).isBoardWhitelist(_customer) == 2) {            
+        if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _customer) == 2) {            
             rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
         } 
         

@@ -25,22 +25,20 @@ interface IProperty {
     function boardRewardRate() external view returns (uint256);       // 20
 
     function getProperty(uint256 _propertyIndex, uint256 _flag) external view returns (uint256 property_);
-    function updateProperty(uint256 _propertyIndex, uint256 _flag) external;
 
-    function removeAgent(address _agent) external;
-
-    function setRewardAddress(address _rewardAddress) external;    
-    function isRewardWhitelist(address _rewardAddress) external view returns (uint256);
-    function removeRewardAddressCandidate(address _rewardAddress) external;    
     function DAO_FUND_REWARD() external view returns (address);
 
     function updateLastVoteTime(address _member) external;
-    function addFilmBoardMember(address _member) external;
-    function removeFilmBoardCandidate(address _member) external;
-    function isBoardWhitelist(address _member) external view returns (uint256);
 
     function getPropertyProposalTime(uint256 _property, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_);
     function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_);
-    function updatePropertyProposalApproveTime(uint256 _property, uint256 _flag, uint256 _approveStatus) external;
-    function updateGovProposalApproveTime(address _member, uint256 _flag, uint256 _approveStatus) external;
+    
+    function updatePropertyProposal(uint256 _property, uint256 _flag, uint256 _approveStatus) external;
+    function updateGovProposal(address _member, uint256 _flag, uint256 _approveStatus) external;
+
+    function getGovProposer(uint256 _flag, address _candidate) external view returns (address);
+    function getPropertyProposer(uint256 _flag, uint256 _property) external view returns (address);
+
+    function checkGovWhitelist(uint256 _flag, address _address) external view returns (uint256);
+    function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view returns (uint256);
 }

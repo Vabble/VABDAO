@@ -7,7 +7,6 @@ const { CONFIG, getBigNumber, DISCOUNT, getVoteData } = require('../scripts/util
 describe('StakingPool', function () {
   before(async function () {        
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
-    this.VabbleFundingFactory = await ethers.getContractFactory('VabbleFunding');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.VoteFactory = await ethers.getContractFactory('Vote');
@@ -74,23 +73,11 @@ describe('StakingPool', function () {
         this.FilmNFT.address
       )
     ).deployed();     
-    
-    this.VabbleFunding = await (
-      await this.VabbleFundingFactory.deploy(
-        this.Ownablee.address,      // Ownablee contract
-        this.UniHelper.address,     // UniHelper contract
-        this.StakingPool.address,   // StakingPool contract
-        this.Property.address,      // Property contract
-        this.FilmNFT.address,// film NFT Factory contract
-        this.VabbleDAO.address 
-      )
-    ).deployed(); 
-    
+        
     this.TierNFT = await (
       await this.FactoryTierNFTFactory.deploy(
         this.Ownablee.address,      // Ownablee contract
-        this.VabbleDAO.address,
-        this.VabbleFunding.address
+        this.VabbleDAO.address
       )
     ).deployed(); 
 
@@ -105,7 +92,6 @@ describe('StakingPool', function () {
     
     await this.FilmNFT.connect(this.auditor).initializeFactory(
       this.VabbleDAO.address, 
-      this.VabbleFunding.address,
       this.StakingPool.address,
       this.Property.address,
       {from: this.auditor.address}
@@ -129,10 +115,6 @@ describe('StakingPool', function () {
     await this.vabToken.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000000));   
     
-    await this.vabToken.connect(this.customer1).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer2).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer3).approve(this.VabbleFunding.address, getBigNumber(100000000)); 
-
     await this.vabToken.connect(this.customer1).approve(this.Property.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer2).approve(this.Property.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer3).approve(this.Property.address, getBigNumber(100000000));
@@ -153,10 +135,7 @@ describe('StakingPool', function () {
 
     await this.vabToken.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000000));        
-    await this.vabToken.connect(this.studio1).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.studio2).approve(this.VabbleFunding.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.studio3).approve(this.VabbleFunding.address, getBigNumber(100000000));       
+    await this.vabToken.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000000));       
     await this.vabToken.connect(this.studio1).approve(this.SubNFT.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio2).approve(this.SubNFT.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio3).approve(this.SubNFT.address, getBigNumber(100000000));
@@ -175,7 +154,6 @@ describe('StakingPool', function () {
     // Initialize StakingPool
     await this.StakingPool.connect(this.auditor).initializePool(
       this.VabbleDAO.address,
-      this.VabbleFunding.address,
       this.Property.address,
       this.Vote.address,
       {from: this.auditor.address}
