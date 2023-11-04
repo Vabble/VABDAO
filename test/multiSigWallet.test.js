@@ -6,7 +6,6 @@ const ERC20 = require('../data/ERC20.json');
 describe('MultiSigWallet', function () {
   before(async function () {        
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
-    this.VabbleFundingFactory = await ethers.getContractFactory('VabbleFunding');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.VoteFactory = await ethers.getContractFactory('Vote');
@@ -76,23 +75,11 @@ describe('MultiSigWallet', function () {
         this.FilmNFT.address
       )
     ).deployed();     
-    
-    this.VabbleFunding = await (
-      await this.VabbleFundingFactory.deploy(
-        this.Ownablee.address,      // Ownablee contract
-        this.UniHelper.address,     // UniHelper contract
-        this.StakingPool.address,   // StakingPool contract
-        this.Property.address,      // Property contract
-        this.FilmNFT.address,// film NFT Factory contract
-        this.VabbleDAO.address 
-      )
-    ).deployed(); 
-    
+        
     this.TierNFT = await (
       await this.FactoryTierNFTFactory.deploy(
         this.Ownablee.address,      // Ownablee contract
-        this.VabbleDAO.address,
-        this.VabbleFunding.address
+        this.VabbleDAO.address
       )
     ).deployed(); 
 
@@ -107,7 +94,6 @@ describe('MultiSigWallet', function () {
 
     await this.FilmNFT.connect(this.deployer).initializeFactory(
       this.VabbleDAO.address, 
-      this.VabbleFunding.address,
       this.StakingPool.address,
       this.Property.address,
       {from: this.deployer.address}
@@ -125,6 +111,7 @@ describe('MultiSigWallet', function () {
       this.VabbleDAO.address,
       this.StakingPool.address,
       this.Property.address,
+      {from: this.deployer.address}
     )
     // Initialize Ownablee contract
     await this.Ownablee.connect(this.deployer).setup(
@@ -135,7 +122,6 @@ describe('MultiSigWallet', function () {
     // Initialize UniHelper contract
     await this.UniHelper.connect(this.deployer).setWhiteList(
       this.VabbleDAO.address,
-      this.VabbleFunding.address,
       this.Subscription.address,
       this.FilmNFT.address,
       this.SubNFT.address

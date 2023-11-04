@@ -4,14 +4,14 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
   this.Ownablee = await deployments.get('Ownablee');  
   this.VabbleDAO = await deployments.get('VabbleDAO');
-  this.VabbleFunding = await deployments.get('VabbleFunding');
+  this.VabbleFund = await deployments.get('VabbleFund');
 
   await deploy('FactoryTierNFT', {
     from: deployer,
     args: [
       this.Ownablee.address,
       this.VabbleDAO.address,
-      this.VabbleFunding.address
+      this.VabbleFund.address
     ],
     log: true,
     deterministicDeployment: false,
@@ -21,4 +21,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 
 module.exports.id = 'deploy_factory_tier_nft'
 module.exports.tags = ['FactoryTierNFT'];
-module.exports.dependencies = ['Ownablee', 'VabbleDAO', 'VabbleFunding'];
+module.exports.dependencies = ['Ownablee', 'VabbleDAO', 'VabbleFund'];

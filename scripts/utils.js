@@ -52,8 +52,8 @@ const CONFIG = {
       router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
     },     
     sig: {
-      user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655',
-      user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'
+      user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
+      user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
     }
   },
   uniswapV3: { // All(Ethereum, Polygon, Avalance... and testnets)

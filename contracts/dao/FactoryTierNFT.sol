@@ -5,7 +5,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleDAO.sol";
-import "../interfaces/IVabbleFunding.sol";
+import "../interfaces/IVabbleFund.sol";
 import "./VabbleNFT.sol";
 
 contract FactoryTierNFT is ReentrancyGuard {
@@ -34,9 +34,9 @@ contract FactoryTierNFT is ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => VabbleNFT)) public tierNFTContract;  // (filmId => (tier number => nft contract))
     mapping(uint256 => mapping(uint256 => uint256[])) public tierNFTTokenList; // (filmId => (tier number => minted tokenId list))
     
-    address private immutable OWNABLE;         // Ownablee contract address
-    address private immutable VABBLE_DAO;      // VabbleDAO contract address
-    address private immutable FUNDING;         // Funding contract address
+    address private immutable OWNABLE;          // Ownablee contract address
+    address private immutable VABBLE_DAO;       // VabbleDAO contract address
+    address private immutable VABBLE_FUND;      // VabbleFund contract address
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -48,14 +48,14 @@ contract FactoryTierNFT is ReentrancyGuard {
     constructor(
         address _ownable,
         address _vabbleDAO,
-        address _funding
+        address _vabbleFund
     ) {
-        require(_ownable != address(0), "ownableContract: Zero address");
+        require(_ownable != address(0), "ownableContract: zero address");
         OWNABLE = _ownable; 
-        require(_vabbleDAO != address(0), "daoContract: Zero address");
+        require(_vabbleDAO != address(0), "daoContract: zero address");
         VABBLE_DAO = _vabbleDAO; 
-        require(_funding != address(0), "fundingContract: Zero address");
-        FUNDING = _funding; 
+        require(_vabbleFund!= address(0), "vabbleFund: zero address");
+        VABBLE_FUND = _vabbleFund;  
     }
 
     /// @notice Set baseURI by Auditor.
@@ -83,12 +83,12 @@ contract FactoryTierNFT is ReentrancyGuard {
         require(_minAmounts.length == _maxAmounts.length, "setTier: bad maxAmount length");        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "setTier: not film owner");
 
-        (uint256 raiseAmount, uint256 fundPeriod, uint256 fundType) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
+        (uint256 raiseAmount, uint256 fundPeriod, uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
         require(fundPeriod < block.timestamp - pApproveTime, "setTier: fund period yet"); 
         require(fundType > 0, "setTier: not fund film"); 
 
-        uint256 raisedAmount = IVabbleFunding(FUNDING).getRaisedAmountByToken(_filmId);        
+        uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);        
         require(raisedAmount > 0 && raisedAmount >= raiseAmount, "setTier: not raised yet");
         
         for(uint256 i = 0; i < _minAmounts.length; i++) {
@@ -134,7 +134,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         require(IVabbleDAO(VABBLE_DAO).isEnabledClaimer(_filmId), "deployTier: not allow to mint tierNft");
 
         uint256 tier = 0;
-        uint256 fund = IVabbleFunding(FUNDING).getUserFundAmountPerFilm(msg.sender, _filmId);
+        uint256 fund = IVabbleFund(VABBLE_FUND).getUserFundAmountPerFilm(msg.sender, _filmId);
         for(uint256 i = 1; i <= tierCount[_filmId]; i++) {
             if(tierInfo[_filmId][i].maxAmount == 0) {
                 if(tierInfo[_filmId][i].minAmount >= fund) {

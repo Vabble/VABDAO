@@ -16,10 +16,8 @@ contract Property is ReentrancyGuard {
     event AuditorProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
     event RewardFundProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
     event FilmBoardProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
-    event FilmBoardMemberAdded(address indexed caller, address member, uint256 addTime);
     event FilmBoardMemberRemoved(address indexed caller, address member, uint256 removeTime);
     event PropertyProposalCreated(address indexed creator, uint256 property, uint256 flag, string title, string description, uint256 createTime);
-    event PropertyUpdated(address indexed caller, uint256 property, uint256 flag, uint256 updateTime);
     
     struct Proposal {
         string title;          // proposal title
@@ -87,16 +85,17 @@ contract Property is ReentrancyGuard {
     address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
     address[] private filmBoardMembers;      // filmBoard members
 
-    mapping(address => uint256) public isBoardWhitelist;       // (filmBoard member => 0: no member, 1: candiate, 2: already member)
-    mapping(address => uint256) public isRewardWhitelist;      // (rewardAddress => 0: no member, 1: candiate, 2: already member) 
+    // flag=1 =>agent, 2=>board, 3=>reward
+    mapping(uint256 => mapping(address => uint256)) private isGovWhitelist;      // (flag => (address => 0: no, 1: candiate, 2: member))
+    mapping(uint256 => mapping(uint256 => uint256)) private isPropertyWhitelist; // (flag => (property => 0: no, 1: candiate, 2: member))
 
-    mapping(address => Proposal) public rewardProposalInfo;    // (rewardAddress => Proposal)       
-    mapping(address => Proposal) public boardProposalInfo;     // (board => Proposal)       
-    mapping(address => Proposal) public agentProposalInfo;     // (pool address => Proposal)       
+    mapping(uint256 => mapping(address => Proposal)) public govProposalInfo;       // (flag => (address => Proposal))
     mapping(uint256 => mapping(uint256 => Proposal)) public propertyProposalInfo;  // (flag => (property => Proposal))
 
     mapping(address => uint256) public userGovernProposalCount;// (user => created governance-proposal count)
-
+    mapping(uint256 => mapping(address => address)) private govProposer;      // (flag => (address => proposer))
+    mapping(uint256 => mapping(uint256 => address)) private propertyProposer; // (flag => (property => proposer))
+    
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
         _;
@@ -159,15 +158,19 @@ contract Property is ReentrancyGuard {
         string memory _title,
         string memory _description
     ) external onlyStaker {
-        require(_agent != address(0), "proposalAuditor: Zero address");                
-        require(IOwnablee(OWNABLE).auditor() != _agent, "proposalAuditor: Already auditor address");                
+        require(
+            _agent != address(0) && IOwnablee(OWNABLE).auditor() != _agent && isGovWhitelist[1][_agent] == 0, 
+            "proposalAuditor: Already auditor or candidate or zero"
+        );                          
         require(__isPaidFee(proposalFeeAmount), 'proposalAuditor: Not paid fee');
 
         agentList.push(_agent);
         governanceProposalCount += 1;
-        userGovernProposalCount[msg.sender] += 1;
+        userGovernProposalCount[msg.sender] += 1;        
+        isGovWhitelist[1][_agent] = 1;
+        govProposer[1][_agent] = msg.sender;
 
-        Proposal storage ap = agentProposalInfo[_agent];
+        Proposal storage ap = govProposalInfo[1][_agent];
         ap.title = _title;
         ap.description = _description;
         ap.createTime = block.timestamp;
@@ -196,14 +199,7 @@ contract Property is ReentrancyGuard {
         } else {
             return false;
         }
-    }  
-
-    /// @notice Remove a agent from agentList by Vote contract
-    function removeAgent(address _agent) external onlyVote nonReentrant {
-        require(agentProposalInfo[_agent].createTime > 0, "removeAgent: no agent");   
-
-        __removeCandidate(_agent, 1);
-    }
+    } 
 
     // =================== DAO fund rewards proposal ====================
     function proposalRewardFund(
@@ -211,16 +207,19 @@ contract Property is ReentrancyGuard {
         string memory _title,
         string memory _description
     ) external onlyStaker {
-        require(_rewardAddress != address(0), "proposalRewardFund: Zero candidate address");     
-        require(isRewardWhitelist[_rewardAddress] == 0, "proposalRewardFund: Already created proposal by this address");
+        require(
+            _rewardAddress != address(0) && isGovWhitelist[3][_rewardAddress] == 0, 
+            "proposalRewardFund: Already candidate or zero"
+        );
         require(__isPaidFee(10 * proposalFeeAmount), 'proposalRewardFund: Not paid fee');
 
         rewardAddressList.push(_rewardAddress);
-        isRewardWhitelist[_rewardAddress] = 1;        
+        isGovWhitelist[3][_rewardAddress] = 1;        
         governanceProposalCount += 1;
         userGovernProposalCount[msg.sender] += 1;
+        govProposer[3][_rewardAddress] = msg.sender;
 
-        Proposal storage rp = rewardProposalInfo[_rewardAddress];
+        Proposal storage rp = govProposalInfo[3][_rewardAddress];
         rp.title = _title;
         rp.description = _description;
         rp.createTime = block.timestamp;
@@ -233,27 +232,9 @@ contract Property is ReentrancyGuard {
         emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description, block.timestamp);
     }
 
-    /// @notice Set DAO_FUND_REWARD by Vote contract
-    function setRewardAddress(address _rewardAddress) external onlyVote nonReentrant {
-        require(_rewardAddress != address(0), "setRewardAddress: Zero address");     
-        require(isRewardWhitelist[_rewardAddress] == 1, "setRewardAddress: no proposal address");
-
-        __removeCandidate(_rewardAddress, 2);
-        isRewardWhitelist[_rewardAddress] = 2;
-        DAO_FUND_REWARD = _rewardAddress;
-    }
-
-    /// @notice Remove a member from rewardAddress candidate by Vote contract
-    function removeRewardAddressCandidate(address _rewardAddress) external onlyVote nonReentrant {
-        require(isRewardWhitelist[_rewardAddress] == 1, "removeRewardMember: Already address or no candidate");   
-
-        __removeCandidate(_rewardAddress, 2);
-        isRewardWhitelist[_rewardAddress] = 0;
-    }
-
     /// @notice Get reward fund proposal title and description
     function getRewardProposalInfo(address _rewardAddress) external view returns (string memory, string memory, uint256) {
-        Proposal memory rp = rewardProposalInfo[_rewardAddress];
+        Proposal memory rp = govProposalInfo[3][_rewardAddress];
         string memory title_ = rp.title;
         string memory desc_ = rp.description;        
         uint256 time_ = rp.createTime;
@@ -268,16 +249,19 @@ contract Property is ReentrancyGuard {
         string memory _title,
         string memory _description
     ) external onlyStaker {
-        require(_member != address(0), "proposalFilmBoard: Zero candidate address");     
-        require(isBoardWhitelist[_member] == 0, "proposalFilmBoard: Already film board member or candidate");                  
+        require(
+            _member != address(0) && isGovWhitelist[2][_member] == 0, 
+            "proposalFilmBoard: Already candidate or zero"
+        );     
         require(__isPaidFee(proposalFeeAmount), 'proposalFilmBoard: Not paid fee');     
 
         filmBoardCandidates.push(_member);
-        isBoardWhitelist[_member] = 1;
+        isGovWhitelist[2][_member] = 1;
         governanceProposalCount += 1;
         userGovernProposalCount[msg.sender] += 1;
+        govProposer[2][_member] = msg.sender;
 
-        Proposal storage bp = boardProposalInfo[_member];
+        Proposal storage bp = govProposalInfo[2][_member];
         bp.title = _title;
         bp.description = _description;
         bp.createTime = block.timestamp;
@@ -290,45 +274,25 @@ contract Property is ReentrancyGuard {
         emit FilmBoardProposalCreated(msg.sender, _member, _title, _description, block.timestamp);
     }
 
-    /// @notice Add a member to whitelist by Vote contract
-    function addFilmBoardMember(address _member) external onlyVote nonReentrant {
-        require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
-
-        filmBoardMembers.push(_member);
-        // TODO - N4 updated(add function)
-        __removeCandidate(_member, 3);
-        isBoardWhitelist[_member] = 2;
-        
-        emit FilmBoardMemberAdded(msg.sender, _member, block.timestamp);
-    }
-
-    /// @notice Remove a member from candidate by Vote contract
-    function removeFilmBoardCandidate(address _member) external onlyVote nonReentrant {
-        require(isBoardWhitelist[_member] == 1, "addFilmBoardMember: Already film board member or no candidate");   
-
-        __removeCandidate(_member, 3);
-        isBoardWhitelist[_member] = 0;
-    }
-
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
     function removeFilmBoardMember(address _member) external onlyStaker nonReentrant {
-        require(isBoardWhitelist[_member] == 2, "removeFilmBoardMember: Not Film board member");        
+        require(isGovWhitelist[2][_member] == 2, "removeFilmBoardMember: Not Film board member");        
         require(maxAllowPeriod < block.timestamp - IVote(VOTE).getLastVoteTime(_member), 'maxAllowPeriod');
         require(maxAllowPeriod > block.timestamp - IStakingPool(STAKING_POOL).lastfundProposalCreateTime(), 'lastfundProposalCreateTime');
 
         __removeCandidate(_member, 4);
-        isBoardWhitelist[_member] = 0;
+        isGovWhitelist[2][_member] = 0;
 
         emit FilmBoardMemberRemoved(msg.sender, _member, block.timestamp);
     }
 
-    /// @notice Get proposal list(flag=1=>agentList, 2=>rewardAddressList, 3=>boardCandidateList, rest=>boardMemberList)
+    /// @notice Get proposal list(flag=1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
     function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
         require(_flag > 0 && _flag < 5, "bad flag");
 
         if(_flag == 1) return agentList;
-        else if(_flag == 2) return rewardAddressList;
-        else if(_flag == 3) return filmBoardCandidates;
+        else if(_flag == 2) return filmBoardCandidates;
+        else if(_flag == 3) return rewardAddressList;
         else return filmBoardMembers;
     }    
 
@@ -340,7 +304,10 @@ contract Property is ReentrancyGuard {
         string memory _title,
         string memory _description
     ) public onlyStaker {
-        require(_property > 0 && _flag >= 0, "proposalProperty: Invalid param");
+        require(
+            _property > 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0, 
+            "proposalProperty: Already candidate or zero value"
+        );          
         require(__isPaidFee(proposalFeeAmount), 'proposalProperty: Not paid fee');
 
         if(_flag == 0) {
@@ -410,6 +377,8 @@ contract Property is ReentrancyGuard {
         
         governanceProposalCount += 1;     
         userGovernProposalCount[msg.sender] += 1;         
+        isPropertyWhitelist[_flag][_property] = 1;
+        propertyProposer[_flag][_property] = msg.sender;
 
         Proposal storage pp = propertyProposalInfo[_flag][_property];
         pp.title = _title;
@@ -477,78 +446,6 @@ contract Property is ReentrancyGuard {
         }     
     }
 
-    function updateProperty(
-        uint256 _index, 
-        uint256 _flag
-    ) external onlyVote {
-        require(_flag >= 0 && _index >= 0, "updateProperty: Invalid flag");   
-
-        if(_flag == 0) {
-            filmVotePeriod = filmVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, filmVotePeriod, _flag, block.timestamp);
-        } else if(_flag == 1) {
-            agentVotePeriod = agentVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, agentVotePeriod, _flag, block.timestamp);
-        } else if(_flag == 2) {
-            disputeGracePeriod = disputeGracePeriodList[_index];
-            emit PropertyUpdated(msg.sender, disputeGracePeriod, _flag, block.timestamp);
-        } else if(_flag == 3) {
-            propertyVotePeriod = propertyVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, propertyVotePeriod, _flag, block.timestamp);
-        } else if(_flag == 4) {
-            lockPeriod = lockPeriodList[_index];
-            emit PropertyUpdated(msg.sender, lockPeriod, _flag, block.timestamp);
-        } else if(_flag == 5) {
-            rewardRate = rewardRateList[_index];
-            emit PropertyUpdated(msg.sender, rewardRate, _flag, block.timestamp);
-        // } else if(_flag == 6) {
-        //     extraRewardRate = extraRewardRateList[_index];
-        //     emit PropertyUpdated(msg.sender, extraRewardRate, _flag, block.timestamp);
-        } else if(_flag == 7) {
-            maxAllowPeriod = maxAllowPeriodList[_index];
-            emit PropertyUpdated(msg.sender, maxAllowPeriod, _flag, block.timestamp);        
-        } else if(_flag == 8) {
-            proposalFeeAmount = proposalFeeAmountList[_index];
-            emit PropertyUpdated(msg.sender, proposalFeeAmount, _flag, block.timestamp);        
-        } else if(_flag == 9) {
-            fundFeePercent = fundFeePercentList[_index];
-            emit PropertyUpdated(msg.sender, fundFeePercent, _flag, block.timestamp);        
-        } else if(_flag == 10) {
-            minDepositAmount = minDepositAmountList[_index];
-            emit PropertyUpdated(msg.sender, minDepositAmount, _flag, block.timestamp);        
-        } else if(_flag == 11) {
-            maxDepositAmount = maxDepositAmountList[_index];
-            emit PropertyUpdated(msg.sender, maxDepositAmount, _flag, block.timestamp);        
-        } else if(_flag == 12) {
-            maxMintFeePercent = maxMintFeePercentList[_index];
-            emit PropertyUpdated(msg.sender, maxMintFeePercent, _flag, block.timestamp);     
-        } else if(_flag == 13) {
-            minVoteCount = minVoteCountList[_index];
-            emit PropertyUpdated(msg.sender, minVoteCount, _flag, block.timestamp);     
-        } else if(_flag == 14) {
-            minStakerCountPercent = minStakerCountPercentList[_index];
-            emit PropertyUpdated(msg.sender, minStakerCountPercent, _flag, block.timestamp);     
-        } else if(_flag == 15) {
-            availableVABAmount = availableVABAmountList[_index];
-            emit PropertyUpdated(msg.sender, availableVABAmount, _flag, block.timestamp);     
-        } else if(_flag == 16) {
-            boardVotePeriod = boardVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, boardVotePeriod, _flag, block.timestamp);     
-        } else if(_flag == 17) {
-            boardVoteWeight = boardVoteWeightList[_index];
-            emit PropertyUpdated(msg.sender, boardVoteWeight, _flag, block.timestamp);     
-        } else if(_flag == 18) {
-            rewardVotePeriod = rewardVotePeriodList[_index];
-            emit PropertyUpdated(msg.sender, rewardVotePeriod, _flag, block.timestamp);     
-        } else if(_flag == 19) {
-            subscriptionAmount = subscriptionAmountList[_index];
-            emit PropertyUpdated(msg.sender, subscriptionAmount, _flag, block.timestamp);     
-        } else if(_flag == 20) {
-            boardRewardRate = boardRewardRateList[_index];
-            emit PropertyUpdated(msg.sender, boardRewardRate, _flag, block.timestamp);     
-        }         
-    }
-
     /// @notice Get property proposal list
     function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list) {
         if(_flag == 0) _list = filmVotePeriodList;
@@ -583,54 +480,108 @@ contract Property is ReentrancyGuard {
         aTime_ = propertyProposalInfo[_flag][_property].approveTime;
     }
     
-    /// @notice Get agent/board/pool proposal created time
-    function getGovProposalTime(
-        address _member, 
-        uint256 _flag
-    ) external view returns (uint256 cTime_, uint256 aTime_) {
-        if(_flag == 1) {
-            cTime_ = agentProposalInfo[_member].createTime;
-            aTime_ = agentProposalInfo[_member].approveTime;
-        } else if(_flag == 2) {
-            cTime_ = boardProposalInfo[_member].createTime;
-            aTime_ = boardProposalInfo[_member].approveTime;
-        } else if(_flag == 3) {
-            cTime_ = rewardProposalInfo[_member].createTime;
-            aTime_ = rewardProposalInfo[_member].approveTime;
-        }
-    }
-
-    function updatePropertyProposalApproveTime(
+    function updatePropertyProposal(
         uint256 _property, 
         uint256 _flag, 
         uint256 _approveStatus
     ) external onlyVote {
+        // update approve time
         propertyProposalInfo[_flag][_property].approveTime = block.timestamp;
-        if(_approveStatus == 1) propertyProposalInfo[_flag][_property].status = Helper.Status.UPDATED;
-        else propertyProposalInfo[_flag][_property].status = Helper.Status.REJECTED;
+
+        // update approve status
+        if(_approveStatus == 1) {
+            propertyProposalInfo[_flag][_property].status = Helper.Status.UPDATED;
+            isPropertyWhitelist[_flag][_property] = 2;
+        } else {
+            propertyProposalInfo[_flag][_property].status = Helper.Status.REJECTED;
+            isPropertyWhitelist[_flag][_property] = 0;
+        }
+
+        // update main item
+        if(_approveStatus == 1) {
+            if(_flag == 0) {
+                filmVotePeriod = _property;
+            } else if(_flag == 1) {
+                agentVotePeriod = _property;
+            } else if(_flag == 2) {
+                disputeGracePeriod = _property;
+            } else if(_flag == 3) {
+                propertyVotePeriod = _property;
+            } else if(_flag == 4) {
+                lockPeriod = _property;
+            } else if(_flag == 5) {
+                rewardRate = _property;
+            // } else if(_flag == 6) {
+            //     extraRewardRate = extraRewardRateList[_index];
+            } else if(_flag == 7) {
+                maxAllowPeriod = _property;
+            } else if(_flag == 8) {
+                proposalFeeAmount = _property;
+            } else if(_flag == 9) {
+                fundFeePercent = _property;
+            } else if(_flag == 10) {
+                minDepositAmount = _property;
+            } else if(_flag == 11) {
+                maxDepositAmount = _property;
+            } else if(_flag == 12) {
+                maxMintFeePercent = _property;
+            } else if(_flag == 13) {
+                minVoteCount = _property;
+            } else if(_flag == 14) {
+                minStakerCountPercent = _property;
+            } else if(_flag == 15) {
+                availableVABAmount = _property;
+            } else if(_flag == 16) {
+                boardVotePeriod = _property;
+            } else if(_flag == 17) {
+                boardVoteWeight = _property;
+            } else if(_flag == 18) {
+                rewardVotePeriod = _property;
+            } else if(_flag == 19) {
+                subscriptionAmount = _property;
+            } else if(_flag == 20) {
+                boardRewardRate = _property;
+            } 
+        }
+    }
+    
+    /// @notice Get agent/board/pool proposal created time
+    // agent=>1, board=>2, pool=>3
+    function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_) {
+        cTime_ = govProposalInfo[_flag][_member].createTime;
+        aTime_ = govProposalInfo[_flag][_member].approveTime;
     }
 
-    function updateGovProposalApproveTime(
+    function updateGovProposal(
         address _member, 
-        uint256 _flag, 
-        uint256 _approveStatus
+        uint256 _flag,  // 1=>agent, 2=>board, 3=>pool
+        uint256 _approveStatus // 1/0
     ) external onlyVote {
-        if(_flag == 1) {
-            agentProposalInfo[_member].approveTime = block.timestamp;
-            if(_approveStatus == 1) agentProposalInfo[_member].status = Helper.Status.UPDATED;
-            else agentProposalInfo[_member].status = Helper.Status.REJECTED;
-        } else if(_flag == 2) {
-            boardProposalInfo[_member].approveTime = block.timestamp;
-            if(_approveStatus == 1) boardProposalInfo[_member].status = Helper.Status.UPDATED;
-            else boardProposalInfo[_member].status = Helper.Status.REJECTED;
-        } else if(_flag == 3) {
-            rewardProposalInfo[_member].approveTime = block.timestamp;
-            if(_approveStatus == 1) rewardProposalInfo[_member].status = Helper.Status.UPDATED;
-            else rewardProposalInfo[_member].status = Helper.Status.REJECTED;
+        // update approve time
+        govProposalInfo[_flag][_member].approveTime = block.timestamp;
+
+        // update approve status
+        if(_approveStatus == 1) {
+            govProposalInfo[_flag][_member].status = Helper.Status.UPDATED;
+            isGovWhitelist[_flag][_member] = 2;
+        } else {
+            govProposalInfo[_flag][_member].status = Helper.Status.REJECTED;
+            isGovWhitelist[_flag][_member] = 0;
+        }
+        
+        // remove member from candidate list
+        __removeCandidate(_member, _flag);
+
+        // update main item
+        if(_flag == 3 && _approveStatus == 1) {
+            DAO_FUND_REWARD = _member;
+        }
+        if(_flag == 2 && _approveStatus == 1) {
+            filmBoardMembers.push(_member);    
         }
     }
 
-    // flag=1 => filmBoard candidate, flag=2 => rewardAddress candidate, flag=3 => filmBoard member
+    // flag=1 => agent candidate, 2 => board candidate, 3 => reward candidate, 4=> board member
     function __removeCandidate(address _candidate, uint256 _flag) private {
         if(_flag == 1) {        
             for(uint256 k = 0; k < agentList.length; k++) { 
@@ -640,15 +591,7 @@ contract Property is ReentrancyGuard {
                     break;
                 }
             }  
-        } else if(_flag == 2) {
-            for(uint256 k = 0; k < rewardAddressList.length; k++) { 
-                if(_candidate == rewardAddressList[k]) {
-                    rewardAddressList[k] = rewardAddressList[rewardAddressList.length - 1];
-                    rewardAddressList.pop();
-                    break;
-                }
-            }    
-        } else if(_flag == 3) {    
+        } else if(_flag == 2) {    
             for(uint256 k = 0; k < filmBoardCandidates.length; k++) { 
                 if(_candidate == filmBoardCandidates[k]) {
                     filmBoardCandidates[k] = filmBoardCandidates[filmBoardCandidates.length - 1];
@@ -656,6 +599,14 @@ contract Property is ReentrancyGuard {
                     break;
                 }
             }  
+        } else if(_flag == 3) {
+            for(uint256 k = 0; k < rewardAddressList.length; k++) { 
+                if(_candidate == rewardAddressList[k]) {
+                    rewardAddressList[k] = rewardAddressList[rewardAddressList.length - 1];
+                    rewardAddressList.pop();
+                    break;
+                }
+            }    
         } else if(_flag == 4) {
             for(uint256 k = 0; k < filmBoardMembers.length; k++) { 
                 if(_candidate == filmBoardMembers[k]) {
@@ -667,6 +618,21 @@ contract Property is ReentrancyGuard {
         }
     }
     
+    function getGovProposer(uint256 _flag, address _candidate) external view returns (address) {
+        return govProposer[_flag][_candidate];
+    }
+
+    function getPropertyProposer(uint256 _flag, uint256 _property) external view returns (address) {
+        return propertyProposer[_flag][_property];
+    }
+
+    function checkGovWhitelist(uint256 _flag, address _address) external view returns (uint256) {
+        return isGovWhitelist[_flag][_address];
+    }
+    function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view returns (uint256) {
+        return isPropertyWhitelist[_flag][_property];
+    }
+
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
     function updatePropertyForTesting(
