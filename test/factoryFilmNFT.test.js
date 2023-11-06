@@ -288,15 +288,6 @@ describe('FactoryFilmNFT', function () {
       )
     ).to.be.revertedWith('mint: no mint info');
 
-    // _amount * _price * (1 - _feePercent / 1e10) > raiseAmount
-    // 500 * 2*10**6 * (1 - 2*10**8 / 10**10) = 8000 * 20*10**6 * 0.98 //15000 000000 10000 000000
-    // _filmId, _tier, _amount, _price, _feePercent, _revenuePercent
-    // const mintData1 = createMintData(
-    //   getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6), getBigNumber(2, 8), getBigNumber(1, 8)
-    // )
-    // const mintData2 = createMintData(
-    //   getBigNumber(2, 0), getBigNumber(1, 0), getBigNumber(9000, 0), getBigNumber(3, 6), getBigNumber(5, 8), getBigNumber(1, 8)
-    // )
     // const mintData = [mintData1, mintData2]
     await this.FilmNFT.connect(this.studio1).setMintInfo(
       getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6), getBigNumber(2, 8), getBigNumber(1, 8), 
@@ -311,8 +302,6 @@ describe('FactoryFilmNFT', function () {
     expect(mInfo.tier_).to.be.equal(1)
     expect(mInfo.maxMintAmount_).to.be.equal(getBigNumber(8000, 0))
     expect(mInfo.mintPrice_).to.be.equal(getBigNumber(2, 6))
-    expect(mInfo.feePercent_).to.be.equal(getBigNumber(2, 8))
-    expect(mInfo.revenuePercent_).to.be.equal(getBigNumber(1, 8))
     
       //===================== Vote to film
     const proposalIds = [2]

@@ -9,8 +9,8 @@ interface IVabbleDAO {
     struct Film {
         string title;            // proposal title
         string description;      // proposal description
-        uint256[] sharePercents; // percents(1% = 1e8) that studio defines to pay revenue for each payee
-        address[] studioPayees;  // payee addresses who studio define to pay revenue
+        uint256[] sharePercents; // percents(1% = 1e8) that studio defines to pay reward for each payee
+        address[] studioPayees;  // payee addresses who studio define to pay reward
         uint256 raiseAmount;     // USDC amount(in cash) studio are seeking to raise for the film
         uint256 fundPeriod;      // how many days(ex: 20 days) to keep the funding pool open        
         uint256 fundType;        // Financing Type(None=>0, Token=>1, NFT=>2, NFT & Token=>3)

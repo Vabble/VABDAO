@@ -160,9 +160,9 @@ function getByteFilm() {
   return ethers.utils.hexlify(uint8Arr);// '0x01020304'
 }
 
-function createMintData(filmId, tier, amount, price, fee, revenue) {
+function createMintData(filmId, tier, amount, price, fee, reward) {
   const hexStr = ethers.utils.defaultAbiCoder.encode(
-    [ "uint256", "uint256", "uint256", "uint256", "uint256", "uint256" ], [filmId, tier, amount, price, fee, revenue]
+    [ "uint256", "uint256", "uint256", "uint256", "uint256", "uint256" ], [filmId, tier, amount, price, fee, reward]
   );
   const uint8Arr = ethers.utils.arrayify(hexStr); // Uint8Array [ 18, 52 ]
   return ethers.utils.hexlify(uint8Arr);// '0x01020304'
