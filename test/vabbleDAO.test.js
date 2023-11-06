@@ -539,8 +539,6 @@ describe('VabbleDAO-test-5', function () {
     const nAmount = getBigNumber(8000, 0)      // 8000
     const nPrice1 = getBigNumber(2, 6)          // 2 USDC
     const nPrice2 = getBigNumber(20, 6)
-    const nFeePercent = getBigNumber(2, 8)     // 2%
-    const nRevenuePercent = getBigNumber(1, 8) // 1%    
     await this.FilmNFT.connect(this.auditor).setBaseURI("base_uri", "collection_uri")
     await this.FilmNFT.connect(this.studio1).setMintInfo(fId4, tier, nAmount, nPrice1, {from: this.studio1.address})
     await this.FilmNFT.connect(this.studio1).setMintInfo(fId5, tier, nAmount, nPrice2, {from: this.studio1.address})
@@ -618,8 +616,8 @@ describe('VabbleDAO-test-5', function () {
     // console.log('====VABInStudioPool after allocate(500, 1000)::', VABInStudioPool.toString(), daoPool.toString())
 
     await expect(
-      this.VabbleDAO.connect(this.customer3).claimRevenue(fId1, {from: this.customer3.address})
-    ).to.be.revertedWith('claimRevenue: not finalized film');
+      this.VabbleDAO.connect(this.customer3).claimReward(fId1, {from: this.customer3.address})
+    ).to.be.revertedWith('claimReward: not finalized film');
     
     // withdrawFunding
     await expect(
@@ -659,7 +657,7 @@ describe('VabbleDAO-test-5', function () {
     console.log('====finalFilmList::', finalFilmList)
 
     const v_1 = await this.vabToken.balanceOf(this.customer1.address)
-    await this.VabbleDAO.connect(this.customer1).claimRevenue(fId1, {from: this.customer1.address})
+    await this.VabbleDAO.connect(this.customer1).claimReward(fId1, {from: this.customer1.address})
     const v_2 = await this.vabToken.balanceOf(this.customer1.address)
     console.log('====customer1 balance::', v_1.toString(), v_2.toString())
     // 9989678 045311936606546366 
@@ -714,17 +712,17 @@ describe('VabbleDAO-test-5', function () {
     //   97833333332666666666
 
     const a_1 = await this.vabToken.balanceOf(this.customer1.address)
-    await this.VabbleDAO.connect(this.customer1).claimRevenue(fId4, {from: this.customer1.address})
+    await this.VabbleDAO.connect(this.customer1).claimReward(fId4, {from: this.customer1.address})
     const a_2 = await this.vabToken.balanceOf(this.customer1.address)
     console.log('====customer1 balance::', a_1.toString(), a_2.toString())    
-    await this.VabbleDAO.connect(this.customer1).claimRevenue(fId5, {from: this.customer1.address})
+    await this.VabbleDAO.connect(this.customer1).claimReward(fId5, {from: this.customer1.address})
     const a_3 = await this.vabToken.balanceOf(this.customer1.address)
     console.log('====customer1 balance::', a_1.toString(), a_2.toString(), a_3.toString())    
     // 9989 77804531193660 6546366 
     // 9989 86811197860326 6546366
     // 0000  9006666666666 0000000    
     const b_1 = await this.vabToken.balanceOf(this.customer3.address)
-    await this.VabbleDAO.connect(this.customer3).claimRevenue(fId4, {from: this.customer3.address})
+    await this.VabbleDAO.connect(this.customer3).claimReward(fId4, {from: this.customer3.address})
     const b_2 = await this.vabToken.balanceOf(this.customer3.address)
     console.log('====customer3 balance::', b_1.toString(), b_2.toString())
 
@@ -734,8 +732,8 @@ describe('VabbleDAO-test-5', function () {
     console.log('====latestClaimMonthId::', mId1, mId3, curMonthId)
 
     await expect(
-      this.VabbleDAO.connect(this.customer3).claimRevenue(fId4, {from: this.customer3.address})
-    ).to.be.revertedWith('claimRevenue: zero amount');
+      this.VabbleDAO.connect(this.customer3).claimReward(fId4, {from: this.customer3.address})
+    ).to.be.revertedWith('claimReward: zero amount');
 
     // => Increase next block timestamp for only testing
     period = 30 * 24 * 3600; // 31 days
@@ -770,7 +768,7 @@ describe('VabbleDAO-test-5', function () {
     console.log("====assignedAmount4::", month.toString(), assignedAmount4.toString()) 
 
     const d_1 = await this.vabToken.balanceOf(this.customer1.address)
-    await this.VabbleDAO.connect(this.customer1).claimRevenue(fId3, {from: this.customer1.address})
+    await this.VabbleDAO.connect(this.customer1).claimReward(fId3, {from: this.customer1.address})
     const d_2 = await this.vabToken.balanceOf(this.customer1.address)
     console.log('====customer1 balance::', d_1.toString(), d_2.toString())
     // 9990  03211978603256546366 

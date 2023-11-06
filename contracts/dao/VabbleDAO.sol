@@ -33,7 +33,7 @@ contract VabbleDAO is ReentrancyGuard {
     event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime);
     event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod, uint256 updateTime);
     event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
-    event RevenueClaimed(address user, uint256 monthId, uint256 filmId, uint256 amount, uint256 claimTime);  
+    event RewardClaimed(address user, uint256 monthId, uint256 filmId, uint256 claimAmount, uint256 claimTime);  
 
     address public immutable OWNABLE;         // Ownablee contract address
     address public immutable VOTE;            // Vote contract address
@@ -418,26 +418,26 @@ contract VabbleDAO is ReentrancyGuard {
         }
     }
 
-    // Claim every month revenue per filmId till current from when auditor call setFinalFilms()
-    function claimRevenue(uint256 _filmId) public nonReentrant {     
-        require(finalFilmCalledTime > 0, "claimRevenue: not finalized film");
+    // Claim every month reward per filmId till current from when auditor call setFinalFilms()
+    function claimReward(uint256 _filmId) public nonReentrant {     
+        require(finalFilmCalledTime > 0, "claimReward: not finalized film");
                 
         uint256 curMonth = monthId.current();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN(); 
-        uint256 revenueAmount = getUserRevenueAmount(_filmId, curMonth);     
-        require(revenueAmount > 0, "claimRevenue: zero amount");
-        require(StudioPool >= revenueAmount, "claimRevenue: insufficient amount");
-        require(IERC20(vabToken).balanceOf(address(this)) >= StudioPool, "claimRevenue: insufficient balance");
+        uint256 rewardAmount = getUserRewardAmount(_filmId, curMonth);     
+        require(rewardAmount > 0, "claimReward: zero amount");
+        require(StudioPool >= rewardAmount, "claimReward: insufficient amount");
+        require(IERC20(vabToken).balanceOf(address(this)) >= StudioPool, "claimReward: insufficient balance");
 
-        Helper.safeTransfer(vabToken, msg.sender, revenueAmount);
-        StudioPool -= revenueAmount; 
+        Helper.safeTransfer(vabToken, msg.sender, rewardAmount);
+        StudioPool -= rewardAmount; 
 
         latestClaimMonthId[_filmId][msg.sender] = curMonth;
 
-        emit RevenueClaimed(msg.sender, curMonth, _filmId, revenueAmount, block.timestamp);
+        emit RewardClaimed(msg.sender, curMonth, _filmId, rewardAmount, block.timestamp);
     }
         
-    function getUserRevenueAmount(uint256 _filmId, uint256 _curMonth) public view returns (uint256 amount_) {        
+    function getUserRewardAmount(uint256 _filmId, uint256 _curMonth) public view returns (uint256 amount_) {        
         uint256 preMonth = latestClaimMonthId[_filmId][msg.sender];
 
         if(_curMonth > preMonth) {
