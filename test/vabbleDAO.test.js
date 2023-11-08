@@ -804,6 +804,9 @@ describe('VabbleDAO-test-5', function () {
 
     const newAddrBalance = await this.vabToken.balanceOf(this.sig1.address)
     expect(newAddrBalance).to.be.equal(totalRewardAmount.add(curEdgePoolBalance).add(curStudioPoolBalance))
+
+    const isGovWhitelist = await this.Property.checkGovWhitelist(2, this.auditor.address);
+    console.log("====isGovWhitelist", isGovWhitelist.toString())
   });
 })
 });

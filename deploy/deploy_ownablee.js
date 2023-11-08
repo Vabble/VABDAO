@@ -6,23 +6,22 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   if(NETWORK == 'mumbai') {
     this.vabToken = CONFIG.mumbai.vabToken
     this.usdc = CONFIG.mumbai.usdcAdress
-  } else if(NETWORK == 'ethereum') {
-    this.vabToken = CONFIG.ethereum.vabToken
-    this.usdc = CONFIG.ethereum.usdcAdress
   } else if(NETWORK == 'polygon') {
     this.vabToken = CONFIG.polygon.vabToken
     this.usdc = CONFIG.polygon.usdcAdress
   }
 
-  this.MultiSig = await deployments.get('MultiSigWallet');  
-
+  // this.MultiSig = await deployments.get('MultiSigWallet');  
+  this.GnosisSafe = await deployments.get('GnosisSafeL2');  
+  
   await deploy('Ownablee', {
     from: deployer,
     args: [
       CONFIG.daoWalletAddress,
       this.vabToken, 
       this.usdc,
-      this.MultiSig.address
+      // this.MultiSig.address
+      this.GnosisSafe.address
     ],
     log: true,
     deterministicDeployment: false,
@@ -32,4 +31,5 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
 module.exports.id = 'deploy_ownablee'
 module.exports.tags = ['Ownablee'];
-module.exports.dependencies = ['MultiSigWallet'];
+// module.exports.dependencies = ['MultiSigWallet'];
+module.exports.dependencies = ['GnosisSafeL2'];
