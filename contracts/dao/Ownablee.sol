@@ -62,6 +62,9 @@ contract Ownablee {
         PAYOUT_TOKEN = _payoutToken;    
         require(_usdcToken != address(0), "usdcToken: Zero address");
         USDC_TOKEN = _usdcToken;
+        
+        depositAssetList.push(_usdcToken);
+        allowAssetToDeposit[_usdcToken] = true;
     }
 
     function setup(

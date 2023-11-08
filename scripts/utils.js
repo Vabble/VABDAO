@@ -22,6 +22,7 @@ const CONFIG = {
   },
   polygon: {
     usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    usdtAdress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
     vabToken: "",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
@@ -245,6 +246,41 @@ async function getSignatures(signers, hexCallData) {
   return { rs, ss, vs };
 }
 
+const buildSignatureBytes = (signatures) => {
+  const SIGNATURE_LENGTH_BYTES = 65;
+  signatures.sort((left, right) => left.signer.toLowerCase().localeCompare(right.signer.toLowerCase()));
+
+  let signatureBytes = "0x";
+  let dynamicBytes = "";
+  for (const sig of signatures) {
+      if (sig.dynamic) {
+          /* 
+              A contract signature has a static part of 65 bytes and the dynamic part that needs to be appended 
+              at the end of signature bytes.
+              The signature format is
+              Signature type == 0
+              Constant part: 65 bytes
+              {32-bytes signature verifier}{32-bytes dynamic data position}{1-byte signature type}
+              Dynamic part (solidity bytes): 32 bytes + signature data length
+              {32-bytes signature length}{bytes signature data}
+          */
+          const dynamicPartPosition = (signatures.length * SIGNATURE_LENGTH_BYTES + dynamicBytes.length / 2)
+              .toString(16)
+              .padStart(64, "0");
+          const dynamicPartLength = (sig.data.slice(2).length / 2).toString(16).padStart(64, "0");
+          const staticSignature = `${sig.signer.slice(2).padStart(64, "0")}${dynamicPartPosition}00`;
+          const dynamicPartWithLength = `${dynamicPartLength}${sig.data.slice(2)}`;
+
+          signatureBytes += staticSignature;
+          dynamicBytes += dynamicPartWithLength;
+      } else {
+          signatureBytes += sig.data.slice(2);
+      }
+  }
+
+  return signatureBytes + dynamicBytes;
+};
+
 module.exports = {
   NETWORK,
   ZERO_ADDRESS,
@@ -263,5 +299,6 @@ module.exports = {
   FILM,
   NFTs,
   getUploadGateContent,
-  createMintData
+  createMintData,
+  buildSignatureBytes
 };

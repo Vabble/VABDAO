@@ -12,7 +12,7 @@ Vote (0x653a0F671688E687e8e06270a21B622A37b7560d)
 FactoryFilmNFT (0x59E69c2Fd6124fE41D5ed3Af5B53E57702001177)         // initializeFactory(), setBaseURI()
 FactorySubNFT (0xe584E94dEa8B27464D054b00Ef432715C291E9E1)          // setBaseURI()
 FactoryTierNFT (0x28f57b69CD169200523fDD7297f86bB7e87D2b52)         // setBaseURI()
-Ownablee (0xfCdEED0e6f7aA0611db21Cd2edd6DCaF649C82e4), skipping.    // setupVote(), addDepositAsset()
+Ownablee (0xfCdEED0e6f7aA0611db21Cd2edd6DCaF649C82e4)    // setupVote(), addDepositAsset()
 Property (0x0fb0811Ac4887D3B8cCC3901437d4336Ac86b5b7)
 StakingPool (0xAdbA0f513A17F91928dCEe371f96a2fc0890d98c)            // initializePool()
 Subscription (0x3D99FA11a02F011eF67067e7Fe678c470CBff1a0)
@@ -26,12 +26,12 @@ FactoryFilmNFT (0xE8ef8A0c8144962edad260478fb21aD5252ECe4f)         // initializ
 FactorySubNFT (0x727Be424fdF5F98583cfC0BEf81Fe758863251bE)          // setBaseURI()
 FactoryTierNFT (0x8f67949dE59018A3b077e9CEF4A51ABd6b0187C7)         // setBaseURI()
 Ownablee (0xfCdEED0e6f7aA0611db21Cd2edd6DCaF649C82e4)               // setupVote(), addDepositAsset()
-Property (0x7B68a8777D7b4e95Ec80926b33F7907C1aA42E24), skipping.
+Property (0x7B68a8777D7b4e95Ec80926b33F7907C1aA42E24)
 StakingPool (0xf6Be587A893236c0183ec1611d1e9d4E6CE6426a)            // initializePool()
-Subscription (0xcadf53Dc51F7a5c5C57de262E430D35194D3bcb0), skipping.
-UniHelper (0x00575447DB905A088f2839d951948ca8De42999F), skipping.
+Subscription (0xcadf53Dc51F7a5c5C57de262E430D35194D3bcb0)
+UniHelper (0x00575447DB905A088f2839d951948ca8De42999F)
 VabbleDAO (0xE2D37D538767219Ced98AF4D8152521471A8458d)
-VabbleFunding (0xdDF5F7DE72cA1AC9D6FA45c397bF46Bb51eDD76a), skipping.
+VabbleFunding (0xdDF5F7DE72cA1AC9D6FA45c397bF46Bb51eDD76a)
 Vote (0x9Cd253463387929735A7d9450b8ddb014233EC94)                   // initializeVote()
 
 // 2023-03-07 Polygon(Mumbai testnet)
@@ -119,7 +119,6 @@ VabbleFunding (0x830EeFAC023D4489CDF94D41d9726695b5a75192)
 Vote (0x7d76A97A528c1f152c4CE248E0bcd20A2f4CbC27)          
 
 
-
 // 2023-07-29
 FactoryFilmNFT (0x74d3aAdcB6e67A640444e24df1bbE00223B5dc14)
 FactorySubNFT (0xC8169Caf8850C545995e6b1d4278d7C877A40fAe)
@@ -132,7 +131,6 @@ UniHelper (0x9f4aBcE97db471D6C6C096CBAC84E6CB2fdecdd7)
 VabbleDAO (0xD0FB9ec5eaBAa8c1cc0851cb017525050CFA47Ab)
 VabbleFunding (0x353a05aD798972507580e63540c102b4493E2284)
 Vote (0xe57D190580b62E83e2bb68239d96BB9A5d2A6537)          
-
 
 
 // 2023-08-09
@@ -163,9 +161,6 @@ VabbleFunding (0xde3c6c290F534712D0FdcC71EB8c256E4e3C6932)
 Vote (0xA3c151EC567584bE40c6c26F7DAa1468B4e061C4)                   // initializeVote()
 
 
-
-
-
 // 2023-11-04 Polygon(Mumbai testnet)
 FactoryFilmNFT (0xE20fC3f13afC52fF857E6b8d1B01EA2e969fcbdf)     // initialize(), auditor=>setBaseURI()
 FactorySubNFT (0x0309611d2b30af8fA45ee7Eb3CF29CBBeCf878C0)
@@ -179,6 +174,26 @@ UniHelper (0xB4b688a5E88479252757bB20D5658B4d91b3e257)          // setWhiteList(
 VabbleDAO (0xA4Bd6D4ff73590aEad76Df20c6EeB5638c84f363)
 VabbleFund (0x2498b64Af0a3b1e080005Ab92a465290070C1578)         // initialize()
 Vote (0xbc342A99CC14fe98703A30513e771e3d7614cd2E)               // initialize()
+
+
+
+
+
+
+
+// 2023-11-08 Polygon(Mumbai testnet) with GnosisSafeL2
+FactoryFilmNFT (0xa5c09e37800ea0d8C92527FcAC5db151bca3561a)     // initialize(), auditor=>setBaseURI()
+FactorySubNFT (0x5642B7f894f0f43B299F611A2AF36090CbBb39bE)
+FactoryTierNFT (0x7E86754257b693214DA1F1825E627955d0FA5A32)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)       // setup()
+Ownablee (0xd57BFDbE7a288a0C36D0c50f188Bd30f5D74E005)           // setup(), auditor=>addDepositAsset()
+Property (0x21122708cB4AD80d47521561c587Df1a758560cC)
+StakingPool (0x66e6B39268BA4789C4d52263578CA4cc40853106)        // initialize()
+Subscription (0x33f8A0bb98697Dd3700E9dFeB12fb1E7fd409ff6)
+UniHelper (0xB0a9F8eA78932BD997AacA2728015f88DAb3663b)          // setWhiteList()
+VabbleDAO (0x92Aa8d31055F35153e483cd47B39840D76109Ceb)
+VabbleFund (0xFCA93dE64d944F59e3E84F6B834B93F04fcdE8C4)         // initialize()
+Vote (0xB578Be0533869e50b6dc8e0335a9130851cFd34A)               // initialize()
 
 
 ** 
