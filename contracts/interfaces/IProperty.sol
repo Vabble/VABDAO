@@ -8,7 +8,7 @@ interface IProperty {
     function propertyVotePeriod() external view returns (uint256);    // 3
     function lockPeriod() external view returns (uint256);            // 4
     function rewardRate() external view returns (uint256);            // 5
-    // function extraRewardRate() external view returns (uint256);       // 6
+    function filmRewardClaimPeriod() external view returns (uint256); // 6
     function maxAllowPeriod() external view returns (uint256);        // 7
     function proposalFeeAmount() external view returns (uint256);     // 8
     function fundFeePercent() external view returns (uint256);        // 9

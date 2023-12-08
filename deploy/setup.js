@@ -1,9 +1,7 @@
 const { ethers } = require("hardhat");
 const { CONFIG, NETWORK } = require('../scripts/utils');
   
-module.exports = async function ({ getNamedAccounts, deployments }) {
-  const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+module.exports = async function ({ deployments }) {
   
   this.signers = await ethers.getSigners();
     

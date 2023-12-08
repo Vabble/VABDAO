@@ -33,7 +33,7 @@ describe('Ownablee', function () {
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
     this.Ownablee = await (await this.OwnableFactory.deploy(
-      CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address
+      CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address, this.auditor.address
     )).deployed(); 
 
     this.UniHelper = await (await this.UniHelperFactory.deploy(
