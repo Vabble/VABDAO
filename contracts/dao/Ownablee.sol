@@ -163,4 +163,8 @@ contract Ownablee {
         }
         return poolBalance;
     }
+
+    function getVabbleDAO() public view returns (address dao_) {        
+        dao_ = VABBLE_DAO;
+    } 
 }

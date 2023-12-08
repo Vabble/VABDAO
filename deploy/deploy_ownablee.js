@@ -25,8 +25,10 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     ],
     log: true,
     deterministicDeployment: false,
-    skipIfAlreadyDeployed: true,
+    skipIfAlreadyDeployed: false,
   });
+
+  this.Ownablee = await deployments.get('Ownablee');
 };
 
 module.exports.id = 'deploy_ownablee'

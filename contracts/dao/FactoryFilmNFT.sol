@@ -199,4 +199,8 @@ contract FactoryFilmNFT is ReentrancyGuard {
     function getFilmNFTTokenList(uint256 _filmId) external view returns (uint256[] memory) {
         return filmNFTTokenList[_filmId];
     }
+
+    function getVabbleDAO() public view returns (address dao_) {        
+        dao_ = VABBLE_DAO;
+    } 
 }
