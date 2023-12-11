@@ -570,9 +570,16 @@ describe('SetFinalFilm', function () {
             console.log('====StakingPool Balance2::', StakingPool_balance2 / getBigNumber(1));
             expect(StakingPool_balance1.sub(StakingPool_balance2)).to.be.equal(getBigNumber(2500));
 
-            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.true;
-          
             // ==================== setFinalFilms =====================================
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, true, true]);
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+            }
+
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
                     [
@@ -591,7 +598,7 @@ describe('SetFinalFilm', function () {
                 );    
             }
 
-            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.false;
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([false, false, false, false, false]);
 
             // check each payeers finalized amount for each film
             let monthId = await this.VabbleDAO.monthId() // 1        
@@ -663,7 +670,16 @@ describe('SetFinalFilm', function () {
             console.log("====isProcessed-1", isProcessed1) 
             expect(isProcessed1).to.be.equal(true); 
 
-            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.true;
+            // ==================== setFinalFilms =====================================
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, true, true]);
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+            }
+
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
                     [
@@ -681,7 +697,7 @@ describe('SetFinalFilm', function () {
                     [getBigNumber(300), getBigNumber(200)]
                 );    
             }
-            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.false;
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, false, false]);
 
             monthId = 2 
             
@@ -801,7 +817,15 @@ describe('SetFinalFilm', function () {
             network.provider.send('evm_increaseTime', [period]);
             await network.provider.send('evm_mine');
 
-            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.true;
+            // ==================== setFinalFilms =====================================
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, true, true]);
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+            }
 
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
@@ -820,8 +844,7 @@ describe('SetFinalFilm', function () {
                     [getBigNumber(200)]
                 )  
             }
-
-            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.false;
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, false, true, true]);
             
             const month = await this.VabbleDAO.monthId()
             const assignedAmount4 = await this.VabbleDAO.finalizedAmount(month, fId3, this.customer1.address)

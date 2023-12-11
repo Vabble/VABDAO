@@ -66,7 +66,7 @@ contract VabbleDAO is ReentrancyGuard {
     mapping(address => bool) private isEdgePoolUser;
 
     uint256 public StudioPool; 
-    uint256 public finalFilmCalledTime;
+    mapping(uint256 => uint256) public finalFilmCalledTime;           // (filmId => finalized time)
 
     Counters.Counter public filmCount;          // created filmId is from No.1
     Counters.Counter public updatedFilmCount;   // updated filmId is from No.1
@@ -335,13 +335,18 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// Pre-Checking for set Final Film
-    function checkSetFinalFilms() external view returns (bool) {
-        if(finalFilmCalledTime > 0) {
-            uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
-            return block.timestamp - finalFilmCalledTime > fPeriod;
-        }
+    function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
+        uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
 
-        return true;
+        _valids = new bool[](_filmIds.length);
+
+        for (uint256 i = 0; i < _filmIds.length; i++) {
+            if (finalFilmCalledTime[_filmIds[i]] > 0) {
+                _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] >= fPeriod;                
+            } else {
+                _valids[i] = true;
+            }
+        }        
     }
 
     /// @notice Set final films for a customer with watched 
@@ -351,21 +356,22 @@ contract VabbleDAO is ReentrancyGuard {
         uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
     ) external onlyAuditor nonReentrant {
         require(_filmIds.length > 0 && _filmIds.length == _payouts.length, "final: bad length");
-        if(finalFilmCalledTime > 0) {
-            uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
-            require(block.timestamp - finalFilmCalledTime >= fPeriod, "final: can be called once per claim period");
-        }
-
-        monthId.increment();        
-        finalFilmCalledTime = block.timestamp;
-
+        
+        bool[] memory _valids = checkSetFinalFilms(_filmIds);
+        
         for(uint256 i = 0; i < _filmIds.length; i++) {     
             if(_filmIds[i] == 0 || _payouts[i] == 0) continue;
+            if (_valids[i] == false) continue;
 
             __setFinalFilm(_filmIds[i], _payouts[i]);
+            finalFilmCalledTime[_filmIds[i]] = block.timestamp;
         }
 
         emit SetFinalFilms(msg.sender, _filmIds, _payouts, block.timestamp);
+    }
+
+    function startNewMonth() external onlyAuditor nonReentrant {
+        monthId.increment();        
     }
 
     function __setFinalFilm(
@@ -434,8 +440,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     // Claim reward for multi-filmIds till current from when auditor call setFinalFilms()
-    function claimReward(uint256[] memory _filmIds) public nonReentrant {     
-        require(finalFilmCalledTime > 0, "claimReward: not finalized film");
+    function claimReward(uint256[] memory _filmIds) public nonReentrant {             
         require(_filmIds.length > 0, "claimReward: zero film ids");
          
         __claimAllReward(_filmIds);        
@@ -446,6 +451,9 @@ contract VabbleDAO is ReentrancyGuard {
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN(); 
         uint256 rewardSum;
         for(uint256 i = 0; i < _filmIds.length; i++) {  
+            if (finalFilmCalledTime[_filmIds[i]] == 0) // not still call final film
+                continue;
+
             rewardSum += getUserRewardAmount(_filmIds[i], curMonth);            
             latestClaimMonthId[_filmIds[i]][msg.sender] = curMonth;
         }
@@ -462,8 +470,6 @@ contract VabbleDAO is ReentrancyGuard {
 
     // Claim reward of all filmIds for each user
     function claimAllReward() public nonReentrant {     
-        require(finalFilmCalledTime > 0, "claimAllReward: not finalized film");
-
         uint256[] memory filmIds = userFinalFilmIds[msg.sender];
         require(filmIds.length > 0, "claimAllReward: zero film ids");
 
