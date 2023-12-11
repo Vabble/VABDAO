@@ -612,10 +612,16 @@ describe('SetFinalFilm', function () {
             const rewardAmount = await this.VabbleDAO.connect(this.customer1).getUserRewardAmount(fId3, monthId, {from: this.customer1.address});
             console.log("rewardAmount", rewardAmount / getBigNumber(1));
 
+            const allRewardAmount1 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1, {from: this.customer1.address});
+            console.log("AllRewardAmount1", allRewardAmount1 / getBigNumber(1));
 
             const v_1 = await this.vabToken.balanceOf(this.customer1.address)
             await this.VabbleDAO.connect(this.customer1).claimReward([fId1], {from: this.customer1.address})
             const v_2 = await this.vabToken.balanceOf(this.customer1.address);
+
+            const allRewardAmount2 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1);
+            console.log("AllRewardAmount2", allRewardAmount2 / getBigNumber(1));
+            
 
 
             // should be 50 (because sharePercents (50/15/35))
