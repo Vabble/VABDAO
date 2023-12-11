@@ -380,6 +380,25 @@ contract StakingPool is ReentrancyGuard {
         return sum;
     }
 
+    function checkAllocateToPool(address[] calldata _users, uint256[] calldata _amounts) external view returns (bool) {
+        uint256 sum;
+        for(uint256 i = 0; i < _users.length; i++) {  
+            if (userRentInfo[_users[i]].vabAmount < _amounts[i])
+                return false;
+
+            sum += _amounts[i];            
+        }
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+
+        if (IERC20(vabToken).balanceOf(address(this)) < sum)
+            return false;
+
+        return true;
+    }
+
+
+
     /// @notice Transfer DAO all fund to V2
     // After call this function, users should be available to withdraw his funds deposited
     function withdrawAllFund() external onlyAuditor nonReentrant {

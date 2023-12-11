@@ -531,6 +531,16 @@ describe('SetFinalFilm', function () {
             console.log('====StakingPool Balance1::', StakingPool_balance1 / getBigNumber(1));
 
             // Allocate to StudioPool (From Staking To Studio Pool)
+            expect(await this.StakingPool.checkAllocateToPool(
+                [this.customer1.address, this.customer2.address, this.customer3.address],
+                [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)]
+            )).to.be.true;
+
+            expect(await this.StakingPool.checkAllocateToPool(
+                [this.customer1.address, this.customer2.address, this.customer3.address],
+                [getBigNumber(20000), getBigNumber(1000), getBigNumber(1000)]
+            )).to.be.false;
+
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("allocateToPool", 
                     [
@@ -755,6 +765,15 @@ describe('SetFinalFilm', function () {
             network.provider.send('evm_increaseTime', [period]);
             await network.provider.send('evm_mine');
 
+            expect(await this.StakingPool.checkAllocateToPool(
+                [this.customer1.address, this.customer2.address, this.customer3.address],
+                [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)]
+            )).to.be.true;
+
+            expect(await this.StakingPool.checkAllocateToPool(
+                [this.customer1.address, this.customer2.address, this.customer3.address],
+                [getBigNumber(200000), getBigNumber(1000), getBigNumber(1000)]
+            )).to.be.false;
             // Allocate to EdgePool
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("allocateToPool", 
@@ -788,7 +807,7 @@ describe('SetFinalFilm', function () {
                 );
             }
 
-            const VABInEdgePool_1 = await this.vabToken.balanceOf(this.Ownablee.address);
+             const VABInEdgePool_1 = await this.vabToken.balanceOf(this.Ownablee.address);
             const VABInStudioPool_1 = await this.vabToken.balanceOf(this.VabbleDAO.address);
             
             if (GNOSIS_FLAG) {
