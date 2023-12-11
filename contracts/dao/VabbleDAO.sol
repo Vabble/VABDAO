@@ -479,13 +479,27 @@ contract VabbleDAO is ReentrancyGuard {
     function getUserRewardAmount(uint256 _filmId, uint256 _curMonth) public view returns (uint256 amount_) {        
         uint256 preMonth = latestClaimMonthId[_filmId][msg.sender];
 
-        amount_ = getUserRewardAmountBetweenMonths(_filmId, preMonth, _curMonth);
+        amount_ = getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, msg.sender);
     }
 
     function getUserRewardAmountBetweenMonths(uint256 _filmId, uint256 _preMonth, uint256 _curMonth) public view returns (uint256 amount_) {        
         if(_preMonth < _curMonth) {
             for(uint256 mon = _preMonth + 1; mon <= _curMonth; mon++) {
                 amount_ += finalizedAmount[mon][_filmId][msg.sender];
+            }                   
+        }
+    }
+
+    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user) public view returns (uint256 amount_) {        
+        uint256 preMonth = latestClaimMonthId[_filmId][_user];
+
+        amount_ = getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, _user);
+    }
+
+    function getUserRewardAmountBetweenMonthsForUser(uint256 _filmId, uint256 _preMonth, uint256 _curMonth, address _user) public view returns (uint256 amount_) {        
+        if(_preMonth < _curMonth) {
+            for(uint256 mon = _preMonth + 1; mon <= _curMonth; mon++) {
+                amount_ += finalizedAmount[mon][_filmId][_user];
             }                   
         }
     }
