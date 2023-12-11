@@ -334,6 +334,16 @@ contract VabbleDAO is ReentrancyGuard {
         return poolBalance;
     }
 
+    /// Pre-Checking for set Final Film
+    function checkSetFinalFilms() external view returns (bool) {
+        if(finalFilmCalledTime > 0) {
+            uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
+            return block.timestamp - finalFilmCalledTime > fPeriod;
+        }
+
+        return true;
+    }
+
     /// @notice Set final films for a customer with watched 
     // Auditor call this function per month
     function setFinalFilms(        
@@ -357,7 +367,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         emit SetFinalFilms(msg.sender, _filmIds, _payouts, block.timestamp);
     }
-    
+
     function __setFinalFilm(
         uint256 _filmId, 
         uint256 _payout  

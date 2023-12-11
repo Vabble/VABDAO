@@ -570,6 +570,8 @@ describe('SetFinalFilm', function () {
             console.log('====StakingPool Balance2::', StakingPool_balance2 / getBigNumber(1));
             expect(StakingPool_balance1.sub(StakingPool_balance2)).to.be.equal(getBigNumber(2500));
 
+            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.true;
+          
             // ==================== setFinalFilms =====================================
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
@@ -588,6 +590,8 @@ describe('SetFinalFilm', function () {
                     [getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100)]
                 );    
             }
+
+            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.false;
 
             // check each payeers finalized amount for each film
             let monthId = await this.VabbleDAO.monthId() // 1        
@@ -621,8 +625,7 @@ describe('SetFinalFilm', function () {
 
             const allRewardAmount2 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1);
             console.log("AllRewardAmount2", allRewardAmount2 / getBigNumber(1));
-            
-
+            expect(allRewardAmount1.sub(allRewardAmount2)).to.be.equal(getBigNumber(50));
 
             // should be 50 (because sharePercents (50/15/35))
             console.log('====customer1 received reward from film-1::', v_2.sub(v_1) / getBigNumber(1)); 
@@ -660,7 +663,7 @@ describe('SetFinalFilm', function () {
             console.log("====isProcessed-1", isProcessed1) 
             expect(isProcessed1).to.be.equal(true); 
 
-
+            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.true;
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
                     [
@@ -678,6 +681,7 @@ describe('SetFinalFilm', function () {
                     [getBigNumber(300), getBigNumber(200)]
                 );    
             }
+            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.false;
 
             monthId = 2 
             
@@ -797,6 +801,8 @@ describe('SetFinalFilm', function () {
             network.provider.send('evm_increaseTime', [period]);
             await network.provider.send('evm_mine');
 
+            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.true;
+
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
                 [
@@ -814,6 +820,8 @@ describe('SetFinalFilm', function () {
                     [getBigNumber(200)]
                 )  
             }
+
+            expect(await this.VabbleDAO.checkSetFinalFilms()).to.be.false;
             
             const month = await this.VabbleDAO.monthId()
             const assignedAmount4 = await this.VabbleDAO.finalizedAmount(month, fId3, this.customer1.address)
