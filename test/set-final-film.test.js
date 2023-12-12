@@ -879,6 +879,10 @@ describe('SetFinalFilm', function () {
             // reward = 30 / 6 = 5
             // total = 140
             console.log('====Customer 1 Film 3 claimReward::', d_2.sub(d_1) / getBigNumber(1));                        
+
+            // expect(
+            //     await this.VabbleDAO.getUserFilmListForMigrate(this.customer1.address)
+            // ).to.be.revertedWith("migrate: no film");            
         } catch (error) {
             console.error("Error:", error);
         } 

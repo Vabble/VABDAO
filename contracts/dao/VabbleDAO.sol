@@ -97,17 +97,11 @@ contract VabbleDAO is ReentrancyGuard {
         address _property,
         address _vabbleFund
     ) {        
-        require(_ownable != address(0), "ownableContract: Zero address");
         OWNABLE = _ownable;     
-        require(_uniHelper != address(0), "uniHelperContract: Zero address");
         UNI_HELPER = _uniHelper;
-        require(_vote != address(0), "voteContract: Zero address");
         VOTE = _vote;
-        require(_staking != address(0), "stakingContract: Zero address");
         STAKING_POOL = _staking;      
-        require(_property != address(0), "daoProperty: Zero address");
         DAO_PROPERTY = _property; 
-        require(_vabbleFund!= address(0), "vabbleFund: Zero address");
         VABBLE_FUND = _vabbleFund;  
     }
 
@@ -337,6 +331,11 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// Pre-Checking for set Final Film
+    // function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
+    //     uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
+    //     _valids = VabbleDAOUtils.checkSetFinalFilms(_filmIds, fPeriod, finalFilmCalledTime);
+    // }
+
     function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
         uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
 
@@ -483,13 +482,10 @@ contract VabbleDAO is ReentrancyGuard {
         amount_ = VabbleDAOUtils.getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, msg.sender, finalizedAmount);
     }
 
-
-
     function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user) public view returns (uint256 amount_) {        
         uint256 preMonth = latestClaimMonthId[_filmId][_user];
         amount_ = VabbleDAOUtils.getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, _user, finalizedAmount);
     }
-
 
     function getUserFinalFilmIds(address _user) external view returns (uint256[] memory) {        
         return userFinalFilmIds[_user];
@@ -573,6 +569,10 @@ contract VabbleDAO is ReentrancyGuard {
         else if(_flag == 3) list_ = userApprovedFilmIds[_user];
     }
 
+    // function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
+    //     filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
+    // }    
+
     function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
         IVabbleDAO.Film memory fInfo;
         uint256[] memory ids = userApprovedFilmIds[_user];
@@ -591,7 +591,6 @@ contract VabbleDAO is ReentrancyGuard {
 
     function getAllAvailableRewards(uint256 _curMonth) external view returns (uint256 reward_) {
         uint256[] memory filmIds = userFinalFilmIds[msg.sender];    
-
         reward_ = VabbleDAOUtils.getAllAvailableRewards(filmIds, _curMonth, latestClaimMonthId, finalizedAmount);
     }
 }
