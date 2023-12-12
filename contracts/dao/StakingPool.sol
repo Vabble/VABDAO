@@ -387,6 +387,17 @@ contract StakingPool is ReentrancyGuard {
 
         emit PendingWithdrawDenied(_customers, block.timestamp);
     } 
+
+    function checkDenyPendingWithDraw(address[] calldata _customers) external view returns (bool) {
+        for(uint256 i = 0; i < _customers.length; i++) {
+            if (userRentInfo[_customers[i]].withdrawAmount == 0)
+                return false;
+
+            if (userRentInfo[_customers[i]].pending == false)
+                return false;
+        }
+        return true;
+    }
     
     /// @notice onlyDAO transfer VAB token to user
     function sendVAB(
