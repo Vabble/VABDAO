@@ -807,7 +807,7 @@ describe('SetFinalFilm', function () {
                 );
             }
 
-             const VABInEdgePool_1 = await this.vabToken.balanceOf(this.Ownablee.address);
+            const VABInEdgePool_1 = await this.vabToken.balanceOf(this.Ownablee.address);
             const VABInStudioPool_1 = await this.vabToken.balanceOf(this.VabbleDAO.address);
             
             if (GNOSIS_FLAG) {

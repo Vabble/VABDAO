@@ -345,6 +345,33 @@ contract StakingPool is ReentrancyGuard {
         return payAmount;
     }
 
+    function checkApprovePendingWithdraw(address[] calldata _customers) external view returns (bool) {
+        address _to;
+        uint256 payAmount;
+        uint256 sum = 0;
+        for(uint256 i = 0; i < _customers.length; i++) {
+            _to = _customers[i];
+            payAmount = userRentInfo[_to].withdrawAmount;
+            if (payAmount == 0) 
+                return false;
+
+            if (payAmount > userRentInfo[_to].vabAmount) 
+                return false;
+
+            if (userRentInfo[_to].pending == false) 
+                return false;
+
+            sum += payAmount;
+        }
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+
+        if (IERC20(vabToken).balanceOf(address(this)) < sum)
+            return false;
+
+        return true;
+    }
+
     /// @notice Deny pending-withdraw of given customers by Auditor
     function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
         require(_customers.length > 0, "denyWithdraw: bad customers");

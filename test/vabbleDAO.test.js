@@ -622,7 +622,7 @@ describe('VabbleDAO-test-5', function () {
 
     await expect(
       this.VabbleDAO.connect(this.customer3).claimReward([fId1], {from: this.customer3.address})
-    ).to.be.revertedWith('claimReward: not finalized film');
+    ).to.be.revertedWith('claimReward: zero amount');
     
     // withdrawFunding
     await expect(
@@ -635,6 +635,7 @@ describe('VabbleDAO-test-5', function () {
     expect(aUserBalance1).to.be.equal(curUserBalance1.add(nPrice1))     // nPrice1 = 2000000
 
     //==================== setFinalFilms for listing(fundType = 0)
+    await this.VabbleDAO.startNewMonth()
     await this.VabbleDAO.setFinalFilms(
       [fId1, fId2, fId3, fId4, fId5], 
       [getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100)]
@@ -658,6 +659,12 @@ describe('VabbleDAO-test-5', function () {
 
     let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
     expect(finalFilmList.length).to.be.equal(5)
+
+    let finalFilmIds = await this.VabbleDAO.getUserFinalFilmIds(this.customer1.address);
+    for (var i = 0; i < finalFilmIds.length; i++) {
+      const rewardAmount = await this.VabbleDAO.connect(this.customer1).getUserRewardAmount(finalFilmIds[i], monthId, {from: this.customer1.address});
+      console.log("rewardAmount", finalFilmIds[i].toString(), rewardAmount.toString());
+    }
 
     const v_1 = await this.vabToken.balanceOf(this.customer1.address)
     await this.VabbleDAO.connect(this.customer1).claimAllReward({from: this.customer1.address})
@@ -698,6 +705,7 @@ describe('VabbleDAO-test-5', function () {
     const isProcessed1 = await this.VabbleFund.isFundProcessed(fId5);
     expect(isProcessed1).to.be.true
 
+    await this.VabbleDAO.startNewMonth()
     await this.VabbleDAO.setFinalFilms(
       [fId4, fId5], 
       [getBigNumber(300), getBigNumber(200)]
@@ -772,6 +780,7 @@ describe('VabbleDAO-test-5', function () {
     network.provider.send('evm_increaseTime', [period]);
     await network.provider.send('evm_mine');
 
+    await this.VabbleDAO.startNewMonth()
     await this.VabbleDAO.setFinalFilms(
       [fId3], 
       [getBigNumber(200)]
