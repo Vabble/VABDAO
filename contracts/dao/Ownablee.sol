@@ -54,8 +54,8 @@ contract Ownablee {
 
         // TODO - PVE007 updated(add multiSigWallet)
         require(_multiSigWallet != address(0), "multiSigWallet: Zero address");
-        auditor = msg.sender; // _multiSigWallet;
-        // auditor = _multiSigWallet;
+        // auditor = msg.sender; // _multiSigWallet;
+        auditor = _multiSigWallet;
 
         require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
         VAB_WALLET = _vabbleWallet; 
