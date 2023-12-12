@@ -519,7 +519,7 @@ describe('SetFinalFilm', function () {
             expect(VABInEdgePool).to.be.equal(0)
             expect(VABInStudioPool).to.be.equal(0)
 
-            // Staking VAB token for move from StakingPool to StudioPool using depositVAB
+            // Deposit VAB token for move from customer to staking pool using depositVAB
             await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(10000), {from: this.customer1.address})
             await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(15000), {from: this.customer2.address})
             await this.StakingPool.connect(this.customer3).depositVAB(getBigNumber(15000), {from: this.customer3.address})

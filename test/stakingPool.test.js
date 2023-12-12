@@ -722,4 +722,59 @@ describe('StakingPool', function () {
     const val = await this.StakingPool.getLimitCount();
     console.log('====limitVal:', val.toString())
   });  
+
+  it('depositVAB and withdraw it', async function () { 
+    expect(await this.StakingPool.checkAllocateToPool(
+      [this.customer1.address, this.customer2.address, this.customer3.address],
+      [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)]
+    )).to.be.false;
+
+    expect(await this.StakingPool.checkApprovePendingWithdraw(
+      [this.customer1.address, this.customer2.address, this.customer3.address]
+    )).to.be.false;
+
+    // Deposit VAB token for move from customer to staking pool using depositVAB
+    await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(10000), {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(15000), {from: this.customer2.address})
+    await this.StakingPool.connect(this.customer3).depositVAB(getBigNumber(15000), {from: this.customer3.address})
+
+    // check allocateToPool
+    expect(await this.StakingPool.checkAllocateToPool(
+      [this.customer1.address, this.customer2.address, this.customer3.address],
+      [getBigNumber(20000), getBigNumber(1000), getBigNumber(1000)]
+    )).to.be.false;
+
+    expect(await this.StakingPool.checkAllocateToPool(
+      [this.customer1.address, this.customer2.address, this.customer3.address],
+      [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)]
+    )).to.be.true;    
+
+    expect(await this.StakingPool.checkApprovePendingWithdraw(
+      [this.customer1.address, this.customer2.address, this.customer3.address]
+    )).to.be.false;
+
+    // request withdraw
+    await this.StakingPool.connect(this.customer1).pendingWithdraw(getBigNumber(500), {from: this.customer1.address});
+    await this.StakingPool.connect(this.customer2).pendingWithdraw(getBigNumber(1000), {from: this.customer2.address});
+    
+    // should be still false
+    expect(await this.StakingPool.checkApprovePendingWithdraw(
+      [this.customer1.address, this.customer2.address, this.customer3.address]
+    )).to.be.false;  
+
+    await this.StakingPool.connect(this.customer3).pendingWithdraw(getBigNumber(1000), {from: this.customer3.address});
+
+    // after all 3 customers request withdraw, should be true
+    expect(await this.StakingPool.checkApprovePendingWithdraw(
+      [this.customer1.address, this.customer2.address, this.customer3.address]
+    )).to.be.true;  
+
+    // approve with draw
+    await this.StakingPool.approvePendingWithdraw([this.customer1.address, this.customer2.address, this.customer3.address]);
+
+    // after approve withdraw, it cannot be withdraw again until next request withdraw
+    expect(await this.StakingPool.checkApprovePendingWithdraw(
+      [this.customer1.address, this.customer2.address, this.customer3.address]
+    )).to.be.false;  
+  });  
 });
