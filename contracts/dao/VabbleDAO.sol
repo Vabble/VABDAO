@@ -555,9 +555,9 @@ contract VabbleDAO is ReentrancyGuard {
         else if(_flag == 3) list_ = userApprovedFilmIds[_user];
     }
 
-    function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
-        filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
-    }    
+    // function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
+    //     filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
+    // }    
 
     function getAllAvailableRewards(uint256 _curMonth) external view returns (uint256 reward_) {
         uint256[] memory filmIds = userFinalFilmIds[msg.sender];    
