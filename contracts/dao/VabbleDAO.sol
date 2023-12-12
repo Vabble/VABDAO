@@ -331,23 +331,9 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// Pre-Checking for set Final Film
-    // function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
-    //     uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
-    //     _valids = VabbleDAOUtils.checkSetFinalFilms(_filmIds, fPeriod, finalFilmCalledTime);
-    // }
-
     function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
         uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
-
-        _valids = new bool[](_filmIds.length);
-
-        for (uint256 i = 0; i < _filmIds.length; i++) {
-            if (finalFilmCalledTime[_filmIds[i]] > 0) {
-                _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] >= fPeriod;                
-            } else {
-                _valids[i] = true;
-            }
-        }        
+        _valids = VabbleDAOUtils.checkSetFinalFilms(_filmIds, fPeriod, finalFilmCalledTime);
     }
 
     /// @notice Set final films for a customer with watched 
@@ -569,24 +555,8 @@ contract VabbleDAO is ReentrancyGuard {
         else if(_flag == 3) list_ = userApprovedFilmIds[_user];
     }
 
-    // function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
-    //     filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
-    // }    
-
     function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
-        IVabbleDAO.Film memory fInfo;
-        uint256[] memory ids = userApprovedFilmIds[_user];
-        require(ids.length > 0, "migrate: no film");
-
-        filmList_ = new IVabbleDAO.Film[](ids.length);
-        for(uint256 i = 0; i < ids.length; i++) {             
-            fInfo = filmInfo[ids[i]];
-            require(fInfo.studio == _user, "migrate: not film owner");
-
-            if(fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
-                filmList_[i] = fInfo;
-            }
-        }
+        filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
     }    
 
     function getAllAvailableRewards(uint256 _curMonth) external view returns (uint256 reward_) {
