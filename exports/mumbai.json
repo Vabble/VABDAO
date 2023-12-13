@@ -3,7 +3,7 @@
   "chainId": "80001",
   "contracts": {
     "FactoryFilmNFT": {
-      "address": "0x28664cfE9e1db7EADc23929659c1cfe42DDf22A5",
+      "address": "0x4c232DB7F11F42b8c3b1866bC1Bd4268806df8d0",
       "abi": [
         {
           "inputs": [
@@ -489,7 +489,7 @@
       ]
     },
     "FactorySubNFT": {
-      "address": "0x5e532a27cf2C131218E96Fd4f51f4Aff7e0018E7",
+      "address": "0xF898c28dab25257b8024359443c2A69584B453b5",
       "abi": [
         {
           "inputs": [
@@ -1022,7 +1022,7 @@
       ]
     },
     "FactoryTierNFT": {
-      "address": "0x3C3fb7FA8139e1Fb8a7E67db0C4cF11f75c3af98",
+      "address": "0x2B2eC4Bd0455b4994bAe767346f1D120F91b45E2",
       "abi": [
         {
           "inputs": [
@@ -2673,7 +2673,7 @@
       ]
     },
     "Ownablee": {
-      "address": "0x2bc13e0bC2AEA7c0287C313d0203F1E9e4c484E2",
+      "address": "0x7831A6F7dB14C459C15BAf10F1B2390ad07d0eF8",
       "abi": [
         {
           "inputs": [
@@ -2960,7 +2960,7 @@
       ]
     },
     "Property": {
-      "address": "0x87D0655fc298c47669770b2Ea4058149389743d5",
+      "address": "0xcF4D2874e64121a81D4A1717da21F7Bf2051fF3b",
       "abi": [
         {
           "inputs": [
@@ -4018,7 +4018,7 @@
       ]
     },
     "StakingPool": {
-      "address": "0x94EDB500660CbF64A5531e9b871d6f35D53Aa354",
+      "address": "0xb1f18458C9d271E530e01E59Ce91A61b5C45B1Dc",
       "abi": [
         {
           "inputs": [
@@ -4360,6 +4360,68 @@
               "internalType": "uint256",
               "name": "amount_",
               "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address[]",
+              "name": "_users",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "_amounts",
+              "type": "uint256[]"
+            }
+          ],
+          "name": "checkAllocateToPool",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address[]",
+              "name": "_customers",
+              "type": "address[]"
+            }
+          ],
+          "name": "checkApprovePendingWithdraw",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address[]",
+              "name": "_customers",
+              "type": "address[]"
+            }
+          ],
+          "name": "checkDenyPendingWithDraw",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
             }
           ],
           "stateMutability": "view",
@@ -4792,7 +4854,7 @@
       ]
     },
     "Subscription": {
-      "address": "0x4a52A8C485B8C3EcC9BBB40797A2573620B6892a",
+      "address": "0x6323ed885FB9092393926381EA07A2aDF699aF6f",
       "abi": [
         {
           "inputs": [
@@ -4974,7 +5036,7 @@
       ]
     },
     "UniHelper": {
-      "address": "0x2b68BeA752df435769953931728fEa37EbE7Ef22",
+      "address": "0xc030Df38424b9C7c3c365194630a67C6d80F0f6a",
       "abi": [
         {
           "inputs": [
@@ -5179,7 +5241,7 @@
       ]
     },
     "VabbleDAO": {
-      "address": "0x19AB7340F4c98B7aCbB6f4f3393321C873324426",
+      "address": "0x9eBE3783CE5E74F36C476a5fcdC303213d51fa7d",
       "abi": [
         {
           "inputs": [
@@ -5592,6 +5654,25 @@
           "type": "function"
         },
         {
+          "inputs": [
+            {
+              "internalType": "uint256[]",
+              "name": "_filmIds",
+              "type": "uint256[]"
+            }
+          ],
+          "name": "checkSetFinalFilms",
+          "outputs": [
+            {
+              "internalType": "bool[]",
+              "name": "_valids",
+              "type": "bool[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
           "inputs": [],
           "name": "claimAllReward",
           "outputs": [],
@@ -5699,7 +5780,13 @@
           "type": "function"
         },
         {
-          "inputs": [],
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
           "name": "finalFilmCalledTime",
           "outputs": [
             {
@@ -5734,6 +5821,25 @@
             {
               "internalType": "uint256",
               "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_curMonth",
+              "type": "uint256"
+            }
+          ],
+          "name": "getAllAvailableRewards",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "reward_",
               "type": "uint256"
             }
           ],
@@ -5949,97 +6055,6 @@
               "type": "address"
             }
           ],
-          "name": "getUserFilmListForMigrate",
-          "outputs": [
-            {
-              "components": [
-                {
-                  "internalType": "string",
-                  "name": "title",
-                  "type": "string"
-                },
-                {
-                  "internalType": "string",
-                  "name": "description",
-                  "type": "string"
-                },
-                {
-                  "internalType": "uint256[]",
-                  "name": "sharePercents",
-                  "type": "uint256[]"
-                },
-                {
-                  "internalType": "address[]",
-                  "name": "studioPayees",
-                  "type": "address[]"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "raiseAmount",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "fundPeriod",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "fundType",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "rewardPercent",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "noVote",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "enableClaimer",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "pCreateTime",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "pApproveTime",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "address",
-                  "name": "studio",
-                  "type": "address"
-                },
-                {
-                  "internalType": "enum Helper.Status",
-                  "name": "status",
-                  "type": "uint8"
-                }
-              ],
-              "internalType": "struct IVabbleDAO.Film[]",
-              "name": "filmList_",
-              "type": "tuple[]"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "_user",
-              "type": "address"
-            }
-          ],
           "name": "getUserFinalFilmIds",
           "outputs": [
             {
@@ -6065,6 +6080,35 @@
             }
           ],
           "name": "getUserRewardAmount",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "amount_",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_filmId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_curMonth",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address"
+            }
+          ],
+          "name": "getUserRewardAmountForUser",
           "outputs": [
             {
               "internalType": "uint256",
@@ -6226,6 +6270,13 @@
           "type": "function"
         },
         {
+          "inputs": [],
+          "name": "startNewMonth",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
           "inputs": [
             {
               "internalType": "uint256",
@@ -6300,7 +6351,7 @@
       ]
     },
     "VabbleFund": {
-      "address": "0xD5F658Ed6f98553D338db2b5F9E8EA693183A8fC",
+      "address": "0x4B36e63D9C11064cFF7694662dCb40E1D3fA1d72",
       "abi": [
         {
           "inputs": [
@@ -6761,7 +6812,7 @@
       ]
     },
     "Vote": {
-      "address": "0x54CD663b0096B08bdF86FBFBFBaC0C64467a1d70",
+      "address": "0xF5629AB4D19EB19873A15dC16E7a14DeC6B7159B",
       "abi": [
         {
           "inputs": [
