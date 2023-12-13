@@ -9,4 +9,5 @@
 // require('./subscription.test');
 // require('./research');
 // require('./multiSigWallet.test');
-require('./gnosisSafe.test');
+// require('./gnosisSafe.test');
+require('./set-final-film.test');

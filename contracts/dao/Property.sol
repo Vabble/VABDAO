@@ -40,7 +40,7 @@ contract Property is ReentrancyGuard {
     uint256 public propertyVotePeriod;   // 3 - vote period for updating properties    
     uint256 public lockPeriod;           // 4 - lock period for staked VAB
     uint256 public rewardRate;           // 5 - day rewards rate => 0.0004%(1% = 1e8, 100% = 1e10)
-    // uint256 public extraRewardRate;      // 6 - bonus day rewards rate =>0.0001%(1% = 1e8, 100% = 1e10)
+    uint256 public filmRewardClaimPeriod;// 6 - period when the auditor can submit the films reward results to be claimed
     uint256 public maxAllowPeriod;       // 7 - max allowed period for removing filmBoard member
     uint256 public proposalFeeAmount;    // 8 - USDC amount($100) studio should pay when create a proposal
     uint256 public fundFeePercent;       // 9 - percent(2% = 2*1e8) of fee on the amount raised
@@ -64,7 +64,7 @@ contract Property is ReentrancyGuard {
     uint256[] private propertyVotePeriodList;      // 3
     uint256[] private lockPeriodList;              // 4
     uint256[] private rewardRateList;              // 5
-    // uint256[] private extraRewardRateList;         // 6
+    uint256[] private filmRewardClaimPeriodList;   // 6
     uint256[] private maxAllowPeriodList;          // 7
     uint256[] private proposalFeeAmountList;       // 8
     uint256[] private fundFeePercentList;          // 9
@@ -124,18 +124,18 @@ contract Property is ReentrancyGuard {
         require(_staking != address(0), "stakingContract: Zero address");
         STAKING_POOL = _staking;       
 
-        filmVotePeriod = 10 minutes; // 10 days;   
-        boardVotePeriod = 10 minutes; // 14 days;
-        agentVotePeriod = 10 minutes; // 10 days;
+        filmVotePeriod = 10 minutes;     // 10 days;   
+        boardVotePeriod = 10 minutes;    // 14 days;
+        agentVotePeriod = 10 minutes;    // 10 days;
         disputeGracePeriod = 30 days;  
         propertyVotePeriod = 10 minutes; // 10 days;
-        rewardVotePeriod = 10 minutes; // 30 days;
-        lockPeriod = 10 minutes; //30 days;
+        rewardVotePeriod = 10 minutes;   // 30 days;
+        lockPeriod = 10 minutes;         //30 days;
         maxAllowPeriod = 90 days;        
+        filmRewardClaimPeriod = 10 minutes;
 
         boardVoteWeight = 30 * 1e8;      // 30% (1% = 1e8)
-        rewardRate = 2500000; //40000;              // 0.0004% (1% = 1e8, 100%=1e10) // 2500000(0.025%)
-        // extraRewardRate = 10000;         // 0.0001% (1% = 1e8, 100%=1e10)
+        rewardRate = 2500000; //40000;   // 0.0004% (1% = 1e8, 100%=1e10) // 2500000(0.025%)
         boardRewardRate = 25 * 1e8;      // 25%
         fundFeePercent = 2 * 1e8;        // percent(2%) 
         maxMintFeePercent = 10 * 1e8;    // 10%
@@ -328,9 +328,9 @@ contract Property is ReentrancyGuard {
         } else if(_flag == 5) {
             require(rewardRate != _property, "proposalProperty: Already rewardRate");
             rewardRateList.push(_property);
-        // } else if(_flag == 6) {
-        //     require(extraRewardRate != _property, "proposalProperty: Already extraRewardRate");
-        //     extraRewardRateList.push(_property);
+        } else if(_flag == 6) {
+            require(filmRewardClaimPeriod != _property, "proposalProperty: Already filmRewardClaimPeriod");
+            filmRewardClaimPeriodList.push(_property);
         } else if(_flag == 7) {
             require(maxAllowPeriod != _property, "proposalProperty: Already maxAllowPeriod");
             maxAllowPeriodList.push(_property);
@@ -411,8 +411,8 @@ contract Property is ReentrancyGuard {
             property_ = lockPeriodList[_index];
         } else if(_flag == 5 && rewardRateList.length > 0 && rewardRateList.length > _index) {
             property_ = rewardRateList[_index];
-        // } else if(_flag == 6 && extraRewardRateList.length > 0 && extraRewardRateList.length > _index) {
-        //     property_ = extraRewardRateList[_index];
+        } else if(_flag == 6 && filmRewardClaimPeriodList.length > 0 && filmRewardClaimPeriodList.length > _index) {
+            property_ = filmRewardClaimPeriodList[_index];
         } else if(_flag == 7 && maxAllowPeriodList.length > 0 && maxAllowPeriodList.length > _index) {
             property_ = maxAllowPeriodList[_index];
         } else if(_flag == 8 && proposalFeeAmountList.length > 0 && proposalFeeAmountList.length > _index) {
@@ -454,7 +454,7 @@ contract Property is ReentrancyGuard {
         else if(_flag == 3) _list = propertyVotePeriodList;
         else if(_flag == 4) _list = lockPeriodList;
         else if(_flag == 5) _list = rewardRateList;
-        // else if(_flag == 6) _list = extraRewardRateList;
+        else if(_flag == 6) _list = filmRewardClaimPeriodList;
         else if(_flag == 7) _list = maxAllowPeriodList;
         else if(_flag == 8) _list = proposalFeeAmountList;
         else if(_flag == 9) _list = fundFeePercentList;
@@ -511,8 +511,8 @@ contract Property is ReentrancyGuard {
                 lockPeriod = _property;
             } else if(_flag == 5) {
                 rewardRate = _property;
-            // } else if(_flag == 6) {
-            //     extraRewardRate = extraRewardRateList[_index];
+            } else if(_flag == 6) {
+                filmRewardClaimPeriod = _property;
             } else if(_flag == 7) {
                 maxAllowPeriod = _property;
             } else if(_flag == 8) {
@@ -647,7 +647,7 @@ contract Property is ReentrancyGuard {
         else if(_flag == 3) propertyVotePeriod = _value;
         else if(_flag == 4) lockPeriod = _value;
         else if(_flag == 5) rewardRate = _value;
-        // else if(_flag == 6) extraRewardRate = _value;
+        else if(_flag == 6) filmRewardClaimPeriod = _value;
         else if(_flag == 7) maxAllowPeriod = _value;
         else if(_flag == 8) proposalFeeAmount = _value;
         else if(_flag == 9) fundFeePercent = _value;

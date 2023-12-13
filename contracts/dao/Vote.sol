@@ -78,7 +78,7 @@ contract Vote is ReentrancyGuard {
         address _stakingPool,
         address _property
     ) external onlyDeployer {
-        require(VABBLE_DAO == address(0), "initialize: already initialized");
+        // require(VABBLE_DAO == address(0), "initialize: already initialized");
 
         require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "initializeVote: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO;        

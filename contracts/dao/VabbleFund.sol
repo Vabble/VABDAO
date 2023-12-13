@@ -67,7 +67,7 @@ contract VabbleFund is ReentrancyGuard {
 
     /// @notice Initialize
     function initialize(address _vabbleDAO) external onlyDeployer {        
-        require(VABBLE_DAO == address(0), "initialize: already initialized");
+        // require(VABBLE_DAO == address(0), "initialize: already initialized");
 
         require(_vabbleDAO != address(0), "initialize: zero address");
         VABBLE_DAO = _vabbleDAO; 

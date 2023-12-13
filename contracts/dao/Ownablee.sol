@@ -54,6 +54,7 @@ contract Ownablee {
 
         // TODO - PVE007 updated(add multiSigWallet)
         require(_multiSigWallet != address(0), "multiSigWallet: Zero address");
+        // auditor = msg.sender; // _multiSigWallet;
         auditor = _multiSigWallet;
 
         require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
@@ -162,4 +163,8 @@ contract Ownablee {
         }
         return poolBalance;
     }
+
+    function getVabbleDAO() public view returns (address dao_) {        
+        dao_ = VABBLE_DAO;
+    } 
 }

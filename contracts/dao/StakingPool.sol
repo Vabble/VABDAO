@@ -345,6 +345,33 @@ contract StakingPool is ReentrancyGuard {
         return payAmount;
     }
 
+    function checkApprovePendingWithdraw(address[] calldata _customers) external view returns (bool) {
+        address _to;
+        uint256 payAmount;
+        uint256 sum = 0;
+        for(uint256 i = 0; i < _customers.length; i++) {
+            _to = _customers[i];
+            payAmount = userRentInfo[_to].withdrawAmount;
+            if (payAmount == 0) 
+                return false;
+
+            if (payAmount > userRentInfo[_to].vabAmount) 
+                return false;
+
+            if (userRentInfo[_to].pending == false) 
+                return false;
+
+            sum += payAmount;
+        }
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+
+        if (IERC20(vabToken).balanceOf(address(this)) < sum)
+            return false;
+
+        return true;
+    }
+
     /// @notice Deny pending-withdraw of given customers by Auditor
     function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
         require(_customers.length > 0, "denyWithdraw: bad customers");
@@ -360,6 +387,17 @@ contract StakingPool is ReentrancyGuard {
 
         emit PendingWithdrawDenied(_customers, block.timestamp);
     } 
+
+    function checkDenyPendingWithDraw(address[] calldata _customers) external view returns (bool) {
+        for(uint256 i = 0; i < _customers.length; i++) {
+            if (userRentInfo[_customers[i]].withdrawAmount == 0)
+                return false;
+
+            if (userRentInfo[_customers[i]].pending == false)
+                return false;
+        }
+        return true;
+    }
     
     /// @notice onlyDAO transfer VAB token to user
     function sendVAB(
@@ -379,6 +417,25 @@ contract StakingPool is ReentrancyGuard {
 
         return sum;
     }
+
+    function checkAllocateToPool(address[] calldata _users, uint256[] calldata _amounts) external view returns (bool) {
+        uint256 sum;
+        for(uint256 i = 0; i < _users.length; i++) {  
+            if (userRentInfo[_users[i]].vabAmount < _amounts[i])
+                return false;
+
+            sum += _amounts[i];            
+        }
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+
+        if (IERC20(vabToken).balanceOf(address(this)) < sum)
+            return false;
+
+        return true;
+    }
+
+
 
     /// @notice Transfer DAO all fund to V2
     // After call this function, users should be available to withdraw his funds deposited
