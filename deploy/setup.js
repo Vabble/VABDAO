@@ -27,19 +27,22 @@ module.exports = async function ({ deployments }) {
     this.sig1Address = CONFIG.polygon.sig.user1
     this.sig2Address = CONFIG.polygon.sig.user2
   }
-  // const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
-  // await GnosisSafeContract.connect(this.signers[0]).setup(
-  //   [this.sig1Address, this.sig2Address], 
-  //   2, 
-  //   CONFIG.addressZero, 
-  //   "0x", 
-  //   CONFIG.addressZero, 
-  //   CONFIG.addressZero, 
-  //   0, 
-  //   CONFIG.addressZero, 
-  //   {from: this.signers[0].address}
-  // )
-
+  const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
+  const threshold = await GnosisSafeContract.getThreshold();
+  if (threshold == 0) {
+    await GnosisSafeContract.connect(this.signers[0]).setup(
+      [this.sig1Address, this.sig2Address], 
+      2, 
+      CONFIG.addressZero, 
+      "0x", 
+      CONFIG.addressZero, 
+      CONFIG.addressZero, 
+      0, 
+      CONFIG.addressZero, 
+      {from: this.signers[0].address}
+    )  
+  }
+  
   console.log('complete => GnosisSafeL2 setup')
 
   const FactoryFilmNFTContract = await ethers.getContractAt('FactoryFilmNFT', this.FactoryFilmNFT.address)
