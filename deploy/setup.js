@@ -19,6 +19,10 @@ module.exports = async function ({ deployments }) {
   this.Vote = await deployments.get('Vote');    
       
   console.log('=========== setup start ==========')
+
+  const network = await ethers.provider.getNetwork();
+	console.log("Network name: ", network.name);
+	console.log("Chain ID: ", network.chainId);
   
   if(NETWORK == 'mumbai') {
     this.sig1Address = CONFIG.mumbai.sig.user1
