@@ -4,7 +4,7 @@ const addressZero = CONFIG.addressZero;
   
 module.exports = async function ({ deployments }) {  
   this.signers = await ethers.getSigners();
-    
+  
   this.FactoryFilmNFT = await deployments.get('FactoryFilmNFT'); 
   this.FactorySubNFT = await deployments.get('FactorySubNFT');
   this.FactoryTierNFT = await deployments.get('FactoryTierNFT');
@@ -26,16 +26,21 @@ module.exports = async function ({ deployments }) {
 
   const {sig} = getConfig(chainId);
 
-  signer1 = new ethers.Wallet(process.env.PK1, ethers.provider);
-  signer2 = new ethers.Wallet(process.env.PK2, ethers.provider);
+  const accounts = await getNamedAccounts();
+  const deployer = this.signers[0];
+  const signer1 = new ethers.Wallet(process.env.PK1, ethers.provider);
+  const signer2 = new ethers.Wallet(process.env.PK2, ethers.provider);
+
+  console.log("accounts", accounts);
+  console.log("deployer", deployer.address);
   console.log("Config Signers", sig)  ;
-  console.log("Private Signers Address", signer1.address, signer2.address);
+  console.log("Private Signers Address", {user1: signer1.address, user2: signer2.address});
   // console.log("Private Signers", signer1, signer2);
 
   const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
   const threshold = await GnosisSafeContract.getThreshold();
   if (threshold == 0) {
-    await GnosisSafeContract.connect(this.signers[0]).setup(
+    await GnosisSafeContract.connect(deployer).setup(
       [sig.user1, sig.user2], 
       2, 
       addressZero, 
@@ -44,67 +49,67 @@ module.exports = async function ({ deployments }) {
       addressZero, 
       0, 
       addressZero, 
-      {from: this.signers[0].address}
+      {from: deployer.address}
     )  
   }
   
   console.log('complete => GnosisSafeL2 setup')
 
   const FactoryFilmNFTContract = await ethers.getContractAt('FactoryFilmNFT', this.FactoryFilmNFT.address)
-  await FactoryFilmNFTContract.connect(this.signers[0]).initialize(
+  await FactoryFilmNFTContract.connect(deployer).initialize(
     this.VabbleDAO.address, 
     this.VabbleFund.address, 
-    {from: this.signers[0].address}
+    {from: deployer.address}
   )
   
   console.log('complete => FactoryFilmNFT initialize')
 
   const OwnableeContract = await ethers.getContractAt('Ownablee', this.Ownablee.address)
-  await OwnableeContract.connect(this.signers[0]).setup(
+  await OwnableeContract.connect(deployer).setup(
     this.Vote.address, 
     this.VabbleDAO.address, 
     this.StakingPool.address,
-    {from: this.signers[0].address}
+    {from: deployer.address}
   )
 
   console.log('complete => Ownablee setup')
 
   const StakingPoolContract = await ethers.getContractAt('StakingPool', this.StakingPool.address)
-  await StakingPoolContract.connect(this.signers[0]).initialize(
+  await StakingPoolContract.connect(deployer).initialize(
     this.VabbleDAO.address, 
     this.Property.address, 
     this.Vote.address,
-    {from: this.signers[0].address}
+    {from: deployer.address}
   )  
 
   console.log('complete => StakingPool initialize')
 
   const UniHelperContract = await ethers.getContractAt('UniHelper', this.UniHelper.address)
-  await UniHelperContract.connect(this.signers[0]).setWhiteList(
+  await UniHelperContract.connect(deployer).setWhiteList(
     this.VabbleDAO.address, 
     this.VabbleFund.address, 
     this.Subscription.address, 
     this.FactoryFilmNFT.address, 
     this.FactorySubNFT.address, 
-    {from: this.signers[0].address}
+    {from: deployer.address}
   )
 
   console.log('complete => UniHelper setWhiteList')
 
   const VabbleFundContract = await ethers.getContractAt('VabbleFund', this.VabbleFund.address)
-  await VabbleFundContract.connect(this.signers[0]).initialize(
+  await VabbleFundContract.connect(deployer).initialize(
     this.VabbleDAO.address, 
-    {from: this.signers[0].address}
+    {from: deployer.address}
   )
   
   console.log('complete => VabbleFund initialize')
 
   const VoteContract = await ethers.getContractAt('Vote', this.Vote.address)
-  await VoteContract.connect(this.signers[0]).initialize(
+  await VoteContract.connect(deployer).initialize(
     this.VabbleDAO.address, 
     this.StakingPool.address, 
     this.Property.address, 
-    {from: this.signers[0].address}
+    {from: deployer.address}
   )
 
   console.log('complete => Vote initialize')
