@@ -23,8 +23,7 @@ module.exports = async function ({ deployments }) {
 
   const network = await ethers.provider.getNetwork();
   const chainId = network.chainId;
-	console.log("Chain ID: ", chainId);
-
+	
   const accounts = await getNamedAccounts();
   const deployer = this.signers[0];
   const signer1 = new ethers.Wallet(process.env.PK1, ethers.provider);
