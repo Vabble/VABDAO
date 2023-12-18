@@ -24,7 +24,7 @@ module.exports = async function ({ deployments }) {
   const chainId = network.chainId;
 	console.log("Chain ID: ", chainId);
 
-  const {sig} = getConfig(chainId);
+  // const {sig} = getConfig(chainId);
 
   const accounts = await getNamedAccounts();
   const deployer = this.signers[0];
@@ -33,7 +33,7 @@ module.exports = async function ({ deployments }) {
 
   console.log("accounts", accounts);
   console.log("deployer", deployer.address);
-  console.log("Config Signers", sig)  ;
+  // console.log("Config Signers", sig);
   console.log("Private Signers Address", {user1: signer1.address, user2: signer2.address});
   // console.log("Private Signers", signer1, signer2);
 
@@ -41,7 +41,7 @@ module.exports = async function ({ deployments }) {
   const threshold = await GnosisSafeContract.getThreshold();
   if (threshold == 0) {
     await GnosisSafeContract.connect(deployer).setup(
-      [sig.user1, sig.user2], 
+      [signer1.address, signer2.address], 
       2, 
       addressZero, 
       "0x", 
