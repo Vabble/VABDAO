@@ -1,8 +1,8 @@
 const { ethers } = require("hardhat");
-const { CONFIG, NETWORK } = require('../scripts/utils');
+const {CONFIG, getConfig } = require('../scripts/utils');
+const addressZero = CONFIG.addressZero;
   
-module.exports = async function ({ deployments }) {
-  
+module.exports = async function ({ deployments }) {  
   this.signers = await ethers.getSigners();
     
   this.FactoryFilmNFT = await deployments.get('FactoryFilmNFT'); 
@@ -21,28 +21,29 @@ module.exports = async function ({ deployments }) {
   console.log('=========== setup start ==========')
 
   const network = await ethers.provider.getNetwork();
-	console.log("Network name: ", network.name);
-	console.log("Chain ID: ", network.chainId);
-  
-  if(NETWORK == 'mumbai') {
-    this.sig1Address = CONFIG.mumbai.sig.user1
-    this.sig2Address = CONFIG.mumbai.sig.user2
-  } else if(NETWORK == 'polygon') {
-    this.sig1Address = CONFIG.polygon.sig.user1
-    this.sig2Address = CONFIG.polygon.sig.user2
-  }
+  const chainId = network.chainId;
+	console.log("Chain ID: ", chainId);
+
+  const {sig} = getConfig(chainId);
+
+  signer1 = new ethers.Wallet(process.env.PK1, ethers.provider);
+  signer2 = new ethers.Wallet(process.env.PK2, ethers.provider);
+  console.log("Config Signers", sig)  ;
+  console.log("Private Signers Address", signer1.address, signer2.address);
+  // console.log("Private Signers", signer1, signer2);
+
   const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
   const threshold = await GnosisSafeContract.getThreshold();
   if (threshold == 0) {
     await GnosisSafeContract.connect(this.signers[0]).setup(
-      [this.sig1Address, this.sig2Address], 
+      [sig.user1, sig.user2], 
       2, 
-      CONFIG.addressZero, 
+      addressZero, 
       "0x", 
-      CONFIG.addressZero, 
-      CONFIG.addressZero, 
+      addressZero, 
+      addressZero, 
       0, 
-      CONFIG.addressZero, 
+      addressZero, 
       {from: this.signers[0].address}
     )  
   }
@@ -107,6 +108,10 @@ module.exports = async function ({ deployments }) {
   )
 
   console.log('complete => Vote initialize')
+
+  const PropertyContract = await ethers.getContractAt('Property', this.Property.address)
+  const fPeriod = await PropertyContract.filmRewardClaimPeriod();
+  console.log("filmRewardClaimPeriod", fPeriod.toString());
 };
 
 module.exports.id = 'init'

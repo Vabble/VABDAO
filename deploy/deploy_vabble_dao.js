@@ -1,7 +1,6 @@
 module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const { CONFIG, NETWORK } = require('../scripts/utils');
   
   this.Ownablee = await deployments.get('Ownablee');
   this.UniHelper = await deployments.get('UniHelper');
