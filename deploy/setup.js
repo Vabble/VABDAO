@@ -1,6 +1,7 @@
 const { ethers } = require("hardhat");
-const {CONFIG, isTest } = require('../scripts/utils');
+const {CONFIG, isTest, getBigNumber } = require('../scripts/utils');
 const addressZero = CONFIG.addressZero;
+const ERC20 = require('../data/ERC20.json');
   
 module.exports = async function ({ deployments }) {  
   this.signers = await ethers.getSigners();
@@ -120,13 +121,19 @@ module.exports = async function ({ deployments }) {
   console.log('complete => Property initialize')
 
   // checking configured values
-  console.log("--------- Checking configured values ---------")
+  console.log("\n--------- Checking configured values ---------")
   const vabToken = await OwnableeContract.PAYOUT_TOKEN();
   const usdcAdress = await OwnableeContract.USDC_TOKEN();
   const walletAddress = await OwnableeContract.VAB_WALLET();
 
   console.log({vabToken, usdcAdress, walletAddress});
 
+  const vabTokenContract = new ethers.Contract(vabToken, JSON.stringify(ERC20), ethers.provider);
+
+  const balanceOfWallet = (await vabTokenContract.balanceOf(walletAddress)) / getBigNumber(1);
+  
+  console.log({balanceOfWallet});
+  
   const uinswapFactory = await UniHelperContract.getUniswapFactory();
   const uinswapRouter = await UniHelperContract.getUniswapRouter();
   const sushiFactory = await UniHelperContract.getSushiFactory();
