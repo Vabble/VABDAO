@@ -11,7 +11,7 @@ const CONFIG = {
   ethereum: {
     usdcAdress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",    
     vabToken: "", 
-    walletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
+    walletAddress: "",
     uniswap: { //Mainnet, kovan, rinkeby ...
       factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
       router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -29,7 +29,7 @@ const CONFIG = {
     usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     usdtAdress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
     vabToken: "",
-    walletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
+    walletAddress: "",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
