@@ -117,10 +117,54 @@ module.exports = async function ({ deployments }) {
     await PropertyContract.updateForTesting();
   }
 
-  const fPeriod = await PropertyContract.filmRewardClaimPeriod();
-  console.log("filmRewardClaimPeriod", fPeriod.toString());
-
   console.log('complete => Property initialize')
+
+  // checking configured values
+  console.log("--------- Checking configured values ---------")
+  const vabToken = await OwnableeContract.PAYOUT_TOKEN();
+  const usdcAdress = await OwnableeContract.USDC_TOKEN();
+  const walletAddress = await OwnableeContract.VAB_WALLET();
+
+  console.log({vabToken, usdcAdress, walletAddress});
+
+  const uinswapFactory = await UniHelperContract.getUniswapFactory();
+  const uinswapRouter = await UniHelperContract.getUniswapRouter();
+  const sushiFactory = await UniHelperContract.getSushiFactory();
+  const sushiRouter = await UniHelperContract.getSushiRouter();
+
+  console.log({uinswapFactory, uinswapRouter, sushiFactory, sushiRouter});
+
+  const filmVotePeriod = (await PropertyContract.filmVotePeriod()).toString();
+  const agentVotePeriod = (await PropertyContract.agentVotePeriod()).toString();
+  const disputeGracePeriod = (await PropertyContract.disputeGracePeriod()).toString();
+  const propertyVotePeriod = (await PropertyContract.propertyVotePeriod()).toString();
+  const lockPeriod = (await PropertyContract.lockPeriod()).toString();
+  const rewardRate = (await PropertyContract.rewardRate()).toString();
+  const filmRewardClaimPeriod = (await PropertyContract.filmRewardClaimPeriod()).toString();
+  const maxAllowPeriod = (await PropertyContract.maxAllowPeriod()).toString();
+  const proposalFeeAmount = (await PropertyContract.proposalFeeAmount()).toString();
+  const fundFeePercent = (await PropertyContract.fundFeePercent()).toString();
+  const minDepositAmount = (await PropertyContract.minDepositAmount()).toString();
+  const maxDepositAmount = (await PropertyContract.maxDepositAmount()).toString();
+  const maxMintFeePercent = (await PropertyContract.maxMintFeePercent()).toString();
+  const minVoteCount = (await PropertyContract.minVoteCount()).toString();
+  const minStakerCountPercent = (await PropertyContract.minStakerCountPercent()).toString();
+  const availableVABAmount = (await PropertyContract.availableVABAmount()).toString();
+  const boardVotePeriod = (await PropertyContract.boardVotePeriod()).toString();
+  const boardVoteWeight = (await PropertyContract.boardVoteWeight()).toString();
+  const rewardVotePeriod = (await PropertyContract.rewardVotePeriod()).toString();
+  const subscriptionAmount = (await PropertyContract.subscriptionAmount()).toString();
+  const boardRewardRate = (await PropertyContract.boardRewardRate()).toString();
+  const governanceProposalCount = (await PropertyContract.governanceProposalCount()).toString();
+
+  console.log({
+    filmVotePeriod, agentVotePeriod, disputeGracePeriod, propertyVotePeriod, 
+    lockPeriod, rewardRate, filmRewardClaimPeriod, maxAllowPeriod, 
+    proposalFeeAmount, fundFeePercent, minDepositAmount, maxDepositAmount, 
+    maxMintFeePercent, minVoteCount, minStakerCountPercent, availableVABAmount, 
+    boardVotePeriod, boardVoteWeight, rewardVotePeriod, subscriptionAmount, 
+    boardRewardRate, governanceProposalCount
+  });
 
 };
 
