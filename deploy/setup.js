@@ -162,15 +162,14 @@ module.exports = async function ({ deployments }) {
   const rewardVotePeriod = (await PropertyContract.rewardVotePeriod()).toString();
   const subscriptionAmount = (await PropertyContract.subscriptionAmount()).toString();
   const boardRewardRate = (await PropertyContract.boardRewardRate()).toString();
-  const governanceProposalCount = (await PropertyContract.governanceProposalCount()).toString();
-
+  
   console.log({
     filmVotePeriod, agentVotePeriod, disputeGracePeriod, propertyVotePeriod, 
     lockPeriod, rewardRate, filmRewardClaimPeriod, maxAllowPeriod, 
     proposalFeeAmount, fundFeePercent, minDepositAmount, maxDepositAmount, 
     maxMintFeePercent, minVoteCount, minStakerCountPercent, availableVABAmount, 
     boardVotePeriod, boardVoteWeight, rewardVotePeriod, subscriptionAmount, 
-    boardRewardRate, governanceProposalCount
+    boardRewardRate
   });
 
 };
