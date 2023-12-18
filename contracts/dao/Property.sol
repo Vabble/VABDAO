@@ -154,11 +154,15 @@ contract Property is ReentrancyGuard {
     function updateForTesting() external onlyDeployer {
         filmVotePeriod = 10 minutes;     // 10 days;   
         boardVotePeriod = 10 minutes;    // 14 days;
-        agentVotePeriod = 10 minutes;    // 10 days;        
+        agentVotePeriod = 10 minutes;    // 10 days;      
+        disputeGracePeriod = 10 minutes;    // 30 days
         propertyVotePeriod = 10 minutes; // 10 days;
         rewardVotePeriod = 10 minutes;   // 30 days;
         lockPeriod = 10 minutes;         //30 days;
         filmRewardClaimPeriod = 10 minutes; // 30 days;
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        availableVABAmount = (10**IERC20Metadata(vabToken).decimals()); // 1        
     }
 
     /// =================== proposals for replacing auditor ==============
