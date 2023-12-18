@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const {CONFIG, getConfig } = require('../scripts/utils');
+const {CONFIG, isTest } = require('../scripts/utils');
 const addressZero = CONFIG.addressZero;
   
 module.exports = async function ({ deployments }) {  
@@ -23,8 +23,6 @@ module.exports = async function ({ deployments }) {
   const network = await ethers.provider.getNetwork();
   const chainId = network.chainId;
 	console.log("Chain ID: ", chainId);
-
-  // const {sig} = getConfig(chainId);
 
   const accounts = await getNamedAccounts();
   const deployer = this.signers[0];
@@ -114,9 +112,16 @@ module.exports = async function ({ deployments }) {
 
   console.log('complete => Vote initialize')
 
-  const PropertyContract = await ethers.getContractAt('Property', this.Property.address)
+  const PropertyContract = await ethers.getContractAt('Property', this.Property.address);
+  if (isTest(chainId)) {
+    await PropertyContract.updateForTesting();
+  }
+
   const fPeriod = await PropertyContract.filmRewardClaimPeriod();
   console.log("filmRewardClaimPeriod", fPeriod.toString());
+
+  console.log('complete => Property initialize')
+
 };
 
 module.exports.id = 'init'

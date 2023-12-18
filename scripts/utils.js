@@ -5,6 +5,7 @@ const { BigNumber } = ethers;
 
 const NETWORK = 'mumbai';
 const ZERO_ADDRESS = ethers.constants.AddressZero;
+const TEST_CHAIN_IDS = [1337, 80001, 31337];
 const CONFIG = {
   daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
@@ -300,6 +301,10 @@ const getConfig = (chainId) => {
   return CONFIG.mumbai;
 }
 
+const isTest = (chainId) => {
+  return TEST_CHAIN_IDS.includes(chainId);
+}
+
 module.exports = {
   NETWORK,
   ZERO_ADDRESS,
@@ -320,5 +325,6 @@ module.exports = {
   getUploadGateContent,
   createMintData,
   buildSignatureBytes,
-  getConfig
+  getConfig,
+  isTest
 };
