@@ -1,33 +1,24 @@
 module.exports = async function ({ ethers, getNamedAccounts, deployments, getChainId }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const { CONFIG, NETWORK } = require('../scripts/utils');
+  const { getConfig } = require('../scripts/utils');
 
-  if(NETWORK == 'mumbai') {
-    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
-    this.uniswapRouter = CONFIG.mumbai.uniswap.router
-    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
-    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
-  } else if(NETWORK == 'ethereum') {
-    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
-    this.uniswapRouter = CONFIG.mumbai.uniswap.router
-    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
-    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
-  } else if(NETWORK == 'polygon') {
-    this.uniswapFactory = CONFIG.mumbai.uniswap.factory
-    this.uniswapRouter = CONFIG.mumbai.uniswap.router
-    this.sushiswapFactory = CONFIG.mumbai.sushiswap.factory
-    this.sushiswapRouter = CONFIG.mumbai.sushiswap.router
-  }
+  const network = await ethers.provider.getNetwork();
+  const chainId = network.chainId;
+  const {uniswap, sushiswap} = getConfig(chainId);
+
+  console.log("------------- UniHelper Deployment -----------------");
+  console.log({uniswap, sushiswap});
+
   this.Ownablee = await deployments.get('Ownablee');
 
   await deploy('UniHelper', {
     from: deployer,
     args: [
-      this.uniswapFactory,
-      this.uniswapRouter,
-      this.sushiswapFactory,
-      this.sushiswapRouter,
+      uniswap.factory,
+      uniswap.router,
+      sushiswap.factory,
+      sushiswap.router,
       this.Ownablee.address
     ],
     log: true,

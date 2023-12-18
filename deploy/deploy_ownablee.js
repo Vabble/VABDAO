@@ -3,11 +3,14 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deployer } = await getNamedAccounts();
 
   const { getConfig } = require('../scripts/utils');
-  
+
   const network = await ethers.provider.getNetwork();
   const chainId = network.chainId;
 
   const {vabToken, usdcAdress, walletAddress} = getConfig(chainId);
+
+  console.log("------------- Ownablee Deployment -----------------");
+  console.log({vabToken, usdcAdress, walletAddress});
 
   this.GnosisSafe = await deployments.get('GnosisSafeL2');  
   
