@@ -3,7 +3,6 @@ const ethers = require('ethers');
 const crypto = require('crypto');
 const { BigNumber } = ethers;
 
-const NETWORK = 'mumbai';
 const ZERO_ADDRESS = ethers.constants.AddressZero;
 const TEST_CHAIN_IDS = [1337, 80001, 31337];
 const CONFIG = {
@@ -306,7 +305,6 @@ const isTest = (chainId) => {
 }
 
 module.exports = {
-  NETWORK,
   ZERO_ADDRESS,
   CONFIG,
   TOKEN_TYPE,
