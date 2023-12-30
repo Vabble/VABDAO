@@ -47,7 +47,11 @@ describe('SetFinalFilm', function () {
     });
     beforeEach(async function () {
         // load ERC20 tokens
-        this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(FERC20), ethers.provider);
+        if (CONFIG.mumbai.vabToken == "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32")
+            this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+        else
+            this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(FERC20), ethers.provider);
+        
         this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
         this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
         
@@ -196,11 +200,13 @@ describe('SetFinalFilm', function () {
         // Initialize the VAB/USDC/EXM token for customers, studio, contracts         
         const source = this.deployer; // set token source
 
-        await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-        await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-        await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-        await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-        await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
+        if (CONFIG.mumbai.vabToken != "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32") {
+            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
+            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
+            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
+            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
+            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
+        }
 
         // Transfering VAB token to user1, 2, 3        
         await this.vabToken.connect(source).transfer(this.customer1.address, getBigNumber(50000000), {from: source.address});

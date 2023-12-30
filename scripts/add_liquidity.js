@@ -2,6 +2,7 @@ const { ethers } = require('hardhat');
 
 require('dotenv').config();
 const { CONFIG, getBigNumber, setupProvider, getConfig } = require('../scripts/utils');
+const ERC20 = require('../data/ERC20.json');
 const FERC20 = require('../data/FxERC20.json');
 const UNISWAP2ROUTER_ABI = require('../data/Uniswap2Router.json');
 const UNISWAP2FACTORY_ABI = require('../data/Uniswap2Factory.json');
@@ -27,13 +28,12 @@ async function addLiquidity() {
 
         const provider = await setupProvider(chainId);
         const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(FERC20), provider);
-        const exmToken = new ethers.Contract(exmAddress, JSON.stringify(FERC20), provider);
+        const exmToken = new ethers.Contract(exmAddress, JSON.stringify(ERC20), provider);
         const uniswapFactory = new ethers.Contract(uniswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
         const uniswapRouter = new ethers.Contract(uniswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
 
         const WETH1 = await uniswapRouter.WETH();   
-        const ether1Token = new ethers.Contract(WETH1, JSON.stringify(FERC20), provider);
-
+        // const ether1Token = new ethers.Contract(WETH1, JSON.stringify(ERC20), provider);
 
         const signers = await ethers.getSigners();
         const deployer = signers[0];
@@ -61,14 +61,14 @@ async function addLiquidity() {
         //     {from: deployer.address}
         // );
 
-        totalSupply = await ether1Token.totalSupply();
-        console.log("ETHE1 totalSupply", totalSupply.toString());
+        // totalSupply = await ether1Token.totalSupply();
+        // console.log("ETHE1 totalSupply", totalSupply.toString());
 
-        await ether1Token.connect(deployer).approve(
-            uniswapRouterAddress,
-            totalSupply,
-            {from: deployer.address}
-        );
+        // await ether1Token.connect(deployer).approve(
+        //     uniswapRouterAddress,
+        //     totalSupply,
+        //     {from: deployer.address}
+        // );
 
 
         const deadline = Date.now() + 60 * 60 * 24 * 7;
@@ -121,20 +121,20 @@ async function addLiquidity() {
         // );
         // console.log("EXM:VAB", res);
 
-        // // EXM:VAB   = 1000000:1000000(1:1) => uniswap
+        // // WETH1:VAB   = 1:1(1:1) => uniswap
         console.log("WETH1 address", WETH1);
-        // res = await uniswapRouter.connect(deployer).addLiquidity(
-        //     WETH1,
-        //     vabTokenAddress,
-        //     getBigNumber(10000),
-        //     getBigNumber(10000),
-        //     1,
-        //     1, 
-        //     deployer.address,
-        //     deadline,             
-        //     {from: deployer.address}            
-        // );
-        // console.log("EXM:VAB", res);
+        res = await uniswapRouter.connect(deployer).addLiquidity(
+            WETH1,
+            vabTokenAddress,
+            getBigNumber(1),
+            getBigNumber(1),
+            1,
+            1, 
+            deployer.address,
+            deadline,             
+            {from: deployer.address}            
+        );
+        console.log("EXM:VAB", res);
 
     } catch (error) {
         console.error('Error in addLiquidity:', error);
