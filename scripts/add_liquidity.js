@@ -29,11 +29,12 @@ async function addLiquidity() {
         const provider = await setupProvider(chainId);
         const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(FERC20), provider);
         const exmToken = new ethers.Contract(exmAddress, JSON.stringify(ERC20), provider);
-        const uniswapFactory = new ethers.Contract(uniswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
         const uniswapRouter = new ethers.Contract(uniswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
+        const sushiswapRouter = new ethers.Contract(sushiswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
 
         const WETH1 = await uniswapRouter.WETH();   
-        // const ether1Token = new ethers.Contract(WETH1, JSON.stringify(ERC20), provider);
+        const WETH2 = await sushiswapRouter.WETH();   
+        const ether1Token = new ethers.Contract(WETH1, JSON.stringify(ERC20), provider);
 
         const signers = await ethers.getSigners();
         const deployer = signers[0];
@@ -122,19 +123,24 @@ async function addLiquidity() {
         // console.log("EXM:VAB", res);
 
         // // WETH1:VAB   = 1:1(1:1) => uniswap
+        const expectAmount = await sushiswapRouter.getAmountsOut(1, [WETH2, "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32"]);
+        console.log("WETH2:VAB expectAmount", expectAmount[1].toString());
+
         console.log("WETH1 address", WETH1);
-        res = await uniswapRouter.connect(deployer).addLiquidity(
-            WETH1,
-            vabTokenAddress,
+        console.log("WETH2 address", WETH2);
+        let ethVal = ethers.utils.parseEther('1');
+        console.log("ethVal", ethVal.toString());
+
+        res = await sushiswapRouter.connect(deployer).addLiquidityETH(
+            vabTokenAddress,            
+            getBigNumber(250000),          
             getBigNumber(1),
-            getBigNumber(1),
-            1,
-            1, 
+            getBigNumber(1, 13), 
             deployer.address,
             deadline,             
-            {from: deployer.address}            
+            {from: deployer.address, value: ethVal}            
         );
-        console.log("EXM:VAB", res);
+        console.log("Zero:VAB", res);
 
     } catch (error) {
         console.error('Error in addLiquidity:', error);
