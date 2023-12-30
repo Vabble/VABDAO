@@ -113,7 +113,7 @@ async function addLiquidity() {
         );
         console.log("EXM:VAB", res);
 
-        // // WETH1:VAB   = 1:1(1:1) => uniswap
+        // VAB:MATIC   
         console.log("WETH1 address", WETH1);
         console.log("WETH2 address", WETH2);
         let ethVal = ethers.utils.parseEther('0.00001');
@@ -128,7 +128,21 @@ async function addLiquidity() {
             deadline,             
             {from: deployer.address, value: ethVal}            
         );
-        console.log("Zero:VAB", res);
+        console.log("VAB:MATIC", res);
+
+        // MATIC:VAB  = 5:250000(1:50000)    => sushiswap
+        res = await sushiswapRouter.connect(deployer).addLiquidity(
+            WETH2,
+            vabTokenAddress,                        
+            getBigNumber(1, 13),
+            getBigNumber(250000),
+            getBigNumber(1, 13),
+            getBigNumber(1),
+            deployer.address,
+            deadline,             
+            {from: deployer.address}                 
+        );
+        console.log("MATIC:VAB", res);
 
     } catch (error) {
         console.error('Error in addLiquidity:', error);
