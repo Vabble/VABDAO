@@ -239,3 +239,8 @@ MATIC:VAB  = 5:250000(1:50000)    => sushiswap
 VAB:WMATIC= 500000:1000(500:1)   => uniswap
 USDC:WMATIC = 50000:10000(5:1)   => uniswap
 real WMATIC: 0x5B67676a984807a212b1c59eBFc9B3568a474F0a(sushiswap)
+
+npx hardhat node
+npx hardhat size-contracts
+
+npx hardhat run .\scripts\add_liquidity.js --network mumbai

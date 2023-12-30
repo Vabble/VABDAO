@@ -1,21 +1,27 @@
 const { ethers } = require('hardhat');
 
 require('dotenv').config();
-const { CONFIG, getBigNumber, DISCOUNT } = require('../scripts/utils');
+const { CONFIG, getBigNumber, setupProvider } = require('../scripts/utils');
 const FERC20 = require('../data/FxERC20.json');
 const UNISWAP2ROUTER_ABI = require('../data/Uniswap2Router.json');
 
 async function addLiquidity() {
     try {
         // Connect to the existing contracts
-        const vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(FERC20), ethers.provider);
-        const uniswapRouter = new ethers.Contract(CONFIG.mumbai.uniswap.router, UNISWAP2ROUTER_ABI, ethers.provider);
+        const network = await ethers.provider.getNetwork();
+        const chainId = network.chainId;
+        console.log("chainId", chainId);
+        
+        const provider = await setupProvider();
+        const vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(FERC20), provider);
+        const uniswapRouter = new ethers.Contract(CONFIG.mumbai.uniswap.router, UNISWAP2ROUTER_ABI, provider);
 
         const signers = await ethers.getSigners();
         const deployer = signers[0];
 
         // Approve Uniswap on 
         const totalSupply = await vabToken.totalSupply();
+        console.log("totalSupply", totalSupply.toString());
 
         await vabToken.connect(deployer).approve(
             CONFIG.mumbai.uniswap.router,
@@ -30,6 +36,8 @@ async function addLiquidity() {
         );
 
         // USDC:VAB   = 10000:1000000(1:100) => uniswap
+        const deadline = Date.now() + 60 * 60 * 24 * 7;
+        console.log("deadline", deadline);
         const res = await uniswapRouter.connect(deployer).addLiquidity(
             CONFIG.mumbai.usdcAdress,
             CONFIG.mumbai.vabToken,
@@ -38,7 +46,7 @@ async function addLiquidity() {
             1,
             1, 
             deployer.address,
-            Date.now() + 60 * 60 * 24 * 7,             
+            deadline,             
             {from: deployer.address}            
         );
 

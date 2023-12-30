@@ -2,6 +2,7 @@
 const ethers = require('ethers');  
 const crypto = require('crypto');
 const { BigNumber } = ethers;
+require('dotenv').config();
 
 const ZERO_ADDRESS = ethers.constants.AddressZero;
 const TEST_CHAIN_IDS = [1337, 80001, 31337];
@@ -305,6 +306,27 @@ const isTest = (chainId) => {
   return TEST_CHAIN_IDS.includes(chainId);
 }
 
+async function setupProvider() {
+  const alchemy_key = process.env.ALCHEMY_KEY;
+
+  let RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`;
+  // if(NETWORK == 'mumbai') {
+  //   RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`    
+  // } else if(NETWORK == 'polygon') {
+  //   RPC_URL = `https://polygon-rpc.com`    
+  // }
+
+  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+
+  return provider;
+}
+
+async function getNetworkConfig() {
+  let network = process.env.NETWORK;
+  return CONFIG[network];
+}
+
+
 module.exports = {
   ZERO_ADDRESS,
   CONFIG,
@@ -325,5 +347,7 @@ module.exports = {
   createMintData,
   buildSignatureBytes,
   getConfig,
-  isTest
+  isTest,
+  setupProvider,
+  getNetworkConfig
 };
