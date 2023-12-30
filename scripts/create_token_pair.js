@@ -6,7 +6,7 @@ const FERC20 = require('../data/FxERC20.json');
 const UNISWAP2ROUTER_ABI = require('../data/Uniswap2Router.json');
 const UNISWAP2FACTORY_ABI = require('../data/Uniswap2Factory.json');
 
-async function addLiquidity() {
+async function createTokenPair() {
     try {
         // Connect to the existing contracts
         const network = await ethers.provider.getNetwork();
@@ -27,6 +27,7 @@ async function addLiquidity() {
 
         const provider = await setupProvider(chainId);
         const uniswapFactory = new ethers.Contract(uniswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
+        const uniswapRouter = new ethers.Contract(uniswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
         
         const signers = await ethers.getSigners();
         const deployer = signers[0];
@@ -69,15 +70,17 @@ async function addLiquidity() {
         }
 
         // Zero:VAB 
-        res = await uniswapFactory.getPair(CONFIG.addressZero, vabTokenAddress);   
-        console.log("Zero:VAB getPair", res); 
-        // if (res == CONFIG.addressZero) {            
-        //     res = await uniswapFactory.connect(deployer).createPair(
-        //         CONFIG.addressZero,
-        //         vabTokenAddress,
-        //         {from: deployer.address}
-        //     );
-        // }
+        const WETH1 = await uniswapRouter.WETH();        
+        res = await uniswapFactory.getPair(WETH1, vabTokenAddress);           
+        console.log("Zero:VAB getPair", res, WETH1); 
+        
+        if (res == CONFIG.addressZero) {            
+            res = await uniswapFactory.connect(deployer).createPair(
+                WETH1,
+                vabTokenAddress,
+                {from: deployer.address}
+            );
+        }
 
     } catch (error) {
         console.error('Error in addLiquidity:', error);
@@ -85,7 +88,7 @@ async function addLiquidity() {
 }
 
 if (require.main === module) {
-    addLiquidity()
+    createTokenPair()
         .then(() => {
             // process.exit(0)
         }
