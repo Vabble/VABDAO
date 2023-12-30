@@ -306,15 +306,15 @@ const isTest = (chainId) => {
   return TEST_CHAIN_IDS.includes(chainId);
 }
 
-async function setupProvider() {
+async function setupProvider(chainId) {
   const alchemy_key = process.env.ALCHEMY_KEY;
-
+  
   let RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`;
-  // if(NETWORK == 'mumbai') {
-  //   RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`    
-  // } else if(NETWORK == 'polygon') {
-  //   RPC_URL = `https://polygon-rpc.com`    
-  // }
+  if(chainId == 1337 || chainId == 80001) {
+    RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`    
+  } else if(chainId == 137) {
+    RPC_URL = `https://polygon-rpc.com`    
+  }
 
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 

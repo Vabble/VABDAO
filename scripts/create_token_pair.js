@@ -125,8 +125,8 @@ async function addLiquidity() {
         res = await uniswapRouter.connect(deployer).addLiquidity(
             exmAddress,
             vabTokenAddress,
-            getBigNumber(10000),
-            getBigNumber(10000),
+            getBigNumber(1000000),
+            getBigNumber(1000000),
             1,
             1, 
             deployer.address,
