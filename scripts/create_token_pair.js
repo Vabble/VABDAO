@@ -28,6 +28,7 @@ async function createTokenPair() {
         const provider = await setupProvider(chainId);
         const uniswapFactory = new ethers.Contract(uniswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
         const uniswapRouter = new ethers.Contract(uniswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
+        const sushiswapFactory = new ethers.Contract(sushiswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
         const sushiswapRouter = new ethers.Contract(sushiswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
         
         const signers = await ethers.getSigners();
@@ -71,17 +72,17 @@ async function createTokenPair() {
         }
 
         // Zero:VAB 
-        // const WETH2 = await sushiswapRouter.WETH();        
-        // res = await sushiswapRouter.getPair(vabTokenAddress, WETH2);           
-        // console.log("Zero:VAB getPair", res, WETH2); 
+        const WETH2 = await sushiswapRouter.WETH();        
+        res = await sushiswapFactory.getPair(WETH2, vabTokenAddress);
+        console.log("MATIC:VAB getPair", res, WETH2); 
         
-        // if (res == CONFIG.addressZero) {            
-        //     res = await uniswapFactory.connect(deployer).createPair(
-        //         vabTokenAddress,
-        //         WETH2,
-        //         {from: deployer.address}
-        //     );
-        // }
+        if (res == CONFIG.addressZero) {            
+            res = await sushiswapFactory.connect(deployer).createPair(
+                WETH2,
+                vabTokenAddress,
+                {from: deployer.address}
+            );
+        }
 
     } catch (error) {
         console.error('Error in addLiquidity:', error);
