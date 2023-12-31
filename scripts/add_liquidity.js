@@ -45,7 +45,7 @@ async function addLiquidity() {
         const targetSupply = getBigNumber(10000000);
         if (totalSupply < targetSupply) {
             await vabToken.connect(deployer).faucet(targetSupply.sub(totalSupply), {from: deployer.address});
-            console.log("Please run again after 1 mins");
+            console.log("Please run again after 1 min");
             return;
         }
         totalSupply = await vabToken.totalSupply();

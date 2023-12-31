@@ -21,6 +21,9 @@
     "mumbai:deploy": "hardhat --network mumbai deploy",
     "mumbai:verify": "hardhat --network mumbai etherscan-verify --solc-input",
     "mumbai:export": "hardhat --network mumbai export --export exports/mumbai.json",
+    "matic:deploy": "hardhat --network matic deploy",
+    "matic:verify": "hardhat --network matic etherscan-verify --solc-input",
+    "matic:export": "hardhat --network matic export --export exports/matic.json",
     "prettier": "prettier --write scripts/**/*.js && prettier --write test/**/*.js && prettier --write contracts/**/*.sol"
   },
   "keywords": [],
