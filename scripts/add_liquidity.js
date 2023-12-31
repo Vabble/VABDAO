@@ -42,7 +42,13 @@ async function addLiquidity() {
         let totalSupply;
         // Approve Uniswap on 
         totalSupply = await vabToken.totalSupply();
-        // totalSupply = getBigNumber(10000000);
+        const targetSupply = getBigNumber(10000000);
+        if (totalSupply < targetSupply) {
+            await vabToken.connect(deployer).faucet(targetSupply.sub(totalSupply), {from: deployer.address});
+            console.log("Please run again after 1 mins");
+            return;
+        }
+        totalSupply = await vabToken.totalSupply();
         console.log("VAB totalSupply", totalSupply.toString());
 
         await vabToken.connect(deployer).approve(

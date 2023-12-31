@@ -84,6 +84,17 @@ async function createTokenPair() {
             );
         }
 
+        res = await sushiswapFactory.getPair(vabTokenAddress, WETH2);
+        console.log("VAB:MATIC getPair", res, WETH2); 
+        
+        if (res == CONFIG.addressZero) {            
+            res = await sushiswapFactory.connect(deployer).createPair(
+                vabTokenAddress,
+                WETH2,
+                {from: deployer.address}
+            );
+        }
+
     } catch (error) {
         console.error('Error in addLiquidity:', error);
     }
