@@ -7,6 +7,8 @@
     "clean": "hardhat clean",
     "compile": "npx hardhat compile",
     "test": "hardhat test test/main.test.js --network hardhat",
+    "local:test": "hardhat test test/main.test.js --network localhost",
+    "local:deploy": "hardhat --network localhost deploy",
     "test:mumbai": "hardhat test test/main.test.js --network mumbai",
     "fork:rinkeby": "hardhat node --fork https://eth-rinkeby.alchemyapi.io/v2/khT7j5E7O7LBI-Vf53jsKg9epwhAk2uh",
     "mainnet:deploy": "hardhat --network mainnet deploy",
@@ -19,6 +21,9 @@
     "mumbai:deploy": "hardhat --network mumbai deploy",
     "mumbai:verify": "hardhat --network mumbai etherscan-verify --solc-input",
     "mumbai:export": "hardhat --network mumbai export --export exports/mumbai.json",
+    "matic:deploy": "hardhat --network matic deploy",
+    "matic:verify": "hardhat --network matic etherscan-verify --solc-input",
+    "matic:export": "hardhat --network matic export --export exports/matic.json",
     "prettier": "prettier --write scripts/**/*.js && prettier --write test/**/*.js && prettier --write contracts/**/*.sol"
   },
   "keywords": [],

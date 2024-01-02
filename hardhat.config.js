@@ -62,7 +62,7 @@ module.exports = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      chainId: chainIds.mumbai,
+      chainId: chainIds.ganache,
       saveDeployments: true,
       forking: {
         // url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,

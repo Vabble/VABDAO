@@ -2,15 +2,17 @@
 const ethers = require('ethers');  
 const crypto = require('crypto');
 const { BigNumber } = ethers;
+require('dotenv').config();
 
-const NETWORK = 'mumbai';
 const ZERO_ADDRESS = ethers.constants.AddressZero;
+const TEST_CHAIN_IDS = [1337, 80001, 31337];
 const CONFIG = {
   daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
   ethereum: {
     usdcAdress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",    
-    vabToken: "",
+    vabToken: "", 
+    walletAddress: "",
     uniswap: { //Mainnet, kovan, rinkeby ...
       factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
       router: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -19,11 +21,16 @@ const CONFIG = {
       factory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
       router: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
     },
+    sig: {
+      user1: '',
+      user2: ''
+    }
   },
   polygon: {
     usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     usdtAdress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
     vabToken: "",
+    walletAddress: "",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
@@ -41,9 +48,11 @@ const CONFIG = {
     usdcAdress: "0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c",
     usdtAdress: "0x47719C2b2A6853d04213efc85075674E93D02037",
     daiAddress: "0x001B3B4d0F3714Ca98ba10F6042DaEbF0B1B7b6F",
-    vabToken: "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32",
+    // vabToken: "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32", // Testcase VAB
+    vabToken: "0x61Ff1D74C20655ef4563b5838B78B551f80F0b32", // Child VAB
     exmAddress: "0x53BeF80E0EBE5A89dfb67782b12435aBeB943754",
     wmatic: "0x1fE108421Bc27B98aD52ae78dD8A3D7aB4199A00",
+    walletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
@@ -281,8 +290,44 @@ const buildSignatureBytes = (signatures) => {
   return signatureBytes + dynamicBytes;
 };
 
+const getConfig = (chainId) => {
+  if (chainId == 1337 || chainId == 80001) { // localhost or mumbai
+    return CONFIG.mumbai
+  } else if (chainId == 137) { // Polygon network
+    return CONFIG.polygon
+  } else if (chainId == 1) { // Ethereum mainnet
+    return CONFIG.ethereum;
+  }
+
+  return CONFIG.mumbai;
+}
+
+const isTest = (chainId) => {
+  return TEST_CHAIN_IDS.includes(chainId);
+}
+
+async function setupProvider(chainId) {
+  const alchemy_key = process.env.ALCHEMY_KEY;
+  
+  let RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`;
+  if(chainId == 1337 || chainId == 80001) {
+    RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`    
+  } else if(chainId == 137) {
+    RPC_URL = `https://polygon-rpc.com`    
+  }
+
+  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+
+  return provider;
+}
+
+async function getNetworkConfig() {
+  let network = process.env.NETWORK;
+  return CONFIG[network];
+}
+
+
 module.exports = {
-  NETWORK,
   ZERO_ADDRESS,
   CONFIG,
   TOKEN_TYPE,
@@ -300,5 +345,9 @@ module.exports = {
   NFTs,
   getUploadGateContent,
   createMintData,
-  buildSignatureBytes
+  buildSignatureBytes,
+  getConfig,
+  isTest,
+  setupProvider,
+  getNetworkConfig
 };

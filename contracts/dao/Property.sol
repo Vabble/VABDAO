@@ -124,15 +124,15 @@ contract Property is ReentrancyGuard {
         require(_staking != address(0), "stakingContract: Zero address");
         STAKING_POOL = _staking;       
 
-        filmVotePeriod = 10 minutes;     // 10 days;   
-        boardVotePeriod = 10 minutes;    // 14 days;
-        agentVotePeriod = 10 minutes;    // 10 days;
+        filmVotePeriod = 10 days;   
+        boardVotePeriod = 14 days;
+        agentVotePeriod = 10 days;
         disputeGracePeriod = 30 days;  
-        propertyVotePeriod = 10 minutes; // 10 days;
-        rewardVotePeriod = 10 minutes;   // 30 days;
-        lockPeriod = 10 minutes;         //30 days;
+        propertyVotePeriod = 10 days;
+        rewardVotePeriod = 30 days;
+        lockPeriod = 30 days;
         maxAllowPeriod = 90 days;        
-        filmRewardClaimPeriod = 10 minutes;
+        filmRewardClaimPeriod =30 days;
 
         boardVoteWeight = 30 * 1e8;      // 30% (1% = 1e8)
         rewardRate = 2500000; //40000;   // 0.0004% (1% = 1e8, 100%=1e10) // 2500000(0.025%)
@@ -149,6 +149,20 @@ contract Property is ReentrancyGuard {
         availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 75M        
         subscriptionAmount = 299 * (10**IERC20Metadata(usdcToken).decimals()) / 100;   // amount in cash(usd dollar - $2.99)
         minVoteCount = 1;//5;
+    }
+
+    function updateForTesting() external onlyDeployer {
+        filmVotePeriod = 10 minutes;     // 10 days;   
+        boardVotePeriod = 10 minutes;    // 14 days;
+        agentVotePeriod = 10 minutes;    // 10 days;      
+        disputeGracePeriod = 10 minutes;    // 30 days
+        propertyVotePeriod = 10 minutes; // 10 days;
+        rewardVotePeriod = 10 minutes;   // 30 days;
+        lockPeriod = 10 minutes;         //30 days;
+        filmRewardClaimPeriod = 10 minutes; // 30 days;
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        availableVABAmount = (10**IERC20Metadata(vabToken).decimals()); // 1        
     }
 
     /// =================== proposals for replacing auditor ==============

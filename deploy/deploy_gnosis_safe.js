@@ -1,7 +1,10 @@
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const { CONFIG, NETWORK } = require('../scripts/utils');
+
+  const network = await ethers.provider.getNetwork();
+  const chainId = network.chainId;
+	console.log("Chain ID: ", chainId);
   
   await deploy('GnosisSafeL2', {
     from: deployer,
