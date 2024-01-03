@@ -96,7 +96,7 @@ async function createTokenPair() {
         }
 
     } catch (error) {
-        console.error('Error in addLiquidity:', error);
+        console.error('Error in createTokenPair:', error);
     }
 }
 
