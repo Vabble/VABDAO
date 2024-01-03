@@ -23,18 +23,16 @@ async function addVABToEdgePool() {
         const deployer = signers[0];
 
         const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(ERC20), provider);       
-        
-        // const GnosisSafe = new ethers.Contract(networkConfig.GnosisSafeL2, GNOSIS_ABI, provider);
-        const Ownablee = new ethers.Contract(OwnableeAddress, OWNABLEE_ABI, provider);
 
+        console.log("getBigNumber", getBigNumber(1, 24).toString());
+        
         let vab_balance_of_Ownablee = await vabToken.balanceOf(OwnableeAddress);        
         console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
 
-        let targetAmount = getBigNumber(10, 24);
+        let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
         console.log("targetAmount", targetAmount.toString());
         let diff = targetAmount.sub(vab_balance_of_Ownablee);
-        console.log("diff", diff.toString());
-
+        
         await vabToken.connect(deployer).transfer(
             OwnableeAddress, diff, {from: deployer.address}
         );
