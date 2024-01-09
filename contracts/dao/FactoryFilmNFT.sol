@@ -8,9 +8,10 @@ import "../libraries/Helper.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVabbleFund.sol";
+import "../interfaces/IFactoryFilmNFT.sol";
 import "./VabbleNFT.sol";
 
-contract FactoryFilmNFT is ReentrancyGuard {
+contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
 
     event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId, uint deployTime);
     event FilmERC721Minted(address nftContract, uint256 indexed filmId, uint256 indexed tokenId, address receiver, uint mintTime);
@@ -167,7 +168,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         return filmNFTContract[_filmId].ownerOf(_tokenId);
     }
 
-    function getTotalSupply(uint256 _filmId) public view returns (uint256) {
+    function getTotalSupply(uint256 _filmId) public view override returns (uint256) {
         return filmNFTContract[_filmId].totalSupply();
     }
 
@@ -180,7 +181,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
     }
     
     /// @notice Get mint information per filmId
-    function getMintInfo(uint256 _filmId) external view 
+    function getMintInfo(uint256 _filmId) external view override
     returns (
         uint256 tier_,
         uint256 maxMintAmount_,
