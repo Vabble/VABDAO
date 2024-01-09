@@ -78,7 +78,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256 _filmId,
         uint256[] calldata _minAmounts,
         uint256[] calldata _maxAmounts
-    ) external {                    
+    ) external nonReentrant {                    
         require(_minAmounts.length > 0, "setTier: bad minAmount length");        
         require(_minAmounts.length == _maxAmounts.length, "setTier: bad maxAmount length");        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "setTier: not film owner");
@@ -129,7 +129,7 @@ contract FactoryTierNFT is ReentrancyGuard {
     }  
 
     /// @notice Should be called //before fundProcess() of VabbleDAO contract
-    function mintTierNft(uint256 _filmId) external {        
+    function mintTierNft(uint256 _filmId) external nonReentrant  {        
         require(tierCount[_filmId] > 0, "mintTier: not set tier");
         require(IVabbleDAO(VABBLE_DAO).isEnabledClaimer(_filmId), "deployTier: not allow to mint tierNft");
 

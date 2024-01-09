@@ -141,7 +141,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _fundPeriod,
         uint256 _rewardPercent,
         uint256 _enableClaimer
-    ) public {                
+    ) public nonReentrant {                
         require(_studioPayees.length > 0, 'proposalUpdate: empty payees');
         require(_studioPayees.length == _sharePercents.length, 'proposalUpdate: invalid share percent');
         
@@ -317,7 +317,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// @notice Withdraw VAB token from StudioPool(VabbleDAO) to V2 by StakingPool contract
-    function withdrawVABFromStudioPool(address _to) external onlyStakingPool returns (uint256) {
+    function withdrawVABFromStudioPool(address _to) external onlyStakingPool nonReentrant returns (uint256) {
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();    
         uint256 poolBalance = IERC20(vabToken).balanceOf(address(this));    
         if(poolBalance > 0) {

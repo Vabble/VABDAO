@@ -80,7 +80,7 @@ contract VabbleFund is ReentrancyGuard {
         uint256 _amount, // flag=1 => token amount, flag=2 => nft count
         uint256 _flag,   // flag=1 => token, flag=2 => nft
         address _token
-    ) external payable {
+    ) external payable nonReentrant {
         if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
         }

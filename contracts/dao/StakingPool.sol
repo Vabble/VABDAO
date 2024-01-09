@@ -101,7 +101,7 @@ contract StakingPool is ReentrancyGuard {
     }    
 
     /// @notice Add reward token(VAB)
-    function addRewardToPool(uint256 _amount) external {
+    function addRewardToPool(uint256 _amount) external nonReentrant {
         require(_amount > 0, 'addRewardToPool: Zero amount');
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
@@ -290,7 +290,7 @@ contract StakingPool is ReentrancyGuard {
     
     // =================== Customer deposit/withdraw VAB START =================    
     /// @notice Deposit VAB token from customer for renting the films
-    function depositVAB(uint256 _amount) external {
+    function depositVAB(uint256 _amount) external nonReentrant {
         require(msg.sender != address(0), "depositVAB: Zero address");
         require(_amount > 0, "depositVAB: Zero amount");
 

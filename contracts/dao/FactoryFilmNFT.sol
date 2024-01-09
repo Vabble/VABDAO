@@ -91,7 +91,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         uint256 _tier,
         uint256 _amount, 
         uint256 _price 
-    ) external {            
+    ) external nonReentrant {            
         require(_amount > 0 && _price > 0 && _tier > 0, "setMint: Zero value");     
 
         address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);

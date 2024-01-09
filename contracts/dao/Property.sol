@@ -171,7 +171,7 @@ contract Property is ReentrancyGuard {
         address _agent,
         string memory _title,
         string memory _description
-    ) external onlyStaker {
+    ) external onlyStaker nonReentrant {
         require(
             _agent != address(0) && IOwnablee(OWNABLE).auditor() != _agent && isGovWhitelist[1][_agent] == 0, 
             "proposalAuditor: Already auditor or candidate or zero"
@@ -220,7 +220,7 @@ contract Property is ReentrancyGuard {
         address _rewardAddress,
         string memory _title,
         string memory _description
-    ) external onlyStaker {
+    ) external onlyStaker nonReentrant {
         require(
             _rewardAddress != address(0) && isGovWhitelist[3][_rewardAddress] == 0, 
             "proposalRewardFund: Already candidate or zero"
@@ -262,7 +262,7 @@ contract Property is ReentrancyGuard {
         address _member, 
         string memory _title,
         string memory _description
-    ) external onlyStaker {
+    ) external onlyStaker nonReentrant {
         require(
             _member != address(0) && isGovWhitelist[2][_member] == 0, 
             "proposalFilmBoard: Already candidate or zero"
@@ -317,7 +317,7 @@ contract Property is ReentrancyGuard {
         uint256 _flag,
         string memory _title,
         string memory _description
-    ) public onlyStaker {
+    ) public onlyStaker nonReentrant {
         require(
             _property > 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0, 
             "proposalProperty: Already candidate or zero value"
