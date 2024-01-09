@@ -348,7 +348,7 @@ contract VabbleDAO is ReentrancyGuard {
         
         for(uint256 i = 0; i < _filmIds.length; i++) {     
             if(_filmIds[i] == 0 || _payouts[i] == 0) continue;
-            if (_valids[i] == false) continue;
+            if (!_valids[i]) continue;
 
             __setFinalFilm(_filmIds[i], _payouts[i]);
             finalFilmCalledTime[_filmIds[i]] = block.timestamp;

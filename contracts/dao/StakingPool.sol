@@ -358,7 +358,7 @@ contract StakingPool is ReentrancyGuard {
             if (payAmount > userRentInfo[_to].vabAmount) 
                 return false;
 
-            if (userRentInfo[_to].pending == false) 
+            if (!userRentInfo[_to].pending) 
                 return false;
 
             sum += payAmount;
@@ -393,7 +393,7 @@ contract StakingPool is ReentrancyGuard {
             if (userRentInfo[_customers[i]].withdrawAmount == 0)
                 return false;
 
-            if (userRentInfo[_customers[i]].pending == false)
+            if (!userRentInfo[_customers[i]].pending)
                 return false;
         }
         return true;
