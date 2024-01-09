@@ -151,7 +151,7 @@ contract Property is ReentrancyGuard {
         minVoteCount = 1;//5;
     }
 
-    function updateForTesting() external onlyDeployer {
+    function updateForTesting() external onlyDeployer nonReentrant {
         filmVotePeriod = 10 minutes;     // 10 days;   
         boardVotePeriod = 10 minutes;    // 14 days;
         agentVotePeriod = 10 minutes;    // 10 days;      
