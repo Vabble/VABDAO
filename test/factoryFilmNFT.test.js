@@ -3,21 +3,27 @@ const { ethers } = require('hardhat');
 const { CONFIG, getBigNumber, DISCOUNT, getProposalFilm } = require('../scripts/utils');
 const ERC20 = require('../data/ERC20.json');
 const { BigNumber } = require('ethers');
+const GNOSIS_FLAG = false;
 
 describe('FactoryFilmNFT', function () {
   before(async function () {        
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
+    this.VabbleFundFactory = await ethers.getContractFactory('VabbleFund');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
     this.VoteFactory = await ethers.getContractFactory('Vote');
     this.PropertyFactory = await ethers.getContractFactory('Property');
     this.FactoryFilmNFTFactory = await ethers.getContractFactory('FactoryFilmNFT');
     this.FactoryTierNFTFactory = await ethers.getContractFactory('FactoryTierNFT');
+    this.FactorySubNFTFactory = await ethers.getContractFactory('FactorySubNFT');
     this.OwnableFactory = await ethers.getContractFactory('Ownablee');
     this.SubscriptionFactory = await ethers.getContractFactory('Subscription');
+    this.GnosisSafeFactory = await ethers.getContractFactory('GnosisSafeL2');
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
+    this.deployer = this.signers[0];
+
     this.newAuditor = this.signers[1];    
     this.studio1 = this.signers[2];    
     this.studio2 = this.signers[3];       
@@ -25,6 +31,9 @@ describe('FactoryFilmNFT', function () {
     this.customer1 = this.signers[5];
     this.customer2 = this.signers[6];
     this.customer3 = this.signers[7];
+
+    this.signer1 = new ethers.Wallet(process.env.PK1, ethers.provider);
+    this.signer2 = new ethers.Wallet(process.env.PK2, ethers.provider);        
   });
 
   beforeEach(async function () {
@@ -32,12 +41,16 @@ describe('FactoryFilmNFT', function () {
     this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
+    this.GnosisSafe = await (await this.GnosisSafeFactory.deploy()).deployed();
+    this.auditor = GNOSIS_FLAG ? this.GnosisSafe : this.deployer;
+
     this.Ownablee = await (await this.OwnableFactory.deploy(
-      CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address
+      CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address, this.auditor.address
     )).deployed(); 
 
     this.UniHelper = await (await this.UniHelperFactory.deploy(
-      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
+      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router,
+      this.Ownablee.address
     )).deployed();
 
     this.StakingPool = await (await this.StakingPoolFactory.deploy(this.Ownablee.address)).deployed(); 
@@ -54,7 +67,21 @@ describe('FactoryFilmNFT', function () {
     ).deployed();
     
     this.FilmNFT = await (
-      await this.FactoryFilmNFTFactory.deploy(this.Ownablee.address, this.UniHelper.address)
+      await this.FactoryFilmNFTFactory.deploy(this.Ownablee.address)
+    ).deployed();   
+
+    this.SubNFT = await (
+      await this.FactorySubNFTFactory.deploy(this.Ownablee.address, this.UniHelper.address)
+  ).deployed();   
+
+    this.VabbleFund = await (
+      await this.VabbleFundFactory.deploy(
+        this.Ownablee.address,
+        this.UniHelper.address,
+        this.StakingPool.address,
+        this.Property.address,
+        this.FilmNFT.address
+      )
     ).deployed();   
 
     this.VabbleDAO = await (
@@ -71,7 +98,8 @@ describe('FactoryFilmNFT', function () {
     this.TierNFT = await (
       await this.FactoryTierNFTFactory.deploy(
         this.Ownablee.address,      // Ownablee contract
-        this.VabbleDAO.address
+        this.VabbleDAO.address,
+        this.FilmNFT.address
       )
     ).deployed(); 
 
@@ -82,29 +110,59 @@ describe('FactoryFilmNFT', function () {
         this.Property.address,
         [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
       )
-    ).deployed();    
+    ).deployed();  
     
-    await this.FilmNFT.connect(this.auditor).initializeFactory(
-      this.VabbleDAO.address, 
-      this.StakingPool.address,
-      this.Property.address,
-      {from: this.auditor.address}
-    );    
+    // ---------------- Setup/Initialize the contracts with the deployer ----------------------------------
+    await this.GnosisSafe.connect(this.deployer).setup(
+      [this.signer1.address, this.signer2.address], 
+      2, 
+      CONFIG.addressZero, 
+      "0x", 
+      CONFIG.addressZero, 
+      CONFIG.addressZero, 
+      0, 
+      CONFIG.addressZero, 
+      {from: this.deployer.address}
+  );
+    
+    await this.FilmNFT.connect(this.deployer).initialize(
+        this.VabbleDAO.address, 
+        this.VabbleFund.address,
+        {from: this.deployer.address}
+    ); 
     
     // Initialize Vote contract
-    await this.Vote.connect(this.auditor).initializeVote(
-      this.VabbleDAO.address,
-      this.StakingPool.address,
-      this.Property.address,
+    await this.Vote.connect(this.deployer).initialize(
+        this.VabbleDAO.address,
+        this.StakingPool.address,
+        this.Property.address,
+        {from: this.deployer.address}
     )
+
     
     // Initialize StakingPool
-    await this.StakingPool.connect(this.auditor).initializePool(
+    await this.StakingPool.connect(this.deployer).initialize(
       this.VabbleDAO.address,
       this.Property.address,
       this.Vote.address,
-      {from: this.auditor.address}
+      {from: this.deployer.address}
+    )  
+
+    await this.VabbleFund.connect(this.deployer).initialize(
+      this.VabbleDAO.address,
+      {from: this.deployer.address}
     )
+
+    await this.UniHelper.connect(this.deployer).setWhiteList(
+      this.VabbleDAO.address,
+      this.VabbleFund.address,
+      this.Subscription.address,
+      this.FilmNFT.address,
+      this.SubNFT.address,
+      {from: this.deployer.address}
+  )
+
+
     
 
     // ====== VAB
@@ -194,17 +252,6 @@ describe('FactoryFilmNFT', function () {
     await this.USDC.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
     await this.USDC.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
 
-    await this.Ownablee.connect(this.auditor).addDepositAsset(
-      [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
-    )
-
-    // Initialize StakingPool
-    await this.StakingPool.connect(this.auditor).initializePool(
-      this.VabbleDAO.address,
-      this.Property.address,
-      this.Vote.address,
-      {from: this.auditor.address}
-    )  
     // Staking VAB token
     await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(40000000), {from: this.customer1.address})
     await this.StakingPool.connect(this.customer2).stakeVAB(getBigNumber(40000000), {from: this.customer2.address})
