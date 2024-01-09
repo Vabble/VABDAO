@@ -8,8 +8,9 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
+import "../interfaces/IVote.sol";
 
-contract Vote is ReentrancyGuard {
+contract Vote is IVote, ReentrancyGuard {
 
     event VotedToFilm(address indexed voter, uint256 indexed filmId, uint256 voteInfo, uint256 voteTime);
     event VotedToAgent(address indexed voter, address indexed agent, uint256 voteInfo, uint256 voteTime);
@@ -528,7 +529,7 @@ contract Vote is ReentrancyGuard {
     }
 
     /// @notice Update last vote time for removing filmboard member
-    function getLastVoteTime(address _member) external view returns (uint256 time_) {
+    function getLastVoteTime(address _member) external view override returns (uint256 time_) {
         time_ = lastVoteTime[_member];
     }
 }
