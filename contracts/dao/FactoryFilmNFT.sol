@@ -38,7 +38,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
     mapping(address => address[]) public studioNFTAddressList;     
     mapping(uint256 => VabbleNFT) public filmNFTContract;      // (filmId => nft contract)     
     
-    address private OWNABLE;         // Ownablee contract address
+    address private immutable OWNABLE;         // Ownablee contract address
     address private VABBLE_DAO;      // VabbleDAO contract address
     address private VABBLE_FUND;     // VabbleFund contract address
 

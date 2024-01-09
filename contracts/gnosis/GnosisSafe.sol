@@ -57,7 +57,7 @@ contract GnosisSafe is
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
-    address private deployer;
+    address private immutable deployer;
     
     modifier onlySigner() {
         require(isOwner(msg.sender), "not signer");

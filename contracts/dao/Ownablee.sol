@@ -11,10 +11,10 @@ contract Ownablee {
     event VABWalletChanged(address indexed wallet);
 
     address public auditor;
-    address public deployer;
+    address public immutable deployer;
     address public VAB_WALLET;           // Vabble wallet
-    address public PAYOUT_TOKEN;         // VAB token       
-    address public USDC_TOKEN;           // USDC token 
+    address public immutable PAYOUT_TOKEN;         // VAB token       
+    address public immutable USDC_TOKEN;           // USDC token 
     address private VOTE;                // Vote contract address
     address private VABBLE_DAO;          // VabbleDAO contract address
     address private STAKING_POOL;        // StakingPool contract address

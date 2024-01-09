@@ -14,7 +14,7 @@ contract UniHelper {
     address private immutable UNISWAP2_FACTORY;    
     address private immutable SUSHI_FACTORY;
     address private immutable SUSHI_ROUTER;
-    address private OWNABLE;
+    address private immutable OWNABLE;
 
     mapping(address => bool) public isVabbleContract;
     bool public isInitialized;         // check if contract initialized or not
