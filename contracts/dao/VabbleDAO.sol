@@ -276,7 +276,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256[] calldata _amounts,
         uint256 _which
     ) external onlyAuditor nonReentrant {
-        require(_users.length == _amounts.length, "allocate: bad array");
+        require(_users.length == _amounts.length && _users.length < 1000, "allocate: bad array");
         require(_which == 1 || _which == 2, "allocate: bad from value");
 
         if(_which == 1) {            
@@ -428,7 +428,7 @@ contract VabbleDAO is ReentrancyGuard {
 
     // Claim reward for multi-filmIds till current from when auditor call setFinalFilms()
     function claimReward(uint256[] memory _filmIds) public nonReentrant {             
-        require(_filmIds.length > 0, "claimReward: zero film ids");
+        require(_filmIds.length > 0 && _filmIds.length < 1000, "claimReward: zero film ids");
          
         __claimAllReward(_filmIds);        
     }
