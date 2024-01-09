@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MockERC20 is Ownable, ERC20 {
-    uint256 SUPPLY = 1456250000 * 10**18;
+    uint256 private SUPPLY = 1456250000 * 10**18;
 
     uint256 public constant faucetLimit = 5e7 * 10**18;
 
