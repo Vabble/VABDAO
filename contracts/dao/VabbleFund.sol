@@ -11,8 +11,9 @@ import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IFactoryFilmNFT.sol";
 import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IVabbleFund.sol";
 
-contract VabbleFund is ReentrancyGuard {
+contract VabbleFund is IVabbleFund, ReentrancyGuard {
     
     event DepositedToFilm(address indexed customer, uint256 indexed filmId, address token, uint256 amount, uint256 flag, uint256 depositTime);
     event FundFilmProcessed(uint256 indexed filmId, address indexed studio, uint256 processTime);
@@ -286,7 +287,7 @@ contract VabbleFund is ReentrancyGuard {
     }
     
     /// @notice Check if fund meet raise amount
-    function isRaisedFullAmount(uint256 _filmId) public view returns (bool) {
+    function isRaisedFullAmount(uint256 _filmId) public view override returns (bool) {
         uint256 raisedAmount = getTotalFundAmountPerFilm(_filmId);
 
         (uint256 raiseAmount, , , ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);    
@@ -301,7 +302,7 @@ contract VabbleFund is ReentrancyGuard {
     function getUserFundAmountPerFilm(
         address _customer, 
         uint256 _filmId
-    ) public view returns (uint256 amount_) {
+    ) public view override returns (uint256 amount_) {
         Asset[] memory assetArr = assetInfo[_filmId][_customer];
         for(uint256 i = 0; i < assetArr.length; i++) {
             if(assetArr[i].amount == 0) continue;
@@ -310,7 +311,7 @@ contract VabbleFund is ReentrancyGuard {
     }
 
     /// @notice Get fund amount in cash(usdc) per film
-    function getTotalFundAmountPerFilm(uint256 _filmId) public view returns (uint256 amount_) {
+    function getTotalFundAmountPerFilm(uint256 _filmId) public view override returns (uint256 amount_) {
         Asset[] memory assetArr = assetPerFilm[_filmId];
         for(uint256 i = 0; i < assetArr.length; i++) {
             if(assetArr[i].amount == 0) continue;
@@ -346,12 +347,12 @@ contract VabbleFund is ReentrancyGuard {
     }
     
     /// @notice Get investor list per film Id
-    function getFilmInvestorList(uint256 _filmId) public view returns (address[] memory) {
+    function getFilmInvestorList(uint256 _filmId) external view override returns (address[] memory) {
         return filmInvestorList[_filmId];
     }
 
     /// @notice Get investor list per film Id
-    function getAllowUserNftCount(uint256 _filmId, address _user) external view returns (uint256) {
+    function getAllowUserNftCount(uint256 _filmId, address _user) external view override returns (uint256) {
         return allowUserNftCount[_filmId][_user];
     }    
 }
