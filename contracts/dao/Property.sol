@@ -135,7 +135,7 @@ contract Property is ReentrancyGuard {
         filmRewardClaimPeriod =30 days;
 
         boardVoteWeight = 30 * 1e8;      // 30% (1% = 1e8)
-        rewardRate = 2500000; //40000;   // 0.0004% (1% = 1e8, 100%=1e10) // 2500000(0.025%)
+        rewardRate = 25 * 1e5; //40000;   // 0.0004% (1% = 1e8, 100%=1e10) // 2500000(0.025%)
         boardRewardRate = 25 * 1e8;      // 25%
         fundFeePercent = 2 * 1e8;        // percent(2%) 
         maxMintFeePercent = 10 * 1e8;    // 10%
