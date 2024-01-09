@@ -175,8 +175,8 @@ contract Property is ReentrancyGuard {
         require(
             _agent != address(0) && IOwnablee(OWNABLE).auditor() != _agent && isGovWhitelist[1][_agent] == 0, 
             "proposalAuditor: Already auditor or candidate or zero"
-        );                          
-        require(__isPaidFee(proposalFeeAmount), 'proposalAuditor: Not paid fee');
+        );                       
+        __paidFee(proposalFeeAmount);
 
         agentList.push(_agent);
         governanceProposalCount += 1;
@@ -199,20 +199,18 @@ contract Property is ReentrancyGuard {
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
-    function __isPaidFee(uint256 _payAmount) private returns(bool) {         
+    function __paidFee(uint256 _payAmount) private {    
         address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();   
         uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(_payAmount, usdcToken, vabToken);
-        if(expectVABAmount > 0) {
-            Helper.safeTransferFrom(vabToken, msg.sender, address(this), expectVABAmount);
-            if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
-                Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
-            }  
-            IStakingPool(STAKING_POOL).addRewardToPool(expectVABAmount);
-            return true;
-        } else {
-            return false;
-        }
+
+        require(expectVABAmount > 0, '__paidFee: Not paid fee');        
+    
+        Helper.safeTransferFrom(vabToken, msg.sender, address(this), expectVABAmount);
+        if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
+            Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
+        }  
+        IStakingPool(STAKING_POOL).addRewardToPool(expectVABAmount);
     } 
 
     // =================== DAO fund rewards proposal ====================
@@ -225,7 +223,7 @@ contract Property is ReentrancyGuard {
             _rewardAddress != address(0) && isGovWhitelist[3][_rewardAddress] == 0, 
             "proposalRewardFund: Already candidate or zero"
         );
-        require(__isPaidFee(10 * proposalFeeAmount), 'proposalRewardFund: Not paid fee');
+        __paidFee(10 * proposalFeeAmount);
 
         rewardAddressList.push(_rewardAddress);
         isGovWhitelist[3][_rewardAddress] = 1;        
@@ -267,7 +265,7 @@ contract Property is ReentrancyGuard {
             _member != address(0) && isGovWhitelist[2][_member] == 0, 
             "proposalFilmBoard: Already candidate or zero"
         );     
-        require(__isPaidFee(proposalFeeAmount), 'proposalFilmBoard: Not paid fee');     
+        __paidFee(proposalFeeAmount);
 
         filmBoardCandidates.push(_member);
         isGovWhitelist[2][_member] = 1;
@@ -322,7 +320,8 @@ contract Property is ReentrancyGuard {
             _property > 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0, 
             "proposalProperty: Already candidate or zero value"
         );          
-        require(__isPaidFee(proposalFeeAmount), 'proposalProperty: Not paid fee');
+        
+        __paidFee(proposalFeeAmount);
 
         if(_flag == 0) {
             require(filmVotePeriod != _property, "proposalProperty: Already filmVotePeriod");
