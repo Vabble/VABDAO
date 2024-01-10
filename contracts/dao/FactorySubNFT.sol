@@ -155,7 +155,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
         __handleMintPay(_token, _periodList, _categoryList);     
 
-        for(uint256 i = 0; i < _toList.length; ++i) {
+        uint256 len = _toList.length;
+        for(uint256 i = 0; i < len; ++i) {
             __mint(_token, _toList[i], _periodList[i], _categoryList[i]);
         }
     }
@@ -166,7 +167,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256[] calldata _categoryList
     ) private {
         uint256 expectAmount;        
-        for(uint256 i = 0; i < _periodList.length; ++i) {
+        uint256 len = _periodList.length;
+        for(uint256 i = 0; i < len; ++i) {
             uint256 price = mintInfo[_categoryList[i]].mintPrice;
             expectAmount += getExpectedTokenAmount(_payToken, _periodList[i] * price);
         }
