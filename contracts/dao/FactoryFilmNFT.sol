@@ -12,9 +12,9 @@ import "./VabbleNFT.sol";
 
 contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
 
-    event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId, uint deployTime);
-    event FilmERC721Minted(address nftContract, uint256 indexed filmId, uint256 indexed tokenId, address receiver, uint mintTime);
-    event MintInfoSetted(address filmOwner, uint indexed filmId, uint tier, uint mintAmount, uint mintPrice, uint setTime);
+    event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId);
+    event FilmERC721Minted(address nftContract, uint256 indexed filmId, uint256 indexed tokenId, address receiver);
+    event MintInfoSetted(address filmOwner, uint indexed filmId, uint tier, uint mintAmount, uint mintPrice);
 
     struct Mint {
         uint256 tier;             // Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
@@ -106,7 +106,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         mInfo.price = _price;                   // 5 usdc = 5 * 1e6
         mInfo.studio = msg.sender;
 
-        emit MintInfoSetted(msg.sender, _filmId, _tier, _amount, _price, block.timestamp);
+        emit MintInfoSetted(msg.sender, _filmId, _tier, _amount, _price);
     }    
 
     /// @notice Studio deploy a nft contract per filmId
@@ -139,7 +139,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         nInfo.name = _name;
         nInfo.symbol = _symbol;
         
-        emit FilmERC721Created(msg.sender, address(t), _filmId, block.timestamp);
+        emit FilmERC721Created(msg.sender, address(t), _filmId);
     }  
         
     function claimNft(uint256 _filmId) external nonReentrant {
@@ -160,7 +160,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
 
         filmNFTTokenList[_filmId].push(tokenId);
 
-        emit FilmERC721Minted(address(t), _filmId, tokenId, msg.sender, block.timestamp);
+        emit FilmERC721Minted(address(t), _filmId, tokenId, msg.sender);
     }       
 
     function getNFTOwner(uint256 _filmId, uint256 _tokenId) external view returns (address) {

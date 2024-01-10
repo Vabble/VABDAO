@@ -15,9 +15,9 @@ import "../interfaces/IVabbleFund.sol";
 
 contract VabbleFund is IVabbleFund, ReentrancyGuard {
     
-    event DepositedToFilm(address indexed customer, uint256 indexed filmId, address token, uint256 amount, uint256 flag, uint256 depositTime);
-    event FundFilmProcessed(uint256 indexed filmId, address indexed studio, uint256 processTime);
-    event FundWithdrawed(uint256 indexed filmId, address indexed customer, uint256 withdrawTime);   
+    event DepositedToFilm(address indexed customer, uint256 indexed filmId, address token, uint256 amount, uint256 flag);
+    event FundFilmProcessed(uint256 indexed filmId, address indexed studio);
+    event FundWithdrawed(uint256 indexed filmId, address indexed customer);   
 
     struct Asset {
         address token;   // token address
@@ -112,7 +112,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
 
         __assignToken(_filmId, _token, tokenAmount);
 
-        emit DepositedToFilm(msg.sender, _filmId, _token, tokenAmount, _flag, block.timestamp);
+        emit DepositedToFilm(msg.sender, _filmId, _token, tokenAmount, _flag);
     }    
 
     /// @dev Avoid deep error
@@ -230,7 +230,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
         fundProcessedFilmIds.push(_filmId);
         isFundProcessed[_filmId] = true;
 
-        emit FundFilmProcessed(_filmId, msg.sender, block.timestamp);
+        emit FundFilmProcessed(_filmId, msg.sender);
     }
     
     /// @notice Investor can withdraw fund after fund period if funding fails to meet the raise amount
@@ -265,7 +265,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
             __removeFilmInvestorList(_filmId, msg.sender);
         }
 
-        emit FundWithdrawed(_filmId, msg.sender, block.timestamp);
+        emit FundWithdrawed(_filmId, msg.sender);
     }
 
     /// @dev Remove user from investor list

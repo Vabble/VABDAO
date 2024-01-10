@@ -10,9 +10,9 @@ import "./VabbleNFT.sol";
 
 contract FactoryTierNFT is ReentrancyGuard {
 
-    event TierERC721Created(address nftCreator, address nftContract, uint indexed tier, uint256 deployTime);// if tier != 0 then tierNFTContract
-    event TierERC721Minted(address nftContract, uint256 indexed tokenId, address receiver, uint256 mintTime);
-    event TierInfoSetted(address filmOwner, uint256 indexed filmId, uint256 tierCount, uint256 setTime);
+    event TierERC721Created(address nftCreator, address nftContract, uint indexed tier);// if tier != 0 then tierNFTContract
+    event TierERC721Minted(address nftContract, uint256 indexed tokenId, address receiver);
+    event TierInfoSetted(address filmOwner, uint256 indexed filmId, uint256 tierCount);
 
     struct TierNFT {
         string name;
@@ -103,7 +103,7 @@ contract FactoryTierNFT is ReentrancyGuard {
 
         tierCount[_filmId] = amountsLength;
 
-        emit TierInfoSetted(msg.sender, _filmId, tierCount[_filmId], block.timestamp);
+        emit TierInfoSetted(msg.sender, _filmId, tierCount[_filmId]);
     }
 
     /// @notice Studio deploy a nft contract per filmId
@@ -126,7 +126,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         nInfo.name = _name;
         nInfo.symbol = _symbol;
         
-        emit TierERC721Created(msg.sender, address(t), _tier, block.timestamp);
+        emit TierERC721Created(msg.sender, address(t), _tier);
     }  
 
     /// @notice Should be called //before fundProcess() of VabbleDAO contract
@@ -158,7 +158,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256 tokenId = t.mintTo(msg.sender);
         tierNFTTokenList[_filmId][tier].push(tokenId);
 
-        emit TierERC721Minted(address(t), tokenId, msg.sender, block.timestamp);
+        emit TierERC721Minted(address(t), tokenId, msg.sender);
     }
 
     /// @notice userTierNFTs

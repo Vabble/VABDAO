@@ -12,10 +12,10 @@ import "./VabbleNFT.sol";
 
 contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
-    event SubscriptionERC721Created(address nftCreator, address nftContract, uint256 deployTime);
-    event SubscriptionERC721Minted(address receiver, uint256 subscriptionPeriod, uint256 indexed tokenId, uint256 mintTime);   
-    event SubscriptionNFTLocked(uint256 indexed tokenId, uint256 lockPeriod, address owner, uint256 lockTime);    
-    event SubscriptionNFTUnLocked(uint256 indexed tokenId, address owner, uint256 unlockTime);
+    event SubscriptionERC721Created(address nftCreator, address nftContract);
+    event SubscriptionERC721Minted(address receiver, uint256 subscriptionPeriod, uint256 indexed tokenId);   
+    event SubscriptionNFTLocked(uint256 indexed tokenId, uint256 lockPeriod, address owner);    
+    event SubscriptionNFTUnLocked(uint256 indexed tokenId, address owner);
 
     struct Mint {
         uint256 maxMintAmount;    // mint amount(ex: 10000 nft)
@@ -107,7 +107,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
         subNFTAddress = address(subNFTContract);
 
-        emit SubscriptionERC721Created(msg.sender, subNFTAddress, block.timestamp);
+        emit SubscriptionERC721Created(msg.sender, subNFTAddress);
     }
 
     // TODO - PVE001 updated(private)
@@ -140,7 +140,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
         subNFTTokenList[receiver].push(tokenId);
         
-        emit SubscriptionERC721Minted(receiver, _subPeriod, tokenId, block.timestamp);    
+        emit SubscriptionERC721Minted(receiver, _subPeriod, tokenId);    
     }
     // TODO - PVE003 updated(payable)
     function mintToBatch(
@@ -213,7 +213,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         lockInfo[_tokenId].lockPeriod = nftLockPeriod;
         lockInfo[_tokenId].lockTime = block.timestamp;
 
-        emit SubscriptionNFTLocked(_tokenId, nftLockPeriod, msg.sender, block.timestamp);
+        emit SubscriptionNFTLocked(_tokenId, nftLockPeriod, msg.sender);
     }
 
     /// @notice unlock subscription NFT (transfer nft from this contract to owner wallet)
@@ -229,7 +229,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         lockInfo[_tokenId].lockPeriod = 0;
         lockInfo[_tokenId].lockTime = 0;
 
-        emit SubscriptionNFTUnLocked(_tokenId, msg.sender, block.timestamp);
+        emit SubscriptionNFTUnLocked(_tokenId, msg.sender);
     }
     
     function getExpectedTokenAmount(
