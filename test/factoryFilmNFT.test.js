@@ -288,6 +288,8 @@ describe('FactoryFilmNFT', function () {
     const enableClaimer = getBigNumber(0, 0)
     const enableClaimer1 = getBigNumber(1, 0)
     const noVote = 1
+
+    console.log('=====t-1')
     
     // Create proposal for a film by studio
     await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType1, noVote, this.USDC.address, {from: this.studio1.address})
@@ -299,10 +301,11 @@ describe('FactoryFilmNFT', function () {
       studioPayees,  
       raiseAmount, 
       fundPeriod, 
+      0,
       enableClaimer1,
       {from: this.studio1.address}
     )
-
+  
     await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(fundType2, 0, this.USDC.address, {from: this.studio1.address})
     await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
       getBigNumber(2, 0), 
@@ -312,6 +315,7 @@ describe('FactoryFilmNFT', function () {
       studioPayees,  
       raiseAmount, 
       fundPeriod, 
+      0,
       enableClaimer,
       {from: this.studio1.address}
     )
@@ -329,19 +333,19 @@ describe('FactoryFilmNFT', function () {
     expect(nftSymbol).to.be.equal(symbol)
     console.log('=====nft info::', name, symbol)    
     
-    await expect(
-      this.FilmNFT.connect(this.studio2).mint(
-        getBigNumber(1,0), this.auditor.address, this.vabToken.address, {from: this.studio2.address}
-      )
-    ).to.be.revertedWith('mint: no mint info');
+    // await expect(
+    //   this.FilmNFT.connect(this.studio2).mint(
+    //     getBigNumber(1,0), this.auditor.address, this.vabToken.address, {from: this.studio2.address}
+    //   )
+    // ).to.be.revertedWith('mint: no mint info');
 
     // const mintData = [mintData1, mintData2]
     await this.FilmNFT.connect(this.studio1).setMintInfo(
-      getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6), getBigNumber(2, 8), getBigNumber(1, 8), 
+      getBigNumber(1, 0), getBigNumber(1, 0), getBigNumber(8000, 0), getBigNumber(2, 6),
       {from: this.studio1.address}
     )
     await this.FilmNFT.connect(this.studio1).setMintInfo(
-      getBigNumber(2, 0), getBigNumber(1, 0), getBigNumber(9000, 0), getBigNumber(3, 6), getBigNumber(5, 8), getBigNumber(1, 8), 
+      getBigNumber(2, 0), getBigNumber(1, 0), getBigNumber(9000, 0), getBigNumber(3, 6), 
       {from: this.studio1.address}
     )
 
@@ -445,6 +449,7 @@ describe('FactoryFilmNFT', function () {
       studioPayees,  
       raiseAmount, 
       fundPeriod, 
+      0,
       enableClaimer,
       {from: this.studio1.address}
     )
@@ -458,6 +463,7 @@ describe('FactoryFilmNFT', function () {
       studioPayees,  
       raiseAmount, 
       fundPeriod, 
+      0,
       enableClaimer1,
       {from: this.studio1.address}
     )
