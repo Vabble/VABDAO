@@ -38,25 +38,25 @@ library VabbleDAOUtils {
         reward_ = rewardSum;
     }
 
-    function getUserFilmListForMigrate(
-        address _user,
-        mapping(address => uint256[]) storage userApprovedFilmIds,
-        mapping(uint256 => IVabbleDAO.Film) storage filmInfo
-    ) internal view returns (IVabbleDAO.Film[] memory filmList_) {   
-        IVabbleDAO.Film memory fInfo;
-        uint256[] memory ids = userApprovedFilmIds[_user];
-        require(ids.length > 0, "migrate: no film");
+    // function getUserFilmListForMigrate(
+    //     address _user,
+    //     mapping(address => uint256[]) storage userApprovedFilmIds,
+    //     mapping(uint256 => IVabbleDAO.Film) storage filmInfo
+    // ) internal view returns (IVabbleDAO.Film[] memory filmList_) {   
+    //     IVabbleDAO.Film memory fInfo;
+    //     uint256[] memory ids = userApprovedFilmIds[_user];
+    //     require(ids.length > 0, "migrate: no film");
 
-        filmList_ = new IVabbleDAO.Film[](ids.length);
-        for(uint256 i = 0; i < ids.length; i++) {             
-            fInfo = filmInfo[ids[i]];
-            require(fInfo.studio == _user, "migrate: not film owner");
+    //     filmList_ = new IVabbleDAO.Film[](ids.length);
+    //     for(uint256 i = 0; i < ids.length; i++) {             
+    //         fInfo = filmInfo[ids[i]];
+    //         require(fInfo.studio == _user, "migrate: not film owner");
 
-            if(fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
-                filmList_[i] = fInfo;
-            }
-        }
-    } 
+    //         if(fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
+    //             filmList_[i] = fInfo;
+    //         }
+    //     }
+    // } 
 
     function checkSetFinalFilms(
         uint256[] calldata _filmIds,
