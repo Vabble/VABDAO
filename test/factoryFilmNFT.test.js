@@ -524,11 +524,6 @@ describe('FactoryFilmNFT', function () {
     expect(film2_status).to.be.equal(getBigNumber(3,0)) // APPROVED_FUNDING
     //================= vote end =========
 
-    // => Increase next block timestamp for only testing
-    const period1 = 10 * 24 * 3600; // filmVotePeriod = 40 days
-    network.provider.send('evm_increaseTime', [period1]);
-    await network.provider.send('evm_mine');
-
     console.log("=====t-7");
 
     // uint256 _filmId,
@@ -542,6 +537,9 @@ describe('FactoryFilmNFT', function () {
     await this.VabbleFund.connect(this.customer4).depositToFilm(proposalId2, dAmount, flag1, this.USDC.address, {from: this.customer4.address})
     await this.VabbleFund.connect(this.customer5).depositToFilm(proposalId2, dAmount, flag1, this.USDC.address, {from: this.customer5.address})
     await this.VabbleFund.connect(this.customer6).depositToFilm(proposalId2, dAmount, flag1, this.USDC.address, {from: this.customer6.address})
+
+    network.provider.send('evm_increaseTime', [period]);
+    await network.provider.send('evm_mine');
 
     const minAmounts = [getBigNumber(100, 6), getBigNumber(1000, 6), getBigNumber(5000, 6)]
     const maxAmounts = [getBigNumber(1000, 6), getBigNumber(5000, 6), getBigNumber(0, 6)]
@@ -590,7 +588,7 @@ describe('FactoryFilmNFT', function () {
     console.log('=====tier2NFTTokenList::', tier2NFTTokenList)
     const tier3NFTTokenList = await this.TierNFT.getTierTokenIdList(proposalId2, 3)
     console.log('=====tier3NFTTokenList::', tier3NFTTokenList)
-    const nftOwner = await this.TierNFT.getNFTOwner(proposalId2, tier1NFTTokenList[0], 1)
+    const nftOwner = await this.TierNFT.getNFTOwner(proposalId2, tier3NFTTokenList[0], 1)
     console.log('=====nftOwner::', nftOwner, this.customer1.address, this.customer2.address, this.customer3.address)
     // await expect(
     //   this.TierNFT.connect(this.customer1).mintTierNft(proposalIds[0], {from: this.customer1.address})
