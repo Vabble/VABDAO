@@ -588,7 +588,7 @@ describe('FactoryFilmNFT', function () {
     console.log('=====tier2NFTTokenList::', tier2NFTTokenList)
     const tier3NFTTokenList = await this.TierNFT.getTierTokenIdList(proposalId2, 3)
     console.log('=====tier3NFTTokenList::', tier3NFTTokenList)
-    const nftOwner = await this.TierNFT.getNFTOwner(proposalId2, tier3NFTTokenList[0], 1)
+    const nftOwner = await this.TierNFT.getNFTOwner(proposalId2, tier3NFTTokenList[0], 3)
     console.log('=====nftOwner::', nftOwner, this.customer1.address, this.customer2.address, this.customer3.address)
     // await expect(
     //   this.TierNFT.connect(this.customer1).mintTierNft(proposalIds[0], {from: this.customer1.address})
