@@ -13,11 +13,11 @@ import "../interfaces/IOwnablee.sol";
 
 contract Property is ReentrancyGuard {
 
-    event AuditorProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
-    event RewardFundProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
-    event FilmBoardProposalCreated(address indexed creator, address member, string title, string description, uint256 createTime);
-    event FilmBoardMemberRemoved(address indexed caller, address member, uint256 removeTime);
-    event PropertyProposalCreated(address indexed creator, uint256 property, uint256 flag, string title, string description, uint256 createTime);
+    event AuditorProposalCreated(address indexed creator, address member, string title, string description);
+    event RewardFundProposalCreated(address indexed creator, address member, string title, string description);
+    event FilmBoardProposalCreated(address indexed creator, address member, string title, string description);
+    event FilmBoardMemberRemoved(address indexed caller, address member);
+    event PropertyProposalCreated(address indexed creator, uint256 property, uint256 flag, string title, string description);
     
     struct Proposal {
         string title;          // proposal title
@@ -194,7 +194,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit AuditorProposalCreated(msg.sender, _agent, _title, _description, block.timestamp);
+        emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
@@ -241,7 +241,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description, block.timestamp);
+        emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
     }
 
     /// @notice Get reward fund proposal title and description
@@ -283,7 +283,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit FilmBoardProposalCreated(msg.sender, _member, _title, _description, block.timestamp);
+        emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
     }
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
@@ -295,7 +295,7 @@ contract Property is ReentrancyGuard {
         __removeCandidate(_member, 4);
         isGovWhitelist[2][_member] = 0;
 
-        emit FilmBoardMemberRemoved(msg.sender, _member, block.timestamp);
+        emit FilmBoardMemberRemoved(msg.sender, _member);
     }
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
@@ -403,7 +403,7 @@ contract Property is ReentrancyGuard {
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-        emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description, block.timestamp);
+        emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
     }
 
     function getProperty(

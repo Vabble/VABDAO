@@ -29,14 +29,14 @@ import "../libraries/VabbleDAOUtils.sol";
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 
-    event FilmProposalCreated(uint256 indexed filmId, uint256 noVote, uint256 fundType, address studio, uint256 createTime);
-    event FilmProposalUpdated(uint256 indexed filmId, uint256 fundType, address studio, uint256 updateTime);  
+    event FilmProposalCreated(uint256 indexed filmId, uint256 noVote, uint256 fundType, address studio);
+    event FilmProposalUpdated(uint256 indexed filmId, uint256 fundType, address studio);  
     event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime);
-    event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod, uint256 updateTime);
+    event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod);
     event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
     // event RewardClaimed(address user, uint256 monthId, uint256 filmId, uint256 claimAmount, uint256 claimTime);  
-    event RewardAllClaimed(address user, uint256 monthId, uint256[] filmIds, uint256 claimAmount, uint256 claimTime);  
-    event SetFinalFilms(address user, uint256[] filmIds, uint256[] payouts, uint256 updateTime);  
+    event RewardAllClaimed(address user, uint256 monthId, uint256[] filmIds, uint256 claimAmount);  
+    event SetFinalFilms(address user, uint256[] filmIds, uint256[] payouts);  
 
     address public immutable OWNABLE;         // Ownablee contract address
     address public immutable VOTE;            // Vote contract address
@@ -128,7 +128,7 @@ contract VabbleDAO is ReentrancyGuard {
         proposalFilmIds.push(filmId);
         userFilmProposalIds[msg.sender].push(filmId);
 
-        emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender, block.timestamp);
+        emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender);
     }
     function proposalFilmUpdate(
         uint256 _filmId, 
@@ -198,7 +198,7 @@ contract VabbleDAO is ReentrancyGuard {
             } 
         }       
 
-        emit FilmProposalUpdated(_filmId, fInfo.fundType, msg.sender, block.timestamp);     
+        emit FilmProposalUpdated(_filmId, fInfo.fundType, msg.sender);     
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
@@ -265,7 +265,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         filmInfo[_filmId].fundPeriod = _fundPeriod;
         
-        emit FilmFundPeriodUpdated(_filmId, msg.sender, _fundPeriod, block.timestamp);
+        emit FilmFundPeriodUpdated(_filmId, msg.sender, _fundPeriod);
     }   
 
     /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO) by Auditor
@@ -356,7 +356,7 @@ contract VabbleDAO is ReentrancyGuard {
             finalFilmCalledTime[_filmIds[i]] = block.timestamp;
         }
 
-        emit SetFinalFilms(msg.sender, _filmIds, _payouts, block.timestamp);
+        emit SetFinalFilms(msg.sender, _filmIds, _payouts);
     }
 
     function startNewMonth() external onlyAuditor nonReentrant {
@@ -456,7 +456,7 @@ contract VabbleDAO is ReentrancyGuard {
         Helper.safeTransfer(vabToken, msg.sender, rewardSum);
         StudioPool -= rewardSum; 
 
-        emit RewardAllClaimed(msg.sender, curMonth, _filmIds, rewardSum, block.timestamp);
+        emit RewardAllClaimed(msg.sender, curMonth, _filmIds, rewardSum);
     }
 
     // Claim reward of all filmIds for each user

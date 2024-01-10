@@ -15,16 +15,16 @@ contract StakingPool is ReentrancyGuard {
     
     using Counters for Counters.Counter;
 
-    event TokenStaked(address indexed staker, uint256 stakeAmount, uint256 stakeTime, uint256 withdrawableTime);
-    event TokenUnstaked(address indexed unstaker, uint256 unStakeAmount, uint256 unstakeTime);
-    event RewardWithdraw(address indexed staker, uint256 rewardAmount, uint256 withdrawTime);
-    event RewardContinued(address indexed staker, uint256 isCompound, uint256 conTime);
+    event TokenStaked(address indexed staker, uint256 stakeAmount, uint256 stakeTime);
+    event TokenUnstaked(address indexed unstaker, uint256 unStakeAmount);
+    event RewardWithdraw(address indexed staker, uint256 rewardAmount);
+    event RewardContinued(address indexed staker, uint256 isCompound);
     event AllFundWithdraw(address to, uint256 amount);
-    event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount, address contributor, uint256 addTime);
-    event VABDeposited(address indexed customer, uint256 amount, uint256 depositTime);
-    event WithdrawPending(address indexed customer, uint256 amount, uint256 pendingTime);  
-    event PendingWithdrawApproved(address[] customers, uint256[] withdrawAmounts, uint256 approvedTime);
-    event PendingWithdrawDenied(address[] customers, uint256 deniedTime);
+    event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount, address contributor);
+    event VABDeposited(address indexed customer, uint256 amount);
+    event WithdrawPending(address indexed customer, uint256 amount);  
+    event PendingWithdrawApproved(address[] customers, uint256[] withdrawAmounts);
+    event PendingWithdrawDenied(address[] customers);
 
     struct Stake {
         uint256 stakeAmount;     // staking amount per staker
@@ -106,7 +106,7 @@ contract StakingPool is ReentrancyGuard {
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
         totalRewardAmount = totalRewardAmount + _amount;
 
-        emit RewardAdded(totalRewardAmount, _amount, msg.sender, block.timestamp);
+        emit RewardAdded(totalRewardAmount, _amount, msg.sender);
     }    
     
     /// @notice Staking VAB token by staker
@@ -130,7 +130,7 @@ contract StakingPool is ReentrancyGuard {
 
         totalStakingAmount += _amount;
 
-        emit TokenStaked(msg.sender, _amount, block.timestamp, block.timestamp + IProperty(DAO_PROPERTY).lockPeriod());
+        emit TokenStaked(msg.sender, _amount, block.timestamp);
     }
 
     /// @dev Allows user to unstake tokens after the correct time period has elapsed
@@ -161,7 +161,7 @@ contract StakingPool is ReentrancyGuard {
             delete stakeInfo[msg.sender];
         } 
 
-        emit TokenUnstaked(msg.sender, _amount, block.timestamp);
+        emit TokenUnstaked(msg.sender, _amount);
     }
 
     /// @notice Withdraw reward.  isCompound=1 => compound reward, isCompound=0 => withdraw
@@ -176,7 +176,7 @@ contract StakingPool is ReentrancyGuard {
             si.stakeTime = block.timestamp;
             si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
 
-            emit RewardContinued(msg.sender, _isCompound, block.timestamp);
+            emit RewardContinued(msg.sender, _isCompound);
         } else {
             require(rewardAmount != 0, "withdrawReward: zero reward amount");
             require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
@@ -195,7 +195,7 @@ contract StakingPool is ReentrancyGuard {
         stakeInfo[msg.sender].stakeTime = block.timestamp;
         stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
         
-        emit RewardWithdraw(msg.sender, _amount, block.timestamp);
+        emit RewardWithdraw(msg.sender, _amount);
     }
     // TODO - PVE008 updated(calculate voteCount again)
     /// @notice Calculate reward amount without extra reward amount for listing film vote
@@ -298,7 +298,7 @@ contract StakingPool is ReentrancyGuard {
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
         userRentInfo[msg.sender].vabAmount += _amount;
 
-        emit VABDeposited(msg.sender, _amount, block.timestamp);
+        emit VABDeposited(msg.sender, _amount);
     }
 
     /// @notice Pending Withdraw VAB token by customer
@@ -314,7 +314,7 @@ contract StakingPool is ReentrancyGuard {
         userRentInfo[msg.sender].withdrawAmount += _amount;
         userRentInfo[msg.sender].pending = true;
 
-        emit WithdrawPending(msg.sender, _amount, block.timestamp);
+        emit WithdrawPending(msg.sender, _amount);
     }
 
     /// @notice Approve pending-withdraw of given customers by Auditor
@@ -328,7 +328,7 @@ contract StakingPool is ReentrancyGuard {
             withdrawAmounts[i] = __transferVABWithdraw(_customers[i]);
         }
         
-        emit PendingWithdrawApproved(_customers, withdrawAmounts, block.timestamp);
+        emit PendingWithdrawApproved(_customers, withdrawAmounts);
     }
 
     /// @dev Transfer VAB token to user's withdraw request
@@ -389,7 +389,7 @@ contract StakingPool is ReentrancyGuard {
             userRentInfo[_customers[i]].pending = false;
         }
 
-        emit PendingWithdrawDenied(_customers, block.timestamp);
+        emit PendingWithdrawDenied(_customers);
     } 
 
     function checkDenyPendingWithDraw(address[] calldata _customers) external view returns (bool) {
