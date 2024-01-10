@@ -46,7 +46,7 @@ library VabbleDAOUtils {
     // ) internal view returns (IVabbleDAO.Film[] memory filmList_) {   
     //     IVabbleDAO.Film memory fInfo;
     //     uint256[] memory ids = userApprovedFilmIds[_user];
-    //     require(ids.length > 0, "migrate: no film");
+    //     require(ids.length != 0, "migrate: no film");
 
     //     filmList_ = new IVabbleDAO.Film[](ids.length);
     //     for(uint256 i = 0; i < ids.length; ++i) {             
@@ -68,7 +68,7 @@ library VabbleDAOUtils {
 
         uint256 filmLength = _filmIds.length;
         for (uint256 i = 0; i < filmLength; ++i) {
-            if (finalFilmCalledTime[_filmIds[i]] > 0) {
+            if (finalFilmCalledTime[_filmIds[i]] != 0) {
                 _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] >= fPeriod;                
             } else {
                 _valids[i] = true;

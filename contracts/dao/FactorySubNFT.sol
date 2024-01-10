@@ -67,10 +67,10 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         string memory _collectionUri
     ) external onlyAuditor {
         bytes memory baseUriByte = bytes(_baseUri);
-        require(baseUriByte.length > 0, "empty baseUri");
+        require(baseUriByte.length != 0, "empty baseUri");
 
         bytes memory collectionUriByte = bytes(_collectionUri);
-        require(collectionUriByte.length > 0, "empty collectionUri");
+        require(collectionUriByte.length != 0, "empty collectionUri");
 
         baseUri = _baseUri;
         collectionUri = _collectionUri;
@@ -83,8 +83,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256 _lockPeriod, 
         uint256 _category
     ) external onlyAuditor {
-        require(_mintAmount > 0, "setAdminMint: zero mint amount");
-        require(_category > 0, "setAdminMint: zero category");
+        require(_mintAmount != 0, "setAdminMint: zero mint amount");
+        require(_category != 0, "setAdminMint: zero category");
         
         Mint storage amInfo = mintInfo[_category];
         // TODO - N3 updated(add condition)
@@ -122,12 +122,12 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "mint: not allowed asset"); 
         }
         require(subNFTAddress != address(0), "mint: not deploy yet");        
-        require(mintInfo[_category].maxMintAmount > 0, "mint: no admin mint info");
+        require(mintInfo[_category].maxMintAmount != 0, "mint: no admin mint info");
         require(mintInfo[_category].maxMintAmount > getTotalSupply(), "mint: exceed max mint amount");   
 
         uint256 nftLockPeriod = mintInfo[_category].lockPeriod;
         address receiver = _to;
-        if(nftLockPeriod > 0) receiver = address(this);
+        if(nftLockPeriod != 0) receiver = address(this);
 
         uint256 tokenId = subNFTContract.mintTo(receiver);
 
@@ -136,7 +136,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         sInfo.lockPeriod = nftLockPeriod;
         sInfo.minter = msg.sender;
         sInfo.category = _category;
-        if(nftLockPeriod > 0) sInfo.lockTime = block.timestamp;
+        if(nftLockPeriod != 0) sInfo.lockTime = block.timestamp;
 
         subNFTTokenList[receiver].push(tokenId);
         
@@ -149,7 +149,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256[] calldata _periodList, 
         uint256[] calldata _categoryList
     ) external payable nonReentrant {
-        require(_toList.length > 0, "batchMint: zero item length");
+        require(_toList.length != 0, "batchMint: zero item length");
         require(_toList.length == _periodList.length, "batchMint: bad item-1 length");
         require(_toList.length == _categoryList.length, "batchMint: bad item-2 length");
 
@@ -198,7 +198,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         }
         
         // Transfer USDC to wallet
-        if(usdcAmount > 0) Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
+        if(usdcAmount != 0) Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
     }
 
     /// @notice Lock subscription NFT for some period (transfer nft from owner wallet to this contract)
@@ -243,7 +243,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     function getNFTOwner(uint256 _tokenId) external view returns (address owner_) {
-        require(_tokenId > 0, "get: zero token id"); 
+        require(_tokenId != 0, "get: zero token id"); 
         owner_ = subNFTContract.ownerOf(_tokenId);
     }
     
@@ -257,7 +257,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     function getTokenUri(uint256 _tokenId) external view returns (string memory tokeUri_) {
-        require(_tokenId > 0, "get: zero token id"); 
+        require(_tokenId != 0, "get: zero token id"); 
         tokeUri_ = subNFTContract.tokenURI(_tokenId);
     }
     
@@ -268,7 +268,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256 mintPrice_, 
         uint256 lockPeriod_
     ) {
-        require(_category > 0, "get: zero category"); 
+        require(_category != 0, "get: zero category"); 
         Mint memory info = mintInfo[_category];
         mintAmount_ = info.maxMintAmount;
         mintPrice_ = info.mintPrice;
@@ -284,7 +284,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256 category_,
         address minter_
     ) {
-        require(_tokenId > 0, "get: zero tokenId"); 
+        require(_tokenId != 0, "get: zero tokenId"); 
 
         Lock memory sInfo = lockInfo[_tokenId];
         subPeriod_ = sInfo.subscriptionPeriod;

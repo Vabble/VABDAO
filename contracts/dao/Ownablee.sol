@@ -97,7 +97,7 @@ contract Ownablee is IOwnablee {
     }
 
     function addDepositAsset(address[] calldata _assetList) external onlyAuditor {
-        require(_assetList.length > 0, "addDepositAsset: zero list");
+        require(_assetList.length != 0, "addDepositAsset: zero list");
 
         for(uint256 i = 0; i < _assetList.length; ++i) { 
             if(allowAssetToDeposit[_assetList[i]]) continue;
@@ -108,7 +108,7 @@ contract Ownablee is IOwnablee {
     }
     
     function removeDepositAsset(address[] calldata _assetList) external onlyAuditor {
-        require(_assetList.length > 0, "removeDepositAsset: zero list");
+        require(_assetList.length != 0, "removeDepositAsset: zero list");
         
         for(uint256 i = 0; i < _assetList.length; ++i) {
             if(!allowAssetToDeposit[_assetList[i]]) continue;
@@ -151,7 +151,7 @@ contract Ownablee is IOwnablee {
 
     /// @notice Deposit VAB token from Auditor to EdgePool
     function depositVABToEdgePool(uint256 _amount) external onlyAuditor {
-        require(_amount > 0, "depositVABToEdgePool: Zero amount");
+        require(_amount != 0, "depositVABToEdgePool: Zero amount");
 
         Helper.safeTransferFrom(PAYOUT_TOKEN, msg.sender, address(this), _amount);
     }
@@ -159,7 +159,7 @@ contract Ownablee is IOwnablee {
     /// @notice Withdraw VAB token from EdgePool to V2
     function withdrawVABFromEdgePool(address _to) external override onlyStakingPool returns (uint256) {
         uint256 poolBalance = IERC20(PAYOUT_TOKEN).balanceOf(address(this));
-        if(poolBalance > 0) {
+        if(poolBalance != 0) {
             Helper.safeTransfer(PAYOUT_TOKEN, _to, poolBalance);
         }
         return poolBalance;

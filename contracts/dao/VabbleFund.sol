@@ -85,7 +85,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
         }
         require(_flag == 1 || _flag == 2, "depositToFilm: invalid flag");
-        require(_amount > 0, "depositToFilm: zero value");
+        require(_amount != 0, "depositToFilm: zero value");
 
         (, uint256 fundPeriod, uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);    
         (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
@@ -138,7 +138,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
             uint256 filmNftTotalSupply = IFactoryFilmNFT(FILM_NFT).getTotalSupply(_filmId);
 
             require(nft != address(0), "depositToFilm: not deployed for film");
-            require(maxMintAmount > 0, "depositToFilm: no mint info");     
+            require(maxMintAmount != 0, "depositToFilm: no mint info");     
             require(maxMintAmount >= filmNftTotalSupply + _amount, "depositToFilm: exceed mint amount");   
             
             uint256 usdcAmount = _amount * mintPrice; // USDC
@@ -219,7 +219,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
             Helper.safeTransferAsset(assetArr[i].token, msg.sender, (assetArr[i].amount - rewardAmount));
         }
 
-        if(rewardSumAmount > 0) {
+        if(rewardSumAmount != 0) {
             if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
                 Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
             }        
@@ -295,7 +295,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
         uint256 raisedAmount = getTotalFundAmountPerFilm(_filmId);
 
         (uint256 raiseAmount, , , ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);    
-        if(raisedAmount > 0 && raisedAmount >= raiseAmount) {
+        if(raisedAmount != 0 && raisedAmount >= raiseAmount) {
             return true;
         } else {
             return false;

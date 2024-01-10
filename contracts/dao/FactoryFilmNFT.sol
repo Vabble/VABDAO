@@ -77,10 +77,10 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         string memory _collectionUri
     ) external onlyAuditor {
         bytes memory baseUriByte = bytes(_baseUri);
-        require(baseUriByte.length > 0, "empty baseUri");
+        require(baseUriByte.length != 0, "empty baseUri");
 
         bytes memory collectionUriByte = bytes(_collectionUri);
-        require(collectionUriByte.length > 0, "empty collectionUri");
+        require(collectionUriByte.length != 0, "empty collectionUri");
 
         baseUri = _baseUri;
         collectionUri = _collectionUri;
@@ -93,7 +93,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         uint256 _amount, 
         uint256 _price 
     ) external nonReentrant {            
-        require(_amount > 0 && _price > 0 && _tier > 0, "setMint: Zero value");     
+        require(_amount != 0 && _price != 0 && _tier != 0, "setMint: Zero value");     
 
         address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);
         require(owner == msg.sender, "setMint: not film owner");
@@ -147,7 +147,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         require(mintInfo[_filmId].nft != address(0), "claimNft: not deployed for film");
 
         uint256 count = IVabbleFund(VABBLE_FUND).getAllowUserNftCount(_filmId, msg.sender);
-        require(count > 0, "claimNft: zero count");
+        require(count != 0, "claimNft: zero count");
         require(IVabbleFund(VABBLE_FUND).isRaisedFullAmount(_filmId), "claimNft: not full raised");
 
         for(uint256 i = 0; i < count; ++i) {

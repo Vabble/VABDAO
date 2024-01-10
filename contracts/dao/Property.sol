@@ -105,7 +105,7 @@ contract Property is ReentrancyGuard {
         _;
     }
     modifier onlyStaker() {
-        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) > 0, "Not staker");
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) != 0, "Not staker");
         _;
     }
 
@@ -204,7 +204,7 @@ contract Property is ReentrancyGuard {
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();   
         uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(_payAmount, usdcToken, vabToken);
 
-        require(expectVABAmount > 0, '__paidFee: Not paid fee');        
+        require(expectVABAmount != 0, '__paidFee: Not paid fee');        
     
         Helper.safeTransferFrom(vabToken, msg.sender, address(this), expectVABAmount);
         if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
@@ -300,7 +300,7 @@ contract Property is ReentrancyGuard {
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
     function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
-        require(_flag > 0 && _flag < 5, "bad flag");
+        require(_flag != 0 && _flag < 5, "bad flag");
 
         if(_flag == 1) return agentList;
         else if(_flag == 2) return filmBoardCandidates;
@@ -317,7 +317,7 @@ contract Property is ReentrancyGuard {
         string memory _description
     ) external onlyStaker nonReentrant {
         require(
-            _property > 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0, 
+            _property != 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0, 
             "proposalProperty: Already candidate or zero value"
         );          
         
@@ -412,47 +412,47 @@ contract Property is ReentrancyGuard {
     ) external view returns (uint256 property_) { 
         require(_flag >= 0 && _index >= 0, "getProperty: Invalid flag");   
         
-        if(_flag == 0 && filmVotePeriodList.length > 0 && filmVotePeriodList.length > _index) {
+        if(_flag == 0 && filmVotePeriodList.length != 0 && filmVotePeriodList.length > _index) {
             property_ = filmVotePeriodList[_index];
-        } else if(_flag == 1 && agentVotePeriodList.length > 0 && agentVotePeriodList.length > _index) {
+        } else if(_flag == 1 && agentVotePeriodList.length != 0 && agentVotePeriodList.length > _index) {
             property_ = agentVotePeriodList[_index];
-        } else if(_flag == 2 && disputeGracePeriodList.length > 0 && disputeGracePeriodList.length > _index) {
+        } else if(_flag == 2 && disputeGracePeriodList.length != 0 && disputeGracePeriodList.length > _index) {
             property_ = disputeGracePeriodList[_index];
-        } else if(_flag == 3 && propertyVotePeriodList.length > 0 && propertyVotePeriodList.length > _index) {
+        } else if(_flag == 3 && propertyVotePeriodList.length != 0 && propertyVotePeriodList.length > _index) {
             property_ = propertyVotePeriodList[_index];
-        } else if(_flag == 4 && lockPeriodList.length > 0 && lockPeriodList.length > _index) {
+        } else if(_flag == 4 && lockPeriodList.length != 0 && lockPeriodList.length > _index) {
             property_ = lockPeriodList[_index];
-        } else if(_flag == 5 && rewardRateList.length > 0 && rewardRateList.length > _index) {
+        } else if(_flag == 5 && rewardRateList.length != 0 && rewardRateList.length > _index) {
             property_ = rewardRateList[_index];
-        } else if(_flag == 6 && filmRewardClaimPeriodList.length > 0 && filmRewardClaimPeriodList.length > _index) {
+        } else if(_flag == 6 && filmRewardClaimPeriodList.length != 0 && filmRewardClaimPeriodList.length > _index) {
             property_ = filmRewardClaimPeriodList[_index];
-        } else if(_flag == 7 && maxAllowPeriodList.length > 0 && maxAllowPeriodList.length > _index) {
+        } else if(_flag == 7 && maxAllowPeriodList.length != 0 && maxAllowPeriodList.length > _index) {
             property_ = maxAllowPeriodList[_index];
-        } else if(_flag == 8 && proposalFeeAmountList.length > 0 && proposalFeeAmountList.length > _index) {
+        } else if(_flag == 8 && proposalFeeAmountList.length != 0 && proposalFeeAmountList.length > _index) {
             property_ = proposalFeeAmountList[_index];
-        } else if(_flag == 9 && fundFeePercentList.length > 0 && fundFeePercentList.length > _index) {
+        } else if(_flag == 9 && fundFeePercentList.length != 0 && fundFeePercentList.length > _index) {
             property_ = fundFeePercentList[_index];
-        } else if(_flag == 10 && minDepositAmountList.length > 0 && minDepositAmountList.length > _index) {
+        } else if(_flag == 10 && minDepositAmountList.length != 0 && minDepositAmountList.length > _index) {
             property_ = minDepositAmountList[_index];
-        } else if(_flag == 11 && maxDepositAmountList.length > 0 && maxDepositAmountList.length > _index) {
+        } else if(_flag == 11 && maxDepositAmountList.length != 0 && maxDepositAmountList.length > _index) {
             property_ = maxDepositAmountList[_index];
-        } else if(_flag == 12 && maxMintFeePercentList.length > 0 && maxMintFeePercentList.length > _index) {
+        } else if(_flag == 12 && maxMintFeePercentList.length != 0 && maxMintFeePercentList.length > _index) {
             property_ = maxMintFeePercentList[_index];
-        } else if(_flag == 13 && minVoteCountList.length > 0 && minVoteCountList.length > _index) {
+        } else if(_flag == 13 && minVoteCountList.length != 0 && minVoteCountList.length > _index) {
             property_ = minVoteCountList[_index];
-        } else if(_flag == 14 && minStakerCountPercentList.length > 0 && minStakerCountPercentList.length > _index) {
+        } else if(_flag == 14 && minStakerCountPercentList.length != 0 && minStakerCountPercentList.length > _index) {
             property_ = minStakerCountPercentList[_index];
-        } else if(_flag == 15 && availableVABAmountList.length > 0 && availableVABAmountList.length > _index) {
+        } else if(_flag == 15 && availableVABAmountList.length != 0 && availableVABAmountList.length > _index) {
             property_ = availableVABAmountList[_index];
-        } else if(_flag == 16 && boardVotePeriodList.length > 0 && boardVotePeriodList.length > _index) {
+        } else if(_flag == 16 && boardVotePeriodList.length != 0 && boardVotePeriodList.length > _index) {
             property_ = boardVotePeriodList[_index];
-        } else if(_flag == 17 && boardVoteWeightList.length > 0 && boardVoteWeightList.length > _index) {
+        } else if(_flag == 17 && boardVoteWeightList.length != 0 && boardVoteWeightList.length > _index) {
             property_ = boardVoteWeightList[_index];
-        } else if(_flag == 18 && rewardVotePeriodList.length > 0 && rewardVotePeriodList.length > _index) {
+        } else if(_flag == 18 && rewardVotePeriodList.length != 0 && rewardVotePeriodList.length > _index) {
             property_ = rewardVotePeriodList[_index];
-        } else if(_flag == 19 && subscriptionAmountList.length > 0 && subscriptionAmountList.length > _index) {
+        } else if(_flag == 19 && subscriptionAmountList.length != 0 && subscriptionAmountList.length > _index) {
             property_ = subscriptionAmountList[_index];
-        } else if(_flag == 20 && boardRewardRateList.length > 0 && boardRewardRateList.length > _index) {
+        } else if(_flag == 20 && boardRewardRateList.length != 0 && boardRewardRateList.length > _index) {
             property_ = boardRewardRateList[_index];
         } else {
             property_ = 0;
@@ -652,7 +652,7 @@ contract Property is ReentrancyGuard {
         uint256 _value, 
         uint256 _flag
     ) external onlyDeployer {
-        require(_value > 0, "test: Zero value");
+        require(_value != 0, "test: Zero value");
 
         if(_flag == 0) filmVotePeriod = _value;
         else if(_flag == 1) agentVotePeriod = _value;

@@ -95,7 +95,7 @@ contract GnosisSafe is
         // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
         setupModules(to, data);
 
-        if (payment > 0) {
+        if (payment != 0) {
             // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
             // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
             handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
@@ -187,7 +187,7 @@ contract GnosisSafe is
             require(success || safeTxGas != 0 || gasPrice != 0, "GS013");
             // We transfer the calculated tx costs to the tx.origin to avoid sending it to intermediate contracts that have made calls
             uint256 payment = 0;
-            if (gasPrice > 0) {
+            if (gasPrice != 0) {
                 payment = handlePayment(gasUsed, baseGas, gasPrice, gasToken, refundReceiver);
             }
             if (success) emit ExecutionSuccess(txHash, payment);
@@ -233,7 +233,7 @@ contract GnosisSafe is
         // Load threshold to avoid multiple storage loads
         uint256 _threshold = threshold;
         // Check that a threshold is set
-        require(_threshold > 0, "GS001");
+        require(_threshold != 0, "GS001");
         checkNSignatures(dataHash, data, signatures, _threshold);
     }
 

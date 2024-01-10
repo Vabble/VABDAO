@@ -201,12 +201,12 @@ contract UniHelper is IUniHelper {
         uint256 transferAmount;
         if(_asset == address(0)) {
             transferAmount = address(this).balance;
-            if (transferAmount > 0) {
+            if (transferAmount != 0) {
                 Helper.safeTransferETH(_target, transferAmount);
             }
         } else {
             transferAmount = IERC20(_asset).balanceOf(address(this));
-            if (transferAmount > 0) {
+            if (transferAmount != 0) {
                 Helper.safeTransfer(_asset, _target, transferAmount);
             }
         }        

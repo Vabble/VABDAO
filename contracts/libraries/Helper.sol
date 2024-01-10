@@ -85,6 +85,6 @@ library Helper {
         assembly {
             size := extcodesize(_address)
         }
-        return (size > 0);
+        return (size != 0);
     }
 }

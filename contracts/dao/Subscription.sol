@@ -125,7 +125,7 @@ contract Subscription is ReentrancyGuard {
 
     /// @notice Expected token amount that user should pay for activing the subscription
     function getExpectedSubscriptionAmount(address _token, uint256 _period) public view returns(uint256 expectAmount_) {
-        require(_period > 0, "getExpectedSubscriptionAmount: Zero period");
+        require(_period != 0, "getExpectedSubscriptionAmount: Zero period");
 
         address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();

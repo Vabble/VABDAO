@@ -57,9 +57,9 @@ pragma solidity ^0.8.4;
 //     receive() external payable {}
 
 //     constructor(address[] memory _signers, uint256 _confirmCount) {
-//         require(_signers.length > 0, "signers required");
+//         require(_signers.length != 0, "signers required");
 //         require(
-//             _confirmCount > 0 && _confirmCount <= _signers.length,
+//             _confirmCount != 0 && _confirmCount <= _signers.length,
 //             "invalid number of required confirmations"
 //         );
 
@@ -107,7 +107,7 @@ pragma solidity ^0.8.4;
 
 //     /// @dev Allows to update confirmCount. Transaction has to be sent by wallet.
 //     function changeConfirmCount(uint256 _count) external onlyWallet {   
-//         require(_count > 0 && _count <= signers.length, "changeConfirmCount: invalid count");
+//         require(_count != 0 && _count <= signers.length, "changeConfirmCount: invalid count");
 
 //         confirmCount = _count;
 //     }

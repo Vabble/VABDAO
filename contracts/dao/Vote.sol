@@ -64,7 +64,7 @@ contract Vote is IVote, ReentrancyGuard {
         _;
     }
     modifier onlyStaker() {
-        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) > 0, "Not staker");
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) != 0, "Not staker");
         _;
     }
 
@@ -94,7 +94,7 @@ contract Vote is IVote, ReentrancyGuard {
         uint256[] calldata _filmIds, 
         uint256[] calldata _voteInfos
     ) external onlyStaker nonReentrant {
-        require(_filmIds.length > 0, "voteToFilm: zero length");
+        require(_filmIds.length != 0, "voteToFilm: zero length");
         require(_filmIds.length == _voteInfos.length, "voteToFilm: Bad item length");
 
         uint256 filmLength = _filmIds.length;
@@ -115,7 +115,7 @@ contract Vote is IVote, ReentrancyGuard {
         require(status == Helper.Status.UPDATED, "Not updated");        
 
         (uint256 pCreateTime, ) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
-        require(pCreateTime > 0, "not updated");
+        require(pCreateTime != 0, "not updated");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), pCreateTime), "film elapsed vote period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -159,7 +159,7 @@ contract Vote is IVote, ReentrancyGuard {
     /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by anyone
     // if isFund is true then "APPROVED_FUNDING", if isFund is false then "APPROVED_LISTING"
     function approveFilms(uint256[] calldata _filmIds) external onlyStaker nonReentrant {
-        require(_filmIds.length > 0, "approveFilms: Invalid items");
+        require(_filmIds.length != 0, "approveFilms: Invalid items");
 
         uint256 filmLength = _filmIds.length;
         for(uint256 i = 0; i < filmLength; ++i) {
@@ -210,7 +210,7 @@ contract Vote is IVote, ReentrancyGuard {
         require(_voteInfo == 1 || _voteInfo == 2, "voteToAgent: bad vote info");  
         
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getGovProposalTime(_agent, 1);
-        require(pCreateTime > 0, "voteToAgent: no proposal");
+        require(pCreateTime != 0, "voteToAgent: no proposal");
 
         __voteToAgent(_agent, _voteInfo, _flag, pCreateTime);        
         
@@ -231,7 +231,7 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2;
         if(_flag == 1) {
             require(_voteInfo == 2, "voteToAgent: invalid vote value");
-            require(totalVoteCount > 0, "voteToAgent: no voter");          
+            require(totalVoteCount != 0, "voteToAgent: no voter");          
             require(!__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), _pTime), "agent vote period yet");  
 
             if(av.disputeVABAmount == 0) {
@@ -267,7 +267,7 @@ contract Vote is IVote, ReentrancyGuard {
         
         AgentVoting memory av = agentVoting[_agent];
         uint256 disputeTime = av.disputeStartTime;
-        if(disputeTime > 0) {
+        if(disputeTime != 0) {
             require(!__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), disputeTime), "auditor grace period yet");            
         } else {
             require(
@@ -319,7 +319,7 @@ contract Vote is IVote, ReentrancyGuard {
         );   
 
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getGovProposalTime(_candidate, 2);
-        require(pCreateTime > 0, "voteToFilmBoard: no proposal");
+        require(pCreateTime != 0, "voteToFilmBoard: no proposal");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).boardVotePeriod(), pCreateTime), "filmBoard elapsed vote period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -389,7 +389,7 @@ contract Vote is IVote, ReentrancyGuard {
         );       
 
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getGovProposalTime(_rewardAddress, 3);
-        require(pCreateTime > 0, "voteToRewardAddress: no proposal");
+        require(pCreateTime != 0, "voteToRewardAddress: no proposal");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).rewardVotePeriod(), pCreateTime), "reward elapsed vote period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
@@ -460,7 +460,7 @@ contract Vote is IVote, ReentrancyGuard {
         require(_voteInfo == 1 || _voteInfo == 2, "voteToProperty: bad vote info");    
         
         (uint256 pCreateTime, ) = IProperty(DAO_PROPERTY).getPropertyProposalTime(propertyVal, _flag);
-        require(pCreateTime > 0, "voteToProperty: no proposal");
+        require(pCreateTime != 0, "voteToProperty: no proposal");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), pCreateTime), "property elapsed vote period");
 
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
