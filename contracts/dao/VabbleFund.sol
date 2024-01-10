@@ -36,7 +36,6 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
     mapping(uint256 => Asset[]) public assetPerFilm;                     // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo;    // (filmId => (customer => Asset[token, amount]))
     mapping(uint256 => address[]) private filmInvestorList;              // (filmId => investor address[])
-    mapping(address => uint256[]) private userInvestFilmIds;             // (user => invest filmId[]) for only approved_funding films
     mapping(uint256 => bool) public isFundProcessed;                     // (filmId => true/false)
     mapping(uint256 => mapping(address => uint256)) private allowUserNftCount; // (filmId => (user => nft count))    
     

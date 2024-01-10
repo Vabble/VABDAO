@@ -51,9 +51,6 @@ contract GnosisSafe is
     event ExecutionSuccess(bytes32 txHash, uint256 payment);
 
     uint256 public nonce;
-    bytes32 private _deprecatedDomainSeparator;
-    // Mapping to keep track of all message hashes that have been approve by ALL REQUIRED owners
-    mapping(bytes32 => uint256) public signedMessages;
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
