@@ -315,7 +315,7 @@ contract Property is ReentrancyGuard {
         uint256 _flag,
         string memory _title,
         string memory _description
-    ) public onlyStaker nonReentrant {
+    ) external onlyStaker nonReentrant {
         require(
             _property > 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0, 
             "proposalProperty: Already candidate or zero value"

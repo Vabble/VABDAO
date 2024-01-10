@@ -56,7 +56,7 @@ contract Subscription is ReentrancyGuard {
 
     // ============= 0. Subscription by token and NFT. ===========    
     /// @notice active subscription(pay $1 monthly as ETH/USDC/USDT/VAB...) for renting the films
-    function activeSubscription(address _token, uint256 _period) public payable nonReentrant {
+    function activeSubscription(address _token, uint256 _period) external payable nonReentrant {
         if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset"); 
         }

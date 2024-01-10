@@ -141,7 +141,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _fundPeriod,
         uint256 _rewardPercent,
         uint256 _enableClaimer
-    ) public nonReentrant {                
+    ) external nonReentrant {                
         require(_studioPayees.length > 0, 'proposalUpdate: empty payees');
         require(_studioPayees.length == _sharePercents.length, 'proposalUpdate: invalid share percent');
         
@@ -427,7 +427,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     // Claim reward for multi-filmIds till current from when auditor call setFinalFilms()
-    function claimReward(uint256[] memory _filmIds) public nonReentrant {             
+    function claimReward(uint256[] memory _filmIds) external nonReentrant {             
         require(_filmIds.length > 0 && _filmIds.length < 1000, "claimReward: zero film ids");
          
         __claimAllReward(_filmIds);        
@@ -456,7 +456,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     // Claim reward of all filmIds for each user
-    function claimAllReward() public nonReentrant {     
+    function claimAllReward() external nonReentrant {     
         uint256[] memory filmIds = userFinalFilmIds[msg.sender];
         require(filmIds.length > 0, "claimAllReward: zero film ids");
 

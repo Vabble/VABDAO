@@ -200,7 +200,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     /// @notice Lock subscription NFT for some period (transfer nft from owner wallet to this contract)
-    function lockNFT(uint256 _tokenId) public nonReentrant {
+    function lockNFT(uint256 _tokenId) external nonReentrant {
         require(msg.sender == subNFTContract.ownerOf(_tokenId), "lock: not token owner"); 
         require(msg.sender == lockInfo[_tokenId].minter, "lock: not token minter"); 
         
@@ -215,7 +215,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     /// @notice unlock subscription NFT (transfer nft from this contract to owner wallet)
-    function unlockNFT(uint256 _tokenId) public nonReentrant {
+    function unlockNFT(uint256 _tokenId) external nonReentrant {
         require(address(this) == subNFTContract.ownerOf(_tokenId), "unlock: not token owner"); 
         require(msg.sender == lockInfo[_tokenId].minter, "unlock: not token minter"); 
 
