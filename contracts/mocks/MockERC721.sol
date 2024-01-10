@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 contract MockERC721 is ERC721Enumerable, Ownable {
     using SafeMath for uint256;
 
-    uint256 private _currentTokenId = 0;
+    uint256 private _currentTokenId;
 
     constructor(string memory _name, string memory _symbol) ERC721(_name, _symbol) {}
 

@@ -85,7 +85,7 @@ contract VabbleNFT is ERC2981, ERC721Enumerable, ReentrancyGuard {
 
     function userTokenIdList(address _owner) external view returns (uint256[] memory _tokensOfOwner) {
         _tokensOfOwner = new uint256[](balanceOf(_owner));
-        for (uint256 i; i < balanceOf(_owner); i++) {
+        for (uint256 i; i < balanceOf(_owner); ++i) {
             _tokensOfOwner[i] = tokenOfOwnerByIndex(_owner, i);
         }
     }

@@ -99,7 +99,7 @@ contract Ownablee is IOwnablee {
     function addDepositAsset(address[] calldata _assetList) external onlyAuditor {
         require(_assetList.length > 0, "addDepositAsset: zero list");
 
-        for(uint256 i = 0; i < _assetList.length; i++) { 
+        for(uint256 i = 0; i < _assetList.length; ++i) { 
             if(allowAssetToDeposit[_assetList[i]]) continue;
 
             depositAssetList.push(_assetList[i]);
@@ -110,7 +110,7 @@ contract Ownablee is IOwnablee {
     function removeDepositAsset(address[] calldata _assetList) external onlyAuditor {
         require(_assetList.length > 0, "removeDepositAsset: zero list");
         
-        for(uint256 i = 0; i < _assetList.length; i++) {
+        for(uint256 i = 0; i < _assetList.length; ++i) {
             if(!allowAssetToDeposit[_assetList[i]]) continue;
 
             for(uint256 k = 0; k < depositAssetList.length; k++) { 

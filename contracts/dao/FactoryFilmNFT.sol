@@ -150,7 +150,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         require(count > 0, "claimNft: zero count");
         require(IVabbleFund(VABBLE_FUND).isRaisedFullAmount(_filmId), "claimNft: not full raised");
 
-        for(uint256 i = 0; i < count; i++) {
+        for(uint256 i = 0; i < count; ++i) {
             __mint(_filmId);
         }
     }

@@ -97,7 +97,7 @@ contract Vote is IVote, ReentrancyGuard {
         require(_filmIds.length > 0, "voteToFilm: zero length");
         require(_filmIds.length == _voteInfos.length, "voteToFilm: Bad item length");
 
-        for(uint256 i = 0; i < _filmIds.length; i++) { 
+        for(uint256 i = 0; i < _filmIds.length; ++i) { 
             __voteToFilm(_filmIds[i], _voteInfos[i]);
         }        
     }
@@ -160,7 +160,7 @@ contract Vote is IVote, ReentrancyGuard {
     function approveFilms(uint256[] calldata _filmIds) external onlyStaker nonReentrant {
         require(_filmIds.length > 0, "approveFilms: Invalid items");
 
-        for(uint256 i = 0; i < _filmIds.length; i++) {
+        for(uint256 i = 0; i < _filmIds.length; ++i) {
             __approveFilm(_filmIds[i]);
         }   
     }

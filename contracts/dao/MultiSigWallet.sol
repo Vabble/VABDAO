@@ -63,7 +63,7 @@ pragma solidity ^0.8.4;
 //             "invalid number of required confirmations"
 //         );
 
-//         for (uint256 i = 0; i < _signers.length; i++) {
+//         for (uint256 i = 0; i < _signers.length; ++i) {
 //             address signer = _signers[i];
 
 //             require(signer != address(0), "invalid signer");
@@ -92,7 +92,7 @@ pragma solidity ^0.8.4;
 //         require(isSigner[_signer], "removeSigner: not signer");
 
 //         isSigner[_signer] = false;
-//         for (uint256 i = 0; i < signers.length; i++) {
+//         for (uint256 i = 0; i < signers.length; ++i) {
 //             if (_signer == signers[i]) {
 //                 signers[i] = signers[signers.length - 1];
 //                 signers.pop();

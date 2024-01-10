@@ -160,7 +160,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 totalPercent = 0;
         if(_studioPayees.length == 1) totalPercent = _sharePercents[0];
         else {
-            for(uint256 i = 0; i < _studioPayees.length; i++) {
+            for(uint256 i = 0; i < _studioPayees.length; ++i) {
                 totalPercent += _sharePercents[i];
             }
         }
@@ -285,7 +285,7 @@ contract VabbleDAO is ReentrancyGuard {
             StudioPool += IStakingPool(STAKING_POOL).sendVAB(_users, address(this), _amounts);
         }
 
-        for(uint256 i = 0; i < _users.length; i++) {   
+        for(uint256 i = 0; i < _users.length; ++i) {   
             if(_which == 1) {
                 if(isEdgePoolUser[_users[i]]) continue;
 
@@ -307,7 +307,7 @@ contract VabbleDAO is ReentrancyGuard {
         IOwnablee(OWNABLE).addToStudioPool(_amount); // Transfer VAB from EdgePool to StudioPool
         StudioPool += _amount;
 
-        for(uint256 i = 0; i < edgePoolUsers.length; i++) {   
+        for(uint256 i = 0; i < edgePoolUsers.length; ++i) {   
             if(isStudioPoolUser[edgePoolUsers[i]]) continue;
 
             studioPoolUsers.push(edgePoolUsers[i]);
@@ -346,7 +346,7 @@ contract VabbleDAO is ReentrancyGuard {
         
         bool[] memory _valids = checkSetFinalFilms(_filmIds);
         
-        for(uint256 i = 0; i < _filmIds.length; i++) {     
+        for(uint256 i = 0; i < _filmIds.length; ++i) {     
             if(_filmIds[i] == 0 || _payouts[i] == 0) continue;
             if (!_valids[i]) continue;
 
@@ -407,7 +407,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);
         if(raisedAmount > 0) {
             address[] memory investors = IVabbleFund(VABBLE_FUND).getFilmInvestorList(_filmId); 
-            for(uint256 i = 0; i < investors.length; i++) {   
+            for(uint256 i = 0; i < investors.length; ++i) {   
                 uint256 userAmount = IVabbleFund(VABBLE_FUND).getUserFundAmountPerFilm(investors[i], _filmId);
                 if(userAmount == 0) continue;
 
@@ -437,7 +437,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 curMonth = monthId.current();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN(); 
         uint256 rewardSum;
-        for(uint256 i = 0; i < _filmIds.length; i++) {  
+        for(uint256 i = 0; i < _filmIds.length; ++i) {  
             if (finalFilmCalledTime[_filmIds[i]] == 0) // not still call final film
                 continue;
 

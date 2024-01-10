@@ -91,7 +91,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);        
         require(raisedAmount > 0 && raisedAmount >= raiseAmount, "setTier: not raised yet");
         
-        for(uint256 i = 0; i < _minAmounts.length; i++) {
+        for(uint256 i = 0; i < _minAmounts.length; ++i) {
             require(_minAmounts[i] > 0, "setTier: zero value");        
             // TODO - N3-2 updated(add below line)
             require(_minAmounts[i] < _maxAmounts[i] || _maxAmounts[i] == 0, "setTier: invalid min/max value");        
@@ -135,7 +135,7 @@ contract FactoryTierNFT is ReentrancyGuard {
 
         uint256 tier = 0;
         uint256 fund = IVabbleFund(VABBLE_FUND).getUserFundAmountPerFilm(msg.sender, _filmId);
-        for(uint256 i = 1; i <= tierCount[_filmId]; i++) {
+        for(uint256 i = 1; i <= tierCount[_filmId]; ++i) {
             if(tierInfo[_filmId][i].maxAmount == 0) {
                 if(tierInfo[_filmId][i].minAmount >= fund) {
                     tier = i;
