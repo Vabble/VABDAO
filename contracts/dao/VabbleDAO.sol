@@ -285,7 +285,8 @@ contract VabbleDAO is ReentrancyGuard {
             StudioPool += IStakingPool(STAKING_POOL).sendVAB(_users, address(this), _amounts);
         }
 
-        for(uint256 i = 0; i < _users.length; ++i) {   
+        uint256 userLength = _users.length;
+        for(uint256 i = 0; i < userLength; ++i) {   
             if(_which == 1) {
                 if(isEdgePoolUser[_users[i]]) continue;
 
@@ -307,7 +308,8 @@ contract VabbleDAO is ReentrancyGuard {
         IOwnablee(OWNABLE).addToStudioPool(_amount); // Transfer VAB from EdgePool to StudioPool
         StudioPool += _amount;
 
-        for(uint256 i = 0; i < edgePoolUsers.length; ++i) {   
+        uint256 userLength = edgePoolUsers.length;
+        for(uint256 i = 0; i < userLength; ++i) {   
             if(isStudioPoolUser[edgePoolUsers[i]]) continue;
 
             studioPoolUsers.push(edgePoolUsers[i]);
@@ -346,7 +348,8 @@ contract VabbleDAO is ReentrancyGuard {
         
         bool[] memory _valids = checkSetFinalFilms(_filmIds);
         
-        for(uint256 i = 0; i < _filmIds.length; ++i) {     
+        uint256 filmLength = _filmIds.length;
+        for(uint256 i = 0; i < filmLength; ++i) {     
             if(_filmIds[i] == 0 || _payouts[i] == 0) continue;
             if (!_valids[i]) continue;
 
@@ -394,8 +397,9 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @dev Avoid deep error
     function __setFinalAmountToPayees(uint256 _filmId, uint256 _payout, uint256 _curMonth) private {       
-        IVabbleDAO.Film memory fInfo = filmInfo[_filmId];         
-        for(uint256 k = 0; k < fInfo.studioPayees.length; k++) {
+        IVabbleDAO.Film memory fInfo = filmInfo[_filmId];       
+        uint256 payeeLength = fInfo.studioPayees.length;  
+        for(uint256 k = 0; k < payeeLength; k++) {
             uint256 shareAmount = _payout * fInfo.sharePercents[k] / 1e10;
             finalizedAmount[_curMonth][_filmId][fInfo.studioPayees[k]] += shareAmount;
 
@@ -437,7 +441,8 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 curMonth = monthId.current();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN(); 
         uint256 rewardSum;
-        for(uint256 i = 0; i < _filmIds.length; ++i) {  
+        uint256 filmLength = _filmIds.length;
+        for(uint256 i = 0; i < filmLength; ++i) {  
             if (finalFilmCalledTime[_filmIds[i]] == 0) // not still call final film
                 continue;
 
