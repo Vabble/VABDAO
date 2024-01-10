@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "../libraries/Helper.sol";
-import "../dao/VabbleDAO.sol";
-
 interface IVabbleFund {   
         
     function getTotalFundAmountPerFilm(uint256 _filmId) external view returns (uint256 amount_);
