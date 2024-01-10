@@ -209,7 +209,8 @@ contract StakingPool is ReentrancyGuard {
 
         // Get proposal count started in withdrawable period of customer
         uint256 proposalCount = 0;     
-        for(uint256 i = 0; i < proposalCreatedTimeList.length; ++i) { 
+        uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
+        for(uint256 i = 0; i < proposalCreatedTimeListLength; ++i) { 
             if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
                 proposalCount += 1;
             }
@@ -217,7 +218,8 @@ contract StakingPool is ReentrancyGuard {
 
         // Get vote count started in withdrawable period of customer
         uint256 votedCount = 0;     
-        for(uint256 i = 0; i < proposalVotedTimeList[_customer].length; ++i) { 
+        uint256 proposalVotedTimeListLength = proposalVotedTimeList[_customer].length;
+        for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
             if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
                 votedCount += 1;
             }
@@ -322,7 +324,8 @@ contract StakingPool is ReentrancyGuard {
         
         uint256[] memory withdrawAmounts = new uint256[](_customers.length);
         // Transfer withdrawable amount to _customers
-        for(uint256 i = 0; i < _customers.length; ++i) {
+        uint256 customerLength = _customers.length;
+        for(uint256 i = 0; i < customerLength; ++i) {
             withdrawAmounts[i] = __transferVABWithdraw(_customers[i]);
         }
         
@@ -349,7 +352,8 @@ contract StakingPool is ReentrancyGuard {
         address _to;
         uint256 payAmount;
         uint256 sum = 0;
-        for(uint256 i = 0; i < _customers.length; ++i) {
+        uint256 customerLength = _customers.length;
+        for(uint256 i = 0; i < customerLength; ++i) {
             _to = _customers[i];
             payAmount = userRentInfo[_to].withdrawAmount;
             if (payAmount == 0) 
@@ -377,7 +381,8 @@ contract StakingPool is ReentrancyGuard {
         require(_customers.length > 0, "denyWithdraw: bad customers");
 
         // Release withdrawable amount for _customers
-        for(uint256 i = 0; i < _customers.length; ++i) {
+        uint256 customerLength = _customers.length;
+        for(uint256 i = 0; i < customerLength; ++i) {
             require(userRentInfo[_customers[i]].withdrawAmount > 0, "denyWithdraw: zero withdraw amount");
             require(userRentInfo[_customers[i]].pending, "denyWithdraw: no pending");
             
@@ -389,7 +394,8 @@ contract StakingPool is ReentrancyGuard {
     } 
 
     function checkDenyPendingWithDraw(address[] calldata _customers) external view returns (bool) {
-        for(uint256 i = 0; i < _customers.length; ++i) {
+        uint256 customerLength = _customers.length;
+        for(uint256 i = 0; i < customerLength; ++i) {
             if (userRentInfo[_customers[i]].withdrawAmount == 0)
                 return false;
 
@@ -406,7 +412,8 @@ contract StakingPool is ReentrancyGuard {
         uint256[] calldata _amounts
     ) external onlyDAO returns (uint256) {
         uint256 sum;
-        for(uint256 i = 0; i < _users.length; ++i) {  
+        uint256 userLength = _users.length;
+        for(uint256 i = 0; i < userLength; ++i) {  
             require(userRentInfo[_users[i]].vabAmount >= _amounts[i], "sendVAB: insufficient balance");
 
             userRentInfo[_users[i]].vabAmount -= _amounts[i];
@@ -420,7 +427,8 @@ contract StakingPool is ReentrancyGuard {
 
     function checkAllocateToPool(address[] calldata _users, uint256[] calldata _amounts) external view returns (bool) {
         uint256 sum;
-        for(uint256 i = 0; i < _users.length; ++i) {  
+        uint256 userLength = _users.length;
+        for(uint256 i = 0; i < userLength; ++i) {  
             if (userRentInfo[_users[i]].vabAmount < _amounts[i])
                 return false;
 
