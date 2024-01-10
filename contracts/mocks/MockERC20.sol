@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract MockERC20 is Ownable, ERC20 {
     uint256 private SUPPLY = 1456250000 * 10**18;
 
-    uint256 public constant faucetLimit = 5e7 * 10**18;
+    uint256 private constant faucetLimit = 5e7 * 10**18;
 
     constructor(string memory _name_, string memory _symbol_) ERC20(_name_, _symbol_) {
         _mint(msg.sender, SUPPLY);
