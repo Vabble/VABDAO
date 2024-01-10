@@ -105,7 +105,7 @@ contract StakingPool is ReentrancyGuard {
         require(_amount > 0, 'addRewardToPool: Zero amount');
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
-        totalRewardAmount += _amount;
+        totalRewardAmount = totalRewardAmount + _amount;
 
         emit RewardAdded(totalRewardAmount, _amount, msg.sender, block.timestamp);
     }    
