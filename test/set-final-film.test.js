@@ -117,7 +117,7 @@ describe('SetFinalFilm', function () {
             await this.FactoryTierNFTFactory.deploy(
               this.Ownablee.address, 
               this.VabbleDAO.address,
-              this.FilmNFT.address
+              this.VabbleFund.address
             )
         ).deployed(); 
       

@@ -10,9 +10,9 @@ import "./VabbleNFT.sol";
 
 contract FactoryTierNFT is ReentrancyGuard {
 
-    event TierERC721Created(address nftCreator, address nftContract, uint indexed tier, uint256 deployTime);// if tier > 0 then tierNFTContract
-    event TierERC721Minted(address nftContract, uint256 indexed tokenId, address receiver, uint256 mintTime);
-    event TierInfoSetted(address filmOwner, uint256 indexed filmId, uint256 tierCount, uint256 setTime);
+    event TierERC721Created(address nftCreator, address nftContract, uint indexed tier);// if tier != 0 then tierNFTContract
+    event TierERC721Minted(address nftContract, uint256 indexed tokenId, address receiver);
+    event TierInfoSetted(address filmOwner, uint256 indexed filmId, uint256 tierCount);
 
     struct TierNFT {
         string name;
@@ -64,10 +64,10 @@ contract FactoryTierNFT is ReentrancyGuard {
         string memory _collectionUri
     ) external onlyAuditor {
         bytes memory baseUriByte = bytes(_baseUri);
-        require(baseUriByte.length > 0, "empty baseUri");
+        require(baseUriByte.length != 0, "empty baseUri");
 
         bytes memory collectionUriByte = bytes(_collectionUri);
-        require(collectionUriByte.length > 0, "empty collectionUri");
+        require(collectionUriByte.length != 0, "empty collectionUri");
 
         baseUri = _baseUri;
         collectionUri = _collectionUri;
@@ -78,21 +78,22 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256 _filmId,
         uint256[] calldata _minAmounts,
         uint256[] calldata _maxAmounts
-    ) external {                    
-        require(_minAmounts.length > 0, "setTier: bad minAmount length");        
+    ) external nonReentrant {                    
+        require(_minAmounts.length != 0, "setTier: bad minAmount length");        
         require(_minAmounts.length == _maxAmounts.length, "setTier: bad maxAmount length");        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "setTier: not film owner");
 
         (uint256 raiseAmount, uint256 fundPeriod, uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
         require(fundPeriod < block.timestamp - pApproveTime, "setTier: fund period yet"); 
-        require(fundType > 0, "setTier: not fund film"); 
+        require(fundType != 0, "setTier: not fund film"); 
 
         uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);        
-        require(raisedAmount > 0 && raisedAmount >= raiseAmount, "setTier: not raised yet");
+        require(raisedAmount != 0 && raisedAmount >= raiseAmount, "setTier: not raised yet");
         
-        for(uint256 i = 0; i < _minAmounts.length; i++) {
-            require(_minAmounts[i] > 0, "setTier: zero value");        
+        uint256 amountsLength = _minAmounts.length;
+        for(uint256 i = 0; i < amountsLength; ++i) {
+            require(_minAmounts[i] != 0, "setTier: zero value");        
             // TODO - N3-2 updated(add below line)
             require(_minAmounts[i] < _maxAmounts[i] || _maxAmounts[i] == 0, "setTier: invalid min/max value");        
 
@@ -100,21 +101,21 @@ contract FactoryTierNFT is ReentrancyGuard {
             tierInfo[_filmId][i+1].maxAmount = _maxAmounts[i];
         }
 
-        tierCount[_filmId] = _minAmounts.length;
+        tierCount[_filmId] = amountsLength;
 
-        emit TierInfoSetted(msg.sender, _filmId, tierCount[_filmId], block.timestamp);
+        emit TierInfoSetted(msg.sender, _filmId, tierCount[_filmId]);
     }
 
     /// @notice Studio deploy a nft contract per filmId
     function deployTierNFTContract(
         uint256 _filmId,
-        uint256 _tier,      // tier = 0 => filmNFT and tier > 0 => tierNFT
+        uint256 _tier,      // tier = 0 => filmNFT and tier != 0 => tierNFT
         string memory _name,
         string memory _symbol
     ) external nonReentrant {        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "deployTier: not film owner");
-        require(_tier > 0, "deployTier: zero tier");
-        require(tierInfo[_filmId][_tier].minAmount > 0, "deployTier: not set tier");
+        require(_tier != 0, "deployTier: zero tier");
+        require(tierInfo[_filmId][_tier].minAmount != 0, "deployTier: not set tier");
 
         VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
         tierNFTContract[_filmId][_tier] = t;
@@ -125,17 +126,17 @@ contract FactoryTierNFT is ReentrancyGuard {
         nInfo.name = _name;
         nInfo.symbol = _symbol;
         
-        emit TierERC721Created(msg.sender, address(t), _tier, block.timestamp);
+        emit TierERC721Created(msg.sender, address(t), _tier);
     }  
 
     /// @notice Should be called //before fundProcess() of VabbleDAO contract
-    function mintTierNft(uint256 _filmId) external {        
-        require(tierCount[_filmId] > 0, "mintTier: not set tier");
+    function mintTierNft(uint256 _filmId) external nonReentrant  {        
+        require(tierCount[_filmId] != 0, "mintTier: not set tier");
         require(IVabbleDAO(VABBLE_DAO).isEnabledClaimer(_filmId), "deployTier: not allow to mint tierNft");
 
         uint256 tier = 0;
         uint256 fund = IVabbleFund(VABBLE_FUND).getUserFundAmountPerFilm(msg.sender, _filmId);
-        for(uint256 i = 1; i <= tierCount[_filmId]; i++) {
+        for(uint256 i = 1; i <= tierCount[_filmId]; ++i) {
             if(tierInfo[_filmId][i].maxAmount == 0) {
                 if(tierInfo[_filmId][i].minAmount >= fund) {
                     tier = i;
@@ -149,7 +150,7 @@ contract FactoryTierNFT is ReentrancyGuard {
             }            
         }
         
-        require(tier > 0, "mintTier: bad investor");
+        require(tier != 0, "mintTier: bad investor");
         uint256[] memory list = getUserTokenIdList(_filmId, msg.sender, tier);
         require(list.length == 0, "mintTier: already minted"); 
 
@@ -157,7 +158,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256 tokenId = t.mintTo(msg.sender);
         tierNFTTokenList[_filmId][tier].push(tokenId);
 
-        emit TierERC721Minted(address(t), tokenId, msg.sender, block.timestamp);
+        emit TierERC721Minted(address(t), tokenId, msg.sender);
     }
 
     /// @notice userTierNFTs

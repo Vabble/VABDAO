@@ -2,19 +2,19 @@
 
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../libraries/Helper.sol";
+import "../interfaces/IOwnablee.sol";
 
-contract Ownablee {
+contract Ownablee is IOwnablee {
     
     event VABWalletChanged(address indexed wallet);
 
-    address public auditor;
-    address public deployer;
-    address public VAB_WALLET;           // Vabble wallet
-    address public PAYOUT_TOKEN;         // VAB token       
-    address public USDC_TOKEN;           // USDC token 
+    address public override auditor;
+    address public immutable override deployer;
+    address public override VAB_WALLET;           // Vabble wallet
+    address public immutable override PAYOUT_TOKEN;         // VAB token       
+    address public immutable override USDC_TOKEN;           // USDC token 
     address private VOTE;                // Vote contract address
     address private VABBLE_DAO;          // VabbleDAO contract address
     address private STAKING_POOL;        // StakingPool contract address
@@ -84,21 +84,21 @@ contract Ownablee {
         STAKING_POOL = _stakingPool;    
     }    
     
-    function transferAuditor(address _newAuditor) external onlyAuditor {
+    function transferAuditor(address _newAuditor) external override onlyAuditor {
         require(_newAuditor != address(0) && _newAuditor != auditor, "Ownablee: Zero newAuditor address");
 
         auditor = _newAuditor;
     }
 
-    function replaceAuditor(address _newAuditor) external onlyVote {
+    function replaceAuditor(address _newAuditor) external override onlyVote {
         require(_newAuditor != address(0) && _newAuditor != auditor, "Ownablee: Zero newAuditor address");
         auditor = _newAuditor;
     }
 
     function addDepositAsset(address[] calldata _assetList) external onlyAuditor {
-        require(_assetList.length > 0, "addDepositAsset: zero list");
+        require(_assetList.length != 0, "addDepositAsset: zero list");
 
-        for(uint256 i = 0; i < _assetList.length; i++) { 
+        for(uint256 i = 0; i < _assetList.length; ++i) { 
             if(allowAssetToDeposit[_assetList[i]]) continue;
 
             depositAssetList.push(_assetList[i]);
@@ -107,9 +107,9 @@ contract Ownablee {
     }
     
     function removeDepositAsset(address[] calldata _assetList) external onlyAuditor {
-        require(_assetList.length > 0, "removeDepositAsset: zero list");
+        require(_assetList.length != 0, "removeDepositAsset: zero list");
         
-        for(uint256 i = 0; i < _assetList.length; i++) {
+        for(uint256 i = 0; i < _assetList.length; ++i) {
             if(!allowAssetToDeposit[_assetList[i]]) continue;
 
             for(uint256 k = 0; k < depositAssetList.length; k++) { 
@@ -126,11 +126,11 @@ contract Ownablee {
         }        
     }
 
-    function isDepositAsset(address _asset) external view returns (bool) {
+    function isDepositAsset(address _asset) external view override returns (bool) {
         return allowAssetToDeposit[_asset];
     }
 
-    function getDepositAssetList() external view returns (address[] memory) {
+    function getDepositAssetList() external view override returns (address[] memory) {
         return depositAssetList;
     }
     
@@ -142,7 +142,7 @@ contract Ownablee {
         emit VABWalletChanged(_wallet);
     } 
 
-    function addToStudioPool(uint256 _amount) external onlyDAO {
+    function addToStudioPool(uint256 _amount) external override onlyDAO {
         require(IERC20(PAYOUT_TOKEN).balanceOf(address(this)) >= _amount, "addToStudioPool: insufficient edge pool");
 
         Helper.safeTransfer(PAYOUT_TOKEN, VABBLE_DAO, _amount);
@@ -150,15 +150,15 @@ contract Ownablee {
 
     /// @notice Deposit VAB token from Auditor to EdgePool
     function depositVABToEdgePool(uint256 _amount) external onlyAuditor {
-        require(_amount > 0, "depositVABToEdgePool: Zero amount");
+        require(_amount != 0, "depositVABToEdgePool: Zero amount");
 
         Helper.safeTransferFrom(PAYOUT_TOKEN, msg.sender, address(this), _amount);
     }
 
     /// @notice Withdraw VAB token from EdgePool to V2
-    function withdrawVABFromEdgePool(address _to) external onlyStakingPool returns (uint256) {
+    function withdrawVABFromEdgePool(address _to) external override onlyStakingPool returns (uint256) {
         uint256 poolBalance = IERC20(PAYOUT_TOKEN).balanceOf(address(this));
-        if(poolBalance > 0) {
+        if(poolBalance != 0) {
             Helper.safeTransfer(PAYOUT_TOKEN, _to, poolBalance);
         }
         return poolBalance;

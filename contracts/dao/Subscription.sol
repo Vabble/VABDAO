@@ -11,7 +11,7 @@ import "../interfaces/IOwnablee.sol";
 
 contract Subscription is ReentrancyGuard {
     
-    event SubscriptionActivated(address indexed customer, address token, uint256 period, uint256 activeTime);
+    event SubscriptionActivated(address indexed customer, address token, uint256 period);
 
     address private immutable OWNABLE;      // Ownablee contract address  
     address private immutable UNI_HELPER;   // UniHelper contract
@@ -56,7 +56,7 @@ contract Subscription is ReentrancyGuard {
 
     // ============= 0. Subscription by token and NFT. ===========    
     /// @notice active subscription(pay $1 monthly as ETH/USDC/USDT/VAB...) for renting the films
-    function activeSubscription(address _token, uint256 _period) public payable nonReentrant {
+    function activeSubscription(address _token, uint256 _period) external payable nonReentrant {
         if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset"); 
         }
@@ -120,12 +120,12 @@ contract Subscription is ReentrancyGuard {
             subscription.expireTime = block.timestamp + PERIOD_UNIT * _period;
         }
 
-        emit SubscriptionActivated(msg.sender, _token, _period, block.timestamp);          
+        emit SubscriptionActivated(msg.sender, _token, _period);          
     }
 
     /// @notice Expected token amount that user should pay for activing the subscription
     function getExpectedSubscriptionAmount(address _token, uint256 _period) public view returns(uint256 expectAmount_) {
-        require(_period > 0, "getExpectedSubscriptionAmount: Zero period");
+        require(_period != 0, "getExpectedSubscriptionAmount: Zero period");
 
         address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();

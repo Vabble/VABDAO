@@ -172,7 +172,7 @@ module.exports = async function ({ deployments }) {
   });
 
   // add 10M VAB to Edge Pool
-  let vab_balance_of_Ownablee = await vabToken.balanceOf(this.Ownablee.address);        
+  let vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
   console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
 
   let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool

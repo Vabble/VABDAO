@@ -66,25 +66,25 @@ library Helper {
         }
     }
 
-    function safeTransferNFT(
-        address _nft,
-        address _from,
-        address _to,
-        TokenType _type,
-        uint256 _tokenId
-    ) internal {
-        if (_type == TokenType.ERC721) {
-            IERC721(_nft).safeTransferFrom(_from, _to, _tokenId);
-        } else {
-            IERC1155(_nft).safeTransferFrom(_from, _to, _tokenId, 1, "0x00");
-        }
-    }
+    // function safeTransferNFT(
+    //     address _nft,
+    //     address _from,
+    //     address _to,
+    //     TokenType _type,
+    //     uint256 _tokenId
+    // ) internal {
+    //     if (_type == TokenType.ERC721) {
+    //         IERC721(_nft).safeTransferFrom(_from, _to, _tokenId);
+    //     } else {
+    //         IERC1155(_nft).safeTransferFrom(_from, _to, _tokenId, 1, "0x00");
+    //     }
+    // }
 
     function isContract(address _address) internal view returns(bool){
         uint32 size;
         assembly {
             size := extcodesize(_address)
         }
-        return (size > 0);
+        return (size != 0);
     }
 }

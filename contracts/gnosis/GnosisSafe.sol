@@ -12,8 +12,6 @@ import "./common/SecuredTokenTransfer.sol";
 import "./common/StorageAccessible.sol";
 import "./interfaces/ISignatureValidator.sol";
 import "./external/GnosisSafeMath.sol";
-import "../libraries/Helper.sol";
-import "hardhat/console.sol";
 
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
 /// @author Stefan George - <stefan@gnosis.io>
@@ -51,13 +49,10 @@ contract GnosisSafe is
     event ExecutionSuccess(bytes32 txHash, uint256 payment);
 
     uint256 public nonce;
-    bytes32 private _deprecatedDomainSeparator;
-    // Mapping to keep track of all message hashes that have been approve by ALL REQUIRED owners
-    mapping(bytes32 => uint256) public signedMessages;
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
-    address private deployer;
+    address private immutable deployer;
     
     modifier onlySigner() {
         require(isOwner(msg.sender), "not signer");
@@ -98,7 +93,7 @@ contract GnosisSafe is
         // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
         setupModules(to, data);
 
-        if (payment > 0) {
+        if (payment != 0) {
             // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
             // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
             handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
@@ -190,7 +185,7 @@ contract GnosisSafe is
             require(success || safeTxGas != 0 || gasPrice != 0, "GS013");
             // We transfer the calculated tx costs to the tx.origin to avoid sending it to intermediate contracts that have made calls
             uint256 payment = 0;
-            if (gasPrice > 0) {
+            if (gasPrice != 0) {
                 payment = handlePayment(gasUsed, baseGas, gasPrice, gasToken, refundReceiver);
             }
             if (success) emit ExecutionSuccess(txHash, payment);
@@ -236,7 +231,7 @@ contract GnosisSafe is
         // Load threshold to avoid multiple storage loads
         uint256 _threshold = threshold;
         // Check that a threshold is set
-        require(_threshold > 0, "GS001");
+        require(_threshold != 0, "GS001");
         checkNSignatures(dataHash, data, signatures, _threshold);
     }
 

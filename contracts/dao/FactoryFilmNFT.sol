@@ -2,19 +2,19 @@
 
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVabbleFund.sol";
+import "../interfaces/IFactoryFilmNFT.sol";
 import "./VabbleNFT.sol";
 
-contract FactoryFilmNFT is ReentrancyGuard {
+contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
 
-    event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId, uint deployTime);
-    event FilmERC721Minted(address nftContract, uint256 indexed filmId, uint256 indexed tokenId, address receiver, uint mintTime);
-    event MintInfoSetted(address filmOwner, uint indexed filmId, uint tier, uint mintAmount, uint mintPrice, uint setTime);
+    event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId);
+    event FilmERC721Minted(address nftContract, uint256 indexed filmId, uint256 indexed tokenId, address receiver);
+    event MintInfoSetted(address filmOwner, uint indexed filmId, uint tier, uint mintAmount, uint mintPrice);
 
     struct Mint {
         uint256 tier;             // Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
@@ -38,7 +38,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
     mapping(address => address[]) public studioNFTAddressList;     
     mapping(uint256 => VabbleNFT) public filmNFTContract;      // (filmId => nft contract)     
     
-    address private OWNABLE;         // Ownablee contract address
+    address private immutable OWNABLE;         // Ownablee contract address
     address private VABBLE_DAO;      // VabbleDAO contract address
     address private VABBLE_FUND;     // VabbleFund contract address
 
@@ -76,10 +76,10 @@ contract FactoryFilmNFT is ReentrancyGuard {
         string memory _collectionUri
     ) external onlyAuditor {
         bytes memory baseUriByte = bytes(_baseUri);
-        require(baseUriByte.length > 0, "empty baseUri");
+        require(baseUriByte.length != 0, "empty baseUri");
 
         bytes memory collectionUriByte = bytes(_collectionUri);
-        require(collectionUriByte.length > 0, "empty collectionUri");
+        require(collectionUriByte.length != 0, "empty collectionUri");
 
         baseUri = _baseUri;
         collectionUri = _collectionUri;
@@ -91,8 +91,8 @@ contract FactoryFilmNFT is ReentrancyGuard {
         uint256 _tier,
         uint256 _amount, 
         uint256 _price 
-    ) external {            
-        require(_amount > 0 && _price > 0 && _tier > 0, "setMint: Zero value");     
+    ) external nonReentrant {            
+        require(_amount != 0 && _price != 0 && _tier != 0, "setMint: Zero value");     
 
         address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);
         require(owner == msg.sender, "setMint: not film owner");
@@ -106,7 +106,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
         mInfo.price = _price;                   // 5 usdc = 5 * 1e6
         mInfo.studio = msg.sender;
 
-        emit MintInfoSetted(msg.sender, _filmId, _tier, _amount, _price, block.timestamp);
+        emit MintInfoSetted(msg.sender, _filmId, _tier, _amount, _price);
     }    
 
     /// @notice Studio deploy a nft contract per filmId
@@ -139,17 +139,17 @@ contract FactoryFilmNFT is ReentrancyGuard {
         nInfo.name = _name;
         nInfo.symbol = _symbol;
         
-        emit FilmERC721Created(msg.sender, address(t), _filmId, block.timestamp);
+        emit FilmERC721Created(msg.sender, address(t), _filmId);
     }  
         
     function claimNft(uint256 _filmId) external nonReentrant {
         require(mintInfo[_filmId].nft != address(0), "claimNft: not deployed for film");
 
         uint256 count = IVabbleFund(VABBLE_FUND).getAllowUserNftCount(_filmId, msg.sender);
-        require(count > 0, "claimNft: zero count");
+        require(count != 0, "claimNft: zero count");
         require(IVabbleFund(VABBLE_FUND).isRaisedFullAmount(_filmId), "claimNft: not full raised");
 
-        for(uint256 i = 0; i < count; i++) {
+        for(uint256 i = 0; i < count; ++i) {
             __mint(_filmId);
         }
     }
@@ -160,14 +160,14 @@ contract FactoryFilmNFT is ReentrancyGuard {
 
         filmNFTTokenList[_filmId].push(tokenId);
 
-        emit FilmERC721Minted(address(t), _filmId, tokenId, msg.sender, block.timestamp);
+        emit FilmERC721Minted(address(t), _filmId, tokenId, msg.sender);
     }       
 
     function getNFTOwner(uint256 _filmId, uint256 _tokenId) external view returns (address) {
         return filmNFTContract[_filmId].ownerOf(_tokenId);
     }
 
-    function getTotalSupply(uint256 _filmId) public view returns (uint256) {
+    function getTotalSupply(uint256 _filmId) public view override returns (uint256) {
         return filmNFTContract[_filmId].totalSupply();
     }
 
@@ -180,7 +180,7 @@ contract FactoryFilmNFT is ReentrancyGuard {
     }
     
     /// @notice Get mint information per filmId
-    function getMintInfo(uint256 _filmId) external view 
+    function getMintInfo(uint256 _filmId) external view override
     returns (
         uint256 tier_,
         uint256 maxMintAmount_,

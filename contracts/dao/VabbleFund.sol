@@ -11,12 +11,13 @@ import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IFactoryFilmNFT.sol";
 import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IVabbleFund.sol";
 
-contract VabbleFund is ReentrancyGuard {
+contract VabbleFund is IVabbleFund, ReentrancyGuard {
     
-    event DepositedToFilm(address indexed customer, uint256 indexed filmId, address token, uint256 amount, uint256 flag, uint256 depositTime);
-    event FundFilmProcessed(uint256 indexed filmId, address indexed studio, uint256 processTime);
-    event FundWithdrawed(uint256 indexed filmId, address indexed customer, uint256 withdrawTime);   
+    event DepositedToFilm(address indexed customer, uint256 indexed filmId, address token, uint256 amount, uint256 flag);
+    event FundFilmProcessed(uint256 indexed filmId, address indexed studio);
+    event FundWithdrawed(uint256 indexed filmId, address indexed customer);   
 
     struct Asset {
         address token;   // token address
@@ -35,7 +36,6 @@ contract VabbleFund is ReentrancyGuard {
     mapping(uint256 => Asset[]) public assetPerFilm;                     // (filmId => Asset[token, amount])
     mapping(uint256 => mapping(address => Asset[])) public assetInfo;    // (filmId => (customer => Asset[token, amount]))
     mapping(uint256 => address[]) private filmInvestorList;              // (filmId => investor address[])
-    mapping(address => uint256[]) private userInvestFilmIds;             // (user => invest filmId[]) for only approved_funding films
     mapping(uint256 => bool) public isFundProcessed;                     // (filmId => true/false)
     mapping(uint256 => mapping(address => uint256)) private allowUserNftCount; // (filmId => (user => nft count))    
     
@@ -80,12 +80,12 @@ contract VabbleFund is ReentrancyGuard {
         uint256 _amount, // flag=1 => token amount, flag=2 => nft count
         uint256 _flag,   // flag=1 => token, flag=2 => nft
         address _token
-    ) external payable {
+    ) external payable nonReentrant {
         if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "depositToFilm: not allowed asset");   
         }
         require(_flag == 1 || _flag == 2, "depositToFilm: invalid flag");
-        require(_amount > 0, "depositToFilm: zero value");
+        require(_amount != 0, "depositToFilm: zero value");
 
         (, uint256 fundPeriod, uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);    
         (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
@@ -112,7 +112,7 @@ contract VabbleFund is ReentrancyGuard {
 
         __assignToken(_filmId, _token, tokenAmount);
 
-        emit DepositedToFilm(msg.sender, _filmId, _token, tokenAmount, _flag, block.timestamp);
+        emit DepositedToFilm(msg.sender, _filmId, _token, tokenAmount, _flag);
     }    
 
     /// @dev Avoid deep error
@@ -138,7 +138,7 @@ contract VabbleFund is ReentrancyGuard {
             uint256 filmNftTotalSupply = IFactoryFilmNFT(FILM_NFT).getTotalSupply(_filmId);
 
             require(nft != address(0), "depositToFilm: not deployed for film");
-            require(maxMintAmount > 0, "depositToFilm: no mint info");     
+            require(maxMintAmount != 0, "depositToFilm: no mint info");     
             require(maxMintAmount >= filmNftTotalSupply + _amount, "depositToFilm: exceed mint amount");   
             
             uint256 usdcAmount = _amount * mintPrice; // USDC
@@ -155,7 +155,8 @@ contract VabbleFund is ReentrancyGuard {
         bool isNewTokenPerFilm = true;
 
         // update token amount
-        for(uint256 i = 0; i < assetInfo[_filmId][msg.sender].length; i++) {
+        uint256 assetInfoLength = assetInfo[_filmId][msg.sender].length;
+        for(uint256 i = 0; i < assetInfoLength; ++i) {
             if(_token == assetInfo[_filmId][msg.sender][i].token) {
                 assetInfo[_filmId][msg.sender][i].amount += _amount;
                 isNewTokenPerUser = false;
@@ -166,7 +167,8 @@ contract VabbleFund is ReentrancyGuard {
             assetInfo[_filmId][msg.sender].push(Asset({token: _token, amount: _amount}));
         }
         
-        for(uint256 i = 0; i < assetPerFilm[_filmId].length; i++) {
+        uint256 assetPerFilmLength = assetPerFilm[_filmId].length;
+        for(uint256 i = 0; i < assetPerFilmLength; ++i) {
             if(_token == assetPerFilm[_filmId][i].token) {
                 assetPerFilm[_filmId][i].amount += _amount;
                 isNewTokenPerFilm = false;
@@ -197,7 +199,8 @@ contract VabbleFund is ReentrancyGuard {
         Asset[] memory assetArr = assetPerFilm[_filmId];
         uint256 rewardSumAmount;
         uint256 rewardAmount;
-        for(uint256 i = 0; i < assetArr.length; i++) {                
+        uint256 assetArrLength = assetArr.length;
+        for(uint256 i = 0; i < assetArrLength; ++i) {                
             rewardAmount = assetArr[i].amount * IProperty(DAO_PROPERTY).fundFeePercent() / 1e10;
             if(vabToken == assetArr[i].token) {
                 rewardSumAmount += rewardAmount;
@@ -216,7 +219,7 @@ contract VabbleFund is ReentrancyGuard {
             Helper.safeTransferAsset(assetArr[i].token, msg.sender, (assetArr[i].amount - rewardAmount));
         }
 
-        if(rewardSumAmount > 0) {
+        if(rewardSumAmount != 0) {
             if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
                 Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
             }        
@@ -227,7 +230,7 @@ contract VabbleFund is ReentrancyGuard {
         fundProcessedFilmIds.push(_filmId);
         isFundProcessed[_filmId] = true;
 
-        emit FundFilmProcessed(_filmId, msg.sender, block.timestamp);
+        emit FundFilmProcessed(_filmId, msg.sender);
     }
     
     /// @notice Investor can withdraw fund after fund period if funding fails to meet the raise amount
@@ -242,7 +245,8 @@ contract VabbleFund is ReentrancyGuard {
         require(!isRaisedFullAmount(_filmId), "withdrawFunding: full raised");
 
         Asset[] storage assetArr = assetInfo[_filmId][msg.sender];
-        for(uint256 i = 0; i < assetArr.length; i++) {   
+        uint256 assetArrLength = assetArr.length;
+        for(uint256 i = 0; i < assetArrLength; ++i) {   
             if(assetArr[i].token == address(0)) {
                 if(address(this).balance >= assetArr[i].amount) {
                     Helper.safeTransferETH(msg.sender, assetArr[i].amount);
@@ -261,12 +265,13 @@ contract VabbleFund is ReentrancyGuard {
             __removeFilmInvestorList(_filmId, msg.sender);
         }
 
-        emit FundWithdrawed(_filmId, msg.sender, block.timestamp);
+        emit FundWithdrawed(_filmId, msg.sender);
     }
 
     /// @dev Remove user from investor list
     function __removeFilmInvestorList(uint256 _filmId, address _user) private { 
-        for(uint256 k = 0; k < filmInvestorList[_filmId].length; k++) { 
+        uint256 length = filmInvestorList[_filmId].length;
+        for(uint256 k = 0; k < length; ++k) { 
             if(_user == filmInvestorList[_filmId][k]) {
                 filmInvestorList[_filmId][k] = filmInvestorList[_filmId][filmInvestorList[_filmId].length - 1];
                 filmInvestorList[_filmId].pop();
@@ -286,11 +291,11 @@ contract VabbleFund is ReentrancyGuard {
     }
     
     /// @notice Check if fund meet raise amount
-    function isRaisedFullAmount(uint256 _filmId) public view returns (bool) {
+    function isRaisedFullAmount(uint256 _filmId) public view override returns (bool) {
         uint256 raisedAmount = getTotalFundAmountPerFilm(_filmId);
 
         (uint256 raiseAmount, , , ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);    
-        if(raisedAmount > 0 && raisedAmount >= raiseAmount) {
+        if(raisedAmount != 0 && raisedAmount >= raiseAmount) {
             return true;
         } else {
             return false;
@@ -301,18 +306,20 @@ contract VabbleFund is ReentrancyGuard {
     function getUserFundAmountPerFilm(
         address _customer, 
         uint256 _filmId
-    ) public view returns (uint256 amount_) {
+    ) public view override returns (uint256 amount_) {
         Asset[] memory assetArr = assetInfo[_filmId][_customer];
-        for(uint256 i = 0; i < assetArr.length; i++) {
+        uint256 assetArrLength = assetArr.length;
+        for(uint256 i = 0; i < assetArrLength; ++i) {
             if(assetArr[i].amount == 0) continue;
             amount_ += __getExpectedUsdcAmount(assetArr[i].token, assetArr[i].amount);
         }
     }
 
     /// @notice Get fund amount in cash(usdc) per film
-    function getTotalFundAmountPerFilm(uint256 _filmId) public view returns (uint256 amount_) {
+    function getTotalFundAmountPerFilm(uint256 _filmId) public view override returns (uint256 amount_) {
         Asset[] memory assetArr = assetPerFilm[_filmId];
-        for(uint256 i = 0; i < assetArr.length; i++) {
+        uint256 assetArrLength = assetArr.length;
+        for(uint256 i = 0; i < assetArrLength; ++i) {
             if(assetArr[i].amount == 0) continue;
             amount_ += __getExpectedUsdcAmount(assetArr[i].token, assetArr[i].amount);
         }
@@ -346,12 +353,12 @@ contract VabbleFund is ReentrancyGuard {
     }
     
     /// @notice Get investor list per film Id
-    function getFilmInvestorList(uint256 _filmId) public view returns (address[] memory) {
+    function getFilmInvestorList(uint256 _filmId) external view override returns (address[] memory) {
         return filmInvestorList[_filmId];
     }
 
     /// @notice Get investor list per film Id
-    function getAllowUserNftCount(uint256 _filmId, address _user) external view returns (uint256) {
+    function getAllowUserNftCount(uint256 _filmId, address _user) external view override returns (uint256) {
         return allowUserNftCount[_filmId][_user];
     }    
 }

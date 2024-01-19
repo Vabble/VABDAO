@@ -7,14 +7,15 @@ import "../libraries/Helper.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IUniswapV2Factory.sol";
 import "../interfaces/IOwnablee.sol";
+import "../interfaces/IUniHelper.sol";
 
-contract UniHelper {
+contract UniHelper is IUniHelper {
         
     address private immutable UNISWAP2_ROUTER;
     address private immutable UNISWAP2_FACTORY;    
     address private immutable SUSHI_FACTORY;
     address private immutable SUSHI_ROUTER;
-    address private OWNABLE;
+    address private immutable OWNABLE;
 
     mapping(address => bool) public isVabbleContract;
     bool public isInitialized;         // check if contract initialized or not
@@ -22,25 +23,6 @@ contract UniHelper {
     modifier onlyDeployer() {
         require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
         _;
-    }
-    /// @dev Provides a standard implementation for transferring assets between
-    /// the msg.sender and the helper, by wrapping the action.
-    modifier transferHandler(bytes memory _encodedArgs) {            
-        (
-            uint256 depositAmount,
-            address depositAsset,
-            address incomingAsset
-        ) = abi.decode(_encodedArgs, (uint256, address, address));
-        
-        if(depositAsset != address(0)) {
-            Helper.safeTransferFrom(depositAsset, msg.sender, address(this), depositAmount);
-        }
-        // Execute call
-        _;
-
-        // remain asset to send caller back
-        __transferAssetToCaller(payable(msg.sender), depositAsset);        
-        __transferAssetToCaller(payable(msg.sender), incomingAsset);
     }
     
     receive() external payable {}
@@ -92,7 +74,7 @@ contract UniHelper {
         uint256 _depositAmount,
         address _depositAsset, 
         address _incomingAsset
-    ) external view returns (uint256 amount_) {                
+    ) external view override returns (uint256 amount_) {                
         (address router, , , address[] memory path) = __checkPool(_depositAsset, _incomingAsset);        
         require(router != address(0), "expectedAmount: No Pool");
 
@@ -147,12 +129,16 @@ contract UniHelper {
     }
 
     /// @notice Swap eth/token to another token
-    function swapAsset(bytes calldata _swapArgs) external transferHandler(_swapArgs) returns (uint256 amount_) {
+    function swapAsset(bytes calldata _swapArgs) external override returns (uint256 amount_) {
         (
             uint256 depositAmount,
             address depositAsset,
             address incomingAsset
         ) = abi.decode(_swapArgs, (uint256, address, address));
+
+        if(depositAsset != address(0)) {
+            Helper.safeTransferFrom(depositAsset, msg.sender, address(this), depositAmount);
+        }
 
         // TODO - PVE002 updated(Sandwich/MEV: update to callable from only related contracts)
         require(isVabbleContract[msg.sender], "caller is not one of vabble contracts");
@@ -168,6 +154,10 @@ contract UniHelper {
         } else {
             amount_ = __swapTokenToToken(depositAmount, expectAmount, router, path)[1];
         } 
+
+        // remain asset to send caller back
+        __transferAssetToCaller(payable(msg.sender), depositAsset);        
+        __transferAssetToCaller(payable(msg.sender), incomingAsset);
     }
 
     // TODO - N6 updated(private)
@@ -211,12 +201,12 @@ contract UniHelper {
         uint256 transferAmount;
         if(_asset == address(0)) {
             transferAmount = address(this).balance;
-            if (transferAmount > 0) {
+            if (transferAmount != 0) {
                 Helper.safeTransferETH(_target, transferAmount);
             }
         } else {
             transferAmount = IERC20(_asset).balanceOf(address(this));
-            if (transferAmount > 0) {
+            if (transferAmount != 0) {
                 Helper.safeTransfer(_asset, _target, transferAmount);
             }
         }        

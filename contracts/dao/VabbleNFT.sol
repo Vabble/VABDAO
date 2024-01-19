@@ -7,9 +7,10 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // TODO - N5 we need royalty(like in Opensea) in the future
-contract VabbleNFT is ERC2981, ERC721Enumerable {    
+contract VabbleNFT is ERC2981, ERC721Enumerable, ReentrancyGuard {    
     
     using Counters for Counters.Counter;
     using Strings for uint256;
@@ -54,7 +55,7 @@ contract VabbleNFT is ERC2981, ERC721Enumerable {
     //     string memory json = '{"name":"Command+AAA","description":"This is test command+aaa collection","external_url":"https://openseacreatures.io/3","image":"https://i.seadn.io/gcs/files/fd08b4a340be10b6af307d7f68542976.png","banner":"https://storage.googleapis.com/opensea-prod.appspot.com/puffs/3.png","seller_fee_basis_points":100,"fee_recipient":"0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1"}';
     //     return string.concat("data:application/json;utf8,", json);
     // }
-    function mintTo(address _to) public payable returns (uint256) {
+    function mintTo(address _to) public payable nonReentrant returns (uint256) {
         // TODO - N2 updated(remove msg.sender != address(0))
         require(msg.sender == FACTORY, "mintTo: caller is not factory contract");
         
@@ -84,7 +85,7 @@ contract VabbleNFT is ERC2981, ERC721Enumerable {
 
     function userTokenIdList(address _owner) external view returns (uint256[] memory _tokensOfOwner) {
         _tokensOfOwner = new uint256[](balanceOf(_owner));
-        for (uint256 i; i < balanceOf(_owner); i++) {
+        for (uint256 i; i < balanceOf(_owner); ++i) {
             _tokensOfOwner[i] = tokenOfOwnerByIndex(_owner, i);
         }
     }
