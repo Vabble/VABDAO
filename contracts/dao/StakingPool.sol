@@ -319,7 +319,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Approve pending-withdraw of given customers by Auditor
     function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
-        require(_customers.length != 0, "approvePendingWithdraw: No customer");
+        require(_customers.length != 0 && _customers.length < 1000, "approvePendingWithdraw: No customer");
         
         uint256[] memory withdrawAmounts = new uint256[](_customers.length);
         // Transfer withdrawable amount to _customers
@@ -377,7 +377,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Deny pending-withdraw of given customers by Auditor
     function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
-        require(_customers.length != 0, "denyWithdraw: bad customers");
+        require(_customers.length != 0 && _customers.length < 1000, "denyWithdraw: bad customers");
 
         // Release withdrawable amount for _customers
         uint256 customerLength = _customers.length;
@@ -410,8 +410,9 @@ contract StakingPool is ReentrancyGuard {
         address _to, 
         uint256[] calldata _amounts
     ) external onlyDAO returns (uint256) {
+        require(_users.length == _amounts.length && _users.length < 1000, "sendVAB: bad array");
         uint256 sum;
-        uint256 userLength = _users.length;
+        uint256 userLength = _users.length;        
         for(uint256 i = 0; i < userLength; ++i) {  
             require(userRentInfo[_users[i]].vabAmount >= _amounts[i], "sendVAB: insufficient balance");
 

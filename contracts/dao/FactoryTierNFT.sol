@@ -79,7 +79,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256[] calldata _minAmounts,
         uint256[] calldata _maxAmounts
     ) external nonReentrant {                    
-        require(_minAmounts.length != 0, "setTier: bad minAmount length");        
+        require(_minAmounts.length != 0 && _minAmounts.length < 1000, "setTier: bad minAmount length");        
         require(_minAmounts.length == _maxAmounts.length, "setTier: bad maxAmount length");        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "setTier: not film owner");
 
