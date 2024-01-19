@@ -1,6 +1,6 @@
 <div align="center">
 <h1 align="center">
-<img src="https://github.com/Vabble/assets/blob/main/logo/Fill/Fill_LogoVabble_128x128.png" width="100" />
+<img src="https://github.com/Vabble/assets/blob/main/logo/VAB%20DAO%20Logo%202024.png" width="100" />
 <br>VABDAO</h1>
 <h3>◦ Unlocking decentralized media possibilities!</h3>
 <h3>◦ Developed with the software and tools below.</h3>
