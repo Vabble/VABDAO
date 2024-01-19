@@ -307,7 +307,7 @@ contract VabbleDAO is ReentrancyGuard {
         IOwnablee(OWNABLE).addToStudioPool(_amount); // Transfer VAB from EdgePool to StudioPool
         StudioPool += _amount;
 
-        uint256 userLength = edgePoolUsers.length;
+        uint256 userLength = edgePoolUsers.length;        
         for(uint256 i = 0; i < userLength; ++i) {   
             if(isStudioPoolUser[edgePoolUsers[i]]) continue;
 
@@ -343,7 +343,7 @@ contract VabbleDAO is ReentrancyGuard {
         uint256[] calldata _filmIds,
         uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
     ) external onlyAuditor nonReentrant {
-        require(_filmIds.length != 0 && _filmIds.length == _payouts.length, "final: bad length");
+        require(_filmIds.length != 0 && _filmIds.length < 1000 && _filmIds.length == _payouts.length, "final: bad length");
         
         bool[] memory _valids = checkSetFinalFilms(_filmIds);
         
@@ -462,7 +462,7 @@ contract VabbleDAO is ReentrancyGuard {
     // Claim reward of all filmIds for each user
     function claimAllReward() external nonReentrant {     
         uint256[] memory filmIds = userFinalFilmIds[msg.sender];
-        require(filmIds.length != 0, "claimAllReward: zero film ids");
+        require(filmIds.length != 0 && filmIds.length < 1000, "claimAllReward: zero film ids");
 
         __claimAllReward(filmIds);   
     }

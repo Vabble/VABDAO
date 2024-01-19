@@ -168,6 +168,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
         }
         
         uint256 assetPerFilmLength = assetPerFilm[_filmId].length;
+        require(assetPerFilmLength < 1000, "assignToken: bad length");
         for(uint256 i = 0; i < assetPerFilmLength; ++i) {
             if(_token == assetPerFilm[_filmId][i].token) {
                 assetPerFilm[_filmId][i].amount += _amount;
@@ -200,6 +201,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
         uint256 rewardSumAmount;
         uint256 rewardAmount;
         uint256 assetArrLength = assetArr.length;
+        require(assetArrLength < 1000, "fundProcess: bad length");
         for(uint256 i = 0; i < assetArrLength; ++i) {                
             rewardAmount = assetArr[i].amount * IProperty(DAO_PROPERTY).fundFeePercent() / 1e10;
             if(vabToken == assetArr[i].token) {
@@ -246,6 +248,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
 
         Asset[] storage assetArr = assetInfo[_filmId][msg.sender];
         uint256 assetArrLength = assetArr.length;
+        require(assetArrLength < 1000, "withdrawFunding: bad length");
         for(uint256 i = 0; i < assetArrLength; ++i) {   
             if(assetArr[i].token == address(0)) {
                 if(address(this).balance >= assetArr[i].amount) {
@@ -271,6 +274,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
     /// @dev Remove user from investor list
     function __removeFilmInvestorList(uint256 _filmId, address _user) private { 
         uint256 length = filmInvestorList[_filmId].length;
+        require(length < 100000, "removeFilmInvestorList: bad length");
         for(uint256 k = 0; k < length; ++k) { 
             if(_user == filmInvestorList[_filmId][k]) {
                 filmInvestorList[_filmId][k] = filmInvestorList[_filmId][filmInvestorList[_filmId].length - 1];

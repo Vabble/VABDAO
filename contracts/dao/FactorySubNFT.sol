@@ -149,7 +149,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256[] calldata _periodList, 
         uint256[] calldata _categoryList
     ) external payable nonReentrant {
-        require(_toList.length != 0, "batchMint: zero item length");
+        require(_toList.length != 0 && _toList.length < 1000, "batchMint: zero item length");
         require(_toList.length == _periodList.length, "batchMint: bad item-1 length");
         require(_toList.length == _categoryList.length, "batchMint: bad item-2 length");
 
