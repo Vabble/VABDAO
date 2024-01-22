@@ -43,7 +43,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         _;
     }
 
-    receive() external payable {}
+    // receive() external payable {}
 
     constructor(
         address _ownable,

@@ -51,7 +51,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         _;
     }
 
-    receive() external payable {}
+    // receive() external payable {}
 
     constructor(address _ownable) {
         require(_ownable != address(0), "ownableContract: Zero address");
