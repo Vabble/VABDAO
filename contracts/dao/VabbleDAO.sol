@@ -35,8 +35,8 @@ contract VabbleDAO is ReentrancyGuard {
     event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod);
     event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
     // event RewardClaimed(address user, uint256 monthId, uint256 filmId, uint256 claimAmount, uint256 claimTime);  
-    event RewardAllClaimed(address user, uint256 monthId, uint256[] filmIds, uint256 claimAmount);  
-    event SetFinalFilms(address user, uint256[] filmIds, uint256[] payouts);  
+    event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);  
+    event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);  
 
     address public immutable OWNABLE;         // Ownablee contract address
     address public immutable VOTE;            // Vote contract address
