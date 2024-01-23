@@ -12,7 +12,7 @@ import "./VabbleNFT.sol";
 
 contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
 
-    event SubscriptionERC721Created(address nftCreator, address nftContract);
+    event SubscriptionERC721Created(address indexed nftCreator, address nftContract);
     event SubscriptionERC721Minted(address receiver, uint256 subscriptionPeriod, uint256 indexed tokenId);   
     event SubscriptionNFTLocked(uint256 indexed tokenId, uint256 lockPeriod, address owner);    
     event SubscriptionNFTUnLocked(uint256 indexed tokenId, address owner);

@@ -21,7 +21,7 @@ contract VabbleNFT is ERC2981, ERC721Enumerable, ReentrancyGuard {
 
     address public immutable FACTORY;
 
-    receive() external payable {}
+    // receive() external payable {}
     constructor(
         string memory _baseUri,
         string memory _collectionUri,
@@ -55,7 +55,7 @@ contract VabbleNFT is ERC2981, ERC721Enumerable, ReentrancyGuard {
     //     string memory json = '{"name":"Command+AAA","description":"This is test command+aaa collection","external_url":"https://openseacreatures.io/3","image":"https://i.seadn.io/gcs/files/fd08b4a340be10b6af307d7f68542976.png","banner":"https://storage.googleapis.com/opensea-prod.appspot.com/puffs/3.png","seller_fee_basis_points":100,"fee_recipient":"0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1"}';
     //     return string.concat("data:application/json;utf8,", json);
     // }
-    function mintTo(address _to) public payable nonReentrant returns (uint256) {
+    function mintTo(address _to) public nonReentrant returns (uint256) {
         // TODO - N2 updated(remove msg.sender != address(0))
         require(msg.sender == FACTORY, "mintTo: caller is not factory contract");
         
