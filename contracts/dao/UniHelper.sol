@@ -215,7 +215,8 @@ contract UniHelper is IUniHelper {
     /// @dev Helper for asset to approve their max amount of an asset.
     function __approveMaxAsNeeded(address _asset, address _target, uint256 _neededAmount) private {
         if (IERC20(_asset).allowance(address(this), _target) < _neededAmount) {
-            Helper.safeApprove(_asset, _target, type(uint256).max);
+            // Helper.safeApprove(_asset, _target, type(uint256).max);
+            Helper.safeApprove(_asset, _target, _neededAmount);
         }
     }
 
