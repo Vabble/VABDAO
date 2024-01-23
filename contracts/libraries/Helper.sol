@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 
 // import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 // import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 library Helper {
     enum Status {
@@ -26,6 +27,7 @@ library Helper {
         uint256 value
     ) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
+        require(Address.isContract(token), "Target is not a contract");
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "TransferHelper::safeApprove: approve failed");
     }
@@ -35,6 +37,7 @@ library Helper {
         address to,
         uint256 value
     ) internal {
+        require(Address.isContract(token), "Target is not a contract");
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::safeTransfer: transfer failed");
     }
@@ -45,6 +48,7 @@ library Helper {
         address to,
         uint256 value
     ) internal {
+        require(Address.isContract(token), "Target is not a contract");
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::transferFrom: transferFrom failed");
     }
@@ -81,10 +85,11 @@ library Helper {
     // }
 
     function isContract(address _address) internal view returns(bool){
-        uint32 size;
-        assembly {
-            size := extcodesize(_address)
-        }
-        return (size != 0);
+        // uint32 size;
+        // assembly {
+        //     size := extcodesize(_address)
+        // }
+        // return (size != 0);
+        return Address.isContract(_address);
     }
 }
