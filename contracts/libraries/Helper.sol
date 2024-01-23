@@ -27,7 +27,7 @@ library Helper {
         uint256 value
     ) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
-        require(Address.isContract(token), "Target is not a contract");
+        require(Address.isContract(token), "C");
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "TransferHelper::safeApprove: approve failed");
     }
@@ -37,7 +37,7 @@ library Helper {
         address to,
         uint256 value
     ) internal {
-        require(Address.isContract(token), "Target is not a contract");
+        require(Address.isContract(token), "C");
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::safeTransfer: transfer failed");
     }
@@ -48,7 +48,7 @@ library Helper {
         address to,
         uint256 value
     ) internal {
-        require(Address.isContract(token), "Target is not a contract");
+        require(Address.isContract(token), "C");
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::transferFrom: transferFrom failed");
     }
