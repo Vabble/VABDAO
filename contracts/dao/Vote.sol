@@ -94,10 +94,10 @@ contract Vote is IVote, ReentrancyGuard {
         uint256[] calldata _filmIds, 
         uint256[] calldata _voteInfos
     ) external onlyStaker nonReentrant {
-        require(_filmIds.length != 0 && _filmIds.length < 1000, "voteToFilm: zero length");
-        require(_filmIds.length == _voteInfos.length, "voteToFilm: Bad item length");
-
         uint256 filmLength = _filmIds.length;
+        require(filmLength != 0 && filmLength < 1000, "voteToFilm: zero length");
+        require(filmLength == _voteInfos.length, "voteToFilm: Bad item length");
+
         for(uint256 i = 0; i < filmLength; ++i) { 
             __voteToFilm(_filmIds[i], _voteInfos[i]);
         }        
@@ -159,9 +159,9 @@ contract Vote is IVote, ReentrancyGuard {
     /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by anyone
     // if isFund is true then "APPROVED_FUNDING", if isFund is false then "APPROVED_LISTING"
     function approveFilms(uint256[] calldata _filmIds) external onlyStaker nonReentrant {
-        require(_filmIds.length != 0 && _filmIds.length < 1000, "approveFilms: Invalid items");
-
         uint256 filmLength = _filmIds.length;
+        require(filmLength != 0 && filmLength < 1000, "approveFilms: Invalid items");
+
         for(uint256 i = 0; i < filmLength; ++i) {
             __approveFilm(_filmIds[i]);
         }   

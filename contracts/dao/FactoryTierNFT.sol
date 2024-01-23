@@ -78,9 +78,11 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256 _filmId,
         uint256[] calldata _minAmounts,
         uint256[] calldata _maxAmounts
-    ) external nonReentrant {                    
-        require(_minAmounts.length != 0 && _minAmounts.length < 1000, "setTier: bad minAmount length");        
-        require(_minAmounts.length == _maxAmounts.length, "setTier: bad maxAmount length");        
+    ) external nonReentrant {                 
+        uint256 amountsLength = _minAmounts.length;
+
+        require(amountsLength != 0 && amountsLength < 1000, "setTier: bad minAmount length");        
+        require(amountsLength == _maxAmounts.length, "setTier: bad maxAmount length");        
         require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "setTier: not film owner");
 
         (uint256 raiseAmount, uint256 fundPeriod, uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
@@ -91,7 +93,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);        
         require(raisedAmount != 0 && raisedAmount >= raiseAmount, "setTier: not raised yet");
         
-        uint256 amountsLength = _minAmounts.length;
+        
         for(uint256 i = 0; i < amountsLength; ++i) {
             require(_minAmounts[i] != 0, "setTier: zero value");        
             // TODO - N3-2 updated(add below line)
