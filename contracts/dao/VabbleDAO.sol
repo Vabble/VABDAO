@@ -275,7 +275,9 @@ contract VabbleDAO is ReentrancyGuard {
         uint256[] calldata _amounts,
         uint256 _which
     ) external onlyAuditor nonReentrant {
-        require(_users.length == _amounts.length && _users.length < 1000, "allocate: bad array");
+        uint256 userLength = _users.length;
+
+        require(userLength == _amounts.length && userLength < 1000, "allocate: bad array");
         require(_which == 1 || _which == 2, "allocate: bad from value");
 
         if(_which == 1) {            
@@ -284,7 +286,7 @@ contract VabbleDAO is ReentrancyGuard {
             StudioPool += IStakingPool(STAKING_POOL).sendVAB(_users, address(this), _amounts);
         }
 
-        uint256 userLength = _users.length;
+        
         for(uint256 i = 0; i < userLength; ++i) {   
             if(_which == 1) {
                 if(isEdgePoolUser[_users[i]]) continue;
@@ -304,10 +306,13 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @notice Allocate VAB from EdgePool(Ownable) to StudioPool(VabbleDAO) by Auditor
     function allocateFromEdgePool(uint256 _amount) external onlyAuditor nonReentrant {
+        uint256 userLength = edgePoolUsers.length;
+        require(userLength < 100000, "bad array");
+
         IOwnablee(OWNABLE).addToStudioPool(_amount); // Transfer VAB from EdgePool to StudioPool
         StudioPool += _amount;
 
-        uint256 userLength = edgePoolUsers.length;        
+                
         for(uint256 i = 0; i < userLength; ++i) {   
             if(isStudioPoolUser[edgePoolUsers[i]]) continue;
 
@@ -343,11 +348,12 @@ contract VabbleDAO is ReentrancyGuard {
         uint256[] calldata _filmIds,
         uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
     ) external onlyAuditor nonReentrant {
-        require(_filmIds.length != 0 && _filmIds.length < 1000 && _filmIds.length == _payouts.length, "final: bad length");
+        uint256 filmLength = _filmIds.length;
+
+        require(filmLength != 0 && filmLength < 1000 && filmLength == _payouts.length, "final: bad length");
         
         bool[] memory _valids = checkSetFinalFilms(_filmIds);
         
-        uint256 filmLength = _filmIds.length;
         for(uint256 i = 0; i < filmLength; ++i) {     
             if(_filmIds[i] == 0 || _payouts[i] == 0) continue;
             if (!_valids[i]) continue;
@@ -437,10 +443,12 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     function __claimAllReward(uint256[] memory _filmIds) private {     
+        uint256 filmLength = _filmIds.length;
+        require(filmLength < 100000, "bad array");
+        
         uint256 curMonth = monthId.current();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN(); 
-        uint256 rewardSum;
-        uint256 filmLength = _filmIds.length;
+        uint256 rewardSum;        
         for(uint256 i = 0; i < filmLength; ++i) {  
             if (finalFilmCalledTime[_filmIds[i]] == 0) // not still call final film
                 continue;

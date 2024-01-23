@@ -23,6 +23,7 @@ const polyScan_api_key = process.env.POLYGON_SCAN_API_KEY;
 const avaxScan_api_key = process.env.AVAX_SCAN_API_KEY;
 
 const mnemonic = process.env.MNEMONIC;
+const privateKey = process.env.DEPLOY_PRIVATE_KEY;
 const coinmarketcap_api_key = process.env.COINMARKETCAP_API_KEY;
 
 const chainIds = {
@@ -71,7 +72,7 @@ module.exports = {
       },
       accounts: {
         mnemonic,
-      },      
+      },  
       // gasPrice: 22500000000,
       gasMultiplier: 2,
       // throwOnTransactionFailures: true,
@@ -80,9 +81,9 @@ module.exports = {
     // Ethereum mainnet
     mainnet: { 
       url: `https://eth-mainnet.alchemyapi.io/v2/${alchemy_key}`,
-      accounts: {
-        mnemonic,
-      },
+      accounts: [
+        privateKey
+      ],
       chainId: chainIds.mainnet,
       live: false,
       saveDeployments: true
@@ -90,9 +91,9 @@ module.exports = {
     // Ethereum testnet(Goerli)
     goerli: { 
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
-      accounts: {
-        mnemonic,
-      },
+      accounts: [
+        privateKey
+      ],
       chainId: chainIds.goerli,
       live: false,
       saveDeployments: true,
@@ -104,9 +105,9 @@ module.exports = {
     bscTest: { 
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: chainIds.bscTest,
-      accounts: {
-        mnemonic,
-      },
+      accounts: [
+        privateKey
+      ],
       live: true,
       saveDeployments: true,
       gasMultiplier: 2,
@@ -115,9 +116,9 @@ module.exports = {
     bscMain: { 
       url: "https://bsc-dataseed.binance.org/",
       chainId: chainIds.bscMain,
-      accounts: {
-        mnemonic,
-      },
+      accounts: [
+        privateKey
+      ],
       live: true,
       saveDeployments: true
     },
@@ -125,9 +126,9 @@ module.exports = {
     mumbai: { 
       url: "https://rpc-mumbai.maticvigil.com",
       chainId: chainIds.mumbai,
-      accounts: {
-        mnemonic,
-      },
+      accounts: [
+        privateKey
+      ],
       live: false,
       saveDeployments: true,
       gasPrice: 22500000000,
@@ -137,9 +138,9 @@ module.exports = {
     matic: { 
       url: "https://polygon-rpc.com",
       chainId: chainIds.matic,
-      accounts: {
-        mnemonic,
-      },
+      accounts: [
+        privateKey
+      ],
       live: true,
       saveDeployments: true
     },
@@ -148,9 +149,9 @@ module.exports = {
       url: "https://api.avax-test.network/ext/C/rpc",
       gasPrice: 225000000000,
       chainId: chainIds.fuji,
-      accounts: {
-        mnemonic,
-      },
+      accounts: [
+        privateKey
+      ],
     },
     // Avalance mainnet
     avax: { 

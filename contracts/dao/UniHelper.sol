@@ -3,13 +3,15 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
 import "../libraries/Helper.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IUniswapV2Factory.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IUniHelper.sol";
 
-contract UniHelper is IUniHelper {
+contract UniHelper is IUniHelper, ReentrancyGuard {
         
     address private immutable UNISWAP2_ROUTER;
     address private immutable UNISWAP2_FACTORY;    
@@ -129,7 +131,7 @@ contract UniHelper is IUniHelper {
     }
 
     /// @notice Swap eth/token to another token
-    function swapAsset(bytes calldata _swapArgs) external override returns (uint256 amount_) {
+    function swapAsset(bytes calldata _swapArgs) external override nonReentrant returns (uint256 amount_) {
         (
             uint256 depositAmount,
             address depositAsset,
@@ -215,7 +217,8 @@ contract UniHelper is IUniHelper {
     /// @dev Helper for asset to approve their max amount of an asset.
     function __approveMaxAsNeeded(address _asset, address _target, uint256 _neededAmount) private {
         if (IERC20(_asset).allowance(address(this), _target) < _neededAmount) {
-            Helper.safeApprove(_asset, _target, type(uint256).max);
+            // Helper.safeApprove(_asset, _target, type(uint256).max);
+            Helper.safeApprove(_asset, _target, _neededAmount);
         }
     }
 

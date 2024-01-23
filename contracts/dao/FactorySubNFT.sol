@@ -149,13 +149,13 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
         uint256[] calldata _periodList, 
         uint256[] calldata _categoryList
     ) external payable nonReentrant {
-        require(_toList.length != 0 && _toList.length < 1000, "batchMint: zero item length");
-        require(_toList.length == _periodList.length, "batchMint: bad item-1 length");
-        require(_toList.length == _categoryList.length, "batchMint: bad item-2 length");
+        uint256 len = _toList.length;
+        require(len != 0 && len < 1000, "batchMint: zero item length");
+        require(len == _periodList.length, "batchMint: bad item-1 length");
+        require(len == _categoryList.length, "batchMint: bad item-2 length");
 
         __handleMintPay(_token, _periodList, _categoryList);     
 
-        uint256 len = _toList.length;
         for(uint256 i = 0; i < len; ++i) {
             __mint(_token, _toList[i], _periodList[i], _categoryList[i]);
         }
@@ -168,6 +168,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     ) private {
         uint256 expectAmount;        
         uint256 len = _periodList.length;
+        require(len < 1000, "bad array");
+        
         for(uint256 i = 0; i < len; ++i) {
             uint256 price = mintInfo[_categoryList[i]].mintPrice;
             expectAmount += getExpectedTokenAmount(_payToken, _periodList[i] * price);
