@@ -346,6 +346,28 @@ describe('SetFinalFilm', function () {
             fundType = 0, nVote = 0;
             await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.USDC.address, 
                 {from: this.studio1.address})
+
+            // change film owner
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.studio3.address, {from: this.studio1.address})                
+
+            await expect(
+                this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+                    fId1, 
+                    title1,
+                    desc1,
+                    sharePercents, 
+                    studioPayees,  
+                    raiseAmount, 
+                    fundPeriod, 
+                    0,
+                    enableClaimer1,
+                    {from: this.studio1.address}
+                )
+            ).to.be.revertedWith('proposalUpdate: not film owner');
+
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio3).changeOwner(fId1, this.studio1.address, {from: this.studio3.address})                
+
             await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
                 fId1, 
                 title1,
