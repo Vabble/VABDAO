@@ -214,9 +214,16 @@ contract VabbleDAO is ReentrancyGuard {
         }
 
         fInfo.studio = newOwner;
-        userFilmProposalIds[newOwner].push(_filmId);
-        userUpdatedFilmProposalIds[newOwner].push(_filmId);
 
+        if (fInfo.status == Helper.Status.LISTED)
+            userFilmProposalIds[newOwner].push(_filmId);
+
+        if (fInfo.status == Helper.Status.UPDATED)
+            userUpdatedFilmProposalIds[newOwner].push(_filmId);
+        
+        if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING)
+            userApprovedFilmIds[newOwner].push(_filmId);
+        
         emit ChangeFilmOwner(_filmId, msg.sender, newOwner);
 
         return true;

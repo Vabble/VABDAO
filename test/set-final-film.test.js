@@ -359,6 +359,10 @@ describe('SetFinalFilm', function () {
                 {from: this.studio1.address}
             );
 
+            await expect(
+                this.VabbleDAO.connect(this.studio2).changeOwner(fId1, this.studio3.address, {from: this.studio2.address})                
+            ).to.be.revertedWith('changeOwner: not film owner');
+
             // Create proposal for a film by studio with EXM token
             await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.EXM.address, 
                 {from: this.studio1.address})
@@ -375,6 +379,7 @@ describe('SetFinalFilm', function () {
                 {from: this.studio1.address}
             );
 
+            
             // fundType=1 => approve fund by token
             await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(1, 0, CONFIG.addressZero, 
                 {from: this.studio1.address, value: ethVal});
