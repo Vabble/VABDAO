@@ -37,6 +37,7 @@ contract VabbleDAO is ReentrancyGuard {
     // event RewardClaimed(address user, uint256 monthId, uint256 filmId, uint256 claimAmount, uint256 claimTime);  
     event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);  
     event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);  
+    event ChangeFilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);  
 
     address public immutable OWNABLE;         // Ownablee contract address
     address public immutable VOTE;            // Vote contract address
@@ -213,6 +214,10 @@ contract VabbleDAO is ReentrancyGuard {
         }
 
         fInfo.studio = newOwner;
+        userFilmProposalIds[newOwner].push(_filmId);
+        userUpdatedFilmProposalIds[newOwner].push(_filmId);
+
+        emit ChangeFilmOwner(_filmId, msg.sender, newOwner);
 
         return true;
     }
