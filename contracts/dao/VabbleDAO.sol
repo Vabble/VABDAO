@@ -201,6 +201,22 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmProposalUpdated(_filmId, fInfo.fundType, msg.sender);     
     }
 
+    function changeOwner(uint256 _filmId, address newOwner) external nonReentrant returns (bool) {
+        IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
+
+        require(fInfo.studio == msg.sender, 'changeOwner: not film owner');
+
+        uint256 payeeLength = fInfo.studioPayees.length;  
+        for(uint256 k = 0; k < payeeLength; k++) {
+            if (fInfo.studioPayees[k] == msg.sender)
+                fInfo.studioPayees[k] = newOwner;
+        }
+
+        fInfo.studio = newOwner;
+
+        return true;
+    }
+
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
     function __paidFee(address _dToken, uint256 _noVote) private {    
