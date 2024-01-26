@@ -348,7 +348,11 @@ describe('SetFinalFilm', function () {
                 {from: this.studio1.address})
 
             // change film owner
-            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.studio3.address, {from: this.studio1.address})                
+            await expect(
+                this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.studio3.address, {from: this.studio1.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.studio1.address, this.studio3.address
+            );
 
             await expect(
                 this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
@@ -367,7 +371,7 @@ describe('SetFinalFilm', function () {
 
             // change owner back to again
             this.VabbleDAO.connect(this.studio3).changeOwner(fId1, this.studio1.address, {from: this.studio3.address})                
-
+            
             await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
                 fId1, 
                 title1,
