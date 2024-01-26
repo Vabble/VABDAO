@@ -37,6 +37,31 @@ library VabbleDAOUtils {
         reward_ = rewardSum;
     }
 
+    function updateFinalizeAmountAndLastClaimMonth (
+        uint256 _filmId, 
+        uint256 _curMonth, 
+        address _oldOwner,
+        address _newOwner,
+        mapping(uint256 => mapping(address => uint256)) storage latestClaimMonthId,
+        mapping(uint256 => mapping(uint256 => mapping(address => uint256))) storage finalizedAmount
+    ) internal {
+        uint256 _preMonth = latestClaimMonthId[_filmId][_oldOwner];
+
+        // update last claim month for newOwner
+        latestClaimMonthId[_filmId][_newOwner] = _preMonth;
+        
+        if(_preMonth < _curMonth) {
+            for(uint256 mon = _preMonth + 1; mon <= _curMonth; ++mon) {
+                // set finalizedAmount for new owner
+                finalizedAmount[mon][_filmId][_newOwner] = finalizedAmount[mon][_filmId][_oldOwner];
+
+                // set 0 for old owner
+                finalizedAmount[mon][_filmId][_oldOwner] = 0;
+            }                   
+        }
+        
+    }
+
     // function getUserFilmListForMigrate(
     //     address _user,
     //     mapping(address => uint256[]) storage userApprovedFilmIds,

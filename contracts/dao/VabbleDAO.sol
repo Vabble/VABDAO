@@ -221,8 +221,11 @@ contract VabbleDAO is ReentrancyGuard {
         if (fInfo.status == Helper.Status.UPDATED)
             userUpdatedFilmProposalIds[newOwner].push(_filmId);
         
-        if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING)
+        if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
             userApprovedFilmIds[newOwner].push(_filmId);
+            uint256 curMonth = monthId.current();        
+            VabbleDAOUtils.updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner, latestClaimMonthId, finalizedAmount);
+        }
         
         emit ChangeFilmOwner(_filmId, msg.sender, newOwner);
 
