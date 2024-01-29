@@ -521,7 +521,67 @@ describe('SetFinalFilm', function () {
 
             // change owner back to again
             this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
-            
+
+            // Each customers 1 ~ 6 Deposit to fund on film-3 by USDC token
+            const flag1 = 1;
+            const flag2 = 2;
+            const dAmount = getBigNumber(50, 6)
+            await this.VabbleFund.connect(this.customer1).depositToFilm(fId3, dAmount, flag1, this.USDC.address, {from: this.customer1.address})
+            await this.VabbleFund.connect(this.customer2).depositToFilm(fId3, dAmount, flag1, this.USDC.address, {from: this.customer2.address})
+            await this.VabbleFund.connect(this.customer3).depositToFilm(fId3, dAmount, flag1, this.USDC.address, {from: this.customer3.address})
+            await this.VabbleFund.connect(this.customer4).depositToFilm(fId3, dAmount, flag1, this.USDC.address, {from: this.customer4.address})
+            await this.VabbleFund.connect(this.customer5).depositToFilm(fId3, dAmount, flag1, this.USDC.address, {from: this.customer5.address})
+            await this.VabbleFund.connect(this.customer6).depositToFilm(fId3, dAmount, flag1, this.USDC.address, {from: this.customer6.address})
+
+            const usdc_balance_of_vabble_fund1 = await this.USDC.balanceOf(this.VabbleFund.address);
+            expect(usdc_balance_of_vabble_fund1).to.be.equal(getBigNumber(300, 6)); // 50 * 6
+
+            // // Deploy NFT for film-4 and film-5
+            // const tier = getBigNumber(1, 0)
+            // const nAmount = getBigNumber(8000, 0)      // 8000
+            // const nPrice1 = getBigNumber(2, 6)          // 2 USDC
+            // const nPrice2 = getBigNumber(20, 6)
+            // if (GNOSIS_FLAG) {
+            //     let encodedCallData = this.FilmNFT.interface.encodeFunctionData("setBaseURI", 
+            //             ["base_uri", "collection_uri"]);
+            //     const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.FilmNFT.address, [this.signer1, this.signer2]);
+            //     await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            // } else {
+            //     await this.FilmNFT.connect(this.auditor).setBaseURI("base_uri", "collection_uri")
+            // }
+
+            // await this.FilmNFT.connect(this.studio1).setMintInfo(fId4, tier, nAmount, nPrice1, {from: this.studio1.address})
+            // await this.FilmNFT.connect(this.studio1).setMintInfo(fId5, tier, nAmount, nPrice2, {from: this.studio1.address})
+            // await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(fId4, "test4 nft", "t4nft", {from: this.studio1.address})
+            // await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(fId5, "test5 nft", "t5nft", {from: this.studio1.address})
+
+            // // Deposit to fund film by nft
+            // const dAmount1 = 100 //(maxMintAmount = nAmount = 8000)
+            // await this.VabbleFund.connect(this.customer1).depositToFilm(fId4, 1, flag2, this.USDC.address, {from: this.customer1.address})
+            // await this.VabbleFund.connect(this.customer1).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer1.address})
+            // await this.VabbleFund.connect(this.customer2).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer2.address})
+
+            // const usdc_balance_of_vabble_fund3 = await this.USDC.balanceOf(this.VabbleFund.address);
+            // // fund 2 * 1 + 20 * 100 + 20 * 100 = 4002 with NFT
+            // // token = 50 * 6 = 300
+            // // total = 4002 + 300 = 4302            
+            // console.log("usdc_balance_of_vabble_fund3:(USDC)", usdc_balance_of_vabble_fund3.toString() / getBigNumber(1)); // 4302000000
+            // expect(usdc_balance_of_vabble_fund3).to.be.equal(getBigNumber(4302, 6));
+
+            // const isRaised3 = await this.VabbleFund.isRaisedFullAmount(fId3);
+            // const isRaised4 = await this.VabbleFund.isRaisedFullAmount(fId4);
+            // const isRaised5 = await this.VabbleFund.isRaisedFullAmount(fId5);    
+            // expect(isRaised3).to.be.true    // 300 > 150
+            // expect(isRaised4).to.be.false   // 2 < 150
+            // expect(isRaised5).to.be.true    // 4000 > 150
+
+            // const userNftCount51 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer1.address)
+            // const userNftCount52 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer2.address)
+            // const userNftCount53 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer3.address)    
+            // expect(userNftCount51).to.be.equal(dAmount1) // 100
+            // expect(userNftCount52).to.be.equal(dAmount1) // 100
+            // expect(userNftCount53).to.be.equal(0)
+
 
                   
         } catch (error) {
