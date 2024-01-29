@@ -724,7 +724,78 @@ describe('ChangeFilmOwner', function () {
             console.log("====assignedAmount4::", a41_1 / getBigNumber(1), a42_1 / getBigNumber(1), a43_1 / getBigNumber(1), a44_1 / getBigNumber(1), a45_1 / getBigNumber(1))
             console.log("====assignedAmount5::", a51_1 / getBigNumber(1), a52_1 / getBigNumber(1), a53_1 / getBigNumber(1), a54_1 / getBigNumber(1), a55_1 / getBigNumber(1))
 
+            // Change Film Owner and check finalized amount
 
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId3, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId3, this.deployer.address, this.studio1.address
+            );
+
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId4, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId4, this.deployer.address, this.studio1.address
+            );
+
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId5, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId5, this.deployer.address, this.studio1.address
+            );
+
+            const a31_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
+            const a32_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
+            const a33_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
+            const a34_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.deployer.address)
+            const a35_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.studio1.address)
+
+            const a41_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer1.address)
+            const a42_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer2.address)
+            const a43_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer3.address)
+            const a44_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.deployer.address)
+            const a45_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.studio1.address)
+            
+            const a51_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer1.address)
+            const a52_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer2.address)
+            const a53_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer3.address)
+            const a54_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.deployer.address)
+            const a55_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.studio1.address)
+
+            console.log("====assignedAmount3_1::", a31_1_1 / getBigNumber(1), a32_1_1 / getBigNumber(1), a33_1_1 / getBigNumber(1), a34_1_1 / getBigNumber(1), a35_1_1 / getBigNumber(1))
+            console.log("====assignedAmount4_1::", a41_1_1 / getBigNumber(1), a42_1_1 / getBigNumber(1), a43_1_1 / getBigNumber(1), a44_1_1 / getBigNumber(1), a45_1_1 / getBigNumber(1))
+            console.log("====assignedAmount5_1::", a51_1_1 / getBigNumber(1), a52_1_1 / getBigNumber(1), a53_1_1 / getBigNumber(1), a54_1_1 / getBigNumber(1), a55_1_1 / getBigNumber(1))
+
+
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId3, this.deployer.address, {from: this.studio1.address})                
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId4, this.deployer.address, {from: this.studio1.address})                
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId5, this.deployer.address, {from: this.studio1.address})                
+
+            const a31_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
+            const a32_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
+            const a33_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
+            const a34_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.deployer.address)
+            const a35_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.studio1.address)
+
+            // There is no reward to investor because not full funded
+            const a41_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer1.address)
+            const a42_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer2.address)
+            const a43_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer3.address)
+            const a44_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.deployer.address)
+            const a45_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.studio1.address)
+            
+            const a51_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer1.address)
+            const a52_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer2.address)
+            const a53_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer3.address)
+            const a54_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.deployer.address)
+            const a55_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.studio1.address)
+
+            console.log("====assignedAmount3_2::", a31_1_2 / getBigNumber(1), a32_1_2 / getBigNumber(1), a33_1_2 / getBigNumber(1), a34_1_2 / getBigNumber(1), a35_1_2 / getBigNumber(1))
+            console.log("====assignedAmount4_2::", a41_1_2 / getBigNumber(1), a42_1_2 / getBigNumber(1), a43_1_2 / getBigNumber(1), a44_1_2 / getBigNumber(1), a45_1_2 / getBigNumber(1))
+            console.log("====assignedAmount5_2::", a51_1_2 / getBigNumber(1), a52_1_2 / getBigNumber(1), a53_1_2 / getBigNumber(1), a54_1_2 / getBigNumber(1), a55_1_2 / getBigNumber(1))
+
+            
                   
         } catch (error) {
             console.error("Error:", error);
