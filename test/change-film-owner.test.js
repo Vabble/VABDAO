@@ -558,8 +558,14 @@ describe('ChangeFilmOwner', function () {
             // Deposit to fund film by nft
             const dAmount1 = 100 //(maxMintAmount = nAmount = 8000)
             await this.VabbleFund.connect(this.customer1).depositToFilm(fId4, 1, flag2, this.USDC.address, {from: this.customer1.address})
+            const investorList4 = await this.VabbleFund.getFilmInvestorList(fId4);
+            console.log("Film4 Investor List", investorList4);
+
             await this.VabbleFund.connect(this.customer1).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer1.address})
             await this.VabbleFund.connect(this.customer2).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer2.address})
+
+            const investorList5 = await this.VabbleFund.getFilmInvestorList(fId5);
+            console.log("Film5 Investor List", investorList5);
 
             const usdc_balance_of_vabble_fund3 = await this.USDC.balanceOf(this.VabbleFund.address);
             // fund 2 * 1 + 20 * 100 + 20 * 100 = 4002 with NFT
@@ -701,6 +707,7 @@ describe('ChangeFilmOwner', function () {
             const a34_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.deployer.address)
             const a35_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.studio1.address)
 
+            // There is no reward to investor because not full funded
             const a41_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer1.address)
             const a42_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer2.address)
             const a43_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer3.address)
