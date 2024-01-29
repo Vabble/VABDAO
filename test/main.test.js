@@ -11,4 +11,4 @@
 // require('./multiSigWallet.test');
 // require('./gnosisSafe.test');
 // require('./set-final-film.test');
-require('./change-owner.test')
+require('./change-film-owner.test')
