@@ -795,6 +795,27 @@ describe('ChangeFilmOwner', function () {
             console.log("====assignedAmount4_2::", a41_1_2 / getBigNumber(1), a42_1_2 / getBigNumber(1), a43_1_2 / getBigNumber(1), a44_1_2 / getBigNumber(1), a45_1_2 / getBigNumber(1))
             console.log("====assignedAmount5_2::", a51_1_2 / getBigNumber(1), a52_1_2 / getBigNumber(1), a53_1_2 / getBigNumber(1), a54_1_2 / getBigNumber(1), a55_1_2 / getBigNumber(1))
 
+            // when film owner is changed from deployer to studio1, finalizedAmount is moved also
+            expect(a34_1).to.be.equal(a35_1_1)
+            expect(a35_1).to.be.equal(a34_1_1)
+
+            expect(a44_1).to.be.equal(a45_1_1)
+            expect(a45_1).to.be.equal(a44_1_1)
+
+            expect(a54_1).to.be.equal(a55_1_1)
+            expect(a55_1).to.be.equal(a54_1_1)
+
+            expect(a34_1_2).to.be.equal(a35_1_1)
+            expect(a35_1_2).to.be.equal(a34_1_1)
+
+            expect(a44_1_2).to.be.equal(a45_1_1)
+            expect(a45_1_2).to.be.equal(a44_1_1)
+
+            expect(a54_1_2).to.be.equal(a55_1_1)
+            expect(a55_1_2).to.be.equal(a54_1_1)
+
+
+
             
                   
         } catch (error) {
