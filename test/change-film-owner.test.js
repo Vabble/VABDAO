@@ -713,7 +713,6 @@ describe('ChangeFilmOwner', function () {
             const a24_1 = await this.VabbleDAO.finalizedAmount(monthId, fId2, this.deployer.address)
             const a25_1 = await this.VabbleDAO.finalizedAmount(monthId, fId2, this.studio1.address)
 
-
             const a31_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
             const a32_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
             const a33_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
@@ -734,37 +733,33 @@ describe('ChangeFilmOwner', function () {
             const a55_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.studio1.address)
 
             console.log("====assignedAmount1::", a11_1 / getBigNumber(1), a12_1 / getBigNumber(1), a13_1 / getBigNumber(1), a14_1 / getBigNumber(1), a15_1 / getBigNumber(1))
-            console.log("====assignedAmount1::", a21_1 / getBigNumber(1), a22_1 / getBigNumber(1), a23_1 / getBigNumber(1), a24_1 / getBigNumber(1), a25_1 / getBigNumber(1))
+            console.log("====assignedAmount2::", a21_1 / getBigNumber(1), a22_1 / getBigNumber(1), a23_1 / getBigNumber(1), a24_1 / getBigNumber(1), a25_1 / getBigNumber(1))
             console.log("====assignedAmount3::", a31_1 / getBigNumber(1), a32_1 / getBigNumber(1), a33_1 / getBigNumber(1), a34_1 / getBigNumber(1), a35_1 / getBigNumber(1))
             console.log("====assignedAmount4::", a41_1 / getBigNumber(1), a42_1 / getBigNumber(1), a43_1 / getBigNumber(1), a44_1 / getBigNumber(1), a45_1 / getBigNumber(1))
             console.log("====assignedAmount5::", a51_1 / getBigNumber(1), a52_1 / getBigNumber(1), a53_1 / getBigNumber(1), a54_1 / getBigNumber(1), a55_1 / getBigNumber(1))
 
-            const rewardAmount_Old = await this.VabbleDAO.connect(this.deployer).getUserRewardAmount(fId3, monthId, {from: this.deployer.address});
-            console.log("rewardAmount_Old", rewardAmount_Old / getBigNumber(1));
+            let finalFilmList_oldUser = await this.VabbleDAO.getUserFinalFilmIds(this.deployer.address) // 1, 2, 3, 4, 5
+            console.log("finalFilmList_oldUser", finalFilmList_oldUser);
 
-            const allRewardAmount1_Old = await this.VabbleDAO.connect(this.deployer).getAllAvailableRewards(1, {from: this.deployer.address});
+            const rewardAmount_Old = await this.VabbleDAO.connect(this.deployer).getUserRewardAmount(fId3, monthId, {from: this.deployer.address});
+            console.log("rewardAmount_Old", rewardAmount_Old / getBigNumber(1));    
+        
+            const allRewardAmount1_Old = await this.VabbleDAO.connect(this.deployer).getAllAvailableRewards(monthId, {from: this.deployer.address});
             console.log("AllRewardAmount1_Old", allRewardAmount1_Old / getBigNumber(1));
 
+            const allRewardAmount11_Old = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(monthId, {from: this.customer1.address});
+            console.log("allRewardAmount11_Old", allRewardAmount11_Old / getBigNumber(1));
+
+
             // Change Film Owner and check finalized amount
-
-            await expect(
-                this.VabbleDAO.connect(this.deployer).changeOwner(fId3, this.studio1.address, {from: this.deployer.address})            
-            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
-                fId3, this.deployer.address, this.studio1.address
-            );
-
-            await expect(
-                this.VabbleDAO.connect(this.deployer).changeOwner(fId4, this.studio1.address, {from: this.deployer.address})            
-            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
-                fId4, this.deployer.address, this.studio1.address
-            );
-
-            await expect(
-                this.VabbleDAO.connect(this.deployer).changeOwner(fId5, this.studio1.address, {from: this.deployer.address})            
-            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
-                fId5, this.deployer.address, this.studio1.address
-            );
-
+            for (var i = 1; i < 6; i++) {
+                await expect(
+                    this.VabbleDAO.connect(this.deployer).changeOwner(i, this.studio1.address, {from: this.deployer.address})            
+                ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                    i, this.deployer.address, this.studio1.address
+                );        
+            }
+           
             const a31_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
             const a32_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
             const a33_1_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
@@ -797,6 +792,10 @@ describe('ChangeFilmOwner', function () {
             this.VabbleDAO.connect(this.studio1).changeOwner(fId3, this.deployer.address, {from: this.studio1.address})                
             this.VabbleDAO.connect(this.studio1).changeOwner(fId4, this.deployer.address, {from: this.studio1.address})                
             this.VabbleDAO.connect(this.studio1).changeOwner(fId5, this.deployer.address, {from: this.studio1.address})                
+
+            for (var i = 1; i < 6; i++) {
+                this.VabbleDAO.connect(this.studio1).changeOwner(i, this.deployer.address, {from: this.studio1.address})                   
+            }
 
             const a31_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
             const a32_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
@@ -843,12 +842,8 @@ describe('ChangeFilmOwner', function () {
             expect(rewardAmount_Old).to.be.equal(rewardAmount_New)
             expect(allRewardAmount1_Old).to.be.equal(allRewardAmount1_New)
 
-
             let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
             expect(finalFilmList.length).to.be.equal(5)
-
-
-            
                   
         } catch (error) {
             console.error("Error:", error);
