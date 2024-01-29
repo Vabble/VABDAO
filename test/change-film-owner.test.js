@@ -360,7 +360,32 @@ describe('SetFinalFilm', function () {
             await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(0, 0, this.USDC.address, 
                 {from: this.deployer.address})
 
-            await this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
+            // Change film owner in LISTING Status
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.deployer.address, this.studio1.address
+            );
+
+            await expect(        
+                this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
+                    fId1, 
+                    title1,
+                    desc1,
+                    sharePercents, 
+                    studioPayees,  
+                    raiseAmount, 
+                    fundPeriod, 
+                    0,
+                    enableClaimer1,
+                    {from: this.deployer.address}
+                )
+            ).to.be.revertedWith('proposalUpdate: not film owner');  
+            
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.deployer.address})                
+
+            this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId1, 
                 title1,
                 desc1,
@@ -371,8 +396,8 @@ describe('SetFinalFilm', function () {
                 0,
                 enableClaimer1,
                 {from: this.deployer.address}
-            );
-
+            )
+            
             // Create proposal for a film by studio with EXM token
             await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(0, 0, this.EXM.address, 
                 {from: this.deployer.address})
@@ -439,8 +464,17 @@ describe('SetFinalFilm', function () {
 
             // Vote to proposal films(1,2,3,4) from customer1, 2, 3
             const pIds = await this.VabbleDAO.getFilmIds(1); // 1, 2, 3, 4, 5
-            
-                    
+
+            // Staking VAB token from customrs 1, 2, 3 to Staking Pool for voting
+            await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(400), {from: this.customer1.address})
+            await this.StakingPool.connect(this.customer2).stakeVAB(getBigNumber(400), {from: this.customer2.address})
+            await this.StakingPool.connect(this.customer3).stakeVAB(getBigNumber(300), {from: this.customer3.address})  
+
+            // Staking VAB token from studio 1, 2, 3 to Staking Pool for approve voting
+            await this.StakingPool.connect(this.studio1).stakeVAB(getBigNumber(300), {from: this.studio1.address})
+            await this.StakingPool.connect(this.studio2).stakeVAB(getBigNumber(300), {from: this.studio2.address})
+            await this.StakingPool.connect(this.studio3).stakeVAB(getBigNumber(300), {from: this.studio3.address})
+                  
         } catch (error) {
             console.error("Error:", error);
         } 
