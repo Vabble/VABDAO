@@ -701,6 +701,19 @@ describe('ChangeFilmOwner', function () {
 
             // check each payeers finalized amount for each film
             let monthId = await this.VabbleDAO.monthId() // 1        
+            const a11_1 = await this.VabbleDAO.finalizedAmount(monthId, fId1, this.customer1.address)
+            const a12_1 = await this.VabbleDAO.finalizedAmount(monthId, fId1, this.customer2.address)
+            const a13_1 = await this.VabbleDAO.finalizedAmount(monthId, fId1, this.customer3.address)
+            const a14_1 = await this.VabbleDAO.finalizedAmount(monthId, fId1, this.deployer.address)
+            const a15_1 = await this.VabbleDAO.finalizedAmount(monthId, fId1, this.studio1.address)
+
+            const a21_1 = await this.VabbleDAO.finalizedAmount(monthId, fId2, this.customer1.address)
+            const a22_1 = await this.VabbleDAO.finalizedAmount(monthId, fId2, this.customer2.address)
+            const a23_1 = await this.VabbleDAO.finalizedAmount(monthId, fId2, this.customer3.address)
+            const a24_1 = await this.VabbleDAO.finalizedAmount(monthId, fId2, this.deployer.address)
+            const a25_1 = await this.VabbleDAO.finalizedAmount(monthId, fId2, this.studio1.address)
+
+
             const a31_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
             const a32_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
             const a33_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
@@ -720,9 +733,17 @@ describe('ChangeFilmOwner', function () {
             const a54_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.deployer.address)
             const a55_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.studio1.address)
 
+            console.log("====assignedAmount1::", a11_1 / getBigNumber(1), a12_1 / getBigNumber(1), a13_1 / getBigNumber(1), a14_1 / getBigNumber(1), a15_1 / getBigNumber(1))
+            console.log("====assignedAmount1::", a21_1 / getBigNumber(1), a22_1 / getBigNumber(1), a23_1 / getBigNumber(1), a24_1 / getBigNumber(1), a25_1 / getBigNumber(1))
             console.log("====assignedAmount3::", a31_1 / getBigNumber(1), a32_1 / getBigNumber(1), a33_1 / getBigNumber(1), a34_1 / getBigNumber(1), a35_1 / getBigNumber(1))
             console.log("====assignedAmount4::", a41_1 / getBigNumber(1), a42_1 / getBigNumber(1), a43_1 / getBigNumber(1), a44_1 / getBigNumber(1), a45_1 / getBigNumber(1))
             console.log("====assignedAmount5::", a51_1 / getBigNumber(1), a52_1 / getBigNumber(1), a53_1 / getBigNumber(1), a54_1 / getBigNumber(1), a55_1 / getBigNumber(1))
+
+            const rewardAmount_Old = await this.VabbleDAO.connect(this.deployer).getUserRewardAmount(fId3, monthId, {from: this.deployer.address});
+            console.log("rewardAmount_Old", rewardAmount_Old / getBigNumber(1));
+
+            const allRewardAmount1_Old = await this.VabbleDAO.connect(this.deployer).getAllAvailableRewards(1, {from: this.deployer.address});
+            console.log("AllRewardAmount1_Old", allRewardAmount1_Old / getBigNumber(1));
 
             // Change Film Owner and check finalized amount
 
@@ -766,6 +787,11 @@ describe('ChangeFilmOwner', function () {
             console.log("====assignedAmount4_1::", a41_1_1 / getBigNumber(1), a42_1_1 / getBigNumber(1), a43_1_1 / getBigNumber(1), a44_1_1 / getBigNumber(1), a45_1_1 / getBigNumber(1))
             console.log("====assignedAmount5_1::", a51_1_1 / getBigNumber(1), a52_1_1 / getBigNumber(1), a53_1_1 / getBigNumber(1), a54_1_1 / getBigNumber(1), a55_1_1 / getBigNumber(1))
 
+            const rewardAmount_New = await this.VabbleDAO.connect(this.studio1).getUserRewardAmount(fId3, monthId, {from: this.studio1.address});
+            console.log("rewardAmount_New", rewardAmount_New / getBigNumber(1));
+
+            const allRewardAmount1_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(1, {from: this.studio1.address});
+            console.log("AllRewardAmount1_New", allRewardAmount1_New / getBigNumber(1));
 
             // change owner back to again
             this.VabbleDAO.connect(this.studio1).changeOwner(fId3, this.deployer.address, {from: this.studio1.address})                
@@ -814,6 +840,12 @@ describe('ChangeFilmOwner', function () {
             expect(a54_1_2).to.be.equal(a55_1_1)
             expect(a55_1_2).to.be.equal(a54_1_1)
 
+            expect(rewardAmount_Old).to.be.equal(rewardAmount_New)
+            expect(allRewardAmount1_Old).to.be.equal(allRewardAmount1_New)
+
+
+            let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
+            expect(finalFilmList.length).to.be.equal(5)
 
 
             
