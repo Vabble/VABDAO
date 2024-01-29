@@ -11,7 +11,7 @@ require('dotenv').config();
 
 const GNOSIS_FLAG = true;
 
-describe('SetFinalFilm', function () {
+describe('ChangeFilmOwner', function () {
     before(async function () {
         this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
         this.VabbleFundFactory = await ethers.getContractFactory('VabbleFund');
@@ -690,6 +690,30 @@ describe('SetFinalFilm', function () {
                     [getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100)]
                 );    
             }
+
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([false, false, false, false, false]);
+
+            // check each payeers finalized amount for each film
+            let monthId = await this.VabbleDAO.monthId() // 1        
+            const a31_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
+            const a32_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
+            const a33_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
+            const a34_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.deployer.address)
+
+            const a41_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer1.address)
+            const a42_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer2.address)
+            const a43_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer3.address)
+            const a44_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.deployer.address)
+            
+            const a51_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer1.address)
+            const a52_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer2.address)
+            const a53_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer3.address)
+            const a54_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.deployer.address)
+
+            console.log("====assignedAmount3::", a31_1 / getBigNumber(1), a32_1 / getBigNumber(1), a33_1 / getBigNumber(1), a34_1 / getBigNumber(1))
+            console.log("====assignedAmount4::", a41_1 / getBigNumber(1), a42_1 / getBigNumber(1), a43_1 / getBigNumber(1), a44_1 / getBigNumber(1))
+            console.log("====assignedAmount5::", a51_1 / getBigNumber(1), a52_1 / getBigNumber(1), a53_1 / getBigNumber(1), a54_1 / getBigNumber(1))
+
 
                   
         } catch (error) {
