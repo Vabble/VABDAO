@@ -536,52 +536,160 @@ describe('SetFinalFilm', function () {
             const usdc_balance_of_vabble_fund1 = await this.USDC.balanceOf(this.VabbleFund.address);
             expect(usdc_balance_of_vabble_fund1).to.be.equal(getBigNumber(300, 6)); // 50 * 6
 
-            // // Deploy NFT for film-4 and film-5
-            // const tier = getBigNumber(1, 0)
-            // const nAmount = getBigNumber(8000, 0)      // 8000
-            // const nPrice1 = getBigNumber(2, 6)          // 2 USDC
-            // const nPrice2 = getBigNumber(20, 6)
-            // if (GNOSIS_FLAG) {
-            //     let encodedCallData = this.FilmNFT.interface.encodeFunctionData("setBaseURI", 
-            //             ["base_uri", "collection_uri"]);
-            //     const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.FilmNFT.address, [this.signer1, this.signer2]);
-            //     await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
-            // } else {
-            //     await this.FilmNFT.connect(this.auditor).setBaseURI("base_uri", "collection_uri")
-            // }
+            // Deploy NFT for film-4 and film-5
+            const tier = getBigNumber(1, 0)
+            const nAmount = getBigNumber(8000, 0)      // 8000
+            const nPrice1 = getBigNumber(2, 6)          // 2 USDC
+            const nPrice2 = getBigNumber(20, 6)
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.FilmNFT.interface.encodeFunctionData("setBaseURI", 
+                        ["base_uri", "collection_uri"]);
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.FilmNFT.address, [this.signer1, this.signer2]);
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.FilmNFT.connect(this.auditor).setBaseURI("base_uri", "collection_uri")
+            }
 
-            // await this.FilmNFT.connect(this.studio1).setMintInfo(fId4, tier, nAmount, nPrice1, {from: this.studio1.address})
-            // await this.FilmNFT.connect(this.studio1).setMintInfo(fId5, tier, nAmount, nPrice2, {from: this.studio1.address})
-            // await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(fId4, "test4 nft", "t4nft", {from: this.studio1.address})
-            // await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(fId5, "test5 nft", "t5nft", {from: this.studio1.address})
+            await this.FilmNFT.connect(this.deployer).setMintInfo(fId4, tier, nAmount, nPrice1, {from: this.deployer.address})
+            await this.FilmNFT.connect(this.deployer).setMintInfo(fId5, tier, nAmount, nPrice2, {from: this.deployer.address})
+            await this.FilmNFT.connect(this.deployer).deployFilmNFTContract(fId4, "test4 nft", "t4nft", {from: this.deployer.address})
+            await this.FilmNFT.connect(this.deployer).deployFilmNFTContract(fId5, "test5 nft", "t5nft", {from: this.deployer.address})
 
-            // // Deposit to fund film by nft
-            // const dAmount1 = 100 //(maxMintAmount = nAmount = 8000)
-            // await this.VabbleFund.connect(this.customer1).depositToFilm(fId4, 1, flag2, this.USDC.address, {from: this.customer1.address})
-            // await this.VabbleFund.connect(this.customer1).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer1.address})
-            // await this.VabbleFund.connect(this.customer2).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer2.address})
+            // Deposit to fund film by nft
+            const dAmount1 = 100 //(maxMintAmount = nAmount = 8000)
+            await this.VabbleFund.connect(this.customer1).depositToFilm(fId4, 1, flag2, this.USDC.address, {from: this.customer1.address})
+            await this.VabbleFund.connect(this.customer1).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer1.address})
+            await this.VabbleFund.connect(this.customer2).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer2.address})
 
-            // const usdc_balance_of_vabble_fund3 = await this.USDC.balanceOf(this.VabbleFund.address);
-            // // fund 2 * 1 + 20 * 100 + 20 * 100 = 4002 with NFT
-            // // token = 50 * 6 = 300
-            // // total = 4002 + 300 = 4302            
-            // console.log("usdc_balance_of_vabble_fund3:(USDC)", usdc_balance_of_vabble_fund3.toString() / getBigNumber(1)); // 4302000000
-            // expect(usdc_balance_of_vabble_fund3).to.be.equal(getBigNumber(4302, 6));
+            const usdc_balance_of_vabble_fund3 = await this.USDC.balanceOf(this.VabbleFund.address);
+            // fund 2 * 1 + 20 * 100 + 20 * 100 = 4002 with NFT
+            // token = 50 * 6 = 300
+            // total = 4002 + 300 = 4302            
+            console.log("usdc_balance_of_vabble_fund3:(USDC)", usdc_balance_of_vabble_fund3.toString() / getBigNumber(1)); // 4302000000
+            expect(usdc_balance_of_vabble_fund3).to.be.equal(getBigNumber(4302, 6));
 
-            // const isRaised3 = await this.VabbleFund.isRaisedFullAmount(fId3);
-            // const isRaised4 = await this.VabbleFund.isRaisedFullAmount(fId4);
-            // const isRaised5 = await this.VabbleFund.isRaisedFullAmount(fId5);    
-            // expect(isRaised3).to.be.true    // 300 > 150
-            // expect(isRaised4).to.be.false   // 2 < 150
-            // expect(isRaised5).to.be.true    // 4000 > 150
+            const isRaised3 = await this.VabbleFund.isRaisedFullAmount(fId3);
+            const isRaised4 = await this.VabbleFund.isRaisedFullAmount(fId4);
+            const isRaised5 = await this.VabbleFund.isRaisedFullAmount(fId5);    
+            expect(isRaised3).to.be.true    // 300 > 150
+            expect(isRaised4).to.be.false   // 2 < 150
+            expect(isRaised5).to.be.true    // 4000 > 150
 
-            // const userNftCount51 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer1.address)
-            // const userNftCount52 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer2.address)
-            // const userNftCount53 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer3.address)    
-            // expect(userNftCount51).to.be.equal(dAmount1) // 100
-            // expect(userNftCount52).to.be.equal(dAmount1) // 100
-            // expect(userNftCount53).to.be.equal(0)
+            const userNftCount51 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer1.address)
+            const userNftCount52 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer2.address)
+            const userNftCount53 = await this.VabbleFund.getAllowUserNftCount(fId5, this.customer3.address)    
+            expect(userNftCount51).to.be.equal(dAmount1) // 100
+            expect(userNftCount52).to.be.equal(dAmount1) // 100
+            expect(userNftCount53).to.be.equal(0)
 
+            // => Increase next block timestamp for only testing
+            period = 21 * 24 * 3600; // 21 days
+            network.provider.send('evm_increaseTime', [period]);
+            await network.provider.send('evm_mine');
+
+            await this.VabbleFund.connect(this.deployer).fundProcess(fId3, {from: this.deployer.address})
+            const isProcessed = await this.VabbleFund.isFundProcessed(fId3);
+            expect(isProcessed).to.be.true
+
+            // Get Film Ids that have been approved (listing and funding)
+            const approvedListIds = await this.VabbleDAO.getFilmIds(2); // 1, 2
+            const approvedFundIds = await this.VabbleDAO.getFilmIds(3); // 3, 4, 5
+            expect(approvedListIds.length).to.be.equal(2)
+            expect(approvedFundIds.length).to.be.equal(3)
+
+            let VABInStudioPool = await this.vabToken.balanceOf(this.VabbleDAO.address)
+            let VABInEdgePool = await this.vabToken.balanceOf(this.Ownablee.address)
+            expect(VABInEdgePool).to.be.equal(0)
+            expect(VABInStudioPool).to.be.equal(0)
+
+            // Deposit VAB token for move from customer to staking pool using depositVAB
+            await this.StakingPool.connect(this.customer1).depositVAB(getBigNumber(10000), {from: this.customer1.address})
+            await this.StakingPool.connect(this.customer2).depositVAB(getBigNumber(15000), {from: this.customer2.address})
+            await this.StakingPool.connect(this.customer3).depositVAB(getBigNumber(15000), {from: this.customer3.address})
+
+            const VabbleDAO_balance1 = await this.vabToken.balanceOf(this.VabbleDAO.address)
+            console.log('====VableDAO Balance1::', VabbleDAO_balance1 / getBigNumber(1));
+            
+            const StakingPool_balance1 = await this.vabToken.balanceOf(this.StakingPool.address)
+            console.log('====StakingPool Balance1::', StakingPool_balance1 / getBigNumber(1));
+
+            // Allocate to StudioPool (From Staking To Studio Pool)
+            expect(await this.StakingPool.checkAllocateToPool(
+                [this.customer1.address, this.customer2.address, this.customer3.address],
+                [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)]
+            )).to.be.true;
+
+            expect(await this.StakingPool.checkAllocateToPool(
+                [this.customer1.address, this.customer2.address, this.customer3.address],
+                [getBigNumber(20000), getBigNumber(1000), getBigNumber(1000)]
+            )).to.be.false;
+
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("allocateToPool", 
+                    [
+                        [this.customer1.address, this.customer2.address, this.customer3.address],
+                        [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
+                        2
+                    ]);
+
+                // Generate Signature and Transaction information
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                await expect(  
+                    executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx)
+                ).to.emit(this.VabbleDAO, 'AllocatedToPool').withArgs(
+                    [this.customer1.address, this.customer2.address, this.customer3.address],
+                    [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
+                    2
+                );
+            } else {
+                await expect(
+                    this.VabbleDAO.connect(this.auditor).allocateToPool(
+                    [this.customer1.address, this.customer2.address, this.customer3.address],
+                    [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
+                    2,
+                    {from: this.auditor.address})
+                ).to.emit(this.VabbleDAO, 'AllocatedToPool').withArgs(
+                    [this.customer1.address, this.customer2.address, this.customer3.address],
+                    [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
+                    2
+                );
+            }
+
+            const studioPool_balance2 = await this.vabToken.balanceOf(this.VabbleDAO.address)
+            console.log('====VableDAO Balance2::', studioPool_balance2 / getBigNumber(1));
+            expect(studioPool_balance2).to.be.equal(getBigNumber(2500));
+
+            const StakingPool_balance2 = await this.vabToken.balanceOf(this.StakingPool.address)
+            console.log('====StakingPool Balance2::', StakingPool_balance2 / getBigNumber(1));
+            expect(StakingPool_balance1.sub(StakingPool_balance2)).to.be.equal(getBigNumber(2500));
+
+            // ==================== setFinalFilms =====================================
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, true, true]);
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+            }
+
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
+                    [
+                        [fId1, fId2, fId3, fId4, fId5], 
+                        [getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100)]
+                    ]);
+
+                // Generate Signature and Transaction information
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.VabbleDAO.connect(this.auditor).setFinalFilms(
+                    [fId1, fId2, fId3, fId4, fId5], 
+                    [getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100)]
+                );    
+            }
 
                   
         } catch (error) {
