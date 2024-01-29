@@ -383,7 +383,7 @@ describe('SetFinalFilm', function () {
             ).to.be.revertedWith('proposalUpdate: not film owner');  
             
             // change owner back to again
-            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.deployer.address})                
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
 
             this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId1, 
@@ -396,7 +396,17 @@ describe('SetFinalFilm', function () {
                 0,
                 enableClaimer1,
                 {from: this.deployer.address}
-            )
+            );
+
+            // Change film owner in UDPATE Status
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.deployer.address, this.studio1.address
+            );
+
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
             
             // Create proposal for a film by studio with EXM token
             await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(0, 0, this.EXM.address, 
@@ -474,6 +484,45 @@ describe('SetFinalFilm', function () {
             await this.StakingPool.connect(this.studio1).stakeVAB(getBigNumber(300), {from: this.studio1.address})
             await this.StakingPool.connect(this.studio2).stakeVAB(getBigNumber(300), {from: this.studio2.address})
             await this.StakingPool.connect(this.studio3).stakeVAB(getBigNumber(300), {from: this.studio3.address})
+
+            const voteInfos = [1, 1, 1, 1, 1];            
+            await this.Vote.connect(this.customer1).voteToFilms(pIds, voteInfos, {from: this.customer1.address}); 
+            await this.Vote.connect(this.customer2).voteToFilms(pIds, voteInfos, {from: this.customer2.address}); 
+            await this.Vote.connect(this.customer3).voteToFilms(pIds, voteInfos, {from: this.customer3.address}); 
+
+            // Change film owner in UDPATE Status (During Vote)
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.deployer.address, this.studio1.address
+            );
+
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
+            
+            // => Increase next block timestamp for only testing
+            let period = 10 * 24 * 3600; // filmVotePeriod = 10 days
+            network.provider.send('evm_increaseTime', [period]);
+            await network.provider.send('evm_mine');
+
+            // => Change the minVoteCount from 5 ppl to 3 ppl for testing
+            await this.Property.connect(this.deployer).updatePropertyForTesting(3, 18, {from: this.deployer.address})
+
+            // Approve 5 films by calling the approveFilms() from Studio
+            const approveData = [pIds[0], pIds[1], pIds[2], pIds[3], pIds[4]]
+            await this.Vote.connect(this.studio2).approveFilms(approveData);// filmId = 1, 2 ,3, 4, 5
+
+            // Change film owner in APPROVED Status
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.deployer.address, this.studio1.address
+            );
+
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
+            
+
                   
         } catch (error) {
             console.error("Error:", error);
