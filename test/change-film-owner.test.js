@@ -779,6 +779,12 @@ describe('ChangeFilmOwner', function () {
             console.log('====studio1 (from deployer) received reward from film-1::', v_2.sub(v_1) / getBigNumber(1)); 
             expect(v_2.sub(v_1)).to.be.equal(getBigNumber(10));
 
+            // check VabbleDAO balance changes
+            const studioPool_balance3 = await this.vabToken.balanceOf(this.VabbleDAO.address)
+            console.log('====VableDAO Balance Changes::', studioPool_balance2.sub(studioPool_balance3) / getBigNumber(1)); // 50
+            expect(studioPool_balance2.sub(studioPool_balance3)).to.be.equal(getBigNumber(10));
+
+
                   
         } catch (error) {
             console.error("Error:", error);
