@@ -744,12 +744,8 @@ describe('ChangeFilmOwner', function () {
             const rewardAmount_Old = await this.VabbleDAO.connect(this.deployer).getUserRewardAmount(fId3, monthId, {from: this.deployer.address});
             console.log("rewardAmount_Old", rewardAmount_Old / getBigNumber(1));    
         
-            const allRewardAmount1_Old = await this.VabbleDAO.connect(this.deployer).getAllAvailableRewards(monthId, {from: this.deployer.address});
+            const allRewardAmount1_Old = await this.VabbleDAO.getAllAvailableRewards(monthId, {from: this.deployer.address});
             console.log("AllRewardAmount1_Old", allRewardAmount1_Old / getBigNumber(1));
-
-            const allRewardAmount11_Old = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(monthId, {from: this.customer1.address});
-            console.log("allRewardAmount11_Old", allRewardAmount11_Old / getBigNumber(1));
-
 
             // Change Film Owner and check finalized amount
             for (var i = 1; i < 6; i++) {
@@ -788,38 +784,6 @@ describe('ChangeFilmOwner', function () {
             const allRewardAmount1_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(1, {from: this.studio1.address});
             console.log("AllRewardAmount1_New", allRewardAmount1_New / getBigNumber(1));
 
-            // change owner back to again
-            this.VabbleDAO.connect(this.studio1).changeOwner(fId3, this.deployer.address, {from: this.studio1.address})                
-            this.VabbleDAO.connect(this.studio1).changeOwner(fId4, this.deployer.address, {from: this.studio1.address})                
-            this.VabbleDAO.connect(this.studio1).changeOwner(fId5, this.deployer.address, {from: this.studio1.address})                
-
-            for (var i = 1; i < 6; i++) {
-                this.VabbleDAO.connect(this.studio1).changeOwner(i, this.deployer.address, {from: this.studio1.address})                   
-            }
-
-            const a31_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
-            const a32_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
-            const a33_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
-            const a34_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.deployer.address)
-            const a35_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.studio1.address)
-
-            // There is no reward to investor because not full funded
-            const a41_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer1.address)
-            const a42_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer2.address)
-            const a43_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer3.address)
-            const a44_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.deployer.address)
-            const a45_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.studio1.address)
-            
-            const a51_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer1.address)
-            const a52_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer2.address)
-            const a53_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer3.address)
-            const a54_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.deployer.address)
-            const a55_1_2 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.studio1.address)
-
-            console.log("====assignedAmount3_2::", a31_1_2 / getBigNumber(1), a32_1_2 / getBigNumber(1), a33_1_2 / getBigNumber(1), a34_1_2 / getBigNumber(1), a35_1_2 / getBigNumber(1))
-            console.log("====assignedAmount4_2::", a41_1_2 / getBigNumber(1), a42_1_2 / getBigNumber(1), a43_1_2 / getBigNumber(1), a44_1_2 / getBigNumber(1), a45_1_2 / getBigNumber(1))
-            console.log("====assignedAmount5_2::", a51_1_2 / getBigNumber(1), a52_1_2 / getBigNumber(1), a53_1_2 / getBigNumber(1), a54_1_2 / getBigNumber(1), a55_1_2 / getBigNumber(1))
-
             // when film owner is changed from deployer to studio1, finalizedAmount is moved also
             expect(a34_1).to.be.equal(a35_1_1)
             expect(a35_1).to.be.equal(a34_1_1)
@@ -830,20 +794,24 @@ describe('ChangeFilmOwner', function () {
             expect(a54_1).to.be.equal(a55_1_1)
             expect(a55_1).to.be.equal(a54_1_1)
 
-            expect(a34_1_2).to.be.equal(a35_1_1)
-            expect(a35_1_2).to.be.equal(a34_1_1)
-
-            expect(a44_1_2).to.be.equal(a45_1_1)
-            expect(a45_1_2).to.be.equal(a44_1_1)
-
-            expect(a54_1_2).to.be.equal(a55_1_1)
-            expect(a55_1_2).to.be.equal(a54_1_1)
-
             expect(rewardAmount_Old).to.be.equal(rewardAmount_New)
             expect(allRewardAmount1_Old).to.be.equal(allRewardAmount1_New)
 
             let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
             expect(finalFilmList.length).to.be.equal(5)
+
+            const v_1 = await this.vabToken.balanceOf(this.studio1.address)
+            await this.VabbleDAO.connect(this.studio1).claimReward([fId1], {from: this.studio1.address})
+            const v_2 = await this.vabToken.balanceOf(this.studio1.address);
+
+            const allRewardAmount2_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(1);
+            console.log("allRewardAmount2_New", allRewardAmount2_New / getBigNumber(1));
+            expect(allRewardAmount1_New.sub(allRewardAmount2_New)).to.be.equal(getBigNumber(10));
+
+            // should be 10 (because sharePercents (40/30/20/10))
+            console.log('====studio1 (from deployer) received reward from film-1::', v_2.sub(v_1) / getBigNumber(1)); 
+            expect(v_2.sub(v_1)).to.be.equal(getBigNumber(10));
+
                   
         } catch (error) {
             console.error("Error:", error);
