@@ -95,7 +95,8 @@ contract Ownablee is IOwnablee {
         auditor = _newAuditor;
     }
 
-    function addDepositAsset(address[] calldata _assetList) external onlyAuditor {
+    function addDepositAsset(address[] calldata _assetList) external {
+        require(msg.sender == auditor || msg.sender == deployer, "caller is not the auditor or deployer");
         require(_assetList.length != 0, "addDepositAsset: zero list");
 
         for(uint256 i = 0; i < _assetList.length; ++i) { 
@@ -105,7 +106,7 @@ contract Ownablee is IOwnablee {
             allowAssetToDeposit[_assetList[i]] = true;
         }        
     }
-    
+
     function removeDepositAsset(address[] calldata _assetList) external onlyAuditor {
         require(_assetList.length != 0, "removeDepositAsset: zero list");
         

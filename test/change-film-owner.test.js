@@ -183,19 +183,24 @@ describe('ChangeFilmOwner', function () {
             {from: this.deployer.address}
         )       
 
-        if (GNOSIS_FLAG) {
-            let encodedCallData = this.Ownablee.interface.encodeFunctionData("addDepositAsset", 
-                [[this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero]]);
+        // if (GNOSIS_FLAG) {
+        //     let encodedCallData = this.Ownablee.interface.encodeFunctionData("addDepositAsset", 
+        //         [[this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero]]);
 
-            // Generate Signature and Transaction information
-            const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.Ownablee.address, [this.signer1, this.signer2]);
+        //     // Generate Signature and Transaction information
+        //     const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.Ownablee.address, [this.signer1, this.signer2]);
 
-            await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
-        } else {
-            await this.Ownablee.connect(this.auditor).addDepositAsset(
-                [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
-            )
-        }
+        //     await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+        // } else {
+        //     await this.Ownablee.connect(this.auditor).addDepositAsset(
+        //         [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
+        //     )
+        // }
+
+        await this.Ownablee.connect(this.deployer).addDepositAsset(
+            [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], 
+            {from: this.deployer.address}
+        )   
 
         // Initialize the VAB/USDC/EXM token for customers, studio, contracts         
         const source = this.deployer; // set token source
