@@ -784,8 +784,8 @@ describe('ChangeFilmOwner', function () {
             console.log('====VableDAO Balance Changes::', studioPool_balance2.sub(studioPool_balance3) / getBigNumber(1)); // 50
             expect(studioPool_balance2.sub(studioPool_balance3)).to.be.equal(getBigNumber(10));
 
-
             // batch mint
+            console.log("---------------------- NFT Film Change Owner ----------------------");
             await expect(
                 this.FilmNFT.connect(this.customer3).claimNft(fId4, {from: this.customer3.address})
             ).to.be.revertedWith('claimNft: zero count');
@@ -810,6 +810,109 @@ describe('ChangeFilmOwner', function () {
             const isProcessed1 = await this.VabbleFund.isFundProcessed(fId5);
             console.log("====isProcessed-1", isProcessed1) 
             expect(isProcessed1).to.be.equal(true); 
+
+            // ==================== setFinalFilms =====================================
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, true, true]);
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+            }
+
+            if (GNOSIS_FLAG) {
+                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
+                    [
+                        [fId4, fId5], 
+                        [getBigNumber(300), getBigNumber(200)]
+                    ]);
+
+                // Generate Signature and Transaction information
+                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+
+                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+            } else {
+                await this.VabbleDAO.connect(this.auditor).setFinalFilms(
+                    [fId4, fId5], 
+                    [getBigNumber(300), getBigNumber(200)]
+                );    
+            }
+            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, false, false]);
+
+            monthId = await this.VabbleDAO.monthId() // 2 
+
+            // film-4 reward: 
+            // 300 -> 40/30/20/10 -> [120, 90, 60, 30]
+
+            // film-5 reward: 200 -> 180 + 20
+            // 180 -> 40/30/20/10 -> [72, 54, 36, 18]
+            // 20 -> 50/50 -> [10, 10, 0, 0]
+            // Result -> [82, 64, 36, 18]
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+
+                let fa_list = [];
+
+                for (let j = 0; j < users.length; j++) {
+                    const user = users[j];
+                
+                    let fa = await this.VabbleDAO.finalizedAmount(monthId, filmId, user.address)
+                    fa = fa / getBigNumber(1);
+
+                    fa_list.push(fa);
+                }
+
+                if (i < 3)
+                    expect(fa_list).to.be.deep.equal([0, 0, 0, 0, 0]);
+
+                if (i == 3) // film 4
+                    expect(fa_list).to.be.deep.equal([120, 90, 60, 30, 0]);
+
+                if (i == 4) // film 5
+                    expect(fa_list).to.be.deep.equal([82, 64, 36, 18, 0]);
+
+
+                console.log(`====finalizedAmount${i + 1}::`, fa_list);
+            }
+
+            // Change Film Owner for film 4, 5 and check finalized amount
+            for (let i = 3; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+                await expect(
+                    this.VabbleDAO.connect(this.deployer).changeOwner(filmId, this.studio1.address, {from: this.deployer.address})            
+                ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                    filmId, this.deployer.address, this.studio1.address
+                );        
+            }
+
+            console.log("===== After change film 4, 5's owner, check finalized amount ======");
+           
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+
+                let fa_list = [];
+
+                for (let j = 0; j < users.length; j++) {
+                    const user = users[j];
+                
+                    let fa = await this.VabbleDAO.finalizedAmount(monthId, filmId, user.address)
+                    fa = fa / getBigNumber(1);
+
+                    fa_list.push(fa);
+                }
+
+                if (i < 3)
+                    expect(fa_list).to.be.deep.equal([0, 0, 0, 0, 0]);
+
+                if (i == 3) // film 4
+                    expect(fa_list).to.be.deep.equal([120, 90, 60, 0, 30]);
+
+                if (i == 4) // film 5
+                    expect(fa_list).to.be.deep.equal([82, 64, 36, 0, 18]);
+
+                console.log(`====finalizedAmount2_${i + 1}::`, fa_list);
+            }
 
 
                   
