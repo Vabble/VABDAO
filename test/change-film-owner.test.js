@@ -785,6 +785,16 @@ describe('ChangeFilmOwner', function () {
             expect(studioPool_balance2.sub(studioPool_balance3)).to.be.equal(getBigNumber(10));
 
 
+            // batch mint
+            await expect(
+                this.FilmNFT.connect(this.customer3).claimNft(fId4, {from: this.customer3.address})
+            ).to.be.revertedWith('claimNft: zero count');
+            await this.FilmNFT.connect(this.customer1).claimNft(fId5, {from: this.customer1.address})
+            const totalSupply5 = await this.FilmNFT.getTotalSupply(fId5)
+            console.log('====totalSupply5::', totalSupply5.toString()) // 100: 
+            expect(totalSupply5).to.be.equal(100);
+
+
                   
         } catch (error) {
             console.error("Error:", error);
