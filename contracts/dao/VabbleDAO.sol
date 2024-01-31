@@ -53,7 +53,7 @@ contract VabbleDAO is ReentrancyGuard {
     address[] private studioPoolUsers;            // (which => user list)
     address[] private edgePoolUsers;              // (which => user list)
 
-    mapping(uint256 => IVabbleDAO.Film) public filmInfo;              // Each film information(filmId => Film)
+    mapping(uint256 => IVabbleDAO.Film) private filmInfo;              // Each film information(filmId => Film)
     mapping(address => uint256[]) private userUpdatedFilmProposalIds; // (studio => filmId list)
     mapping(address => uint256[]) private userFilmProposalIds;        // (studio => filmId list)
     mapping(address => uint256[]) private userApprovedFilmIds;        // (studio => filmId list)
@@ -595,11 +595,11 @@ contract VabbleDAO is ReentrancyGuard {
         return finalizedFilmIds[_monthId];
     }
 
-    function getUserFilmIds(uint256 _flag, address _user) external view returns (uint256[] memory list_) {           
-        if(_flag == 1) list_ = userUpdatedFilmProposalIds[_user];
-        else if(_flag == 2) list_ = userFilmProposalIds[_user];
-        else if(_flag == 3) list_ = userApprovedFilmIds[_user];
-    }
+    // function getUserFilmIds(uint256 _flag, address _user) external view returns (uint256[] memory list_) {           
+    //     if(_flag == 1) list_ = userUpdatedFilmProposalIds[_user];
+    //     else if(_flag == 2) list_ = userFilmProposalIds[_user];
+    //     else if(_flag == 3) list_ = userApprovedFilmIds[_user];
+    // }
 
     // function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
     //     filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
