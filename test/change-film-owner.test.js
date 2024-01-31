@@ -914,6 +914,19 @@ describe('ChangeFilmOwner', function () {
                 console.log(`====finalizedAmount2_${i + 1}::`, fa_list);
             }
 
+            const allRewardAmount4_1_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount4_1_New", allRewardAmount4_1_New / getBigNumber(1));            
+
+            const v_4_1 = await this.vabToken.balanceOf(this.studio1.address)
+            await this.VabbleDAO.connect(this.studio1).claimReward([fId4], {from: this.studio1.address})
+            const v_4_2 = await this.vabToken.balanceOf(this.studio1.address);
+
+            // month 1 - 10, month 2, 30 -> 10 + 30 = 40
+            expect(v_4_2.sub(v_4_1)).to.be.equal(getBigNumber(40));
+
+            const allRewardAmount4_2_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount4_2_New", allRewardAmount4_2_New / getBigNumber(1));            
+            expect(allRewardAmount4_1_New.sub(allRewardAmount4_2_New)).to.be.equal(getBigNumber(40));
 
                   
         } catch (error) {
