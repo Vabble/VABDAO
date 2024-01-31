@@ -15,6 +15,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
     event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId);
     event FilmERC721Minted(address nftContract, uint256 indexed filmId, uint256 indexed tokenId, address receiver);
     event MintInfoSetted(address filmOwner, uint indexed filmId, uint tier, uint mintAmount, uint mintPrice);
+    event ChangeERC721FilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);  
 
     struct Mint {
         uint256 tier;             // Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
@@ -162,6 +163,21 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
 
         emit FilmERC721Minted(address(t), _filmId, tokenId, msg.sender);
     }       
+
+    function changeOwner(uint256 _filmId, address newOwner) external nonReentrant returns (bool) {
+        Mint storage mInfo = mintInfo[_filmId];
+        
+        require(mInfo.studio == msg.sender, 'changeOwner: not film owner');
+
+        mInfo.studio = newOwner;
+
+        VabbleNFT t = filmNFTContract[_filmId];
+        t.transferOwnership(msg.sender, newOwner);
+
+        emit ChangeERC721FilmOwner(_filmId, msg.sender, newOwner);
+       
+        return true;
+    } 
 
     function getNFTOwner(uint256 _filmId, uint256 _tokenId) external view returns (address) {
         return filmNFTContract[_filmId].ownerOf(_tokenId);

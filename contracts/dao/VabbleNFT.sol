@@ -89,6 +89,22 @@ contract VabbleNFT is ERC2981, ERC721Enumerable, ReentrancyGuard {
             _tokensOfOwner[i] = tokenOfOwnerByIndex(_owner, i);
         }
     }
+
+    function transferOwnership(address _oldOwner, address _newOwner) public {
+        require(msg.sender == FACTORY, "mintTo: caller is not factory contract");
+        
+        uint256 countOfTokens = balanceOf(_oldOwner);
+
+        uint256[] memory _tokensOfOwner = new uint256[](countOfTokens);
+
+        for (uint256 i; i < countOfTokens; ++i) {
+            _tokensOfOwner[i] = tokenOfOwnerByIndex(_oldOwner, i);
+        }
+
+        for (uint256 i; i < countOfTokens; ++i) {
+            transferFrom(_oldOwner, _newOwner, _tokensOfOwner[i]);
+        }
+    }
     
     /// @notice Return total minited NFT count
     function totalSupply() public view override returns (uint256) {
