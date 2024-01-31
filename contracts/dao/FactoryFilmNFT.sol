@@ -170,10 +170,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         require(mInfo.studio == msg.sender, 'changeOwner: not film owner');
 
         mInfo.studio = newOwner;
-
-        VabbleNFT t = filmNFTContract[_filmId];
-        t.transferOwnership(msg.sender, newOwner);
-
+        
         emit ChangeERC721FilmOwner(_filmId, msg.sender, newOwner);
        
         return true;
