@@ -922,13 +922,41 @@ describe('ChangeFilmOwner', function () {
             const v_4_2 = await this.vabToken.balanceOf(this.studio1.address);
 
             // month 1 - 10, month 2, 30 -> 10 + 30 = 40
+            console.log("====Studio 1 Film 4 claimReward::", v_4_2.sub(v_4_1) / getBigNumber(1));
             expect(v_4_2.sub(v_4_1)).to.be.equal(getBigNumber(40));
 
             const allRewardAmount4_2_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
             console.log("allRewardAmount4_2_New", allRewardAmount4_2_New / getBigNumber(1));            
             expect(allRewardAmount4_1_New.sub(allRewardAmount4_2_New)).to.be.equal(getBigNumber(40));
 
-                  
+            const allRewardAmount5_1_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount5_1_New", allRewardAmount5_1_New / getBigNumber(1));            
+
+            const v_5_1 = await this.vabToken.balanceOf(this.studio1.address)
+            await this.VabbleDAO.connect(this.studio1).claimReward([fId5], {from: this.studio1.address})
+            const v_5_2 = await this.vabToken.balanceOf(this.studio1.address);
+
+            // month 1 - 9, month 2, 18 -> 9 + 18 = 27
+            console.log("====Studio 1 Film 5 claimReward::", v_5_2.sub(v_5_1) / getBigNumber(1));
+            expect(v_5_2.sub(v_5_1)).to.be.equal(getBigNumber(27));
+
+            const allRewardAmount5_2_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount5_2_New", allRewardAmount5_2_New / getBigNumber(1));            
+            expect(allRewardAmount5_1_New.sub(allRewardAmount5_2_New)).to.be.equal(getBigNumber(27));
+
+            // claim film 1 at month 1, claim film 4, 5 at month 2
+            const lastClaimMonthIds = [1, 0, 0, 2, 2]; 
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+                const mId1 = await this.VabbleDAO.latestClaimMonthId(filmId, this.studio1.address) // 1
+
+                expect(mId1).to.be.equal(lastClaimMonthIds[i])
+            }                  
+
+            await expect(
+                this.VabbleDAO.connect(this.studio1).claimReward([fId4], {from: this.studio1.address})
+            ).to.be.revertedWith('claimReward: zero amount');
+            
         } catch (error) {
             console.error("Error:", error);
         } 
