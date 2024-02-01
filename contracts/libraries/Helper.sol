@@ -92,4 +92,21 @@ library Helper {
         // return (size != 0);
         return Address.isContract(_address);
     }
+
+    function moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) internal {
+        uint256 index = array1.length;
+
+        for(uint256 i = 0; i < array1.length; ++i) {
+            if(array1[i] == value) {
+                index = i;
+            }
+        }
+
+        if (index >= array1.length) return;
+
+        array2.push(value);
+        
+        array1[index] = array1[array1.length - 1];
+        array1.pop();
+    }
 }

@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const {CONFIG, isTest, getBigNumber } = require('../scripts/utils');
+const {CONFIG, isTest, getBigNumber, getConfig } = require('../scripts/utils');
 const addressZero = CONFIG.addressZero;
 const ERC20 = require('../data/ERC20.json');
   
@@ -70,6 +70,15 @@ module.exports = async function ({ deployments }) {
     {from: deployer.address}
   )
 
+  const vabToken = await OwnableeContract.PAYOUT_TOKEN();
+  const usdcAdress = await OwnableeContract.USDC_TOKEN();
+  const walletAddress = await OwnableeContract.VAB_WALLET();
+  
+  await OwnableeContract.connect(deployer).addDepositAsset(
+    [vabToken, usdcAdress, CONFIG.addressZero], 
+    {from: deployer.address}
+  )   
+
   console.log('complete => Ownablee setup')
 
   const StakingPoolContract = await ethers.getContractAt('StakingPool', this.StakingPool.address)
@@ -121,10 +130,6 @@ module.exports = async function ({ deployments }) {
 
   // checking configured values
   console.log("\n--------- Checking configured values ---------")
-  const vabToken = await OwnableeContract.PAYOUT_TOKEN();
-  const usdcAdress = await OwnableeContract.USDC_TOKEN();
-  const walletAddress = await OwnableeContract.VAB_WALLET();
-
   console.log({vabToken, usdcAdress, walletAddress});
 
   const vabTokenContract = new ethers.Contract(vabToken, JSON.stringify(ERC20), ethers.provider);
@@ -181,6 +186,10 @@ module.exports = async function ({ deployments }) {
   await vabTokenContract.connect(deployer).transfer(
     this.Ownablee.address, diff, {from: deployer.address}
   );
+
+  vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
+  console.log("vab_balance_of_Ownablee after", vab_balance_of_Ownablee.toString());
+
 
 
 };

@@ -11,7 +11,7 @@ require('dotenv').config();
 
 const GNOSIS_FLAG = true;
 
-describe('SetFinalFilm', function () {
+describe('ChangeFilmOwner', function () {
     before(async function () {
         this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
         this.VabbleFundFactory = await ethers.getContractFactory('VabbleFund');
@@ -183,19 +183,24 @@ describe('SetFinalFilm', function () {
             {from: this.deployer.address}
         )       
 
-        if (GNOSIS_FLAG) {
-            let encodedCallData = this.Ownablee.interface.encodeFunctionData("addDepositAsset", 
-                [[this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero]]);
+        // if (GNOSIS_FLAG) {
+        //     let encodedCallData = this.Ownablee.interface.encodeFunctionData("addDepositAsset", 
+        //         [[this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero]]);
 
-            // Generate Signature and Transaction information
-            const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.Ownablee.address, [this.signer1, this.signer2]);
+        //     // Generate Signature and Transaction information
+        //     const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.Ownablee.address, [this.signer1, this.signer2]);
 
-            await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
-        } else {
-            await this.Ownablee.connect(this.auditor).addDepositAsset(
-                [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
-            )
-        }
+        //     await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+        // } else {
+        //     await this.Ownablee.connect(this.auditor).addDepositAsset(
+        //         [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
+        //     )
+        // }
+
+        await this.Ownablee.connect(this.deployer).addDepositAsset(
+            [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], 
+            {from: this.deployer.address}
+        )   
 
         // Initialize the VAB/USDC/EXM token for customers, studio, contracts         
         const source = this.deployer; // set token source
@@ -222,10 +227,12 @@ describe('SetFinalFilm', function () {
         await this.vabToken.connect(source).transfer(this.studio3.address, getBigNumber(500000), {from: source.address});
 
         // Approve to transfer VAB token for each customer, studio to StudioPool, StakingPool, FilmNFT
+        await this.vabToken.connect(this.deployer).approve(this.VabbleDAO.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000000));   
         
+        await this.vabToken.connect(this.deployer).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(100000000));
@@ -233,6 +240,7 @@ describe('SetFinalFilm', function () {
         await this.vabToken.connect(this.customer5).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer6).approve(this.StakingPool.address, getBigNumber(100000000));
         
+        await this.vabToken.connect(this.deployer).approve(this.FilmNFT.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer1).approve(this.FilmNFT.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer2).approve(this.FilmNFT.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer3).approve(this.FilmNFT.address, getBigNumber(100000000));
@@ -240,10 +248,12 @@ describe('SetFinalFilm', function () {
         await this.vabToken.connect(this.customer5).approve(this.FilmNFT.address, getBigNumber(100000000));
         await this.vabToken.connect(this.customer6).approve(this.FilmNFT.address, getBigNumber(100000000));
 
+        await this.vabToken.connect(this.deployer).approve(this.VabbleDAO.address, getBigNumber(100000000));
         await this.vabToken.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(100000000));
         await this.vabToken.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000000));
         await this.vabToken.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000000));
         
+        await this.vabToken.connect(this.deployer).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.studio1).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.studio2).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.studio3).approve(this.StakingPool.address, getBigNumber(100000000));
@@ -260,14 +270,17 @@ describe('SetFinalFilm', function () {
         await this.EXM.connect(source).transfer(this.studio3.address, getBigNumber(5000), {from: source.address});
 
         // Approve to transfer EXM token for each customer, studio to StudioPool, StakingPool
+        await this.EXM.connect(this.deployer).approve(this.VabbleDAO.address, getBigNumber(100000));
         await this.EXM.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(100000));
         await this.EXM.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(100000));
         await this.EXM.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000));   
 
+        await this.EXM.connect(this.deployer).approve(this.StakingPool.address, getBigNumber(100000));
         await this.EXM.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(100000));
         await this.EXM.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(100000));
         await this.EXM.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(100000));
 
+        await this.EXM.connect(this.deployer).approve(this.VabbleDAO.address, getBigNumber(100000));
         await this.EXM.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(100000));
         await this.EXM.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000));
         await this.EXM.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000));
@@ -287,6 +300,7 @@ describe('SetFinalFilm', function () {
         await this.USDC.connect(source).transfer(this.studio3.address, getBigNumber(50000, 6), {from: source.address});
 
         // Approve to transfer USDC token for each user, studio to VabbleDAO, VabbleFund, StakingPool, FilmNFT
+        await this.USDC.connect(this.deployer).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));   
@@ -294,6 +308,7 @@ describe('SetFinalFilm', function () {
         await this.USDC.connect(this.customer5).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer6).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         
+        await this.USDC.connect(this.deployer).approve(this.VabbleFund.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer1).approve(this.VabbleFund.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer2).approve(this.VabbleFund.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer3).approve(this.VabbleFund.address, getBigNumber(10000000, 6));   
@@ -301,10 +316,12 @@ describe('SetFinalFilm', function () {
         await this.USDC.connect(this.customer5).approve(this.VabbleFund.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer6).approve(this.VabbleFund.address, getBigNumber(10000000, 6));
 
+        await this.USDC.connect(this.deployer).approve(this.StakingPool.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(10000000, 6));
 
+        await this.USDC.connect(this.deployer).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
         await this.USDC.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(10000000, 6));
@@ -326,8 +343,8 @@ describe('SetFinalFilm', function () {
             const desc3 = 'film description - 3'
             const title4 = 'film title - 4'
             const desc4 = 'film description - 4'
-            const sharePercents = [getBigNumber(50, 8), getBigNumber(15, 8), getBigNumber(35, 8)]
-            const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
+            const sharePercents = [getBigNumber(40, 8), getBigNumber(30, 8), getBigNumber(20, 8), getBigNumber(10, 8)]
+            const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address, this.deployer.address]
             const raiseAmount = getBigNumber(150, 6)
             const fundPeriod = getBigNumber(20, 0)
             const enableClaimer = getBigNumber(0, 0)
@@ -342,20 +359,21 @@ describe('SetFinalFilm', function () {
             let ethVal = ethers.utils.parseEther('1');
 
             let fundType = 0, nVote = 0;
+
             // Create proposal for a film by studio with USDC token
             fundType = 0, nVote = 0;
-            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.USDC.address, 
-                {from: this.studio1.address})
+            await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(0, 0, this.USDC.address, 
+                {from: this.deployer.address})
 
-            // change film owner
+            // Change film owner in LISTING Status
             await expect(
-                this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.studio3.address, {from: this.studio1.address})            
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
             ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
-                fId1, this.studio1.address, this.studio3.address
+                fId1, this.deployer.address, this.studio1.address
             );
 
-            await expect(
-                this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+            await expect(        
+                this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                     fId1, 
                     title1,
                     desc1,
@@ -365,14 +383,14 @@ describe('SetFinalFilm', function () {
                     fundPeriod, 
                     0,
                     enableClaimer1,
-                    {from: this.studio1.address}
+                    {from: this.deployer.address}
                 )
-            ).to.be.revertedWith('proposalUpdate: not film owner');
-
-            // change owner back to again
-            this.VabbleDAO.connect(this.studio3).changeOwner(fId1, this.studio1.address, {from: this.studio3.address})                
+            ).to.be.revertedWith('proposalUpdate: not film owner');  
             
-            await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
+
+            this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId1, 
                 title1,
                 desc1,
@@ -382,17 +400,23 @@ describe('SetFinalFilm', function () {
                 fundPeriod, 
                 0,
                 enableClaimer1,
-                {from: this.studio1.address}
+                {from: this.deployer.address}
             );
 
+            // Change film owner in UDPATE Status
             await expect(
-                this.VabbleDAO.connect(this.studio2).changeOwner(fId1, this.studio3.address, {from: this.studio2.address})                
-            ).to.be.revertedWith('changeOwner: not film owner');
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.deployer.address, this.studio1.address
+            );
 
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
+            
             // Create proposal for a film by studio with EXM token
-            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.EXM.address, 
-                {from: this.studio1.address})
-            await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+            await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(0, 0, this.EXM.address, 
+                {from: this.deployer.address})
+            await this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId2, 
                 title2,
                 desc2,
@@ -402,14 +426,13 @@ describe('SetFinalFilm', function () {
                 fundPeriod, 
                 0,
                 enableClaimer,
-                {from: this.studio1.address}
+                {from: this.deployer.address}
             );
 
-            
             // fundType=1 => approve fund by token
-            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(1, 0, CONFIG.addressZero, 
-                {from: this.studio1.address, value: ethVal});
-            await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+            await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(1, 0, CONFIG.addressZero, 
+                {from: this.deployer.address, value: ethVal});
+            await this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId3, 
                 title3,
                 desc3,
@@ -419,13 +442,13 @@ describe('SetFinalFilm', function () {
                 fundPeriod, 
                 rewardPercent,
                 enableClaimer,
-                {from: this.studio1.address}
+                {from: this.deployer.address}
             );
 
             // fundType=2 => approve fund by nft
-            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(2, 0, CONFIG.addressZero, 
-                {from: this.studio1.address, value: ethVal})
-            await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+            await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(2, 0, CONFIG.addressZero, 
+                {from: this.deployer.address, value: ethVal})
+            await this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId4, 
                 title4,
                 desc4,
@@ -435,13 +458,13 @@ describe('SetFinalFilm', function () {
                 fundPeriod, 
                 rewardPercent,
                 enableClaimer,
-                {from: this.studio1.address}
+                {from: this.deployer.address}
             )
 
             // fundType=3 => approve fund by token & nft
-            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(3, 0, CONFIG.addressZero, 
-                {from: this.studio1.address, value: ethVal});
-            await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+            await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(3, 0, CONFIG.addressZero, 
+                {from: this.deployer.address, value: ethVal});
+            await this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId5, 
                 title4,
                 desc4,
@@ -451,7 +474,7 @@ describe('SetFinalFilm', function () {
                 fundPeriod, 
                 rewardPercent,
                 enableClaimer,
-                {from: this.studio1.address}
+                {from: this.deployer.address}
             );
 
             // Vote to proposal films(1,2,3,4) from customer1, 2, 3
@@ -466,12 +489,22 @@ describe('SetFinalFilm', function () {
             await this.StakingPool.connect(this.studio1).stakeVAB(getBigNumber(300), {from: this.studio1.address})
             await this.StakingPool.connect(this.studio2).stakeVAB(getBigNumber(300), {from: this.studio2.address})
             await this.StakingPool.connect(this.studio3).stakeVAB(getBigNumber(300), {from: this.studio3.address})
-          
+
             const voteInfos = [1, 1, 1, 1, 1];            
             await this.Vote.connect(this.customer1).voteToFilms(pIds, voteInfos, {from: this.customer1.address}); 
             await this.Vote.connect(this.customer2).voteToFilms(pIds, voteInfos, {from: this.customer2.address}); 
             await this.Vote.connect(this.customer3).voteToFilms(pIds, voteInfos, {from: this.customer3.address}); 
 
+            // Change film owner in UDPATE Status (During Vote)
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.deployer.address, this.studio1.address
+            );
+
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
+            
             // => Increase next block timestamp for only testing
             let period = 10 * 24 * 3600; // filmVotePeriod = 10 days
             network.provider.send('evm_increaseTime', [period]);
@@ -483,6 +516,16 @@ describe('SetFinalFilm', function () {
             // Approve 5 films by calling the approveFilms() from Studio
             const approveData = [pIds[0], pIds[1], pIds[2], pIds[3], pIds[4]]
             await this.Vote.connect(this.studio2).approveFilms(approveData);// filmId = 1, 2 ,3, 4, 5
+
+            // Change film owner in APPROVED Status
+            await expect(
+                this.VabbleDAO.connect(this.deployer).changeOwner(fId1, this.studio1.address, {from: this.deployer.address})            
+            ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                fId1, this.deployer.address, this.studio1.address
+            );
+
+            // change owner back to again
+            this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
 
             // Each customers 1 ~ 6 Deposit to fund on film-3 by USDC token
             const flag1 = 1;
@@ -497,7 +540,7 @@ describe('SetFinalFilm', function () {
 
             const usdc_balance_of_vabble_fund1 = await this.USDC.balanceOf(this.VabbleFund.address);
             expect(usdc_balance_of_vabble_fund1).to.be.equal(getBigNumber(300, 6)); // 50 * 6
-            
+
             // Deploy NFT for film-4 and film-5
             const tier = getBigNumber(1, 0)
             const nAmount = getBigNumber(8000, 0)      // 8000
@@ -512,16 +555,22 @@ describe('SetFinalFilm', function () {
                 await this.FilmNFT.connect(this.auditor).setBaseURI("base_uri", "collection_uri")
             }
 
-            await this.FilmNFT.connect(this.studio1).setMintInfo(fId4, tier, nAmount, nPrice1, {from: this.studio1.address})
-            await this.FilmNFT.connect(this.studio1).setMintInfo(fId5, tier, nAmount, nPrice2, {from: this.studio1.address})
-            await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(fId4, "test4 nft", "t4nft", {from: this.studio1.address})
-            await this.FilmNFT.connect(this.studio1).deployFilmNFTContract(fId5, "test5 nft", "t5nft", {from: this.studio1.address})
+            await this.FilmNFT.connect(this.deployer).setMintInfo(fId4, tier, nAmount, nPrice1, {from: this.deployer.address})
+            await this.FilmNFT.connect(this.deployer).setMintInfo(fId5, tier, nAmount, nPrice2, {from: this.deployer.address})
+            await this.FilmNFT.connect(this.deployer).deployFilmNFTContract(fId4, "test4 nft", "t4nft", {from: this.deployer.address})
+            await this.FilmNFT.connect(this.deployer).deployFilmNFTContract(fId5, "test5 nft", "t5nft", {from: this.deployer.address})
 
             // Deposit to fund film by nft
             const dAmount1 = 100 //(maxMintAmount = nAmount = 8000)
             await this.VabbleFund.connect(this.customer1).depositToFilm(fId4, 1, flag2, this.USDC.address, {from: this.customer1.address})
+            const investorList4 = await this.VabbleFund.getFilmInvestorList(fId4);
+            console.log("Film4 Investor List", investorList4);
+
             await this.VabbleFund.connect(this.customer1).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer1.address})
             await this.VabbleFund.connect(this.customer2).depositToFilm(fId5, dAmount1, flag2, this.USDC.address, {from: this.customer2.address})
+
+            const investorList5 = await this.VabbleFund.getFilmInvestorList(fId5);
+            console.log("Film5 Investor List", investorList5);
 
             const usdc_balance_of_vabble_fund3 = await this.USDC.balanceOf(this.VabbleFund.address);
             // fund 2 * 1 + 20 * 100 + 20 * 100 = 4002 with NFT
@@ -549,7 +598,7 @@ describe('SetFinalFilm', function () {
             network.provider.send('evm_increaseTime', [period]);
             await network.provider.send('evm_mine');
 
-            await this.VabbleFund.connect(this.studio1).fundProcess(fId3, {from: this.studio1.address})
+            await this.VabbleFund.connect(this.deployer).fundProcess(fId3, {from: this.deployer.address})
             const isProcessed = await this.VabbleFund.isFundProcessed(fId3);
             expect(isProcessed).to.be.true
 
@@ -626,7 +675,8 @@ describe('SetFinalFilm', function () {
             expect(StakingPool_balance1.sub(StakingPool_balance2)).to.be.equal(getBigNumber(2500));
 
             // ==================== setFinalFilms =====================================
-            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, true, true]);
+            const filmIds = [fId1, fId2, fId3, fId4, fId5];
+            expect(await this.VabbleDAO.checkSetFinalFilms(filmIds)).to.be.deep.equals([true, true, true, true, true]);
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
                 const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
@@ -638,7 +688,7 @@ describe('SetFinalFilm', function () {
             if (GNOSIS_FLAG) {
                 let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
                     [
-                        [fId1, fId2, fId3, fId4, fId5], 
+                        filmIds, 
                         [getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100)]
                     ]);
 
@@ -648,58 +698,99 @@ describe('SetFinalFilm', function () {
                 await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
             } else {
                 await this.VabbleDAO.connect(this.auditor).setFinalFilms(
-                    [fId1, fId2, fId3, fId4, fId5], 
+                    filmIds, 
                     [getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100), getBigNumber(100)]
                 );    
             }
 
-            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([false, false, false, false, false]);
+            expect(await this.VabbleDAO.checkSetFinalFilms(filmIds)).to.be.deep.equals([false, false, false, false, false]);
 
             // check each payeers finalized amount for each film
-            let monthId = await this.VabbleDAO.monthId() // 1        
-            const a31_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer1.address)
-            const a32_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer2.address)
-            const a33_1 = await this.VabbleDAO.finalizedAmount(monthId, fId3, this.customer3.address)
-
-            const a41_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer1.address)
-            const a42_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer2.address)
-            const a43_1 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer3.address)
+            let monthId = await this.VabbleDAO.monthId() // 1 
             
-            const a51_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer1.address)
-            const a52_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer2.address)
-            const a53_1 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer3.address)
-            console.log("====assignedAmount3::", a31_1 / getBigNumber(1), a32_1 / getBigNumber(1), a33_1 / getBigNumber(1))
-            console.log("====assignedAmount4::", a41_1 / getBigNumber(1), a42_1 / getBigNumber(1), a43_1 / getBigNumber(1))
-            console.log("====assignedAmount5::", a51_1 / getBigNumber(1), a52_1 / getBigNumber(1), a53_1 / getBigNumber(1))
+            let users = [this.customer1, this.customer2, this.customer3, this.deployer, this.studio1];
+            
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+
+                let fa_list = [];
+
+                for (let j = 0; j < users.length; j++) {
+                    const user = users[j];
+                
+                    let fa = await this.VabbleDAO.finalizedAmount(monthId, filmId, user.address)
+                    fa = fa / getBigNumber(1);
+
+                    fa_list.push(fa);
+                }
+
+                console.log(`====finalizedAmount${i + 1}::`, fa_list);
+            }
+            
+            const rewardAmount_Old = await this.VabbleDAO.connect(this.deployer).getUserRewardAmount(fId3, monthId, {from: this.deployer.address});
+            console.log("rewardAmount_Old", rewardAmount_Old / getBigNumber(1));    
+        
+            const allRewardAmount1_Old = await this.VabbleDAO.getAllAvailableRewards(monthId, {from: this.deployer.address});
+            console.log("AllRewardAmount1_Old", allRewardAmount1_Old / getBigNumber(1));
+
+            // Change Film Owner for film 1, 2, 3 and check finalized amount
+            for (let i = 0; i < 3; i++) {
+                const filmId = filmIds[i];
+                await expect(
+                    this.VabbleDAO.connect(this.deployer).changeOwner(filmId, this.studio1.address, {from: this.deployer.address})            
+                ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                    filmId, this.deployer.address, this.studio1.address
+                );        
+            }
+           
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+
+                let fa_list = [];
+
+                for (let j = 0; j < users.length; j++) {
+                    const user = users[j];
+                
+                    let fa = await this.VabbleDAO.finalizedAmount(monthId, filmId, user.address)
+                    fa = fa / getBigNumber(1);
+
+                    fa_list.push(fa);
+                }
+
+                console.log(`====finalizedAmount2_${i + 1}::`, fa_list);
+            }
+
+            const rewardAmount_New = await this.VabbleDAO.connect(this.studio1).getUserRewardAmount(fId3, monthId, {from: this.studio1.address});
+            console.log("rewardAmount_New", rewardAmount_New / getBigNumber(1));
+
+            const allRewardAmount1_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("AllRewardAmount1_New", allRewardAmount1_New / getBigNumber(1));
+
+            expect(rewardAmount_Old).to.be.equal(rewardAmount_New)
+            // expect(allRewardAmount1_Old).to.be.equal(allRewardAmount1_New)
 
             let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
             expect(finalFilmList.length).to.be.equal(5)
 
-            const rewardAmount = await this.VabbleDAO.connect(this.customer1).getUserRewardAmount(fId3, monthId, {from: this.customer1.address});
-            console.log("rewardAmount", rewardAmount / getBigNumber(1));
+            const v_1 = await this.vabToken.balanceOf(this.studio1.address)
+            await this.VabbleDAO.connect(this.studio1).claimReward([fId1], {from: this.studio1.address})
+            const v_2 = await this.vabToken.balanceOf(this.studio1.address);
 
-            const allRewardAmount1 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1, {from: this.customer1.address});
-            console.log("AllRewardAmount1", allRewardAmount1 / getBigNumber(1));
+            const allRewardAmount2_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount2_New", allRewardAmount2_New / getBigNumber(1));
+            expect(allRewardAmount1_New.sub(allRewardAmount2_New)).to.be.equal(getBigNumber(10));
 
-            const v_1 = await this.vabToken.balanceOf(this.customer1.address)
-            await this.VabbleDAO.connect(this.customer1).claimReward([fId1], {from: this.customer1.address})
-            const v_2 = await this.vabToken.balanceOf(this.customer1.address);
-
-            const allRewardAmount2 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1);
-            console.log("AllRewardAmount2", allRewardAmount2 / getBigNumber(1));
-            expect(allRewardAmount1.sub(allRewardAmount2)).to.be.equal(getBigNumber(50));
-
-            // should be 50 (because sharePercents (50/15/35))
-            console.log('====customer1 received reward from film-1::', v_2.sub(v_1) / getBigNumber(1)); 
-            expect(v_2.sub(v_1)).to.be.equal(getBigNumber(50));
+            // should be 10 (because sharePercents (40/30/20/10))
+            console.log('====studio1 (from deployer) received reward from film-1::', v_2.sub(v_1) / getBigNumber(1)); 
+            expect(v_2.sub(v_1)).to.be.equal(getBigNumber(10));
 
             // check VabbleDAO balance changes
             const studioPool_balance3 = await this.vabToken.balanceOf(this.VabbleDAO.address)
-            console.log('====VableDAO Balance2::', studioPool_balance2.sub(studioPool_balance3) / getBigNumber(1)); // 50
-            expect(studioPool_balance2.sub(studioPool_balance3)).to.be.equal(getBigNumber(50));
-
+            console.log('====VableDAO Balance Changes::', studioPool_balance2.sub(studioPool_balance3) / getBigNumber(1)); // 50
+            expect(studioPool_balance2.sub(studioPool_balance3)).to.be.equal(getBigNumber(10));
 
             // batch mint
+            console.log("---------------------- NFT Film Change Owner ----------------------");
             await expect(
                 this.FilmNFT.connect(this.customer3).claimNft(fId4, {from: this.customer3.address})
             ).to.be.revertedWith('claimNft: zero count');
@@ -720,7 +811,7 @@ describe('SetFinalFilm', function () {
             expect(filmNFTTokenList4.length).to.be.equal(0);
             expect(filmNFTTokenList5.length).to.be.equal(100);
 
-            await this.VabbleFund.connect(this.studio1).fundProcess(fId5, {from: this.studio1.address})
+            await this.VabbleFund.connect(this.deployer).fundProcess(fId5, {from: this.deployer.address})
             const isProcessed1 = await this.VabbleFund.isFundProcessed(fId5);
             console.log("====isProcessed-1", isProcessed1) 
             expect(isProcessed1).to.be.equal(true); 
@@ -754,180 +845,123 @@ describe('SetFinalFilm', function () {
             }
             expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, false, false]);
 
-            monthId = 2 
-            
-            // film-4 is not funded full, so even though customer 1 fund with nft, he can not get reward
-            const a41 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer1.address)
-            const a42 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer2.address)
-            const a43 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer3.address)
-            const a44 = await this.VabbleDAO.finalizedAmount(monthId, fId4, this.customer4.address)
-            // film-4 reward: 300 -> 300 * 0.5 = 150, 300 * 0.15 = 45, 300 * 0.35 = 105, 0;
-            console.log("====assignedAmount-Film-4::", a41 / getBigNumber(1), a42 / getBigNumber(1), a43 / getBigNumber(1), a44 / getBigNumber(1));
-            expect([a41, a42, a43, a44]).to.be.deep.equal([getBigNumber(150), getBigNumber(45), getBigNumber(105), getBigNumber(0)]);
+            monthId = await this.VabbleDAO.monthId() // 2 
 
-            // film-5 is funded full, so even though funded customers(1, 2) can get reward
-            const a51 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer1.address)
-            const a52 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer2.address)
-            const a53 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer3.address)
-            const a54 = await this.VabbleDAO.finalizedAmount(monthId, fId5, this.customer4.address)
+            // film-4 reward: 
+            // 300 -> 40/30/20/10 -> [120, 90, 60, 30]
 
-            // 200 -> 180 + 20 (reward)
-            // 180 -> 180 * 0.5 = 90, 180 * 0.15 = 27, 180 * 0.35 = 63, 0;
-            // 20 -> 20 * 0.5 = 10, 20 * 0.5 = 10
-            // result: 90 + 10 = 100, 27 + 10 = 37, 63 + 0 = 63;
-            console.log("====assignedAmount-Film-5::", a51 / getBigNumber(1), a52 / getBigNumber(1), a53 / getBigNumber(1), a54 / getBigNumber(1));
-            expect([a51, a52, a53, a54]).to.be.deep.equal([getBigNumber(100), getBigNumber(37), getBigNumber(63), getBigNumber(0)]);
+            // film-5 reward: 200 -> 180 + 20
+            // 180 -> 40/30/20/10 -> [72, 54, 36, 18]
+            // 20 -> 50/50 -> [10, 10, 0, 0]
+            // Result -> [82, 64, 36, 18]
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
 
-            const a_1 = await this.vabToken.balanceOf(this.customer1.address)             
-            await this.VabbleDAO.connect(this.customer1).claimReward([fId4], {from: this.customer1.address})
-            const a_2 = await this.vabToken.balanceOf(this.customer1.address);
-            console.log("====Customer 1 Film 4 claimReward::", a_2.sub(a_1) / getBigNumber(1));
-            expect(a_2.sub(a_1)).to.be.equal(getBigNumber(200)); // 100 * 0.5 + 150 = 200
+                let fa_list = [];
 
-            await this.VabbleDAO.connect(this.customer1).claimReward([fId5], {from: this.customer1.address})
-            const a_3 = await this.vabToken.balanceOf(this.customer1.address);
-            console.log("====Customer 1 Film 5 claimReward::", a_3.sub(a_2) / getBigNumber(1));
-            expect(a_3.sub(a_2)).to.be.equal(getBigNumber(150)); // 100 * 0.5 + 100 = 150
+                for (let j = 0; j < users.length; j++) {
+                    const user = users[j];
+                
+                    let fa = await this.VabbleDAO.finalizedAmount(monthId, filmId, user.address)
+                    fa = fa / getBigNumber(1);
 
-            const b_1 = await this.vabToken.balanceOf(this.customer3.address)
-            await this.VabbleDAO.connect(this.customer3).claimReward([fId4], {from: this.customer3.address})
-            const b_2 = await this.vabToken.balanceOf(this.customer3.address)
-            console.log("====Customer 3 Film 4 claimReward::", b_2.sub(b_1) / getBigNumber(1));
-            expect(b_2.sub(b_1)).to.be.equal(getBigNumber(140)); // 100 * 0.35 + 105 = 140
-            
-            const mId1 = await this.VabbleDAO.latestClaimMonthId(fId5, this.customer1.address) // 2
-            const mId3 = await this.VabbleDAO.latestClaimMonthId(fId4, this.customer3.address) // 2
-            const curMonthId = await this.VabbleDAO.monthId()    // 2
-            expect(mId1).to.be.equal(curMonthId)
-            expect(mId3).to.be.equal(curMonthId)
+                    fa_list.push(fa);
+                }
+
+                if (i < 3)
+                    expect(fa_list).to.be.deep.equal([0, 0, 0, 0, 0]);
+
+                if (i == 3) // film 4
+                    expect(fa_list).to.be.deep.equal([120, 90, 60, 30, 0]);
+
+                if (i == 4) // film 5
+                    expect(fa_list).to.be.deep.equal([82, 64, 36, 18, 0]);
+
+
+                console.log(`====finalizedAmount${i + 1}::`, fa_list);
+            }
+
+            // Change Film Owner for film 4, 5 and check finalized amount
+            for (let i = 3; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+                await expect(
+                    this.VabbleDAO.connect(this.deployer).changeOwner(filmId, this.studio1.address, {from: this.deployer.address})            
+                ).to.emit(this.VabbleDAO, 'ChangeFilmOwner').withArgs(
+                    filmId, this.deployer.address, this.studio1.address
+                );        
+            }
+
+            console.log("===== After change film 4, 5's owner, check finalized amount ======");
+           
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+
+                let fa_list = [];
+
+                for (let j = 0; j < users.length; j++) {
+                    const user = users[j];
+                
+                    let fa = await this.VabbleDAO.finalizedAmount(monthId, filmId, user.address)
+                    fa = fa / getBigNumber(1);
+
+                    fa_list.push(fa);
+                }
+
+                if (i < 3)
+                    expect(fa_list).to.be.deep.equal([0, 0, 0, 0, 0]);
+
+                if (i == 3) // film 4
+                    expect(fa_list).to.be.deep.equal([120, 90, 60, 0, 30]);
+
+                if (i == 4) // film 5
+                    expect(fa_list).to.be.deep.equal([82, 64, 36, 0, 18]);
+
+                console.log(`====finalizedAmount2_${i + 1}::`, fa_list);
+            }
+
+            const allRewardAmount4_1_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount4_1_New", allRewardAmount4_1_New / getBigNumber(1));            
+
+            const v_4_1 = await this.vabToken.balanceOf(this.studio1.address)
+            await this.VabbleDAO.connect(this.studio1).claimReward([fId4], {from: this.studio1.address})
+            const v_4_2 = await this.vabToken.balanceOf(this.studio1.address);
+
+            // month 1 - 10, month 2, 30 -> 10 + 30 = 40
+            console.log("====Studio 1 Film 4 claimReward::", v_4_2.sub(v_4_1) / getBigNumber(1));
+            expect(v_4_2.sub(v_4_1)).to.be.equal(getBigNumber(40));
+
+            const allRewardAmount4_2_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount4_2_New", allRewardAmount4_2_New / getBigNumber(1));            
+            expect(allRewardAmount4_1_New.sub(allRewardAmount4_2_New)).to.be.equal(getBigNumber(40));
+
+            const allRewardAmount5_1_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount5_1_New", allRewardAmount5_1_New / getBigNumber(1));            
+
+            const v_5_1 = await this.vabToken.balanceOf(this.studio1.address)
+            await this.VabbleDAO.connect(this.studio1).claimReward([fId5], {from: this.studio1.address})
+            const v_5_2 = await this.vabToken.balanceOf(this.studio1.address);
+
+            // month 1 - 9, month 2, 18 -> 9 + 18 = 27
+            console.log("====Studio 1 Film 5 claimReward::", v_5_2.sub(v_5_1) / getBigNumber(1));
+            expect(v_5_2.sub(v_5_1)).to.be.equal(getBigNumber(27));
+
+            const allRewardAmount5_2_New = await this.VabbleDAO.connect(this.studio1).getAllAvailableRewards(monthId, {from: this.studio1.address});
+            console.log("allRewardAmount5_2_New", allRewardAmount5_2_New / getBigNumber(1));            
+            expect(allRewardAmount5_1_New.sub(allRewardAmount5_2_New)).to.be.equal(getBigNumber(27));
+
+            // claim film 1 at month 1, claim film 4, 5 at month 2
+            const lastClaimMonthIds = [1, 0, 0, 2, 2]; 
+            for (let i = 0; i < filmIds.length; i++) {
+                const filmId = filmIds[i];
+                const mId1 = await this.VabbleDAO.latestClaimMonthId(filmId, this.studio1.address) // 1
+
+                expect(mId1).to.be.equal(lastClaimMonthIds[i])
+            }                  
 
             await expect(
-                this.VabbleDAO.connect(this.customer3).claimReward([fId4], {from: this.customer3.address})
+                this.VabbleDAO.connect(this.studio1).claimReward([fId4], {from: this.studio1.address})
             ).to.be.revertedWith('claimReward: zero amount');
-
-            // => Increase next block timestamp for only testing
-            period = 30 * 24 * 3600; // 31 days
-            network.provider.send('evm_increaseTime', [period]);
-            await network.provider.send('evm_mine');
-
-            expect(await this.StakingPool.checkAllocateToPool(
-                [this.customer1.address, this.customer2.address, this.customer3.address],
-                [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)]
-            )).to.be.true;
-
-            expect(await this.StakingPool.checkAllocateToPool(
-                [this.customer1.address, this.customer2.address, this.customer3.address],
-                [getBigNumber(200000), getBigNumber(1000), getBigNumber(1000)]
-            )).to.be.false;
-            // Allocate to EdgePool
-            if (GNOSIS_FLAG) {
-                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("allocateToPool", 
-                    [
-                        [this.customer1.address, this.customer2.address, this.customer3.address],
-                        [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
-                        1
-                    ]);
-
-                // Generate Signature and Transaction information
-                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
-                await expect(  
-                    executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx)
-                ).to.emit(this.VabbleDAO, 'AllocatedToPool').withArgs(
-                    [this.customer1.address, this.customer2.address, this.customer3.address],
-                    [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
-                    1
-                );
-            } else {
-                await expect(
-                    this.VabbleDAO.connect(this.auditor).allocateToPool(
-                        [this.customer1.address, this.customer2.address, this.customer3.address],
-                        [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
-                        1,
-                        {from: this.auditor.address}
-                    )
-                ).to.emit(this.VabbleDAO, 'AllocatedToPool').withArgs(
-                    [this.customer1.address, this.customer2.address, this.customer3.address],
-                    [getBigNumber(500), getBigNumber(1000), getBigNumber(1000)],
-                    1
-                );
-            }
-
-            const VABInEdgePool_1 = await this.vabToken.balanceOf(this.Ownablee.address);
-            const VABInStudioPool_1 = await this.vabToken.balanceOf(this.VabbleDAO.address);
             
-            if (GNOSIS_FLAG) {
-                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("allocateFromEdgePool", 
-                    [
-                        getBigNumber(1000)
-                    ]);
-
-                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
-
-                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
-            } else {
-                await this.VabbleDAO.connect(this.auditor).allocateFromEdgePool(getBigNumber(1000), {from: this.auditor.address})
-            }
-
-            const VABInEdgePool_2 = await this.vabToken.balanceOf(this.Ownablee.address);
-            const VABInStudioPool_2 = await this.vabToken.balanceOf(this.VabbleDAO.address);
-            console.log("====After allocateFromEdgePool, EdgePool ::", VABInEdgePool_1.sub(VABInEdgePool_2) / getBigNumber(1));
-            console.log("====After allocateFromEdgePool, StudioPool::", VABInStudioPool_2.sub(VABInStudioPool_1) / getBigNumber(1));
-            expect(VABInEdgePool_1.sub(VABInEdgePool_2)).to.be.equal(getBigNumber(1000));
-            expect(VABInStudioPool_2.sub(VABInStudioPool_1)).to.be.equal(getBigNumber(1000));
-
-            //============= setFinalFilms for funding(fundType = 1, token)
-            // => Increase next block timestamp for only testing
-            period = 31 * 24 * 3600; // 31 days
-            network.provider.send('evm_increaseTime', [period]);
-            await network.provider.send('evm_mine');
-
-            // ==================== setFinalFilms =====================================
-            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, true, true, true]);
-            if (GNOSIS_FLAG) {
-                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
-                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
-                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
-            } else {
-                await this.VabbleDAO.connect(this.auditor).startNewMonth();    
-            }
-
-            if (GNOSIS_FLAG) {
-                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("setFinalFilms", 
-                [
-                    [fId3], 
-                    [getBigNumber(200)]
-                ]);
-
-                // Generate Signature and Transaction information
-                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
-
-                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
-            } else {
-                await this.VabbleDAO.connect(this.auditor).setFinalFilms(
-                    [fId3], 
-                    [getBigNumber(200)]
-                )  
-            }
-            expect(await this.VabbleDAO.checkSetFinalFilms([fId1, fId2, fId3, fId4, fId5])).to.be.deep.equals([true, true, false, true, true]);
-            
-            const month = await this.VabbleDAO.monthId()
-            const assignedAmount4 = await this.VabbleDAO.finalizedAmount(month, fId3, this.customer1.address)
-            // 200 -> 180 + 20
-            // customer1 shared = 180 / 2 = 90
-            // customer1 reward = 20 / 6 (customers) = 3.3
-            console.log("====assignedAmount4::", month.toString(), assignedAmount4 / getBigNumber(1)) ; 
-           
-            const d_1 = await this.vabToken.balanceOf(this.customer1.address)
-            await this.VabbleDAO.connect(this.customer1).claimReward([fId3], {from: this.customer1.address})
-            const d_2 = await this.vabToken.balanceOf(this.customer1.address)
-            // shared = (200 + 100) * 0.9 / 2 = 135 // twice setFinalFilm
-            // reward = 30 / 6 = 5
-            // total = 140
-            console.log('====Customer 1 Film 3 claimReward::', d_2.sub(d_1) / getBigNumber(1));                        
-
-            // expect(
-            //     await this.VabbleDAO.getUserFilmListForMigrate(this.customer1.address)
-            // ).to.be.revertedWith("migrate: no film");            
         } catch (error) {
             console.error("Error:", error);
         } 
