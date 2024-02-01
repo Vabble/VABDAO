@@ -173,6 +173,11 @@ cd VabbleDAO
 ►  npm install
 ```
 
+4. Copy the .env.examples into a new file and set the variables:
+```sh
+►  cp .env.example .env
+```
+
 ### 🤖 Running VabbleDAO
 
 ```sh
