@@ -53,7 +53,7 @@ contract VabbleDAO is ReentrancyGuard {
     address[] private studioPoolUsers;            // (which => user list)
     address[] private edgePoolUsers;              // (which => user list)
 
-    mapping(uint256 => IVabbleDAO.Film) private filmInfo;              // Each film information(filmId => Film)
+    mapping(uint256 => IVabbleDAO.Film) public filmInfo;              // Each film information(filmId => Film)
     mapping(address => uint256[]) private userUpdatedFilmProposalIds; // (studio => filmId list)
     mapping(address => uint256[]) private userFilmProposalIds;        // (studio => filmId list)
     mapping(address => uint256[]) private userApprovedFilmIds;        // (studio => filmId list)

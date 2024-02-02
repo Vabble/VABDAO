@@ -73,9 +73,10 @@ module.exports = async function ({ deployments }) {
   const vabToken = await OwnableeContract.PAYOUT_TOKEN();
   const usdcAdress = await OwnableeContract.USDC_TOKEN();
   const walletAddress = await OwnableeContract.VAB_WALLET();
+  const {usdtAdress} = getConfig(chainId);
   
   await OwnableeContract.connect(deployer).addDepositAsset(
-    [vabToken, usdcAdress, CONFIG.addressZero], 
+    [vabToken, usdcAdress, usdtAdress, CONFIG.addressZero], 
     {from: deployer.address}
   )   
 
@@ -130,7 +131,7 @@ module.exports = async function ({ deployments }) {
 
   // checking configured values
   console.log("\n--------- Checking configured values ---------")
-  console.log({vabToken, usdcAdress, walletAddress});
+  console.log({vabToken, usdcAdress, usdtAdress, walletAddress});
 
   const vabTokenContract = new ethers.Contract(vabToken, JSON.stringify(ERC20), ethers.provider);
 
@@ -190,8 +191,19 @@ module.exports = async function ({ deployments }) {
   vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
   console.log("vab_balance_of_Ownablee after", vab_balance_of_Ownablee.toString());
 
+  // add 50M VAB to Edge Pool
+  let vab_balance_of_Staking_Pool = await vabTokenContract.balanceOf(this.StakingPool.address);        
+  console.log("vab_balance_of_Staking_Pool before", vab_balance_of_Staking_Pool.toString());
 
+  targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
+  diff = targetAmount.sub(vab_balance_of_Staking_Pool);
 
+  if (diff > 0) {
+    await vabTokenContract.connect(deployer).transfer(
+      this.StakingPool.address, diff, {from: deployer.address}
+    );  
+  } 
+  
 };
 
 module.exports.id = 'init'
