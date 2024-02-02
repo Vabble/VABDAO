@@ -73,9 +73,10 @@ module.exports = async function ({ deployments }) {
   const vabToken = await OwnableeContract.PAYOUT_TOKEN();
   const usdcAdress = await OwnableeContract.USDC_TOKEN();
   const walletAddress = await OwnableeContract.VAB_WALLET();
+  const {usdtAdress} = getConfig(chainId);
   
   await OwnableeContract.connect(deployer).addDepositAsset(
-    [vabToken, usdcAdress, CONFIG.addressZero], 
+    [vabToken, usdcAdress, usdtAdress, CONFIG.addressZero], 
     {from: deployer.address}
   )   
 
@@ -130,7 +131,7 @@ module.exports = async function ({ deployments }) {
 
   // checking configured values
   console.log("\n--------- Checking configured values ---------")
-  console.log({vabToken, usdcAdress, walletAddress});
+  console.log({vabToken, usdcAdress, usdtAdress, walletAddress});
 
   const vabTokenContract = new ethers.Contract(vabToken, JSON.stringify(ERC20), ethers.provider);
 
