@@ -192,15 +192,16 @@ module.exports = async function ({ deployments }) {
   console.log("vab_balance_of_Ownablee after", vab_balance_of_Ownablee.toString());
 
   // add 50M VAB to Edge Pool
-  let vab_balance_of_Staking_Pool = await vabTokenContract.balanceOf(this.StakingPool.address);        
-  console.log("vab_balance_of_Staking_Pool before", vab_balance_of_Staking_Pool.toString());
+  let totalRewardAmount = await StakingPoolContract.connect(deployer).totalRewardAmount();        
+  console.log("vab_balance_of_totalRewardAmount before", totalRewardAmount.toString());
 
   targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
-  diff = targetAmount.sub(vab_balance_of_Staking_Pool);
+  diff = targetAmount.sub(totalRewardAmount);
 
   if (diff > 0) {
-    await vabTokenContract.connect(deployer).transfer(
-      this.StakingPool.address, diff, {from: deployer.address}
+    await vabTokenContract.connect(deployer).approve(StakingPoolContract.address, targetAmount);
+    await StakingPoolContract.connect(deployer).addRewardToPool(
+      diff, {from: deployer.address}
     );  
   } 
   

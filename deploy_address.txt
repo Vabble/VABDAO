@@ -254,7 +254,7 @@ Vote (0xB977306044B9cf98361265802d71Ef30f03ce28b)
 
 VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
 
-// 2024-02-01 Polygon(Mumbai testnet) with filmInfo mapping to public
+// 2024-02-02 Polygon(Mumbai testnet) with filmInfo mapping to public
 FactoryFilmNFT (0xf3600fD8A5F22753b4b5d26C6407940F5F5A04D5)
 FactorySubNFT (0xE24Dd28ae00025d4D321235d7C61Bc83e26bCdc7)
 FactoryTierNFT (0x8Cb60E19A0c15A003d6dF3F544E739A00Af9b4fa)
