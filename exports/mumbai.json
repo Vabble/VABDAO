@@ -1025,7 +1025,7 @@
       ]
     },
     "FactoryTierNFT": {
-      "address": "0xF0E29Ec45c4EAcCc9FB1384339A7419735dF351f",
+      "address": "0x8Cb60E19A0c15A003d6dF3F544E739A00Af9b4fa",
       "abi": [
         {
           "inputs": [
@@ -5133,7 +5133,7 @@
       ]
     },
     "VabbleDAO": {
-      "address": "0xE003698A7A9a3644294108dfa998b90aD638cA84",
+      "address": "0xC0036a960cd574f80194d66FAFB46Bc0e996b335",
       "abi": [
         {
           "inputs": [
@@ -5611,6 +5611,80 @@
               "internalType": "uint256",
               "name": "_value",
               "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "filmInfo",
+          "outputs": [
+            {
+              "internalType": "string",
+              "name": "title",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "raiseAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fundPeriod",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fundType",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "rewardPercent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "noVote",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "enableClaimer",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "pCreateTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "pApproveTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "studio",
+              "type": "address"
+            },
+            {
+              "internalType": "enum Helper.Status",
+              "name": "status",
+              "type": "uint8"
             }
           ],
           "stateMutability": "view",

@@ -197,16 +197,13 @@ module.exports = async function ({ deployments }) {
 
   targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
   diff = targetAmount.sub(vab_balance_of_Staking_Pool);
+
+  if (diff > 0) {
+    await vabTokenContract.connect(deployer).transfer(
+      this.StakingPool.address, diff, {from: deployer.address}
+    );  
+  } 
   
-  await vabTokenContract.connect(deployer).transfer(
-    this.StakingPool.address, diff, {from: deployer.address}
-  );
-
-  vab_balance_of_Staking_Pool = await vabTokenContract.balanceOf(this.StakingPool.address);        
-  console.log("vab_balance_of_Staking_Pool after", vab_balance_of_Staking_Pool.toString());
-
-
-
 };
 
 module.exports.id = 'init'
