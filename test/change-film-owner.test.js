@@ -678,11 +678,14 @@ describe('ChangeFilmOwner', function () {
             const filmIds = [fId1, fId2, fId3, fId4, fId5];
             expect(await this.VabbleDAO.checkSetFinalFilms(filmIds)).to.be.deep.equals([true, true, true, true, true]);
             if (GNOSIS_FLAG) {
-                let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
-                const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
-                await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+                for (var i = 0; i < 9; i++) {
+                    let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
+                    const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                    await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+                }
             } else {
-                await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+                for (var i = 0; i < 9; i++)
+                    await this.VabbleDAO.connect(this.auditor).startNewMonth();    
             }
 
             if (GNOSIS_FLAG) {
@@ -950,7 +953,7 @@ describe('ChangeFilmOwner', function () {
             expect(allRewardAmount5_1_New.sub(allRewardAmount5_2_New)).to.be.equal(getBigNumber(27));
 
             // claim film 1 at month 1, claim film 4, 5 at month 2
-            const lastClaimMonthIds = [1, 0, 0, 2, 2]; 
+            const lastClaimMonthIds = [9, 0, 0, 10, 10]; 
             for (let i = 0; i < filmIds.length; i++) {
                 const filmId = filmIds[i];
                 const mId1 = await this.VabbleDAO.latestClaimMonthId(filmId, this.studio1.address) // 1
