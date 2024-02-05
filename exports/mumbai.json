@@ -1025,7 +1025,7 @@
       ]
     },
     "FactoryTierNFT": {
-      "address": "0x8Cb60E19A0c15A003d6dF3F544E739A00Af9b4fa",
+      "address": "0x61975daD8799BAcFd130202Bf2ADfA820c70b9D9",
       "abi": [
         {
           "inputs": [
@@ -5133,7 +5133,7 @@
       ]
     },
     "VabbleDAO": {
-      "address": "0xC0036a960cd574f80194d66FAFB46Bc0e996b335",
+      "address": "0x984ca3E6301D459910f92DAa9ba328D49491c3e6",
       "abi": [
         {
           "inputs": [
@@ -5967,6 +5967,40 @@
             }
           ],
           "name": "getUserRewardAmount",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "amount_",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_filmId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "preMonth",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_curMonth",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address"
+            }
+          ],
+          "name": "getUserRewardAmountForUser",
           "outputs": [
             {
               "internalType": "uint256",
