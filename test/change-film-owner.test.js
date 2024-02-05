@@ -766,6 +766,14 @@ describe('ChangeFilmOwner', function () {
 
                 console.log(`====finalizedAmount${i + 1}::`, fa_list);
             }
+
+            const prevUser1 = await this.VabbleDAO.connect(this.deployer).getPrevMonthAndUser(fId1, {from: this.deployer.address});
+            console.log("With Wallet", prevUser1)
+
+            const prevUser2 = await this.VabbleDAO.getPrevMonthAndUser(fId1);
+            console.log("Without Wallet", prevUser2)
+
+
             
             const rewardAmount_Old = await this.VabbleDAO.connect(this.deployer).getUserRewardAmount(fId3, monthId, {from: this.deployer.address});
             console.log("rewardAmount_Old", rewardAmount_Old / getBigNumber(1));    
