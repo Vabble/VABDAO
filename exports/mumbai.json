@@ -1025,7 +1025,7 @@
       ]
     },
     "FactoryTierNFT": {
-      "address": "0xc7E02ecdAfC6a5F1c22cDcb28fabcD7E6b8ea882",
+      "address": "0xb03F3eB1415358533b3c74e0519A9490651BD8D2",
       "abi": [
         {
           "inputs": [
@@ -5133,7 +5133,7 @@
       ]
     },
     "VabbleDAO": {
-      "address": "0xBA47fFeb99041297cb6e73202014C9DD600Ab131",
+      "address": "0x4590D083Ef54ECA594891A35ec7817B3521724f7",
       "abi": [
         {
           "inputs": [
