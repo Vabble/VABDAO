@@ -679,13 +679,23 @@ describe('ChangeFilmOwner', function () {
             expect(await this.VabbleDAO.checkSetFinalFilms(filmIds)).to.be.deep.equals([true, true, true, true, true]);
             if (GNOSIS_FLAG) {
                 for (var i = 0; i < 9; i++) {
+                    // => Increase next block timestamp for only testing
+                    period = 31 * 24 * 3600; // 31 days
+                    network.provider.send('evm_increaseTime', [period]);
+                    await network.provider.send('evm_mine');   
                     let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
                     const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
                     await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
                 }
             } else {
-                for (var i = 0; i < 9; i++)
+                for (var i = 0; i < 9; i++) {
+                    // => Increase next block timestamp for only testing
+                    period = 31 * 24 * 3600; // 31 days
+                    network.provider.send('evm_increaseTime', [period]);
+                    await network.provider.send('evm_mine');   
+
                     await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+                }
             }
 
             if (GNOSIS_FLAG) {
@@ -708,8 +718,35 @@ describe('ChangeFilmOwner', function () {
 
             expect(await this.VabbleDAO.checkSetFinalFilms(filmIds)).to.be.deep.equals([false, false, false, false, false]);
 
-            // check each payeers finalized amount for each film
             let monthId = await this.VabbleDAO.monthId() // 1 
+
+            let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
+            expect(finalFilmList.length).to.be.equal(5)
+
+            if (GNOSIS_FLAG) {
+                for (var i = 0; i < 3; i++) {
+                    // => Increase next block timestamp for only testing
+                    period = 31 * 24 * 3600; // 31 days
+                    network.provider.send('evm_increaseTime', [period]);
+                    await network.provider.send('evm_mine');   
+
+                    let encodedCallData = this.VabbleDAO.interface.encodeFunctionData("startNewMonth", []);
+                    const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.VabbleDAO.address, [this.signer1, this.signer2]);
+                    await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+                }
+            } else {
+                for (var i = 0; i < 3; i++) {
+                    // => Increase next block timestamp for only testing
+                    period = 31 * 24 * 3600; // 31 days
+                    network.provider.send('evm_increaseTime', [period]);
+                    await network.provider.send('evm_mine');   
+
+                    await this.VabbleDAO.connect(this.auditor).startNewMonth();    
+                }
+            }
+
+            // check each payeers finalized amount for each film
+            monthId = await this.VabbleDAO.monthId() // 1 
             
             let users = [this.customer1, this.customer2, this.customer3, this.deployer, this.studio1];
             
@@ -772,8 +809,7 @@ describe('ChangeFilmOwner', function () {
             expect(rewardAmount_Old).to.be.equal(rewardAmount_New)
             // expect(allRewardAmount1_Old).to.be.equal(allRewardAmount1_New)
 
-            let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
-            expect(finalFilmList.length).to.be.equal(5)
+            
 
             const v_1 = await this.vabToken.balanceOf(this.studio1.address)
             await this.VabbleDAO.connect(this.studio1).claimReward([fId1], {from: this.studio1.address})
@@ -953,7 +989,7 @@ describe('ChangeFilmOwner', function () {
             expect(allRewardAmount5_1_New.sub(allRewardAmount5_2_New)).to.be.equal(getBigNumber(27));
 
             // claim film 1 at month 1, claim film 4, 5 at month 2
-            const lastClaimMonthIds = [9, 0, 0, 10, 10]; 
+            const lastClaimMonthIds = [12, 0, 0, 13, 13]; 
             for (let i = 0; i < filmIds.length; i++) {
                 const filmId = filmIds[i];
                 const mId1 = await this.VabbleDAO.latestClaimMonthId(filmId, this.studio1.address) // 1
