@@ -166,8 +166,8 @@ contract VabbleDAO is ReentrancyGuard {
         }
         require(totalPercent == 1e10, 'proposalUpdate: total percent should be 100%');
         
-        require(fInfo.status == Helper.Status.LISTED, 'proposalUpdate: Not listed');
-        require(fInfo.studio == msg.sender, 'proposalUpdate: not film owner');
+        require(fInfo.status == Helper.Status.LISTED, 'pU: NL'); // proposalUpdate: Not listed
+        require(fInfo.studio == msg.sender, 'pU: NFO'); // proposalUpdate: not film owner
 
         fInfo.title = _title;
         fInfo.description = _description;
@@ -205,7 +205,7 @@ contract VabbleDAO is ReentrancyGuard {
     function changeOwner(uint256 _filmId, address newOwner) external nonReentrant returns (bool) {
         IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
 
-        require(fInfo.studio == msg.sender, 'changeOwner: not film owner');
+        require(fInfo.studio == msg.sender, 'cO, E1'); //changeOwner: not film owner
 
         uint256 payeeLength = fInfo.studioPayees.length;  
         for(uint256 k = 0; k < payeeLength; k++) {
@@ -226,6 +226,8 @@ contract VabbleDAO is ReentrancyGuard {
         if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
             moveToAnotherArray(userApprovedFilmIds[msg.sender], userApprovedFilmIds[newOwner], _filmId);
             moveToAnotherArray(userFinalFilmIds[msg.sender], userFinalFilmIds[newOwner], _filmId);
+            isInvested[msg.sender][_filmId] = false;
+            isInvested[newOwner][_filmId] = true;
             uint256 curMonth = monthId.current();        
             updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner);
         }
