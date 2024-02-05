@@ -3,7 +3,7 @@
   "chainId": "80001",
   "contracts": {
     "FactoryFilmNFT": {
-      "address": "0xf3600fD8A5F22753b4b5d26C6407940F5F5A04D5",
+      "address": "0xaa2f3513772960E02A0C3eB09ABD21450AE771A0",
       "abi": [
         {
           "inputs": [
@@ -516,7 +516,7 @@
       ]
     },
     "FactorySubNFT": {
-      "address": "0xE24Dd28ae00025d4D321235d7C61Bc83e26bCdc7",
+      "address": "0xed6c03f9C201Bf0865E99fb58E1ec1d3b2199E4E",
       "abi": [
         {
           "inputs": [
@@ -1025,7 +1025,7 @@
       ]
     },
     "FactoryTierNFT": {
-      "address": "0x61975daD8799BAcFd130202Bf2ADfA820c70b9D9",
+      "address": "0xc7E02ecdAfC6a5F1c22cDcb28fabcD7E6b8ea882",
       "abi": [
         {
           "inputs": [
@@ -2654,7 +2654,7 @@
       ]
     },
     "Ownablee": {
-      "address": "0x342158Ab022C9E2122b039f5891997ef0b26F488",
+      "address": "0x6Ec4855f2Ef434f02E743B29148Dc65407Dc5497",
       "abi": [
         {
           "inputs": [
@@ -2941,7 +2941,7 @@
       ]
     },
     "Property": {
-      "address": "0x0f15D7a39D97dC053b77D8c8F96F2220Fd064B85",
+      "address": "0x492536CD89a9eC936f846794E612a8Ca4A939149",
       "abi": [
         {
           "inputs": [
@@ -3976,7 +3976,7 @@
       ]
     },
     "StakingPool": {
-      "address": "0xb15c631F162d2C145e377eb9a0820a1F8ED17C24",
+      "address": "0x3D0Ef718cd37FF5c245F883A9417d947F80ad44A",
       "abi": [
         {
           "inputs": [
@@ -4752,7 +4752,7 @@
       ]
     },
     "Subscription": {
-      "address": "0x2B91465a155DA95E5eC003ff73d1570b198821A8",
+      "address": "0x2e1B37575B41dbfeae780Ee18643E5d9E5FEcB69",
       "abi": [
         {
           "inputs": [
@@ -4928,7 +4928,7 @@
       ]
     },
     "UniHelper": {
-      "address": "0x51Ccc0AEd524B89E11e53A84E957Dc7E76ce6243",
+      "address": "0x7b49B88Ce7CCD73DE093cAEB59B45961a63ea194",
       "abi": [
         {
           "inputs": [
@@ -5133,7 +5133,7 @@
       ]
     },
     "VabbleDAO": {
-      "address": "0x984ca3E6301D459910f92DAa9ba328D49491c3e6",
+      "address": "0xBA47fFeb99041297cb6e73202014C9DD600Ab131",
       "abi": [
         {
           "inputs": [
@@ -5937,6 +5937,30 @@
         {
           "inputs": [
             {
+              "internalType": "uint256",
+              "name": "_filmId",
+              "type": "uint256"
+            }
+          ],
+          "name": "getPrevMonthAndUser",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "preMonth_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "user_",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
               "internalType": "address",
               "name": "_user",
               "type": "address"
@@ -5986,7 +6010,36 @@
             },
             {
               "internalType": "uint256",
-              "name": "preMonth",
+              "name": "_preMonth",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_curMonth",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address"
+            }
+          ],
+          "name": "getUserRewardAmountBetweenMonthsForUser",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "amount_",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_filmId",
               "type": "uint256"
             },
             {
@@ -6243,7 +6296,7 @@
       ]
     },
     "VabbleFund": {
-      "address": "0x9C11aef7B1887cD04f1d4ca9FDdA282eF1fAd920",
+      "address": "0xcdE432bb4bF72e882c1AF4747338ED72FA87B61E",
       "abi": [
         {
           "inputs": [
@@ -6686,7 +6739,7 @@
       ]
     },
     "Vote": {
-      "address": "0xB977306044B9cf98361265802d71Ef30f03ce28b",
+      "address": "0x94A3dD5330acF5f4c79dad33D0032B4DE550124f",
       "abi": [
         {
           "inputs": [

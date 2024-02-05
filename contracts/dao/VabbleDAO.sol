@@ -23,7 +23,7 @@ import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFund.sol";
 import "../interfaces/IVabbleDAO.sol";
-import "../libraries/VabbleDAOUtils.sol";
+// import "../libraries/VabbleDAOUtils.sol";
 
 
 contract VabbleDAO is ReentrancyGuard {
@@ -216,23 +216,40 @@ contract VabbleDAO is ReentrancyGuard {
         fInfo.studio = newOwner;
 
         if (fInfo.status == Helper.Status.LISTED) {
-            Helper.moveToAnotherArray(userFilmProposalIds[msg.sender], userFilmProposalIds[newOwner], _filmId);
+            moveToAnotherArray(userFilmProposalIds[msg.sender], userFilmProposalIds[newOwner], _filmId);
         }
 
         if (fInfo.status == Helper.Status.UPDATED) {            
-            Helper.moveToAnotherArray(userUpdatedFilmProposalIds[msg.sender], userUpdatedFilmProposalIds[newOwner], _filmId);
+            moveToAnotherArray(userUpdatedFilmProposalIds[msg.sender], userUpdatedFilmProposalIds[newOwner], _filmId);
         }
         
         if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
-            Helper.moveToAnotherArray(userApprovedFilmIds[msg.sender], userApprovedFilmIds[newOwner], _filmId);
-            Helper.moveToAnotherArray(userFinalFilmIds[msg.sender], userFinalFilmIds[newOwner], _filmId);
+            moveToAnotherArray(userApprovedFilmIds[msg.sender], userApprovedFilmIds[newOwner], _filmId);
+            moveToAnotherArray(userFinalFilmIds[msg.sender], userFinalFilmIds[newOwner], _filmId);
             uint256 curMonth = monthId.current();        
-            VabbleDAOUtils.updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner, latestClaimMonthId, finalizedAmount);
+            updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner);
         }
         
         emit ChangeFilmOwner(_filmId, msg.sender, newOwner);
 
         return true;
+    }
+
+    function moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) private {
+        uint256 index = array1.length;
+
+        for(uint256 i = 0; i < array1.length; ++i) {
+            if(array1[i] == value) {
+                index = i;
+            }
+        }
+
+        if (index >= array1.length) return;
+
+        array2.push(value);
+        
+        array1[index] = array1[array1.length - 1];
+        array1.pop();
     }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
@@ -294,8 +311,8 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @notice onlyStudio update film fund period
     function updateFilmFundPeriod(uint256 _filmId, uint256 _fundPeriod) external nonReentrant {
-        require(msg.sender == filmInfo[_filmId].studio, "updateFundPeriod: not film owner");
-        require(filmInfo[_filmId].fundType != 0, "updateFundPeriod: not fund film");
+        require(msg.sender == filmInfo[_filmId].studio, "uFP: 1"); // updateFundPeriod: not film owner
+        require(filmInfo[_filmId].fundType != 0, "uFP: 2"); // updateFundPeriod: not fund film
 
         filmInfo[_filmId].fundPeriod = _fundPeriod;
         
@@ -373,7 +390,17 @@ contract VabbleDAO is ReentrancyGuard {
     /// Pre-Checking for set Final Film
     function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
         uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
-        _valids = VabbleDAOUtils.checkSetFinalFilms(_filmIds, fPeriod, finalFilmCalledTime);
+
+        _valids = new bool[](_filmIds.length);
+
+        uint256 filmLength = _filmIds.length;
+        for (uint256 i = 0; i < filmLength; ++i) {
+            if (finalFilmCalledTime[_filmIds[i]] != 0) {
+                _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] >= fPeriod;                
+            } else {
+                _valids[i] = true;
+            }
+        }      
     }
 
     /// @notice Set final films for a customer with watched 
@@ -508,14 +535,49 @@ contract VabbleDAO is ReentrancyGuard {
 
         __claimAllReward(filmIds);   
     }
+
+    function getUserRewardAmountBetweenMonthsForUser (
+        uint256 _filmId, 
+        uint256 _preMonth, 
+        uint256 _curMonth, 
+        address _user
+    ) public view returns (uint256 amount_) {
+        if(_preMonth < _curMonth) {
+            for(uint256 mon = _preMonth + 1; mon <= _curMonth; ++mon) {
+                amount_ += finalizedAmount[mon][_filmId][_user];
+            }                   
+        }
+    }
+
+    function getAllAvailableRewards(
+        uint256 _curMonth
+    ) public view returns (uint256 reward_) {
+        uint256[] memory filmIds = userFinalFilmIds[msg.sender];
+
+        uint256 rewardSum;
+        uint256 preMonth;
+        uint256 filmLength = filmIds.length;
+        for(uint256 i = 0; i < filmLength; ++i) {  
+            preMonth = latestClaimMonthId[filmIds[i]][msg.sender];
+            rewardSum += getUserRewardAmountBetweenMonthsForUser(filmIds[i], preMonth, _curMonth, msg.sender);                        
+        }
+
+        reward_ = rewardSum;
+    }
         
     function getUserRewardAmount(uint256 _filmId, uint256 _curMonth) public view returns (uint256 amount_) {        
         uint256 preMonth = latestClaimMonthId[_filmId][msg.sender];
-        amount_ = VabbleDAOUtils.getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, msg.sender, finalizedAmount);
+        amount_ = getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, msg.sender);
     }
 
-    function getUserRewardAmountForUser(uint256 _filmId, uint256 preMonth, uint256 _curMonth, address _user) public view returns (uint256 amount_) {        
-        amount_ = VabbleDAOUtils.getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, _user, finalizedAmount);
+    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user) public view returns (uint256 amount_) {        
+        uint256 preMonth = latestClaimMonthId[_filmId][_user];
+        amount_ = getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, _user);
+    }
+
+    function getPrevMonthAndUser(uint256 _filmId) public view returns (uint256 preMonth_, address user_) {
+        preMonth_ = latestClaimMonthId[_filmId][msg.sender];
+        user_ = msg.sender;
     }
 
     function getUserFinalFilmIds(address _user) external view returns (uint256[] memory) {        
@@ -584,8 +646,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// @notice flag=1 => studioPoolUsers, flag=2 => edgePoolUsers
-    function getPoolUsers(uint256 _flag) external view returns (address[] memory list_) { 
-        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor"); 
+    function getPoolUsers(uint256 _flag) external onlyAuditor view returns (address[] memory list_) {         
         if(_flag == 1) list_ = studioPoolUsers;
         else if(_flag == 2) list_ = edgePoolUsers;
     }
@@ -604,8 +665,26 @@ contract VabbleDAO is ReentrancyGuard {
     //     filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
     // }    
 
-    function getAllAvailableRewards(uint256 _curMonth) external view returns (uint256 reward_) {
-        uint256[] memory filmIds = userFinalFilmIds[msg.sender];    
-        reward_ = VabbleDAOUtils.getAllAvailableRewards(filmIds, _curMonth, latestClaimMonthId, finalizedAmount);
+    function updateFinalizeAmountAndLastClaimMonth (
+        uint256 _filmId, 
+        uint256 _curMonth, 
+        address _oldOwner,
+        address _newOwner
+    ) private {
+        uint256 _preMonth = latestClaimMonthId[_filmId][_oldOwner];
+
+        // update last claim month for newOwner
+        latestClaimMonthId[_filmId][_newOwner] = _preMonth;
+        
+        if(_preMonth < _curMonth) {
+            for(uint256 mon = _preMonth + 1; mon <= _curMonth; ++mon) {
+                // set finalizedAmount for new owner
+                finalizedAmount[mon][_filmId][_newOwner] = finalizedAmount[mon][_filmId][_oldOwner];
+
+                // set 0 for old owner
+                finalizedAmount[mon][_filmId][_oldOwner] = 0;
+            }                   
+        }
+        
     }
 }
