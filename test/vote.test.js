@@ -1,9 +1,13 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { BigNumber } = require('ethers');
+const { generateSignature, executeGnosisSafeTransaction } = require('../scripts/gnosis-safe');
 const ERC20 = require('../data/ERC20.json');
+const FERC20 = require('../data/FxERC20.json');
 const { CONFIG, DISCOUNT, getFinalFilm, getBigNumber, getVoteData, getProposalFilm, getOldProposalFilm } = require('../scripts/utils');
   
+const GNOSIS_FLAG = true;
+
 describe('Vote', function () {
   before(async function () {
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
@@ -17,9 +21,11 @@ describe('Vote', function () {
     this.FactorySubNFTFactory = await ethers.getContractFactory('FactorySubNFT');
     this.OwnableFactory = await ethers.getContractFactory('Ownablee');
     this.SubscriptionFactory = await ethers.getContractFactory('Subscription');
-    this.MultiSigFactory = await ethers.getContractFactory('MultiSigWallet');
+    this.GnosisSafeFactory = await ethers.getContractFactory('GnosisSafeL2');
 
     this.signers = await ethers.getSigners();
+    this.deployer = this.signers[0];
+
     this.auditor = this.signers[0];
     this.studio1 = this.signers[2];    
     this.studio2 = this.signers[3];       
@@ -37,132 +43,166 @@ describe('Vote', function () {
     this.sig1 = this.signers[15];    
     this.sig2 = this.signers[16];       
     this.sig3 = this.signers[17]; 
+
+    this.signer1 = new ethers.Wallet(process.env.PK1, ethers.provider);
+    this.signer2 = new ethers.Wallet(process.env.PK2, ethers.provider);    
   });
 
   beforeEach(async function () {
-    this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+    // load ERC20 tokens
+    if (CONFIG.mumbai.vabToken == "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32")
+      this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
+    else
+      this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(FERC20), ethers.provider);
+
+
     this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
     this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
 
-    this.MultiSigWallet = await (await this.MultiSigFactory.deploy(
-      [this.sig1.address, this.sig2.address, this.sig3.address], 2
-    )).deployed();    
-
+    this.GnosisSafe = await (await this.GnosisSafeFactory.deploy()).deployed();
+    this.auditor = GNOSIS_FLAG ? this.GnosisSafe : this.deployer;
+        
     this.Ownablee = await (await this.OwnableFactory.deploy(
-      CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address, this.MultiSigWallet.address
-    )).deployed(); 
-
-    this.UniHelper = await (await this.UniHelperFactory.deploy(
-      CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, 
-      CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router, this.Ownablee.address
+        CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address, this.auditor.address
     )).deployed();
 
-    this.StakingPool = await (await this.StakingPoolFactory.deploy(this.Ownablee.address)).deployed(); 
+    this.UniHelper = await (await this.UniHelperFactory.deploy(
+        CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, 
+        CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router, this.Ownablee.address
+    )).deployed();
 
+
+    this.StakingPool = await (await this.StakingPoolFactory.deploy(this.Ownablee.address)).deployed();                 
     this.Vote = await (await this.VoteFactory.deploy(this.Ownablee.address)).deployed();
-      
+  
     this.Property = await (
-      await this.PropertyFactory.deploy(
-        this.Ownablee.address,
-        this.UniHelper.address,
-        this.Vote.address,
-        this.StakingPool.address
-      )
+        await this.PropertyFactory.deploy(
+          this.Ownablee.address,
+          this.UniHelper.address,
+          this.Vote.address,
+          this.StakingPool.address
+        )
     ).deployed();
-    
+
     this.FilmNFT = await (
-      await this.FactoryFilmNFTFactory.deploy(this.Ownablee.address)
+        await this.FactoryFilmNFTFactory.deploy(this.Ownablee.address)
     ).deployed();   
 
     this.SubNFT = await (
-      await this.FactorySubNFTFactory.deploy(this.Ownablee.address, this.UniHelper.address)
+        await this.FactorySubNFTFactory.deploy(this.Ownablee.address, this.UniHelper.address)
     ).deployed();   
 
     this.VabbleFund = await (
-      await this.VabbleFundFactory.deploy(
-        this.Ownablee.address,
-        this.UniHelper.address,
-        this.StakingPool.address,
-        this.Property.address,
-        this.FilmNFT.address
-      )
+        await this.VabbleFundFactory.deploy(
+          this.Ownablee.address,
+          this.UniHelper.address,
+          this.StakingPool.address,
+          this.Property.address,
+          this.FilmNFT.address
+        )
     ).deployed();   
 
     this.VabbleDAO = await (
-      await this.VabbleDAOFactory.deploy(
-        this.Ownablee.address,
-        this.UniHelper.address,
-        this.Vote.address,
-        this.StakingPool.address,
-        this.Property.address,
-        this.VabbleFund.address
-      )
+        await this.VabbleDAOFactory.deploy(
+          this.Ownablee.address,
+          this.UniHelper.address,
+          this.Vote.address,
+          this.StakingPool.address,
+          this.Property.address,
+          this.VabbleFund.address
+        )
     ).deployed();     
-    
+      
     this.TierNFT = await (
-      await this.FactoryTierNFTFactory.deploy(
-        this.Ownablee.address, 
-        this.VabbleDAO.address,
-        this.FilmNFT.address
-      )
+        await this.FactoryTierNFTFactory.deploy(
+          this.Ownablee.address, 
+          this.VabbleDAO.address,
+          this.VabbleFund.address
+        )
     ).deployed(); 
 
     this.Subscription = await (
-      await this.SubscriptionFactory.deploy(
-        this.Ownablee.address,
-        this.UniHelper.address,
-        this.Property.address,
-        [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
-      )
+        await this.SubscriptionFactory.deploy(
+          this.Ownablee.address,
+          this.UniHelper.address,
+          this.Property.address,
+          [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
+        )
     ).deployed();    
-    
-    await this.FilmNFT.connect(this.auditor).initialize(
-      this.VabbleDAO.address, 
-      this.VabbleFund.address,
-      {from: this.auditor.address}
+
+    // ---------------- Setup/Initialize the contracts with the deployer ----------------------------------
+    await this.GnosisSafe.connect(this.deployer).setup(
+        [this.signer1.address, this.signer2.address], 
+        2, 
+        CONFIG.addressZero, 
+        "0x", 
+        CONFIG.addressZero, 
+        CONFIG.addressZero, 
+        0, 
+        CONFIG.addressZero, 
+        {from: this.deployer.address}
+    );
+
+    await this.FilmNFT.connect(this.deployer).initialize(
+        this.VabbleDAO.address, 
+        this.VabbleFund.address,
+        {from: this.deployer.address}
     ); 
 
-    // Initialize StakingPool
-    await this.StakingPool.connect(this.auditor).initialize(
-      this.VabbleDAO.address,
-      this.Property.address,
-      this.Vote.address,
-      {from: this.auditor.address}
+    await this.StakingPool.connect(this.deployer).initialize(
+        this.VabbleDAO.address,
+        this.Property.address,
+        this.Vote.address,
+        {from: this.deployer.address}
     )  
-    
-    // Initialize Vote contract
-    await this.Vote.connect(this.auditor).initialize(
-      this.VabbleDAO.address,
-      this.StakingPool.address,
-      this.Property.address,
-      {from: this.auditor.address}
-    )
-    // Initialize VabbleFund contract
-    await this.VabbleFund.connect(this.auditor).initialize(
-      this.VabbleDAO.address,
-      {from: this.auditor.address}
+      
+    await this.Vote.connect(this.deployer).initialize(
+        this.VabbleDAO.address,
+        this.StakingPool.address,
+        this.Property.address,
+        {from: this.deployer.address}
     )
 
-    // set whitelist for swap asset in Unihelper contract
-    await this.UniHelper.connect(this.auditor).setWhiteList(
-      this.VabbleDAO.address,
-      this.VabbleFund.address,
-      this.Subscription.address,
-      this.FilmNFT.address,
-      this.SubNFT.address,
-      {from: this.auditor.address}
+    await this.VabbleFund.connect(this.deployer).initialize(
+        this.VabbleDAO.address,
+        {from: this.deployer.address}
     )
 
-    await this.Ownablee.connect(this.auditor).addDepositAsset(
-      [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
+    await this.UniHelper.connect(this.deployer).setWhiteList(
+        this.VabbleDAO.address,
+        this.VabbleFund.address,
+        this.Subscription.address,
+        this.FilmNFT.address,
+        this.SubNFT.address,
+        {from: this.deployer.address}
     )
-    
-    await this.Ownablee.connect(this.auditor).setup(
-      this.Vote.address, this.VabbleDAO.address, this.StakingPool.address, {from: this.auditor.address}
-    )
+
+    await this.Ownablee.connect(this.deployer).setup(
+        this.Vote.address, this.VabbleDAO.address, this.StakingPool.address, 
+        {from: this.deployer.address}
+    )       
+
+    // if (GNOSIS_FLAG) {
+    //     let encodedCallData = this.Ownablee.interface.encodeFunctionData("addDepositAsset", 
+    //         [[this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero]]);
+
+    //     // Generate Signature and Transaction information
+    //     const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.Ownablee.address, [this.signer1, this.signer2]);
+
+    //     await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
+    // } else {
+    //     await this.Ownablee.connect(this.auditor).addDepositAsset(
+    //         [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
+    //     )
+    // }
+
+    await this.Ownablee.connect(this.deployer).addDepositAsset(
+        [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], 
+        {from: this.deployer.address}
+    )  
     expect(await this.Ownablee.auditor()).to.be.equal(this.auditor.address);   
 
-    this.auditorBalance = await this.vabToken.balanceOf(this.auditor.address) // 145M
+    this.auditorBalance = await this.vabToken.balanceOf(this.deployer.address) // 145M
 
     // Approve to transfer VAB token for each user, studio to DAO, StakingPool
     await this.vabToken.connect(this.customer1).approve(this.VabbleDAO.address, this.auditorBalance);
@@ -364,16 +404,16 @@ describe('Vote', function () {
   // });
 
   it('voteToProperty', async function () {    
-    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(90000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer4.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer5.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer6.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer7.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer1.address, getBigNumber(90000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer2.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer3.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer4.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer5.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer6.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer7.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.studio1.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.studio2.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.studio3.address, getBigNumber(10000000), {from: this.deployer.address});
         
     const stakeAmount = getBigNumber(200)
     await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(50000000), {from: this.customer1.address})
@@ -389,8 +429,8 @@ describe('Vote', function () {
     let property1 = 15 * 86400; // 15 days
     let property2 = 20 * 86400; // 20 days
     let defaultVal = 10 * 86400; // 10 days    
-    let period_8 = 3 * 60; // 8 days      
-    let period_3 = 14 * 60; // 3 days    
+    let period_8 = 8 * 86400; // 8 days      
+    let period_3 = 14 * 86400; // 3 days    
 
     // Call voteToProperty() before create a proposal
     await expect(
@@ -497,16 +537,16 @@ describe('Vote', function () {
   });
 
   it('voteToRewardAddress', async function () { 
-    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(60000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(60000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer4.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer5.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer6.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer7.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(10000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(10000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer1.address, getBigNumber(60000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer2.address, getBigNumber(60000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer3.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer4.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer5.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer6.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.customer7.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.studio1.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.studio2.address, getBigNumber(10000000), {from: this.deployer.address});
+    await this.vabToken.connect(this.deployer).transfer(this.studio3.address, getBigNumber(10000000), {from: this.deployer.address});
         
     const stakeAmount = getBigNumber(200)
     await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(50000000), {from: this.customer1.address})
@@ -567,7 +607,7 @@ describe('Vote', function () {
     ).to.be.revertedWith('voteToRewardAddress: Already voted')
 
     // => Change the minVoteCount from 5 ppl to 3 ppl for testing
-    await this.Property.connect(this.auditor).updatePropertyForTesting(3, 18, {from: this.auditor.address})
+    await this.Property.connect(this.deployer).updatePropertyForTesting(3, 18, {from: this.deployer.address})
     
     // setDAORewardAddress
     await expect(
@@ -602,8 +642,15 @@ describe('Vote', function () {
     const curStudioPoolBalance = await this.vabToken.balanceOf(this.VabbleDAO.address)
 
     console.log("====totalRewardAmount", totalRewardAmount.toString())
-    
-    await this.StakingPool.connect(this.auditor).withdrawAllFund({from: this.auditor.address})
+
+    if (GNOSIS_FLAG) {
+        // => Increase next block timestamp for only testing
+        let encodedCallData = this.StakingPool.interface.encodeFunctionData("withdrawAllFund", []);
+        const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.StakingPool.address, [this.signer1, this.signer2]);
+        await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);            
+    } else {
+      await this.StakingPool.connect(this.auditor).withdrawAllFund({from: this.auditor.address})
+    }
         
     const aStakPoolBalance = await this.vabToken.balanceOf(this.StakingPool.address)
     const aEdgePoolBalance = await this.vabToken.balanceOf(this.Ownablee.address)
