@@ -645,8 +645,10 @@ describe('Vote', function () {
     const curStakPoolBalance = await this.vabToken.balanceOf(this.StakingPool.address)
     const curEdgePoolBalance = await this.vabToken.balanceOf(this.Ownablee.address)
     const curStudioPoolBalance = await this.vabToken.balanceOf(this.VabbleDAO.address)
+    const totalMigrationVAB = await this.StakingPool.totalMigrationVAB()
 
     console.log("====totalRewardAmount", totalRewardAmount.toString())
+    console.log("====totalMigrationVAB", totalMigrationVAB.toString())
 
     if (GNOSIS_FLAG) {
         // => Increase next block timestamp for only testing
@@ -665,7 +667,7 @@ describe('Vote', function () {
     console.log("====edgePool", curEdgePoolBalance.toString(), aEdgePoolBalance.toString())
     console.log("====studioPool", curStudioPoolBalance.toString(), aStudioPoolBalance.toString())
 
-    expect(aStakPoolBalance).to.be.equal(curStakPoolBalance.sub(totalRewardAmount))
+    expect(aStakPoolBalance).to.be.equal(curStakPoolBalance.sub(totalMigrationVAB))
     expect(aEdgePoolBalance).to.be.equal(0)
     expect(aStudioPoolBalance).to.be.equal(0)
 
@@ -674,7 +676,7 @@ describe('Vote', function () {
     console.log("====studioPool", curStudioPoolBalance.toString(), aStudioPoolBalance.toString())
 
     newAddrBalance = await this.vabToken.balanceOf(rewardAddress)
-    expect(newAddrBalance).to.be.equal(totalRewardAmount.add(curEdgePoolBalance).add(curStudioPoolBalance))
+    expect(newAddrBalance).to.be.equal(totalMigrationVAB.add(curEdgePoolBalance).add(curStudioPoolBalance))
   });
 
 });
