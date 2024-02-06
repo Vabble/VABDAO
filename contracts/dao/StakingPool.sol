@@ -145,7 +145,7 @@ contract StakingPool is ReentrancyGuard {
 
         Stake storage si = stakeInfo[msg.sender];
         require(si.stakeAmount >= _amount, "unstakeVAB: Insufficient stake amount");
-        require(block.timestamp > si.withdrawableTime, "unstakeVAB: lock period yet");
+        require(migrationStatus > 0 || block.timestamp > si.withdrawableTime, "unstakeVAB: lock period yet");
 
         // first, withdraw reward
         uint256 rewardAmount = calcRewardAmount(msg.sender);
@@ -181,7 +181,7 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Withdraw reward.  isCompound=1 => compound reward, isCompound=0 => withdraw
     function withdrawReward(uint256 _isCompound) external nonReentrant {
         require(stakeInfo[msg.sender].stakeAmount != 0, "withdrawReward: Zero staking amount");
-        require(block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
+        require(migrationStatus > 0 || block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
         
         uint256 rewardAmount = calcRewardAmount(msg.sender);
         if(_isCompound == 1) {
@@ -208,6 +208,7 @@ contract StakingPool is ReentrancyGuard {
 
         stakeInfo[msg.sender].stakeTime = block.timestamp;
         stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+        stakeInfo[msg.sender].holdedAmount = 0;
         
         emit RewardWithdraw(msg.sender, _amount);
     }
@@ -217,8 +218,12 @@ contract StakingPool is ReentrancyGuard {
         Stake memory si = stakeInfo[_customer];
         require(si.stakeAmount != 0, "calcRewardAmount: Not staker");
 
-        uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
-        require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
+        if (migrationStatus > 0) { // if migration is started
+            return si.holdedAmount; // just return pre-calcuated amount
+        }
+        
+        // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
+        // require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
 
         // Get proposal count started in withdrawable period of customer
         uint256 proposalCount = 0;     
@@ -490,8 +495,7 @@ contract StakingPool is ReentrancyGuard {
 
     function calcMigrationVAB() external onlyNormal nonReentrant {
         require(msg.sender == DAO_PROPERTY, "caller is not Property contract");
-        migrationStatus = 1;
-
+        
         uint256 amount = 0;
         uint256 totalAmount = 0;
 
@@ -504,6 +508,8 @@ contract StakingPool is ReentrancyGuard {
 
         if (totalRewardAmount >= totalAmount)
             totalMigrationVAB = totalRewardAmount - totalAmount;
+
+        migrationStatus = 1;
     }
 
     /// @notice Update lastStakedTime for a staker when vote
