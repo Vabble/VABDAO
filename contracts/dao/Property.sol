@@ -168,10 +168,10 @@ contract Property is ReentrancyGuard {
             1 * 1e8,    // 12: 1%
             1, // 13: 
             3 * 1e8, // 14: 3%
-            75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()), // 15: 75M        
+            50 * 1e6 * (10**IERC20Metadata(vabToken).decimals()), // 15: 50M        
             7 days, // 16:
             5 * 1e8, // 17: 5% (1% = 1e8)
-            100 days, // 18:
+            7 days, // 18:
             299 * (10**IERC20Metadata(usdcToken).decimals()) / 100,   // 19: amount in cash(usd dollar - $2.99)
             1 * 1e8 // 20: 1%
         ]; 
@@ -192,10 +192,10 @@ contract Property is ReentrancyGuard {
             10 * 1e8,    // 12: 10%
             10, // 13: 
             10 * 1e8, // 14: 10%
-            75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()), // 15: 75M        
+            200 * 1e6 * (10**IERC20Metadata(vabToken).decimals()), // 15: 200M        
             90 days, // 16:
             30 * 1e8, // 17: 30% (1% = 1e8)
-            100 days, // 18:
+            90 days, // 18:
             9999 * (10**IERC20Metadata(usdcToken).decimals()) / 100,   // 19: amount in cash(usd dollar - $99.99)
             20 * 1e8 // 20: 20%
         ]; 
