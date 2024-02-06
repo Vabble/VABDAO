@@ -41,4 +41,6 @@ interface IProperty {
 
     function checkGovWhitelist(uint256 _flag, address _address) external view returns (uint256);
     function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view returns (uint256);
+
+    function migrationStatus() external view returns (uint256);      
 }

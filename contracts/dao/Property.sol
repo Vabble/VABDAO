@@ -97,6 +97,8 @@ contract Property is ReentrancyGuard {
     mapping(address => uint256) public userGovernProposalCount;// (user => created governance-proposal count)
     mapping(uint256 => mapping(address => address)) private govProposer;      // (flag => (address => proposer))
     mapping(uint256 => mapping(uint256 => address)) private propertyProposer; // (flag => (property => proposer))
+
+    uint256 public migrationStatus = 0;    // 0: not started, 1: started, 2: end
     
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -641,7 +643,9 @@ contract Property is ReentrancyGuard {
         // update main item
         if(_flag == 3 && _approveStatus == 1) {
             DAO_FUND_REWARD = _member;
+            migrationStatus = 1; // started
         }
+        
         if(_flag == 2 && _approveStatus == 1) {
             filmBoardMembers.push(_member);    
         }
