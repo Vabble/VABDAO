@@ -624,6 +624,27 @@ describe('Vote', function () {
     network.provider.send('evm_increaseTime', [defaultAgentVotePeriod]);
     await network.provider.send('evm_mine');
 
+    var users = [
+      this.customer1,
+      this.customer2,
+      this.customer3,
+      this.customer4,
+      this.customer5,
+      this.customer6,
+      this.customer7
+    ]
+
+    var rewardList = [];
+    var sumOfReward = getBigNumber(0);
+    for (let i = 0; i < users.length; i++) {
+      const balance1 = await this.StakingPool.calcRewardAmount(users[i].address);
+
+      sumOfReward = sumOfReward.add(balance1);
+      rewardList.push(balance1 / getBigNumber(1));
+    }
+
+    console.log("rewardList", rewardList);
+
     let rewardAddress = await this.Property.DAO_FUND_REWARD(); 
     console.log("====rewardAddress-before::", rewardAddress)
     await this.Vote.connect(this.customer2).setDAORewardAddress(this.reward.address, {from: this.customer2.address})
@@ -649,6 +670,9 @@ describe('Vote', function () {
 
     console.log("====totalRewardAmount", totalRewardAmount.toString())
     console.log("====totalMigrationVAB", totalMigrationVAB.toString())
+    // expect(totalMigrationVAB).to.be.equal(totalRewardAmount.sub(sumOfReward));
+
+    
 
     if (GNOSIS_FLAG) {
         // => Increase next block timestamp for only testing
@@ -677,6 +701,45 @@ describe('Vote', function () {
 
     newAddrBalance = await this.vabToken.balanceOf(rewardAddress)
     expect(newAddrBalance).to.be.equal(totalMigrationVAB.add(curEdgePoolBalance).add(curStudioPoolBalance))
+
+    
+
+    var balanceList1 = [];
+    var sumOfBalance1 = getBigNumber(0);
+    for (let i = 0; i < users.length; i++) {
+      const balance1 = await this.vabToken.balanceOf(users[i].address);
+
+      sumOfBalance1 = sumOfBalance1.add(balance1);
+      balanceList1.push(balance1 / getBigNumber(1));
+    }
+
+    console.log("Before unstakeVAB", balanceList1);
+
+    var rewardList1 = [];
+    for (let i = 0; i < users.length; i++) {
+      const balance1 = await this.StakingPool.calcRewardAmount(users[i].address);
+      rewardList1.push(balance1 / getBigNumber(1));
+      if (balance1 == 0)
+        continue;
+      
+      await this.StakingPool.connect(users[i]).withdrawReward(0, {from: users[i].address});
+    }
+
+    console.log("rewardList1", rewardList1);
+
+    var balanceList2 = [];
+    var sumOfBalance2 = getBigNumber(0);
+
+    for (let i = 0; i < users.length; i++) {
+      const balance1 = await this.vabToken.balanceOf(users[i].address);
+
+      sumOfBalance2 = sumOfBalance2.add(balance1);
+      balanceList2.push(balance1 / getBigNumber(1));
+    }
+
+    console.log("After withdraw Reward", balanceList2);
+    expect(sumOfBalance2.sub(sumOfBalance1)).to.be.equal(totalRewardAmount.sub(totalMigrationVAB));
+
   });
 
 });
