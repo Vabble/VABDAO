@@ -30,7 +30,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
         uint256 stakeTime;  
-        uint256 holdedAmount; // after migration is started, this amount will be holded       
+        uint256 outstandingReward; // after migration is started, this amount will be holded       
     }
 
     struct UserRent {
@@ -208,7 +208,7 @@ contract StakingPool is ReentrancyGuard {
 
         stakeInfo[msg.sender].stakeTime = block.timestamp;
         stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
-        stakeInfo[msg.sender].holdedAmount = 0;
+        stakeInfo[msg.sender].outstandingReward = 0;
         
         emit RewardWithdraw(msg.sender, _amount);
     }
@@ -219,7 +219,7 @@ contract StakingPool is ReentrancyGuard {
         require(si.stakeAmount != 0, "calcRewardAmount: Not staker");
 
         if (migrationStatus > 0) { // if migration is started
-            return si.holdedAmount; // just return pre-calcuated amount
+            return si.outstandingReward; // just return pre-calcuated amount
         }
         
         // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
@@ -502,7 +502,7 @@ contract StakingPool is ReentrancyGuard {
         // calculate the total amount of reward
         for (uint256 i = 0; i < stakerList.length; ++i) {
             amount = calcRewardAmount(stakerList[i]);
-            stakeInfo[stakerList[i]].holdedAmount = amount;
+            stakeInfo[stakerList[i]].outstandingReward = amount;
             totalAmount = totalAmount + amount;
         }        
 
