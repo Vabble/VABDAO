@@ -57,6 +57,7 @@ contract Property is ReentrancyGuard {
     uint256 public boardRewardRate;      // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
 
     uint256[] private maxPropertyList;
+    uint256[] private minPropertyList;
     uint256 public governanceProposalCount;
 
     uint256[] private filmVotePeriodList;          // 0
@@ -151,28 +152,52 @@ contract Property is ReentrancyGuard {
         subscriptionAmount = 299 * (10**IERC20Metadata(usdcToken).decimals()) / 100;   // amount in cash(usd dollar - $2.99)
         minVoteCount = 1;//5;
 
-        maxPropertyList = [
-            100 days, // 0:
-            100 days, // 1:
-            100 days, // 2:
-            100 days, // 3:
-            100 days, // 4:
-            25 * 1e5, // 5: 0.025%
-            100 days, // 6:
-            100 days, // 7:
+        minPropertyList = [
+            7 days, // 0:
+            7 days, // 1:
+            7 days, // 2:
+            7 days, // 3:
+            7 days, // 4:
+            2 * 1e5, // 5: 0.002%
+            1 days, // 6:
+            7 days, // 7:
             20 * (10**IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $20)
             2 * 1e8, // 9: percent(2%) 
-            50 * (10**IERC20Metadata(usdcToken).decimals()),    // 10: amount in cash(usd dollar - $50)
-            5000 * (10**IERC20Metadata(usdcToken).decimals()),  // 11: amount in cash(usd dollar - $5000)
-            10 * 1e8,    // 12: 10%
-            5, // 13: 
-            5 * 1e8, // 14: 5%
+            5 * (10**IERC20Metadata(usdcToken).decimals()),    // 10: amount in cash(usd dollar - $5)
+            5 * (10**IERC20Metadata(usdcToken).decimals()),  // 11: amount in cash(usd dollar - $5)
+            1 * 1e8,    // 12: 1%
+            1, // 13: 
+            3 * 1e8, // 14: 3%
             75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()), // 15: 75M        
-            100 days, // 16:
-            30 * 1e8, // 17: 30% (1% = 1e8)
+            7 days, // 16:
+            5 * 1e8, // 17: 5% (1% = 1e8)
             100 days, // 18:
             299 * (10**IERC20Metadata(usdcToken).decimals()) / 100,   // 19: amount in cash(usd dollar - $2.99)
-            25 * 1e8 // 20: 25%
+            1 * 1e8 // 20: 1%
+        ]; 
+
+        maxPropertyList = [
+            90 days, // 0:
+            90 days, // 1:
+            90 days, // 2:
+            90 days, // 3:
+            90 days, // 4:
+            58 * 1e5, // 5: 0.058%
+            90 days, // 6:
+            90 days, // 7:
+            500 * (10**IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $500)
+            10 * 1e8, // 9: percent(10%) 
+            10000000 * (10**IERC20Metadata(usdcToken).decimals()),    // 10: amount in cash(usd dollar - $10,000,000)
+            10000000 * (10**IERC20Metadata(usdcToken).decimals()),  // 11: amount in cash(usd dollar - $10,000,000)
+            10 * 1e8,    // 12: 10%
+            10, // 13: 
+            10 * 1e8, // 14: 10%
+            75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()), // 15: 75M        
+            90 days, // 16:
+            30 * 1e8, // 17: 30% (1% = 1e8)
+            100 days, // 18:
+            9999 * (10**IERC20Metadata(usdcToken).decimals()) / 100,   // 19: amount in cash(usd dollar - $99.99)
+            20 * 1e8 // 20: 20%
         ]; 
     
     }
@@ -347,7 +372,7 @@ contract Property is ReentrancyGuard {
             "proposalProperty: Already candidate or zero value"
         );          
 
-        require(_property <= maxPropertyList[_flag], "too much property");
+        require(minPropertyList[_flag] <= _property && _property <= maxPropertyList[_flag], "property invalid");
         
         __paidFee(proposalFeeAmount);
 

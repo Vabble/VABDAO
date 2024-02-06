@@ -440,7 +440,7 @@ describe('Vote', function () {
     // call proposalProperty with extreme values
     await expect(
       this.Property.connect(this.customer6).proposalProperty(101 * 86400, flag, 'test-1', 'desc-1', {from: this.customer6.address})      
-    ).to.be.revertedWith('too much property')
+    ).to.be.revertedWith('property invalid')
 
     // 1 ====================== proposalProperty(filmVotePeriod) ======================
     await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
@@ -448,7 +448,7 @@ describe('Vote', function () {
     expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
     expect(await this.Property.getProperty(1, flag)).to.be.equal(property2)
 
-    // voteToProperty
+    // // voteToProperty
     await this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
     await this.Vote.connect(this.customer2).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer2.address})
     await this.Vote.connect(this.customer3).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer3.address})
@@ -500,8 +500,8 @@ describe('Vote', function () {
     console.log('====totalRewardAmount::', totalRewardAmount.toString())
 
     flag = 5;
-    property1 = 50000; // 0.0005% (1% = 1e8, 100%=1e10)
-    property2 = 80000; // 0.0008% (1% = 1e8, 100%=1e10)
+    property1 = 200000; // 0.0005% (1% = 1e8, 100%=1e10)
+    property2 = 300000; // 0.0008% (1% = 1e8, 100%=1e10)
     await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
     await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
     expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
