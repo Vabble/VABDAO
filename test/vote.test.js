@@ -437,6 +437,11 @@ describe('Vote', function () {
       this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
     ).to.be.revertedWith('voteToProperty: no proposal')
 
+    // call proposalProperty with extreme values
+    await expect(
+      this.Property.connect(this.customer6).proposalProperty(101 * 86400, flag, 'test-1', 'desc-1', {from: this.customer6.address})      
+    ).to.be.revertedWith('too much property')
+
     // 1 ====================== proposalProperty(filmVotePeriod) ======================
     await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
     await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
