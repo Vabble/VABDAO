@@ -53,7 +53,7 @@ contract Ownablee is IOwnablee {
         deployer = msg.sender;
 
         // TODO - PVE007 updated(add multiSigWallet)
-        require(_multiSigWallet != address(0), "multiSigWallet: Zero address");
+        require(_multiSigWallet != address(0), "multiSigWallet: Zero add");
         // auditor = msg.sender; // _multiSigWallet;
         auditor = _multiSigWallet;
 

@@ -367,7 +367,7 @@ describe('SetFinalFilm', function () {
                     enableClaimer1,
                     {from: this.studio1.address}
                 )
-            ).to.be.revertedWith('proposalUpdate: not film owner');
+                ).to.be.revertedWith('pU: NFO');  // proposalUpdate: not film owner
 
             // change owner back to again
             this.VabbleDAO.connect(this.studio3).changeOwner(fId1, this.studio1.address, {from: this.studio3.address})                
@@ -387,7 +387,7 @@ describe('SetFinalFilm', function () {
 
             await expect(
                 this.VabbleDAO.connect(this.studio2).changeOwner(fId1, this.studio3.address, {from: this.studio2.address})                
-            ).to.be.revertedWith('changeOwner: not film owner');
+            ).to.be.revertedWith('cO, E1'); // changeOwner: not film owner
 
             // Create proposal for a film by studio with EXM token
             await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.EXM.address, 
@@ -675,17 +675,17 @@ describe('SetFinalFilm', function () {
             let finalFilmList = await this.VabbleDAO.getFinalizedFilmIds(monthId) // 1, 2, 3, 4, 5
             expect(finalFilmList.length).to.be.equal(5)
 
-            const rewardAmount = await this.VabbleDAO.connect(this.customer1).getUserRewardAmount(fId3, monthId, {from: this.customer1.address});
+            const rewardAmount = await this.VabbleDAO.connect(this.customer1).getUserRewardAmountForUser(fId3, monthId, this.deployer.address, {from: this.customer1.address});
             console.log("rewardAmount", rewardAmount / getBigNumber(1));
 
-            const allRewardAmount1 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1, {from: this.customer1.address});
+            const allRewardAmount1 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1, this.customer1.address, {from: this.customer1.address});
             console.log("AllRewardAmount1", allRewardAmount1 / getBigNumber(1));
 
             const v_1 = await this.vabToken.balanceOf(this.customer1.address)
             await this.VabbleDAO.connect(this.customer1).claimReward([fId1], {from: this.customer1.address})
             const v_2 = await this.vabToken.balanceOf(this.customer1.address);
 
-            const allRewardAmount2 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1);
+            const allRewardAmount2 = await this.VabbleDAO.connect(this.customer1).getAllAvailableRewards(1, this.customer1.address);
             console.log("AllRewardAmount2", allRewardAmount2 / getBigNumber(1));
             expect(allRewardAmount1.sub(allRewardAmount2)).to.be.equal(getBigNumber(50));
 
