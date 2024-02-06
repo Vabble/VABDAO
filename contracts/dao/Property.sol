@@ -55,7 +55,8 @@ contract Property is ReentrancyGuard {
     uint256 public rewardVotePeriod;     // 18 - withdraw address setup for moving to V2
     uint256 public subscriptionAmount;   // 19 - user need to have an active subscription(pay $1 per month) for rent films.    
     uint256 public boardRewardRate;      // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
-    
+
+    uint256[] private maxPropertyList;
     uint256 public governanceProposalCount;
 
     uint256[] private filmVotePeriodList;          // 0
@@ -149,6 +150,31 @@ contract Property is ReentrancyGuard {
         availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 75M        
         subscriptionAmount = 299 * (10**IERC20Metadata(usdcToken).decimals()) / 100;   // amount in cash(usd dollar - $2.99)
         minVoteCount = 1;//5;
+
+        maxPropertyList = [
+            100 days, // 0:
+            100 days, // 1:
+            100 days, // 2:
+            100 days, // 3:
+            100 days, // 4:
+            25 * 1e5, // 5: 0.025%
+            100 days, // 6:
+            100 days, // 7:
+            20 * (10**IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $20)
+            2 * 1e8, // 9: percent(2%) 
+            50 * (10**IERC20Metadata(usdcToken).decimals()),    // 10: amount in cash(usd dollar - $50)
+            5000 * (10**IERC20Metadata(usdcToken).decimals()),  // 11: amount in cash(usd dollar - $5000)
+            10 * 1e8,    // 12: 10%
+            5, // 13: 
+            5 * 1e8, // 14: 5%
+            75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()), // 15: 75M        
+            100 days, // 16:
+            30 * 1e8, // 17: 30% (1% = 1e8)
+            100 days, // 18:
+            299 * (10**IERC20Metadata(usdcToken).decimals()) / 100,   // 19: amount in cash(usd dollar - $2.99)
+            25 * 1e8 // 20: 25%
+        ]; 
+    
     }
 
     function updateForTesting() external onlyDeployer nonReentrant {
@@ -317,9 +343,11 @@ contract Property is ReentrancyGuard {
         string memory _description
     ) external onlyStaker nonReentrant {
         require(
-            _property != 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0, 
+            _property != 0 && _flag >= 0 && _flag < maxPropertyList.length && isPropertyWhitelist[_flag][_property] == 0, 
             "proposalProperty: Already candidate or zero value"
         );          
+
+        require(_property <= maxPropertyList[_flag], "too much property");
         
         __paidFee(proposalFeeAmount);
 
