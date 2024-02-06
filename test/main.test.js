@@ -10,5 +10,5 @@
 // require('./research');
 // require('./multiSigWallet.test');
 // require('./gnosisSafe.test');
-require('./set-final-film.test');
-// require('./change-film-owner.test')
+// require('./set-final-film.test');
+require('./change-film-owner.test')
