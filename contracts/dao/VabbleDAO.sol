@@ -226,8 +226,12 @@ contract VabbleDAO is ReentrancyGuard {
         if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
             moveToAnotherArray(userApprovedFilmIds[msg.sender], userApprovedFilmIds[newOwner], _filmId);
             moveToAnotherArray(userFinalFilmIds[msg.sender], userFinalFilmIds[newOwner], _filmId);
-            isInvested[msg.sender][_filmId] = false;
-            isInvested[newOwner][_filmId] = true;
+
+            if (isInvested[msg.sender][_filmId]) {
+                isInvested[msg.sender][_filmId] = false;
+                isInvested[newOwner][_filmId] = true;
+            }
+            
             uint256 curMonth = monthId.current();        
             updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner);
         }
@@ -516,7 +520,7 @@ contract VabbleDAO is ReentrancyGuard {
             if (finalFilmCalledTime[_filmIds[i]] == 0) // not still call final film
                 continue;
 
-            rewardSum += getUserRewardAmount(_filmIds[i], curMonth);            
+            rewardSum += getUserRewardAmountForUser(_filmIds[i], curMonth, msg.sender);
             latestClaimMonthId[_filmIds[i]][msg.sender] = curMonth;
         }
         
@@ -552,39 +556,26 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     function getAllAvailableRewards(
-        uint256 _curMonth
+        uint256 _curMonth,
+        address _user
     ) public view returns (uint256 reward_) {
-        uint256[] memory filmIds = userFinalFilmIds[msg.sender];
+        uint256[] memory filmIds = userFinalFilmIds[_user];
 
         uint256 rewardSum;
         uint256 preMonth;
         uint256 filmLength = filmIds.length;
         for(uint256 i = 0; i < filmLength; ++i) {  
-            preMonth = latestClaimMonthId[filmIds[i]][msg.sender];
-            rewardSum += getUserRewardAmountBetweenMonthsForUser(filmIds[i], preMonth, _curMonth, msg.sender);                        
+            preMonth = latestClaimMonthId[filmIds[i]][_user];
+            rewardSum += getUserRewardAmountBetweenMonthsForUser(filmIds[i], preMonth, _curMonth, _user);                        
         }
 
         reward_ = rewardSum;
     }
-        
-    function getUserRewardAmount(uint256 _filmId, uint256 _curMonth) public view returns (uint256 amount_) {        
-        uint256 preMonth = latestClaimMonthId[_filmId][msg.sender];
-        amount_ = getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, msg.sender);
-    }
-
+     
     function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user) public view returns (uint256 amount_) {        
         uint256 preMonth = latestClaimMonthId[_filmId][_user];
         amount_ = getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, _user);
     }
-
-    function getPrevMonthAndUser(uint256 _filmId) public view returns (uint256 preMonth_, address user_) {
-        preMonth_ = latestClaimMonthId[_filmId][msg.sender];
-        user_ = msg.sender;
-    }
-
-    // function getCaller(uint256 _filmId) external view returns (address) {
-    //     return msg.sender;
-    // }
 
     function getUserFinalFilmIds(address _user) external view returns (uint256[] memory) {        
         return userFinalFilmIds[_user];

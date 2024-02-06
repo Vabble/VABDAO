@@ -662,7 +662,7 @@ describe('VabbleDAO-test-5', function () {
 
     let finalFilmIds = await this.VabbleDAO.getUserFinalFilmIds(this.customer1.address);
     for (var i = 0; i < finalFilmIds.length; i++) {
-      const rewardAmount = await this.VabbleDAO.connect(this.customer1).getUserRewardAmount(finalFilmIds[i], monthId, {from: this.customer1.address});
+      const rewardAmount = await this.VabbleDAO.connect(this.customer1).getUserRewardAmountForUser(finalFilmIds[i], monthId, this.customer1.address, {from: this.customer1.address});
       console.log("rewardAmount", finalFilmIds[i].toString(), rewardAmount.toString());
     }
 

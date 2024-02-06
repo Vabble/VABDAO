@@ -27,7 +27,7 @@ async function tsetVabbleDAO() {
         console.log("With Wallet", prevUser1);
         console.log("Without Wallet", prevUser2);
 
-        const rewardAmount = await VabbleDAO.connect(deployer).getUserRewardAmount(1, 1, {from: deployer.address});
+        const rewardAmount = await VabbleDAO.connect(deployer).getUserRewardAmountForUser(1, 1, deployer.address, {from: deployer.address});
         console.log("User Reward Amount", rewardAmount.toString());
 
 
