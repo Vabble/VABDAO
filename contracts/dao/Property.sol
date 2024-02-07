@@ -18,21 +18,6 @@ contract Property is ReentrancyGuard {
     event FilmBoardMemberRemoved(address indexed caller, address member);
     event PropertyProposalCreated(address indexed creator, uint256 property, uint256 flag, string title, string description);
 
-    struct Proposal {
-        string title; // proposal title
-        string description; // proposal description
-        uint256 createTime; // proposal created timestamp
-        uint256 approveTime; // proposal approved timestamp
-        address creator; // proposal creator address
-        Helper.Status status; // status of proposal
-    }
-
-    address private immutable OWNABLE; // Ownablee contract address
-    address private immutable VOTE; // Vote contract address
-    address private immutable STAKING_POOL; // StakingPool contract address
-    address private immutable UNI_HELPER; // UniHelper contract address
-    address public DAO_FUND_REWARD; // address for sending the DAO rewards fund
-
     uint256 public filmVotePeriod; // 0 - film vote period
     uint256 public agentVotePeriod; // 1 - vote period for replacing auditor
     uint256 public disputeGracePeriod; // 2 - grace period for replacing Auditor
@@ -55,6 +40,8 @@ contract Property is ReentrancyGuard {
     uint256 public subscriptionAmount; // 19 - user need to have an active subscription(pay $1 per month) for rent films.
     uint256 public boardRewardRate; // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
 
+    uint256[] private maxPropertyList;
+    uint256[] private minPropertyList;
     uint256 public governanceProposalCount;
 
     uint256[] private filmVotePeriodList; // 0
@@ -90,7 +77,6 @@ contract Property is ReentrancyGuard {
 
     mapping(uint256 => mapping(address => Proposal)) public govProposalInfo; // (flag => (address => Proposal))
     mapping(uint256 => mapping(uint256 => Proposal)) public propertyProposalInfo; // (flag => (property => Proposal))
-
     mapping(uint256 => address[]) public allGovProposalInfo; // (flag => address array))
 
     mapping(address => uint256) public userGovernProposalCount; // (user => created governance-proposal count)
@@ -145,6 +131,54 @@ contract Property is ReentrancyGuard {
         availableVABAmount = 75 * 1e6 * (10 ** IERC20Metadata(vabToken).decimals()); // 75M
         subscriptionAmount = (299 * (10 ** IERC20Metadata(usdcToken).decimals())) / 100; // amount in cash(usd dollar - $2.99)
         minVoteCount = 1; //5;
+
+        minPropertyList = [
+            7 days, // 0:
+            7 days, // 1:
+            7 days, // 2:
+            7 days, // 3:
+            7 days, // 4:
+            2 * 1e5, // 5: 0.002%
+            1 days, // 6:
+            7 days, // 7:
+            20 * (10 ** IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $20)
+            2 * 1e8, // 9: percent(2%)
+            5 * (10 ** IERC20Metadata(usdcToken).decimals()), // 10: amount in cash(usd dollar - $5)
+            5 * (10 ** IERC20Metadata(usdcToken).decimals()), // 11: amount in cash(usd dollar - $5)
+            1 * 1e8, // 12: 1%
+            1, // 13:
+            3 * 1e8, // 14: 3%
+            50 * 1e6 * (10 ** IERC20Metadata(vabToken).decimals()), // 15: 50M
+            7 days, // 16:
+            5 * 1e8, // 17: 5% (1% = 1e8)
+            7 days, // 18:
+            (299 * (10 ** IERC20Metadata(usdcToken).decimals())) / 100, // 19: amount in cash(usd dollar - $2.99)
+            1 * 1e8 // 20: 1%
+        ];
+
+        maxPropertyList = [
+            90 days, // 0:
+            90 days, // 1:
+            90 days, // 2:
+            90 days, // 3:
+            90 days, // 4:
+            58 * 1e5, // 5: 0.058%
+            90 days, // 6:
+            90 days, // 7:
+            500 * (10 ** IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $500)
+            10 * 1e8, // 9: percent(10%)
+            10000000 * (10 ** IERC20Metadata(usdcToken).decimals()), // 10: amount in cash(usd dollar - $10,000,000)
+            10000000 * (10 ** IERC20Metadata(usdcToken).decimals()), // 11: amount in cash(usd dollar - $10,000,000)
+            10 * 1e8, // 12: 10%
+            10, // 13:
+            10 * 1e8, // 14: 10%
+            200 * 1e6 * (10 ** IERC20Metadata(vabToken).decimals()), // 15: 200M
+            90 days, // 16:
+            30 * 1e8, // 17: 30% (1% = 1e8)
+            90 days, // 18:
+            (9999 * (10 ** IERC20Metadata(usdcToken).decimals())) / 100, // 19: amount in cash(usd dollar - $99.99)
+            20 * 1e8 // 20: 20%
+        ];
     }
 
     function updateForTesting() external onlyDeployer nonReentrant {
@@ -315,9 +349,11 @@ contract Property is ReentrancyGuard {
         string memory _description
     ) external onlyStaker nonReentrant {
         require(
-            _property != 0 && _flag >= 0 && isPropertyWhitelist[_flag][_property] == 0,
+            _property != 0 && _flag >= 0 && _flag < maxPropertyList.length && isPropertyWhitelist[_flag][_property] == 0,
             "proposalProperty: Already candidate or zero value"
         );
+
+        require(minPropertyList[_flag] <= _property && _property <= maxPropertyList[_flag], "property invalid");
 
         __paidFee(proposalFeeAmount);
 
@@ -576,7 +612,9 @@ contract Property is ReentrancyGuard {
         // update main item
         if (_flag == 3 && _approveStatus == 1) {
             DAO_FUND_REWARD = _member;
+            IStakingPool(STAKING_POOL).calcMigrationVAB();
         }
+
         if (_flag == 2 && _approveStatus == 1) {
             filmBoardMembers.push(_member);
         }

@@ -1,0 +1,48 @@
+1. Deploy New Contract: 
+2. Create Proposal: Submit a proposal to cease staking rewards 
+    Property->proposalRewardFund
+3. Vote: Vote on the proposal
+    Vote->voteToRewardAddress
+4. Approve Proposal and start Migration
+    4.1 Vote->setDAORewardAddress
+    4.2 If proposal is approved(passed), contract start migration automatically(triggered)
+        totalMigrationVAB will be calculated
+            calculate the total amount of reward for each member
+            put it into outstandingReward of each member (stakeInfo.outstandingReward)
+            totalMigrationVAB = totalRewardAmount - sum of outstandingReward for all members
+        migrationStatus will be chnaged from 0 to 1
+            migrationStatus:
+                0: Not Started (Normal)
+                1: Started
+                2: Ended
+    4.3 If migration is started,
+        All rewarding action will be stopped (StakingPool->addRewardToPool)
+            VabbleDAO->proposalFilmCreate will be stopped
+            VabbleFund->fundProcess will be processed
+            Property->proposalValue will be stopped
+        All stacking/devoting action will be stopped
+            StakingPool->stakeVAB will be stopped
+            StakingPool->depositVAB will be stopped
+        Lock Period will be ignored 
+            StakingPool->unstakeVAB can be called at any time
+            StakingPool->withdrawReward can be called at any time
+5. Move VAB from StakingPool, StudioPool(VabbleDAO), EdgePool(Ownable) to new DAO Reward Address
+    Call StakingPool->withdrawAllFund though audit action
+    5.1 Move totalMigrationVAB to new DAO Reward Address
+        totalRewardAmount = totalRewardAmount - totalMigrationVAB;
+        totalMigrationVAB = 0;
+        transfer totalMigrationVAB from Staking Pool to new DAO Reward Address
+    5.2 Move All balance of StudioPool to new DAO Reward Address
+    5.3 Move All balance of EdgePool to new DAO Reward Address
+    5.4 migrationStatus <- 2 (Ended)
+
+    Even though withdrawAllFund is called (migration is ended), 
+        Each staker can still unstake
+        Each staker can still withdraw the reward(outstandingReward)
+        Each depositor can still withdraw
+6. When all stakers and depositor have withdrawn, then Migration is done.
+
+
+    
+        
+
