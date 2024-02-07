@@ -93,7 +93,7 @@ contract Property is ReentrancyGuard {
 
     mapping(uint256 => mapping(address => Proposal)) public govProposalInfo;       // (flag => (address => Proposal))
     mapping(uint256 => mapping(uint256 => Proposal)) public propertyProposalInfo;  // (flag => (property => Proposal))
-    mapping(uint256 => address[]) public allGovProposalInfo; // (flag => address array))
+    mapping(uint256 => address[]) private allGovProposalInfo; // (flag => address array))
 
     mapping(address => uint256) public userGovernProposalCount;// (user => created governance-proposal count)
     mapping(uint256 => mapping(address => address)) private govProposer;      // (flag => (address => proposer))
@@ -706,6 +706,10 @@ contract Property is ReentrancyGuard {
     }
     function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view returns (uint256) {
         return isPropertyWhitelist[_flag][_property];
+    }
+
+    function getAllGovProposalInfo(uint256 _flag) external view returns (address[] memory) {
+        return allGovProposalInfo[_flag];
     }
 
     ///================ @dev Update the property value for only testing in the testnet
