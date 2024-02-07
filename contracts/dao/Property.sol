@@ -93,6 +93,7 @@ contract Property is ReentrancyGuard {
 
     mapping(uint256 => mapping(address => Proposal)) public govProposalInfo;       // (flag => (address => Proposal))
     mapping(uint256 => mapping(uint256 => Proposal)) public propertyProposalInfo;  // (flag => (property => Proposal))
+    mapping(uint256 => address[]) public allGovProposalInfo; // (flag => address array))
 
     mapping(address => uint256) public userGovernProposalCount;// (user => created governance-proposal count)
     mapping(uint256 => mapping(address => address)) private govProposer;      // (flag => (address => proposer))
@@ -242,6 +243,8 @@ contract Property is ReentrancyGuard {
         ap.creator = msg.sender;
         ap.status = Helper.Status.LISTED;
 
+        allGovProposalInfo[1].push(_agent);
+
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
@@ -289,6 +292,8 @@ contract Property is ReentrancyGuard {
         rp.creator = msg.sender;
         rp.status = Helper.Status.LISTED;
 
+        allGovProposalInfo[3].push(_rewardAddress);
+
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
@@ -330,6 +335,8 @@ contract Property is ReentrancyGuard {
         bp.createTime = block.timestamp;
         bp.creator = msg.sender;
         bp.status = Helper.Status.LISTED;
+
+        allGovProposalInfo[2].push(_member);
 
         // add timestap to array for calculating rewards
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
