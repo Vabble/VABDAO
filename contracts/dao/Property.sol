@@ -673,6 +673,10 @@ contract Property is ReentrancyGuard {
         return isPropertyWhitelist[_flag][_property];
     }
 
+    function getAllGovProposalInfo(uint256 _flag) external view returns (address[] memory) {
+        return allGovProposalInfo[_flag];
+    }
+
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
     function updatePropertyForTesting(uint256 _value, uint256 _flag) external onlyDeployer {
