@@ -1025,7 +1025,7 @@
       ]
     },
     "FactoryTierNFT": {
-      "address": "0x9f643D05d2aA2CBEd5f82DD88fa8407a3dcB97b8",
+      "address": "0x72414aF153386bc375c9Bbd28AC523D90493D576",
       "abi": [
         {
           "inputs": [
@@ -2941,7 +2941,7 @@
       ]
     },
     "Property": {
-      "address": "0x1d340b35Afc806aBB3aa40157751818d4B0e08Db",
+      "address": "0xc1E808D277967DEcb7Ef2F4E35765FD937CF2B3a",
       "abi": [
         {
           "inputs": [
@@ -3145,30 +3145,6 @@
           "type": "function"
         },
         {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "allGovProposalInfo",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
           "inputs": [],
           "name": "availableVABAmount",
           "outputs": [
@@ -3315,6 +3291,25 @@
               "internalType": "uint256",
               "name": "",
               "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_flag",
+              "type": "uint256"
+            }
+          ],
+          "name": "getAllGovProposalInfo",
+          "outputs": [
+            {
+              "internalType": "address[]",
+              "name": "",
+              "type": "address[]"
             }
           ],
           "stateMutability": "view",
@@ -4820,7 +4815,7 @@
       ]
     },
     "Subscription": {
-      "address": "0x22226B946EDDC22CF8a2E4a2f53d334d661a8B92",
+      "address": "0x13ac5E8FeF1f9864DAac96Fe9FC00F96Cc5ee477",
       "abi": [
         {
           "inputs": [
@@ -5201,7 +5196,7 @@
       ]
     },
     "VabbleDAO": {
-      "address": "0x842f8105D1bE6dfC50DE252349033DB7e981C59c",
+      "address": "0xef203910eCee1B8027C452A58B7b13Dec6B4186d",
       "abi": [
         {
           "inputs": [
@@ -6321,7 +6316,7 @@
       ]
     },
     "VabbleFund": {
-      "address": "0x67e0c5C39E3205fe719454cC6841129d540689C0",
+      "address": "0x37A6381a682aE7b7181e3D66FE59268D03118033",
       "abi": [
         {
           "inputs": [
