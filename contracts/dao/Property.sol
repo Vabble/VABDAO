@@ -223,11 +223,13 @@ contract Property is ReentrancyGuard {
         address _agent,
         string memory _title,
         string memory _description
-    ) external onlyStaker nonReentrant {
+    ) external nonReentrant {
         require(
             _agent != address(0) && IOwnablee(OWNABLE).auditor() != _agent && isGovWhitelist[1][_agent] == 0, 
             "proposalAuditor: Already auditor or candidate or zero"
-        );                       
+        );         
+
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= availableVABAmount, "proposalAuditor: Not enough VAB");             
         __paidFee(proposalFeeAmount);
 
         agentList.push(_agent);
