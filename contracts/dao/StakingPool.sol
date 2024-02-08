@@ -192,6 +192,8 @@ contract StakingPool is ReentrancyGuard {
             si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
             si.outstandingReward = 0;
 
+            totalStakingAmount += rewardAmount;
+
             emit RewardContinued(msg.sender, _isCompound);
         } else {
             require(rewardAmount != 0, "withdrawReward: zero reward amount");
