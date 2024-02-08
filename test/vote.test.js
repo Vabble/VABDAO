@@ -644,17 +644,24 @@ describe('Vote', function () {
     }
 
     console.log("rewardList", rewardList);
+    console.log("sumOfReward", sumOfReward);
+
+    for (let i = 0; i < 3; i++) {
+      await this.StakingPool.connect(users[i]).stakeVAB(stakeAmount, {from: users[i].address})      
+    }
 
     var rewardList1 = [];
     var sumOfReward1 = getBigNumber(0);
     for (let i = 0; i < users.length; i++) {
       const balance1 = await this.StakingPool.calcRewardAmount(users[i].address);
 
-      sumOfReward1 = sumOfReward.add(balance1);
+      sumOfReward1 = sumOfReward1.add(balance1);
       rewardList1.push(balance1 / getBigNumber(1));
     }
 
     console.log("After StakeVAB rewardList", rewardList1);
+    console.log("sumOfReward1", sumOfReward1);
+
     expect(sumOfReward).to.be.equal(sumOfReward1);
     
     let rewardAddress = await this.Property.DAO_FUND_REWARD(); 
