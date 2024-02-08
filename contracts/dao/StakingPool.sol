@@ -130,15 +130,17 @@ contract StakingPool is ReentrancyGuard {
         Stake storage si = stakeInfo[msg.sender];
         if(si.stakeAmount == 0 && si.stakeTime == 0) {
             stakerCount.increment();
-            stakerList.push(msg.sender);
-            si.rewardTime = block.timestamp;
-            si.withdrawableRewardTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+            stakerList.push(msg.sender);                
         }
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
         si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
-
         totalStakingAmount += _amount;
+
+        if (calcRewardAmount(msg.sender) == 0) { // if there is no reward of user, adjust reward period
+            si.rewardTime = block.timestamp;        
+            si.withdrawableRewardTime = si.withdrawableTime;    
+        }
 
         emit TokenStaked(msg.sender, _amount);
     }
