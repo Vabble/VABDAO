@@ -231,7 +231,10 @@ contract StakingPool is ReentrancyGuard {
             return si.outstandingReward; // just return pre-calcuated amount
         }
 
-        if (block.timestamp <= stakeInfo[msg.sender].withdrawableRewardTime) // if not yet withdrawable
+        if (si.rewardTime == 0) // if reward is not started
+            return 0;
+
+        if (block.timestamp <= stakeInfo[_customer].withdrawableRewardTime) // if not yet withdrawable
             return 0;
         
         // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
