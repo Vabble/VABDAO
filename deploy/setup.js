@@ -195,7 +195,7 @@ module.exports = async function ({ deployments }) {
   let totalRewardAmount = await StakingPoolContract.connect(deployer).totalRewardAmount();        
   console.log("vab_balance_of_totalRewardAmount before", totalRewardAmount.toString());
 
-  targetAmount = getBigNumber(5, 24); // 50M VAB to Staking Pool
+  targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
   diff = targetAmount.sub(totalRewardAmount);
 
   if (diff > 0) {
