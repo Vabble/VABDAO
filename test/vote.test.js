@@ -692,8 +692,8 @@ describe('Vote', function () {
     const curStudioPoolBalance = await this.vabToken.balanceOf(this.VabbleDAO.address)
     const totalMigrationVAB = await this.StakingPool.totalMigrationVAB()
 
-    console.log("====totalRewardAmount", totalRewardAmount.toString())
-    console.log("====totalMigrationVAB", totalMigrationVAB.toString())
+    console.log("====totalRewardAmount", totalRewardAmount / getBigNumber(1))
+    console.log("====totalMigrationVAB", totalMigrationVAB / getBigNumber(1))
     // expect(totalMigrationVAB).to.be.equal(totalRewardAmount.sub(sumOfReward));
 
     

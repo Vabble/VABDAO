@@ -130,6 +130,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
+        si.outstandingReward += calcCurrentRewardAmount(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
         si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
@@ -189,6 +190,7 @@ contract StakingPool is ReentrancyGuard {
             si.stakeAmount = si.stakeAmount + rewardAmount;
             si.stakeTime = block.timestamp;
             si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+            si.outstandingReward = 0;
 
             emit RewardContinued(msg.sender, _isCompound);
         } else {
@@ -215,18 +217,24 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Calculate reward amount with previous reward
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
-    }
-
-    // TODO - PVE008 updated(calculate voteCount again)
-    /// @notice Calculate reward amount without extra reward amount for listing film vote    
-    function calcCurrentRewardAmount(address _customer) public view returns (uint256 amount_) {
         Stake memory si = stakeInfo[_customer];
         require(si.stakeAmount != 0, "calcRewardAmount: Not staker");
 
         if (migrationStatus > 0) { // if migration is started
             return si.outstandingReward; // just return pre-calcuated amount
         }
-        
+
+        return si.outstandingReward + calcCurrentRewardAmount(_customer);
+    }
+
+    // TODO - PVE008 updated(calculate voteCount again)
+    /// @notice Calculate reward amount without extra reward amount for listing film vote    
+    function calcCurrentRewardAmount(address _customer) public view returns (uint256 amount_) {
+        Stake memory si = stakeInfo[_customer];
+
+        if (si.stakeTime == 0)
+            return 0;
+
         // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
         // require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
 
@@ -506,9 +514,9 @@ contract StakingPool is ReentrancyGuard {
 
         // calculate the total amount of reward
         for (uint256 i = 0; i < stakerList.length; ++i) {
-            amount = calcRewardAmount(stakerList[i]);
+            amount = calcCurrentRewardAmount(stakerList[i]);
             stakeInfo[stakerList[i]].outstandingReward += amount;
-            totalAmount = totalAmount + amount;
+            totalAmount = totalAmount + stakeInfo[stakerList[i]].outstandingReward;
         }        
 
         if (totalRewardAmount >= totalAmount)
