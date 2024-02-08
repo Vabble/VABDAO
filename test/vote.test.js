@@ -746,6 +746,16 @@ describe('Vote', function () {
 
     console.log("rewardList1", rewardList1);
 
+    var rewardList2 = [];
+    for (let i = 0; i < users.length; i++) {
+      const balance1 = await this.StakingPool.calcRewardAmount(users[i].address);
+      rewardList2.push(balance1 / getBigNumber(1));      
+      expect(balance1).to.be.equal(0);
+    }
+
+    console.log("After withdrawReward", rewardList2);
+
+
     var balanceList2 = [];
     var sumOfBalance2 = getBigNumber(0);
 
