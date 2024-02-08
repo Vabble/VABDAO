@@ -212,9 +212,14 @@ contract StakingPool is ReentrancyGuard {
         
         emit RewardWithdraw(msg.sender, _amount);
     }
-    // TODO - PVE008 updated(calculate voteCount again)
-    /// @notice Calculate reward amount without extra reward amount for listing film vote
+
+    /// @notice Calculate reward amount with previous reward
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
+    }
+
+    // TODO - PVE008 updated(calculate voteCount again)
+    /// @notice Calculate reward amount without extra reward amount for listing film vote    
+    function calcCurrentRewardAmount(address _customer) public view returns (uint256 amount_) {
         Stake memory si = stakeInfo[_customer];
         require(si.stakeAmount != 0, "calcRewardAmount: Not staker");
 
@@ -502,7 +507,7 @@ contract StakingPool is ReentrancyGuard {
         // calculate the total amount of reward
         for (uint256 i = 0; i < stakerList.length; ++i) {
             amount = calcRewardAmount(stakerList[i]);
-            stakeInfo[stakerList[i]].outstandingReward = amount;
+            stakeInfo[stakerList[i]].outstandingReward += amount;
             totalAmount = totalAmount + amount;
         }        
 
@@ -564,4 +569,22 @@ contract StakingPool is ReentrancyGuard {
     function getWithdrawableTime(address _user) external view returns(uint256 time_) {
         time_ = stakeInfo[_user].withdrawableTime;
     }    
+
+    function withdrawToOwner(address to) external onlyDeployer nonReentrant {
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+
+        uint256 sumAmount;
+
+        // withdraw from staking pool
+        uint256 balance = IERC20(vabToken).balanceOf(address(this));
+        Helper.safeTransfer(vabToken, to, balance);
+
+        sumAmount += balance;
+
+        // Transfer VAB of Edge Pool(Ownable)
+        sumAmount += IOwnablee(OWNABLE).withdrawVABFromEdgePool(to);
+        
+        // Transfer VAB of Studio Pool(VabbleDAO)
+        sumAmount += IVabbleDAO(VABBLE_DAO).withdrawVABFromStudioPool(to);
+    }
 }
