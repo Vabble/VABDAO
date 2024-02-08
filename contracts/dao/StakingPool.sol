@@ -30,6 +30,8 @@ contract StakingPool is ReentrancyGuard {
         uint256 stakeAmount;     // staking amount per staker
         uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
         uint256 stakeTime;  
+        uint256 rewardTime;
+        uint256 withdrawableRewardTime;// last reward time(here, means the time that staker withdrawable time)
         uint256 outstandingReward; // after migration is started, this amount will be holded       
     }
 
@@ -129,6 +131,8 @@ contract StakingPool is ReentrancyGuard {
         if(si.stakeAmount == 0 && si.stakeTime == 0) {
             stakerCount.increment();
             stakerList.push(msg.sender);
+            si.rewardTime = block.timestamp;
+            si.withdrawableRewardTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
         }
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
@@ -181,14 +185,17 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Withdraw reward.  isCompound=1 => compound reward, isCompound=0 => withdraw
     function withdrawReward(uint256 _isCompound) external nonReentrant {
         require(stakeInfo[msg.sender].stakeAmount != 0, "withdrawReward: Zero staking amount");
-        require(migrationStatus > 0 || block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
-        
+
         uint256 rewardAmount = calcRewardAmount(msg.sender);
+        require(rewardAmount != 0, "withdrawReward: reward amount is 0");
+        
         if(_isCompound == 1) {
             Stake storage si = stakeInfo[msg.sender];
             si.stakeAmount = si.stakeAmount + rewardAmount;
             si.stakeTime = block.timestamp;
             si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+            si.rewardTime = si.stakeTime;
+            si.withdrawableRewardTime = si.withdrawableTime;
 
             emit RewardContinued(msg.sender, _isCompound);
         } else {
@@ -206,8 +213,8 @@ contract StakingPool is ReentrancyGuard {
         receivedRewardAmount[msg.sender] += _amount;
         totalRewardIssuedAmount += _amount;
 
-        stakeInfo[msg.sender].stakeTime = block.timestamp;
-        stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+        stakeInfo[msg.sender].rewardTime = block.timestamp;
+        stakeInfo[msg.sender].withdrawableRewardTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
         stakeInfo[msg.sender].outstandingReward = 0;
         
         emit RewardWithdraw(msg.sender, _amount);
@@ -221,6 +228,9 @@ contract StakingPool is ReentrancyGuard {
         if (migrationStatus > 0) { // if migration is started
             return si.outstandingReward; // just return pre-calcuated amount
         }
+
+        if (block.timestamp <= stakeInfo[msg.sender].withdrawableRewardTime) // if not yet withdrawable
+            return 0;
         
         // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
         // require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
@@ -229,7 +239,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 proposalCount = 0;     
         uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
         for(uint256 i = 0; i < proposalCreatedTimeListLength; ++i) { 
-            if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
+            if(proposalCreatedTimeList[i] > si.rewardTime && proposalCreatedTimeList[i] < si.withdrawableRewardTime) {
                 proposalCount += 1;
             }
         }
@@ -238,7 +248,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 votedCount = 0;     
         uint256 proposalVotedTimeListLength = proposalVotedTimeList[_customer].length;
         for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
-            if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
+            if(proposalVotedTimeList[_customer][i] > si.rewardTime && proposalVotedTimeList[_customer][i] < si.withdrawableRewardTime) {
                 votedCount += 1;
             }
         }
@@ -246,7 +256,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
         
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
+        uint256 period = (block.timestamp - si.rewardTime) * 1e4 / 1 days;
         uint256 rewardAmount = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
         
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
