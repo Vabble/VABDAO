@@ -282,7 +282,7 @@ contract Vote is IVote, ReentrancyGuard {
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
             av.stakeAmount_1 > av.stakeAmount_2 &&
-            av.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() &&
+            // av.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() &&
             av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IOwnablee(OWNABLE).replaceAuditor(_agent);
@@ -357,8 +357,8 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 totalVoteCount = fbp.voteCount_1 + fbp.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
-            fbp.stakeAmount_1 > fbp.stakeAmount_2 &&
-            fbp.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
+            fbp.stakeAmount_1 > fbp.stakeAmount_2
+            // fbp.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IProperty(DAO_PROPERTY).updateGovProposal(_member, 2, 1);
             govPassedVoteCount[3] += 1;
@@ -427,8 +427,8 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 totalVoteCount = rav.voteCount_1 + rav.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&       // Less than limit count
-            rav.stakeAmount_1 > rav.stakeAmount_2 &&                         // less 51%
-            rav.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() // less than permit amount
+            rav.stakeAmount_1 > rav.stakeAmount_2                          // less 51%
+            // rav.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() // less than permit amount
         ) {
             IProperty(DAO_PROPERTY).updateGovProposal(_rewardAddress, 3, 1);
             govPassedVoteCount[4] += 1;
@@ -501,8 +501,8 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
-            pv.stakeAmount_1 > pv.stakeAmount_2 &&
-            pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
+            pv.stakeAmount_1 > pv.stakeAmount_2 
+            // pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 1);
             govPassedVoteCount[5] += 1;              
