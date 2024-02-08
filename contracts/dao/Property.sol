@@ -112,6 +112,12 @@ contract Property is ReentrancyGuard {
         _;
     }
 
+    modifier onlyMajor() {
+        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= availableVABAmount, "Not major");
+        _;
+    }
+
+
     constructor(
         address _ownable,
         address _uniHelper,
@@ -223,13 +229,12 @@ contract Property is ReentrancyGuard {
         address _agent,
         string memory _title,
         string memory _description
-    ) external nonReentrant {
+    ) external onlyMajor nonReentrant {
         require(
             _agent != address(0) && IOwnablee(OWNABLE).auditor() != _agent && isGovWhitelist[1][_agent] == 0, 
             "proposalAuditor: Already auditor or candidate or zero"
         );         
 
-        require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= availableVABAmount, "proposalAuditor: Not enough VAB");             
         __paidFee(proposalFeeAmount);
 
         agentList.push(_agent);
@@ -274,11 +279,12 @@ contract Property is ReentrancyGuard {
         address _rewardAddress,
         string memory _title,
         string memory _description
-    ) external onlyStaker nonReentrant {
+    ) external onlyMajor nonReentrant {
         require(
             _rewardAddress != address(0) && isGovWhitelist[3][_rewardAddress] == 0, 
             "proposalRewardFund: Already candidate or zero"
         );
+        
         __paidFee(10 * proposalFeeAmount);
 
         rewardAddressList.push(_rewardAddress);
@@ -745,7 +751,11 @@ contract Property is ReentrancyGuard {
     }
 
     /// @dev Update the rewardAddress for only testing in the testnet
-    function updateDAOFundForTesting(address _address) external onlyDeployer {        
-        DAO_FUND_REWARD = _address;    
-    }        
+    // function updateDAOFundForTesting(address _address) external onlyDeployer {        
+    //     DAO_FUND_REWARD = _address;    
+    // }        
+
+    function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
+        availableVABAmount = _amount;
+    }     
 }

@@ -561,6 +561,11 @@ describe('Vote', function () {
     await this.StakingPool.connect(this.customer5).stakeVAB(stakeAmount, {from: this.customer5.address})
     await this.StakingPool.connect(this.customer6).stakeVAB(stakeAmount, {from: this.customer6.address})
     await this.StakingPool.connect(this.customer7).stakeVAB(stakeAmount, {from: this.customer7.address})
+
+    await this.Property.connect(this.deployer).updateAvailableVABForTesting(getBigNumber(150), {from: this.deployer.address});
+
+    const info = await this.StakingPool.stakeInfo(this.customer6.address);
+    console.log("Customer6 StakeAmount", info[0] / getBigNumber(1));
     
     console.log('====t-1')
     // Create proposal
