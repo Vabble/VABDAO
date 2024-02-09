@@ -3,6 +3,7 @@ const { ethers } = require('hardhat');
 require('dotenv').config();
 const { CONFIG, getBigNumber, setupProvider, getConfig } = require('../scripts/utils');
 const ERC20 = require('../data/ERC20.json');
+const FxERC20 = require('../data/FxERC20.json');
 const OWNABLEE_ABI = require('../data/Ownablee.json');
 
 async function addVABToEdgePool() {
@@ -24,12 +25,13 @@ async function addVABToEdgePool() {
 
         const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(ERC20), provider);       
 
-        console.log("getBigNumber", getBigNumber(1, 24).toString());
-        
         let vab_balance_of_Ownablee = await vabToken.balanceOf(OwnableeAddress);        
         console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
 
         let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
+        if (chainId == 137) // polygon 1 VAB
+            targetAmount = getBigNumber(1, 0);
+
         console.log("targetAmount", targetAmount.toString());
         let diff = targetAmount.sub(vab_balance_of_Ownablee);
         
