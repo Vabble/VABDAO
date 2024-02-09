@@ -755,7 +755,7 @@ contract Property is ReentrancyGuard {
     //     DAO_FUND_REWARD = _address;    
     // }        
 
-    function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
-        availableVABAmount = _amount;
-    }     
+    // function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
+    //     availableVABAmount = _amount;
+    // }     
 }
