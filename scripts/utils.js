@@ -29,8 +29,8 @@ const CONFIG = {
   polygon: {
     usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     usdtAdress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-    vabToken: "",
-    walletAddress: "",
+    vabToken: "0xea73dcf6f49f8d6ad5a129aaede776d78d418cfd",
+    walletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',

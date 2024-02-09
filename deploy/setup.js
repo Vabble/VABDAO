@@ -182,6 +182,9 @@ module.exports = async function ({ deployments }) {
   console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
 
   let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
+  if (chainId == 137) // polygon 1 VAB
+    targetAmount = getBigNumber(1, 0);
+
   let diff = targetAmount.sub(vab_balance_of_Ownablee);
   
   await vabTokenContract.connect(deployer).transfer(
@@ -196,6 +199,8 @@ module.exports = async function ({ deployments }) {
   console.log("vab_balance_of_totalRewardAmount before", totalRewardAmount.toString());
 
   targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
+  if (chainId == 137) // polygon 2 VAB
+    targetAmount = getBigNumber(2, 0);
   diff = targetAmount.sub(totalRewardAmount);
 
   if (diff > 0) {
