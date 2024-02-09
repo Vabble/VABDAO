@@ -729,6 +729,9 @@ contract Property is ReentrancyGuard {
         uint256 _value, 
         uint256 _flag
     ) external onlyDeployer {
+        if (Helper.isTestNet() == false)
+            return;
+            
         require(_value != 0, "test: Zero value");
 
         if(_flag == 0) filmVotePeriod = _value;
