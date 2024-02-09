@@ -487,40 +487,40 @@ contract Vote is IVote, ReentrancyGuard {
     }
 
     /// @notice Update properties based on vote result(>=51% and stakeAmount of "Yes" > 75m)
-    function updateProperty(
-        uint256 _propertyIndex, 
-        uint256 _flag
-    ) external onlyStaker nonReentrant {
-        uint256 propertyVal = IProperty(DAO_PROPERTY).getProperty(_propertyIndex, _flag);
-        (uint256 pCreateTime, uint256 pApproveTime) = IProperty(DAO_PROPERTY).getPropertyProposalTime(propertyVal, _flag);
-        require(!__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), pCreateTime), "property vote period yet");
-        require(pApproveTime == 0, "property already approved");
+    // function updateProperty(
+    //     uint256 _propertyIndex, 
+    //     uint256 _flag
+    // ) external onlyStaker nonReentrant {
+    //     uint256 propertyVal = IProperty(DAO_PROPERTY).getProperty(_propertyIndex, _flag);
+    //     (uint256 pCreateTime, uint256 pApproveTime) = IProperty(DAO_PROPERTY).getPropertyProposalTime(propertyVal, _flag);
+    //     require(!__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), pCreateTime), "property vote period yet");
+    //     require(pApproveTime == 0, "property already approved");
 
-        uint256 reason = 0;
-        Voting memory pv = propertyVoting[_flag][propertyVal];
-        uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2;
-        if(
-            totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
-            pv.stakeAmount_1 > pv.stakeAmount_2 
-            // pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
-        ) {
-            IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 1);
-            govPassedVoteCount[5] += 1;              
-        } else {
-            IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 0);
+    //     uint256 reason = 0;
+    //     Voting memory pv = propertyVoting[_flag][propertyVal];
+    //     uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2;
+    //     if(
+    //         totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
+    //         pv.stakeAmount_1 > pv.stakeAmount_2 
+    //         // pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
+    //     ) {
+    //         IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 1);
+    //         govPassedVoteCount[5] += 1;              
+    //     } else {
+    //         IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 0);
 
-            if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
-                reason = 1;
-            } else if(pv.stakeAmount_1 <= pv.stakeAmount_2) {
-                reason = 2;
-            } else if(pv.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
-                reason = 3;
-            } else {
-                reason = 10;
-            }
-        }
-        emit PropertyUpdated(_flag, propertyVal, msg.sender, reason);
-    }
+    //         if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
+    //             reason = 1;
+    //         } else if(pv.stakeAmount_1 <= pv.stakeAmount_2) {
+    //             reason = 2;
+    //         } else if(pv.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
+    //             reason = 3;
+    //         } else {
+    //             reason = 10;
+    //         }
+    //     }
+    //     emit PropertyUpdated(_flag, propertyVal, msg.sender, reason);
+    // }
 
     function __isVotePeriod(
         uint256 _period, 
