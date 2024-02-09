@@ -8,6 +8,10 @@ const OWNABLEE_ABI = require('../data/Ownablee.json');
 
 async function addVABToEdgePool() {
     try {
+        // this.Ownablee = await deployments.get('Ownablee');
+        const TestContract = await ethers.getContractFactory('Ownablee');
+        console.log("TestOwnableeContract", TestContract.address);
+
         // Connect to the existing contracts
         const network = await ethers.provider.getNetwork();
         const chainId = network.chainId;
