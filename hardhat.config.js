@@ -23,7 +23,8 @@ const polyScan_api_key = process.env.POLYGON_SCAN_API_KEY;
 const avaxScan_api_key = process.env.AVAX_SCAN_API_KEY;
 
 const mnemonic = process.env.MNEMONIC;
-const privateKey = process.env.DEPLOY_PRIVATE_KEY;
+// const privateKey = process.env.DEPLOY_PRIVATE_KEY;
+const privateKey = process.env.DEPLOY_MAINNET_PRIVATE_KEY;
 const coinmarketcap_api_key = process.env.COINMARKETCAP_API_KEY;
 
 const chainIds = {
