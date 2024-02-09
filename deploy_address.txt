@@ -396,3 +396,7 @@ npx hardhat node
 npx hardhat size-contracts
 
 npx hardhat run .\scripts\add_liquidity.js --network mumbai
+
+// Please review code and change VAB on script code and run below command
+npx hardhat run .\scripts\add_vab_to_edgepool.js --network mumbai
+npx hardhat run .\scripts\add_vab_to_staking.js --network mumbai
