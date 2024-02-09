@@ -240,6 +240,17 @@ contract StakingPool is ReentrancyGuard {
         // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
         // require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
 
+        uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
+        
+        // Get time with accuracy(10**4) from after lockPeriod 
+        uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
+        uint256 rewardAmount = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
+
+        // If customer is film board member, more rewards(25%)
+        if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _customer) == 2) {            
+            rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+        } 
+
         // Get proposal count started in withdrawable period of customer
         uint256 proposalCount = 0;     
         uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
@@ -257,12 +268,6 @@ contract StakingPool is ReentrancyGuard {
                 votedCount += 1;
             }
         }
-
-        uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
-        
-        // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
-        uint256 rewardAmount = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
         
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
         if(proposalCount != 0) {
@@ -273,11 +278,6 @@ contract StakingPool is ReentrancyGuard {
                 rewardAmount = rewardAmount * countVal / 1e4;
             }
         }
-        
-        // If customer is film board member, more rewards(25%)
-        if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _customer) == 2) {            
-            rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
-        } 
         
         amount_ = rewardAmount;
     }
