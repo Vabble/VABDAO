@@ -1,7 +1,7 @@
 'use strict';
 
 // require('./owner.test');
-// require('./vote.test');
+require('./vote.test');
 // require('./vabbleDAO.test');
 // require('./stakingPool.test');
 // require('./factoryFilmNFT.test');
@@ -11,4 +11,4 @@
 // require('./multiSigWallet.test');
 // require('./gnosisSafe.test');
 // require('./set-final-film.test');
-require('./change-film-owner.test')
+// require('./change-film-owner.test')
