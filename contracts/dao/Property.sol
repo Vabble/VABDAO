@@ -210,6 +210,9 @@ contract Property is ReentrancyGuard {
     }
 
     function updateForTesting() external onlyDeployer nonReentrant {
+        // if (Helper.isTestNet() == false)
+        //     return;
+
         filmVotePeriod = 10 minutes;     // 10 days;   
         boardVotePeriod = 10 minutes;    // 14 days;
         agentVotePeriod = 10 minutes;    // 10 days;      
@@ -755,7 +758,10 @@ contract Property is ReentrancyGuard {
     //     DAO_FUND_REWARD = _address;    
     // }        
 
-    // function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
-    //     availableVABAmount = _amount;
-    // }     
+    function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
+        if (Helper.isTestNet() == false)
+            return;
+
+        availableVABAmount = _amount;
+    }     
 }
