@@ -1,0 +1,205 @@
+1. Deploy New Contract: 
+2. Create Proposal: Submit a proposal to cease staking rewards 
+    Property->proposalRewardFund
+3. Vote: Vote on the proposal
+    Vote->voteToRewardAddress
+4. Approve Proposal and start Migration
+    4.1 Vote->setDAORewardAddress
+    4.2 If proposal is approved(passed), contract start migration automatically(triggered)
+        totalMigrationVAB will be calculated
+            calculate the total amount of reward for each member
+            put it into outstandingReward of each member (stakeInfo.outstandingReward)
+            totalMigrationVAB = totalRewardAmount - sum of outstandingReward for all members
+        migrationStatus will be chnaged from 0 to 1
+            migrationStatus:
+                0: Not Started (Normal)
+                1: Started
+                2: Ended
+    4.3 If migration is started,
+        All rewarding action will be stopped (StakingPool->addRewardToPool)
+            VabbleDAO->proposalFilmCreate will be stopped
+            VabbleFund->fundProcess will be processed
+            Property->proposalValue will be stopped
+        All stacking/devoting action will be stopped
+            StakingPool->stakeVAB will be stopped
+            StakingPool->depositVAB will be stopped
+        Lock Period will be ignored 
+            StakingPool->unstakeVAB can be called at any time
+            StakingPool->withdrawReward can be called at any time
+5. Move VAB from StakingPool, StudioPool(VabbleDAO), EdgePool(Ownable) to new DAO Reward Address
+    Call StakingPool->withdrawAllFund though audit action
+    5.1 Move totalMigrationVAB to new DAO Reward Address
+        totalRewardAmount = totalRewardAmount - totalMigrationVAB;
+        totalMigrationVAB = 0;
+        transfer totalMigrationVAB from Staking Pool to new DAO Reward Address
+    5.2 Move All balance of StudioPool to new DAO Reward Address
+    5.3 Move All balance of EdgePool to new DAO Reward Address
+    5.4 migrationStatus <- 2 (Ended)
+
+    Even though withdrawAllFund is called (migration is ended), 
+        Each staker can still unstake
+        Each staker can still withdraw the reward(outstandingReward)
+        Each depositor can still withdraw
+6. When all stakers and depositor have withdrawn, then Migration is done.
+
+
+    
+        
+
+
+
+// 2024-02-08 Polygon(Mumbai testnet) with migration test - 
+- Batch 1 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 10MB, 50MB
+FactoryFilmNFT (0xe9b286f79120D36736340c9a5A368afEBD5F3Aae)
+FactorySubNFT (0xBB9637A86CE9baCc14bb07fDd2133ebcd4EA8D26)
+FactoryTierNFT (0x01cad7a659cBBEE8f113e0573c7f9E32A1092d01)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x9e37584E494Eef5a57aD8b9b247C86d4e4Da592f)
+Property (0x4E0e0Fa935E8A61503c826e34F69acEc8B9380De)
+StakingPool (0xF7a92aEfA0591023fbaBb5F6e3751fbA2e3b8B3e)
+Subscription (0xD3B587B219476B299cd7cAe01F7c8E37ff9aD9c1)
+UniHelper (0x2Bd8a266A38ae0a4673709BB0F0DDdE3E00c1C44)
+VabbleDAO (0x91A484bd25D45a1A54ad35431FbAED9d34c9b2F6)
+VabbleFund (0xfa01C1E120fA174A14e51326E8201dA6c2B129a3)
+Vote (0x5b2976D318A58AcdE54d9AEc46B7679476012f18)
+
+- Batch 2 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 0MB, 0MB
+FactoryFilmNFT (0xcBF850cE2657FB8de9b566551694C4476DF9eB55)
+FactorySubNFT (0xF540d0C07F068b2194499550607Fe41f7E37f082)
+FactoryTierNFT (0x5a64704a57deEF268aB5eE52Ac2fd6dAE1c38d09)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x2ceF2F7b0a565229D74c7f5E8916Df49C89EC032)
+Property (0xE3fdd12B43Ed5d4C0E7F19566a8Bd62251D9b27B)
+StakingPool (0xEa0FF45d9Fd522C67d218e5B1b278021Bb17b535)
+Subscription (0xbBB45E02404d333bEc812F7894DfeD9c8D33aFdB)
+UniHelper (0x023E9570635aDCd1F9aa9b61a7321D1420D7ea29)
+VabbleDAO (0xDb56A6F9f4C19F5947f3CBbe0A3214BC5B816ba2)
+VabbleFund (0x0dF65a8601389FEB38Fb9efa77363b70ADE51369)
+Vote (0x809612c2b4DA06477CB625356438190310Ab5475)
+
+
+VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
+
+// 2024-02-08-01 Polygon(Mumbai testnet) with migration test - (availableVABAmount, reward set 0)
+- Batch 1 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 10MB, 50MB
+FactoryFilmNFT (0xf1E52d7Ba97D04Db96fD18D4803a574E0181C46b)
+FactorySubNFT (0xfE2DD8DB5758a4B0cc73F09A09abD5CD73CFe9e6)
+FactoryTierNFT (0x13f80626201AA4E68E7180ae58B5D4dE123279B0)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x6df590015F58B2a81CB0365DFbDf3C8357116CBD)
+Property (0x5Ea26CF619aeeEB937F60A0c43eA8a242cfC69b5)
+StakingPool (0x943c0c0725E7db2B65d8Cf03812cD0AdC2C62a00)
+Subscription (0xAFF53764ac49cC3602F683345Cf0201219b6012D)
+UniHelper (0x85F1918001De71D72Ea7e8abe0c74196A1DeFEcb)
+VabbleDAO (0xa3008E219E4f34308C3402a693A4536816c4963b)
+VabbleFund (0x48bf12292c82dD2748F14d25c71746351B4Af937)
+Vote (0x9bF494D49C5F408B73F3C03158E44139caEf654f)
+
+- Batch 2 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 0MB, 0MB
+FactoryFilmNFT (0xc3C841840415A59187A75d215f379Bb6aC7aE774)
+FactorySubNFT (0x6c61baf149f521045fD41E53036C47185c58532c)
+FactoryTierNFT (0x0535eD61ac76eC51e9fE5d53D8C8b4138085D27E)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x0Df388f7933e4ee8d50E32d4DC4D234eE73C05a4)
+Property (0xAD7647a74C090D0569E697a0Fc762985F2EbF8Dd)
+StakingPool (0x099cB988FE3B0d0eE7Febb517A50B264278529B0)
+Subscription (0x9e888185c9151Ca47ee9833Fb0F79E193F592885)
+UniHelper (0x9A9Cc752B6044D1734259852D7E2dd8a9575aD0b)
+VabbleDAO (0x11528cA9b00955A968F36296111Bb83AF51EDA45)
+VabbleFund (0x0C24fa422eEB6177750c5BCa6de1D8aD722e912A)
+Vote (0xCf5413d7c4fC31087250c4C72B5a8ceBb0e4d5b1)
+
+VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
+
+// 2024-02-09 Polygon(Mumbai testnet) with adjust reward period, if there is no reward when stack.
+- Batch 1 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 10MB, 50MB
+FactoryFilmNFT (0x712a839493b704A4bE3949A72521250DCaB887B3)
+FactorySubNFT (0x688DC899b7522f063BD8C884a62c1835b3174F2b)
+FactoryTierNFT (0x4b7f26E231Ec7e9A8642b8406DDA3f427bBC50B3)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0xE0db2D5E81DB97EC5AD1Db46Cffa9E54afA3d4c9)
+Property (0xae90Cfc36bE808ED7519078Fe6E6844CE41f08Dd)
+StakingPool (0x45aFadc6c66c07F32e556BC5c4e50F10E12547A3)
+Subscription (0x5D7Fe90F44282f965eF0928C969177c9f3Bf44C5)
+UniHelper (0x8948a472887402E835f07D76d906957Bd93ba843)
+VabbleDAO (0x4A9bF27b6f5DEE38eEFb7A07cCC16Db2285FE9dd)
+VabbleFund (0x4A1d6D63CE3e8571889ad931AD505461d2fCe6a4)
+Vote (0xC2E6F75a92740Bd673b782C889dD3365EC4dbe15)
+
+- Batch 2 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 0MB, 0MB
+FactoryFilmNFT (0x53fAAd159bd236292AFFcA37E9E7B211e9b0F27F)
+FactorySubNFT (0x1E77c7d5ae2Ff29102eb2D4f69aa79270C11C009)
+FactoryTierNFT (0x9bEABc6EA04061840493c1655B84d893Cd9Cc6a3)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0xba0466cDF0FAEA43C5BEc233Bed08739c0EfF8A0)
+Property (0x0386B9042961D542dFa4534D7116E07CC9EBC0F2)
+StakingPool (0x4325E63Cc8bcA5D88d3BDAF3d1AeBfC04BbfF187)
+Subscription (0x192B171a635b95A1306DE16724a291CABF1464C9)
+UniHelper (0xa9351626aB69AD8a5EC6F445707fE2Ccd078535f)
+VabbleDAO (0x47842fB80b7b239F165FD09Dcda5404B7D173B91)
+VabbleFund (0x7C9DC9E58e6ddE38C9b20a9995d72e186e3d40eb)
+Vote (0xeA45CD53dA1545B771D364992f9455977B7930Ca)
+
+VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
+
+
+// 2024-02-09-02 Polygon(Mumbai testnet) with adjust reward period, if there is no reward when stack.
+- Batch 1 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 10MB, 50MB
+FactoryFilmNFT (0x53fAAd159bd236292AFFcA37E9E7B211e9b0F27F)
+FactorySubNFT (0x1E77c7d5ae2Ff29102eb2D4f69aa79270C11C009)
+FactoryTierNFT (0xA7240B519C262ab4551DFe7b57b08383869D0a14)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0xba0466cDF0FAEA43C5BEc233Bed08739c0EfF8A0)
+Property (0x8379416AC17787F806Ba026096B1DEd6598fdC34)
+StakingPool (0xA827C4E586e999a91123CC381c6e553a14d1442D)
+Subscription (0x762e8103F5D79f721914b361518B43e0F9D12524)
+UniHelper (0xa9351626aB69AD8a5EC6F445707fE2Ccd078535f)
+VabbleDAO (0x83397625533386864A2a52eD79739524C76b736e)
+VabbleFund (0xCf18c2847847D5b2E11dAF0F87FD67bDF5605FCF)
+Vote (0xeA45CD53dA1545B771D364992f9455977B7930Ca)
+
+- Batch 2 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 0MB, 0MB
+FactoryFilmNFT (0x032a18151EDFf2502223eAbcAd3137e114DaC07d)
+FactorySubNFT (0x6d9b8d057a168Ed52926187BE4F8f43a962B3559)
+FactoryTierNFT (0x08501aE926d24ECcd0e868bCAea5844c9D88cA05)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x898FE1c583C3C62764d91E1898871Fa5D98d46d9)
+Property (0x51FFaD0f86976f1B129c758bb1094F6f6942Ea6c)
+StakingPool (0xACB55F3c4ed5275bd927AabbE1fb3880f7541050)
+Subscription (0x4671423A3988975275d1FEA85A05576EF79d9F62)
+UniHelper (0x2E63a019d61B450d2556CEC0509C7c7B7E67ecb5)
+VabbleDAO (0x76eD47579b4606bB4769bfC9A801e23dDDB94CB1)
+VabbleFund (0x01D28122c0e9b33e027dbc637046b00ac1C77958)
+Vote (0x056312f3648f3f71362857d9002FCFe830f164E1)
+
+VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
+
+// 2024-02-09-03 Polygon(Mumbai testnet) with fix reward error
+- Batch 1 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 10MB, 50MB
+FactoryFilmNFT (0x6d0a9d3da7Bb5EE707FA3542813883ca066a48BE)
+FactorySubNFT (0x2Fe9b8C01651c67b752184DBD5D340D3F749B0Cc)
+FactoryTierNFT (0x31A1740Bc2D451B131424edD5B95caac4764Ee15)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x070bDEA8cEf9B544669dcAf2Ea6A46121D623Ae1)
+Property (0x218b81bb0Bc8f9686661508Ed7abFB30101B6899)
+StakingPool (0x930284e4018fA8182EF3c87B875E908f24717119)
+Subscription (0xf49Ea4256a65AE382eC1528470C33E22F69CD921)
+UniHelper (0x5A35C4E966282676E81E9ae8331A6588425f91F2)
+VabbleDAO (0x7820E9642002Ca15eC3bD5978B620D05e6db7e7b)
+VabbleFund (0x614b42391d454031Cce09AC3A58192683274FDf7)
+Vote (0x548628208bF4227A627f440e49945407f842e01b)
+
+// 2024-02-09-03 Polygon(Mumbai testnet) with fix reward error
+- Batch 1 - auditor (0xe0536a4D730a78DB8B4c4605D73e107201d9543e), 10MB, 50MB
+FactoryFilmNFT (0x6d0a9d3da7Bb5EE707FA3542813883ca066a48BE)
+FactorySubNFT (0x2Fe9b8C01651c67b752184DBD5D340D3F749B0Cc)
+FactoryTierNFT (0xb04460889E0aFCCc869d48d85ed078b8c436Fbd6)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x070bDEA8cEf9B544669dcAf2Ea6A46121D623Ae1)
+Property (0x61a63a9B46e77D40D1efa63256b497f52E8560A4)
+StakingPool (0x00496B75029ab3a278fb2bAB7198975390f122D8)
+Subscription (0x5a8D36b6B44021592fB89BA0E584341913572E6B)
+UniHelper (0x5A35C4E966282676E81E9ae8331A6588425f91F2)
+VabbleDAO (0x756594a5EAbE5bE436b89057378803894344a4aF)
+VabbleFund (0xb39B962ED941e46Ec78f126718B1c16aa20323a1)
+Vote (0x129D867EA53B22227825C606924b7a32186D1325)

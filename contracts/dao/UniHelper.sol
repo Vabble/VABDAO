@@ -55,7 +55,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address _factoryFilm,
         address _factorySub
     ) external onlyDeployer {
-        // require(!isInitialized, "setWhiteList: already initialized");
+        require(!isInitialized, "setWhiteList: already initialized");
 
         require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "setWhiteList: zero vabbleDAO address");
         isVabbleContract[_vabbleDAO] = true;

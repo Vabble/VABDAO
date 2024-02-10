@@ -79,7 +79,7 @@ contract Vote is IVote, ReentrancyGuard {
         address _stakingPool,
         address _property
     ) external onlyDeployer {
-        // require(VABBLE_DAO == address(0), "initialize: already initialized");
+        require(VABBLE_DAO == address(0), "initialize: already initialized");
 
         require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "initializeVote: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO;        
@@ -282,7 +282,7 @@ contract Vote is IVote, ReentrancyGuard {
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
             av.stakeAmount_1 > av.stakeAmount_2 &&
-            av.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() &&
+            // av.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() &&
             av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IOwnablee(OWNABLE).replaceAuditor(_agent);
@@ -357,8 +357,8 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 totalVoteCount = fbp.voteCount_1 + fbp.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
-            fbp.stakeAmount_1 > fbp.stakeAmount_2 &&
-            fbp.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
+            fbp.stakeAmount_1 > fbp.stakeAmount_2
+            // fbp.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IProperty(DAO_PROPERTY).updateGovProposal(_member, 2, 1);
             govPassedVoteCount[3] += 1;
@@ -427,8 +427,8 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 totalVoteCount = rav.voteCount_1 + rav.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&       // Less than limit count
-            rav.stakeAmount_1 > rav.stakeAmount_2 &&                         // less 51%
-            rav.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() // less than permit amount
+            rav.stakeAmount_1 > rav.stakeAmount_2                          // less 51%
+            // rav.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() // less than permit amount
         ) {
             IProperty(DAO_PROPERTY).updateGovProposal(_rewardAddress, 3, 1);
             govPassedVoteCount[4] += 1;
@@ -487,40 +487,40 @@ contract Vote is IVote, ReentrancyGuard {
     }
 
     /// @notice Update properties based on vote result(>=51% and stakeAmount of "Yes" > 75m)
-    function updateProperty(
-        uint256 _propertyIndex, 
-        uint256 _flag
-    ) external onlyStaker nonReentrant {
-        uint256 propertyVal = IProperty(DAO_PROPERTY).getProperty(_propertyIndex, _flag);
-        (uint256 pCreateTime, uint256 pApproveTime) = IProperty(DAO_PROPERTY).getPropertyProposalTime(propertyVal, _flag);
-        require(!__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), pCreateTime), "property vote period yet");
-        require(pApproveTime == 0, "property already approved");
+    // function updateProperty(
+    //     uint256 _propertyIndex, 
+    //     uint256 _flag
+    // ) external onlyStaker nonReentrant {
+    //     uint256 propertyVal = IProperty(DAO_PROPERTY).getProperty(_propertyIndex, _flag);
+    //     (uint256 pCreateTime, uint256 pApproveTime) = IProperty(DAO_PROPERTY).getPropertyProposalTime(propertyVal, _flag);
+    //     require(!__isVotePeriod(IProperty(DAO_PROPERTY).propertyVotePeriod(), pCreateTime), "property vote period yet");
+    //     require(pApproveTime == 0, "property already approved");
 
-        uint256 reason = 0;
-        Voting memory pv = propertyVoting[_flag][propertyVal];
-        uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2;
-        if(
-            totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
-            pv.stakeAmount_1 > pv.stakeAmount_2 &&
-            pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
-        ) {
-            IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 1);
-            govPassedVoteCount[5] += 1;              
-        } else {
-            IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 0);
+    //     uint256 reason = 0;
+    //     Voting memory pv = propertyVoting[_flag][propertyVal];
+    //     uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2;
+    //     if(
+    //         totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
+    //         pv.stakeAmount_1 > pv.stakeAmount_2 
+    //         // pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
+    //     ) {
+    //         IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 1);
+    //         govPassedVoteCount[5] += 1;              
+    //     } else {
+    //         IProperty(DAO_PROPERTY).updatePropertyProposal(propertyVal, _flag, 0);
 
-            if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
-                reason = 1;
-            } else if(pv.stakeAmount_1 <= pv.stakeAmount_2) {
-                reason = 2;
-            } else if(pv.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
-                reason = 3;
-            } else {
-                reason = 10;
-            }
-        }
-        emit PropertyUpdated(_flag, propertyVal, msg.sender, reason);
-    }
+    //         if(totalVoteCount < IStakingPool(STAKING_POOL).getLimitCount()) {
+    //             reason = 1;
+    //         } else if(pv.stakeAmount_1 <= pv.stakeAmount_2) {
+    //             reason = 2;
+    //         } else if(pv.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
+    //             reason = 3;
+    //         } else {
+    //             reason = 10;
+    //         }
+    //     }
+    //     emit PropertyUpdated(_flag, propertyVal, msg.sender, reason);
+    // }
 
     function __isVotePeriod(
         uint256 _period, 
