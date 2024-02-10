@@ -29,7 +29,7 @@ async function addLiquidity() {
         
 
         const provider = await setupProvider(chainId);
-        const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(FERC20), provider);
+        const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(ERC20), provider);
         const usdcToken = new ethers.Contract(usdcAddress, JSON.stringify(ERC20), provider);
         const usdtToken = new ethers.Contract(usdtAddress, JSON.stringify(ERC20), provider);
         const exmToken = new ethers.Contract(exmAddress, JSON.stringify(ERC20), provider);
