@@ -47,53 +47,53 @@ async function createTokenPair() {
         }
 
         
-        // USDT:VAB 
-        console.log("USDT address", usdtAddress);
-        res = await uniswapFactory.getPair(usdtAddress, vabTokenAddress);   
-        console.log("USDT:VAB getPair", res); 
-        if (res == CONFIG.addressZero) {
-            res = await uniswapFactory.connect(deployer).createPair(
-                usdtAddress,
-                vabTokenAddress,
-                {from: deployer.address}
-            );
-        }
+        // // USDT:VAB 
+        // console.log("USDT address", usdtAddress);
+        // res = await uniswapFactory.getPair(usdtAddress, vabTokenAddress);   
+        // console.log("USDT:VAB getPair", res); 
+        // if (res == CONFIG.addressZero) {
+        //     res = await uniswapFactory.connect(deployer).createPair(
+        //         usdtAddress,
+        //         vabTokenAddress,
+        //         {from: deployer.address}
+        //     );
+        // }
 
-        // EXM:VAB 
-        console.log("EXM address", exmAddress);
-        res = await uniswapFactory.getPair(exmAddress, vabTokenAddress);   
-        console.log("EXM:VAB getPair", res); 
-        if (res == CONFIG.addressZero) {            
-            res = await uniswapFactory.connect(deployer).createPair(
-                exmAddress,
-                vabTokenAddress,
-                {from: deployer.address}
-            );
-        }
+        // // EXM:VAB 
+        // console.log("EXM address", exmAddress);
+        // res = await uniswapFactory.getPair(exmAddress, vabTokenAddress);   
+        // console.log("EXM:VAB getPair", res); 
+        // if (res == CONFIG.addressZero) {            
+        //     res = await uniswapFactory.connect(deployer).createPair(
+        //         exmAddress,
+        //         vabTokenAddress,
+        //         {from: deployer.address}
+        //     );
+        // }
 
-        // Zero:VAB 
-        const WETH2 = await sushiswapRouter.WETH();        
-        res = await sushiswapFactory.getPair(WETH2, vabTokenAddress);
-        console.log("MATIC:VAB getPair", res, WETH2); 
+        // // Zero:VAB 
+        // const WETH2 = await sushiswapRouter.WETH();        
+        // res = await sushiswapFactory.getPair(WETH2, vabTokenAddress);
+        // console.log("MATIC:VAB getPair", res, WETH2); 
         
-        if (res == CONFIG.addressZero) {            
-            res = await sushiswapFactory.connect(deployer).createPair(
-                WETH2,
-                vabTokenAddress,
-                {from: deployer.address}
-            );
-        }
+        // if (res == CONFIG.addressZero) {            
+        //     res = await sushiswapFactory.connect(deployer).createPair(
+        //         WETH2,
+        //         vabTokenAddress,
+        //         {from: deployer.address}
+        //     );
+        // }
 
-        res = await sushiswapFactory.getPair(vabTokenAddress, WETH2);
-        console.log("VAB:MATIC getPair", res, WETH2); 
+        // res = await sushiswapFactory.getPair(vabTokenAddress, WETH2);
+        // console.log("VAB:MATIC getPair", res, WETH2); 
         
-        if (res == CONFIG.addressZero) {            
-            res = await sushiswapFactory.connect(deployer).createPair(
-                vabTokenAddress,
-                WETH2,
-                {from: deployer.address}
-            );
-        }
+        // if (res == CONFIG.addressZero) {            
+        //     res = await sushiswapFactory.connect(deployer).createPair(
+        //         vabTokenAddress,
+        //         WETH2,
+        //         {from: deployer.address}
+        //     );
+        // }
 
     } catch (error) {
         console.error('Error in createTokenPair:', error);
