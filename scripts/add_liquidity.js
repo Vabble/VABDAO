@@ -104,36 +104,36 @@ async function addLiquidity() {
         console.log("deadline", deadline);
 
         
-        // USDC:VAB   = 10000:1000000(1:100) => uniswap     
+        // // USDC:VAB   = 10000:1000000(1:100) => uniswap     
         
-        res = await uniswapRouter.connect(deployer).addLiquidity(
-            usdcAddress,
-            vabTokenAddress,
-            getBigNumber(10, 6),
-            getBigNumber(1000),
-            1,
-            1, 
-            deployer.address,
-            deadline,             
-            {from: deployer.address}            
-        );
-        console.log("USDC:VAB", res);
+        // res = await uniswapRouter.connect(deployer).addLiquidity(
+        //     usdcAddress,
+        //     vabTokenAddress,
+        //     getBigNumber(10, 6),
+        //     getBigNumber(1000),
+        //     1,
+        //     1, 
+        //     deployer.address,
+        //     deadline,             
+        //     {from: deployer.address}            
+        // );
+        // console.log("USDC:VAB", res);
 
-        // USDT:VAB   = 10000:1000000(1:100) => uniswap    
-        console.log("USDT address", usdtAddress);
+        // // USDT:VAB   = 10000:1000000(1:100) => uniswap    
+        // console.log("USDT address", usdtAddress);
         
-        res = await uniswapRouter.connect(deployer).addLiquidity(
-            usdtAddress,
-            vabTokenAddress,
-            getBigNumber(10, 6),
-            getBigNumber(1000),
-            1,
-            1, 
-            deployer.address,
-            deadline,             
-            {from: deployer.address}            
-        );
-        console.log("USDT:VAB", res);
+        // res = await uniswapRouter.connect(deployer).addLiquidity(
+        //     usdtAddress,
+        //     vabTokenAddress,
+        //     getBigNumber(10, 6),
+        //     getBigNumber(1000),
+        //     1,
+        //     1, 
+        //     deployer.address,
+        //     deadline,             
+        //     {from: deployer.address}            
+        // );
+        // console.log("USDT:VAB", res);
 
         // // VAB:MATIC   
         // console.log("WETH1 address", WETH1);
@@ -143,14 +143,14 @@ async function addLiquidity() {
 
         // res = await sushiswapRouter.connect(deployer).addLiquidityETH(
         //     vabTokenAddress,            
-        //     getBigNumber(250000),          
-        //     getBigNumber(1),
-        //     getBigNumber(1, 13), 
+        //     getBigNumber(1),          
+        //     1,
+        //     1, 
         //     deployer.address,
         //     deadline,             
         //     {from: deployer.address, value: ethVal}            
         // );
-        // console.log("VAB:MATIC", res);
+        // console.log("MATIC:VAB", res);
 
         // // MATIC:VAB  = 5:250000(1:50000)    => sushiswap
         // res = await sushiswapRouter.connect(deployer).addLiquidity(
