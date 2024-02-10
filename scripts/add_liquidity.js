@@ -40,9 +40,7 @@ async function addLiquidity() {
 
         const WETH1 = await uniswapRouter.WETH();   
         const WETH2 = await sushiswapRouter.WETH();   
-        const ether1Token = new ethers.Contract(WETH1, JSON.stringify(ERC20), provider);
-        const ether2Token = new ethers.Contract(WETH2, JSON.stringify(ERC20), provider);
-
+   
         const signers = await ethers.getSigners();
         const deployer = signers[0];
 
@@ -62,6 +60,7 @@ async function addLiquidity() {
 
         let res;
 
+        console.log("------------------- Approve USDC:VAB, USDT:VAB Pair Tokens -------------------");
         var token_list = [usdcToken, usdtToken];
         for (var i = 0; i < token_list.length; i++) {
             const token = token_list[i];
@@ -71,7 +70,7 @@ async function addLiquidity() {
             totalSupply = await token.totalSupply();
             console.log((i + 1) + "'s totalSupply", totalSupply.toString()); 
 
-            if (res != CONFIG.addressZero) {
+            if (pair != CONFIG.addressZero) {
                 await vabToken.connect(deployer).approve(
                     pair,
                     totalVABSupply,
@@ -86,47 +85,28 @@ async function addLiquidity() {
             }
         }
 
-        token_list = [vabToken, usdcToken, usdtToken];
-
+        console.log("------------------- Approve MATIC:VAB on uniswap/sushiswap -------------------");
+        token_list = [WETH1, WETH2];
         for (var i = 0; i < token_list.length; i++) {
             const token = token_list[i];
-            totalSupply = await token.totalSupply();
-            console.log((i + 1) + "'s totalSupply", totalSupply.toString());       
+            console.log("token address", token);
+            let pair;
+            if (token == WETH1) {
+                pair = await uniswapFactory.getPair(token, vabTokenAddress);      
+            }
+            if (token == WETH2)
+                pair = await sushiswapFactory.getPair(token, vabTokenAddress);      
+             
+            console.log((i + 1) + "'s getPair", pair);
 
-            if (i < 3) {
-                await token.connect(deployer).approve(
-                    uniswapRouterAddress,
-                    totalSupply,
-                    {from: deployer.address}
-                );
-
-                await token.connect(deployer).approve(
-                    sushiswapRouterAddress,
-                    totalSupply,
+            if (pair != CONFIG.addressZero) {
+                await vabToken.connect(deployer).approve(
+                    pair,
+                    totalVABSupply,
                     {from: deployer.address}
                 );
             }
-            // if (i == 3) {
-            //     await token.connect(deployer).approve(
-            //         uniswapRouterAddress,
-            //         totalSupply,
-            //         {from: deployer.address}
-            //     );        
-            // } 
-
-            // if (i == 4) {
-            //     await token.connect(deployer).approve(
-            //         sushiswapRouterAddress,
-            //         totalSupply,
-            //         {from: deployer.address}
-            //     );
-            // }
         }
-        // await exmToken.connect(deployer).approve(
-        //     uniswapRouterAddress,
-        //     totalSupply,
-        //     {from: deployer.address}
-        // );
 
         const deadline = Date.now() + 60 * 60 * 24 * 7;
         console.log("deadline", deadline);
@@ -134,18 +114,18 @@ async function addLiquidity() {
         
         // USDC:VAB   = 10000:1000000(1:100) => uniswap     
         
-        // res = await uniswapRouter.connect(deployer).addLiquidity(
-        //     usdcAddress,
-        //     vabTokenAddress,
-        //     getBigNumber(10, 6),
-        //     getBigNumber(1000),
-        //     1,
-        //     1, 
-        //     deployer.address,
-        //     deadline,             
-        //     {from: deployer.address}            
-        // );
-        // console.log("USDC:VAB", res);
+        res = await uniswapRouter.connect(deployer).addLiquidity(
+            usdcAddress,
+            vabTokenAddress,
+            getBigNumber(10, 6),
+            getBigNumber(1000),
+            1,
+            1, 
+            deployer.address,
+            deadline,             
+            {from: deployer.address}            
+        );
+        console.log("USDC:VAB", res);
 
         // // USDT:VAB   = 10000:1000000(1:100) => uniswap    
         // console.log("USDT address", usdtAddress);

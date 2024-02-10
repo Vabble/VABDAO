@@ -5,6 +5,8 @@ const { CONFIG, getBigNumber, setupProvider, getConfig } = require('../scripts/u
 const FERC20 = require('../data/FxERC20.json');
 const UNISWAP2ROUTER_ABI = require('../data/Uniswap2Router.json');
 const UNISWAP2FACTORY_ABI = require('../data/Uniswap2Factory.json');
+const SUSHISWAP2ROUTER_ABI = require('../data/Sushiswap2Router.json');
+const SUSHISWAP2FACTORY_ABI = require('../data/Sushiswap2Factory.json');
 
 async function createTokenPair() {
     try {
@@ -28,8 +30,8 @@ async function createTokenPair() {
         const provider = await setupProvider(chainId);
         const uniswapFactory = new ethers.Contract(uniswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
         const uniswapRouter = new ethers.Contract(uniswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
-        const sushiswapFactory = new ethers.Contract(sushiswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
-        const sushiswapRouter = new ethers.Contract(sushiswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
+        const sushiswapFactory = new ethers.Contract(sushiswapFactoryAddress, SUSHISWAP2FACTORY_ABI, provider);
+        const sushiswapRouter = new ethers.Contract(sushiswapRouterAddress, SUSHISWAP2ROUTER_ABI, provider);
         
         const signers = await ethers.getSigners();
         const deployer = signers[0];
