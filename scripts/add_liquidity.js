@@ -32,7 +32,8 @@ async function addLiquidity() {
         const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(FERC20), provider);
         const usdcToken = new ethers.Contract(usdcAddress, JSON.stringify(ERC20), provider);
         const usdtToken = new ethers.Contract(usdtAddress, JSON.stringify(ERC20), provider);
-        // const exmToken = new ethers.Contract(exmAddress, JSON.stringify(ERC20), provider);
+        const exmToken = new ethers.Contract(exmAddress, JSON.stringify(ERC20), provider);
+
         const uniswapRouter = new ethers.Contract(uniswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
         const sushiswapRouter = new ethers.Contract(sushiswapRouterAddress, SUSHISWAP2ROUTER_ABI, provider);
         const uniswapFactory = new ethers.Contract(uniswapFactoryAddress, UNISWAP2FACTORY_ABI, provider);
@@ -52,7 +53,8 @@ async function addLiquidity() {
 
         let res;
 
-        console.log("------------------- Approve USDC:VAB, USDT:VAB Pair Tokens -------------------");
+        console.log("------------------- Approve USDC:VAB, USDT:VAB, EMX:VAB Pair Tokens -------------------");
+        // var token_list = [usdcToken, usdtToken, exmToken];
         var token_list = [usdcToken, usdtToken];
         for (var i = 0; i < token_list.length; i++) {
             const token = token_list[i];
@@ -119,38 +121,55 @@ async function addLiquidity() {
         );
         console.log("USDC:VAB", res);
 
-        // USDT:VAB   = 10000:1000000(1:100) => uniswap    
-        console.log("USDT address", usdtAddress);
+        // // USDT:VAB   = 10000:1000000(1:100) => uniswap    
+        // console.log("USDT address", usdtAddress);
         
-        res = await uniswapRouter.connect(deployer).addLiquidity(
-            usdtAddress,
-            vabTokenAddress,
-            getBigNumber(10, 6),
-            getBigNumber(1000),
-            1,
-            1, 
-            deployer.address,
-            deadline,             
-            {from: deployer.address}            
-        );
-        console.log("USDT:VAB", res);
+        // res = await uniswapRouter.connect(deployer).addLiquidity(
+        //     usdtAddress,
+        //     vabTokenAddress,
+        //     getBigNumber(10, 6),
+        //     getBigNumber(1000),
+        //     1,
+        //     1, 
+        //     deployer.address,
+        //     deadline,             
+        //     {from: deployer.address}            
+        // );
+        // console.log("USDT:VAB", res);
 
-        // VAB:MATIC   
-        console.log("WETH1 address", WETH1);
-        console.log("WETH2 address", WETH2);
-        let ethVal = ethers.utils.parseEther('0.00001');
-        console.log("ethVal", ethVal.toString());
+        
+        // // VAB:MATIC   
+        // console.log("WETH1 address", WETH1);
+        // console.log("WETH2 address", WETH2);
+        // let ethVal = ethers.utils.parseEther('0.00001');
+        // console.log("ethVal", ethVal.toString());
 
-        res = await sushiswapRouter.connect(deployer).addLiquidityETH(
-            vabTokenAddress,            
-            getBigNumber(1),          
-            1,
-            1, 
-            deployer.address,
-            deadline,             
-            {from: deployer.address, value: ethVal}            
-        );
-        console.log("MATIC:VAB", res);
+        // res = await sushiswapRouter.connect(deployer).addLiquidityETH(
+        //     vabTokenAddress,            
+        //     getBigNumber(1),          
+        //     1,
+        //     1, 
+        //     deployer.address,
+        //     deadline,             
+        //     {from: deployer.address, value: ethVal}            
+        // );
+        // console.log("MATIC:VAB", res);
+
+        // // EMX:VAB   = 1000:1000(1:1) => uniswap    
+        // console.log("EMX address", exmAddress);
+        
+        // res = await uniswapRouter.connect(deployer).addLiquidity(
+        //     exmAddress,
+        //     vabTokenAddress,
+        //     getBigNumber(1000),
+        //     getBigNumber(1000),
+        //     1,
+        //     1, 
+        //     deployer.address,
+        //     deadline,             
+        //     {from: deployer.address}            
+        // );
+        // console.log("EMX:VAB", res);
     } catch (error) {
         console.error('Error in addLiquidity:', error);
     }
