@@ -63,7 +63,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         address _vabbleDAO,
         address _vabbleFund
     ) external onlyDeployer {     
-        // require(VABBLE_DAO == address(0), "initialize: already initialized");
+        require(VABBLE_DAO == address(0), "initialize: already initialized");
 
         require(_vabbleDAO != address(0), "daoContract: Zero address");
         VABBLE_DAO = _vabbleDAO; 

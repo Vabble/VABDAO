@@ -358,6 +358,38 @@ Vote (0x0c981b89D8B765C9690fB13aB2DE9DBf4BaeC906)
 
 VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
 
+// 2024-02-07-02 Polygon(Mumbai testnet) with get allGovProposalInfo
+FactoryFilmNFT (0x688345CbeEc2D5566946503AcEB1e4De5241428d)
+FactorySubNFT (0x834e107e9d7d36f77d1498F969A8C8AF085F1Aa7)
+FactoryTierNFT (0x72414aF153386bc375c9Bbd28AC523D90493D576)
+GnosisSafeL2 (0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B)
+Ownablee (0x600947714868527932B06ebB883552584ac77b88)
+Property (0xc1E808D277967DEcb7Ef2F4E35765FD937CF2B3a)
+StakingPool (0x13A4Fd9cbB5853A8895C328e2cA178eEF30458B5)
+Subscription (0x13ac5E8FeF1f9864DAac96Fe9FC00F96Cc5ee477)
+UniHelper (0x9B657E2473Dd29983Bda2f3669296E1a0d447D7A)
+VabbleDAO (0xef203910eCee1B8027C452A58B7b13Dec6B4186d)
+VabbleFund (0x37A6381a682aE7b7181e3D66FE59268D03118033)
+Vote (0x0c981b89D8B765C9690fB13aB2DE9DBf4BaeC906)
+
+VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
+
+// 2024-02-09-02 Polygon(MAIN net) with auditor(0x3E5e853d1784cDB519DB1eB175B374FB53FE285C)
+FactoryFilmNFT (0x14d699f12704b861a6c7bfcb41be65cee261669f)
+FactorySubNFT (0xe1B01d3810AcC2B236a73239bB92A19f51D97D29)
+FactoryTierNFT (0xB3f8EB0f726b67BEb61B28ECF0B0Cc2f0c419902)
+GnosisSafeL2 (0xE4b9109aA0e98B1084cA062f395256eb2Ae456dC)
+Ownablee (0x6766b4ade7ebd1870e49815422b7addb9464f812)
+Property (0x58f777963F5c805D82E9Ff50c137fd3D58bD525C)
+StakingPool (0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1)
+Subscription (0xc8EC3b38fc2b7406Fc57095eC92b61183E63718A)
+UniHelper (0x0897E869a32A1D720983f1965b87382e042e54F1)
+VabbleDAO (0x84f5c9D7AD8AB834c45C790B870dD8e47ed403d5)
+VabbleFund (0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda)
+Vote (0xDEFc6ee1A08d2277EAfCa61a92FDbF7FA2cD32f1)
+
+VAB Token 0xea73dcf6f49f8d6ad5a129aaede776d78d418cfd
+
 ** 
 Auditor wallet address: 0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1
 USDC: 0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c    -6   totalSupply: 1000000000000
@@ -376,7 +408,38 @@ VAB:WMATIC= 500000:1000(500:1)   => uniswap
 USDC:WMATIC = 50000:10000(5:1)   => uniswap
 real WMATIC: 0x5B67676a984807a212b1c59eBFc9B3568a474F0a(sushiswap)
 
-npx hardhat node
-npx hardhat size-contracts
+// How to deploy
+Pre-Check
+    1. VAB Tokens: for Mumbai, Polygon
+    2. Wallet Address
+    3. Private Keys (.env)
+        PK1='' // GnosisSafeL2 signer1's private key
+        PK2='' // GnosisSafeL2 signer2's private key
+        DEPLOY_PRIVATE_KEY='' // deployer's private key for mumbai
+        DEPLOY_MAINNET_PRIVATE_KEY='' // deployer's private key for polygon
+
+Step 1: Simulate deploy on local network
+    npx hardhat node
+Step 2: Test Contract Size
+    npx hardhat size-contracts
+    All contract size should not be red color (below 24KB)
+Step 3: Deploy
+    Mumbai:     npm run mumbai:deploy
+    Polygon:    npm run matic:deploy
+Step 4: Verify
+    Mumbai:     npm run mumbai:verify
+    Polygon:    npm run matic:verify
+Step 5: Export ABI
+    Mumbai:     npm run mumbai:export
+    Polygon:    npm run matic:export
+Step 6: deploy contract address on this file
+Step 7: Copy ABI and address to Backend and Frontend
+
 
 npx hardhat run .\scripts\add_liquidity.js --network mumbai
+
+// Please review code and change VAB on script code and run below command
+npx hardhat run .\scripts\add_vab_to_edgepool.js --network mumbai
+npx hardhat run .\scripts\add_vab_to_staking.js --network mumbai
+
+// 

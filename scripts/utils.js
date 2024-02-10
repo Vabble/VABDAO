@@ -27,10 +27,24 @@ const CONFIG = {
     }
   },
   polygon: {
+    // START: Vabble Contracts - Deployed onm Mumbai
+    FactoryFilmNFT: "",
+    FactorySubNFT: "",
+    FactoryTierNFT: "",
+    GnosisSafeL2: "",
+    Ownablee: "",
+    Property: "",
+    StakingPool: "",
+    Subscription: "",
+    UniHelper: "",
+    VabbleDAO: "",
+    VabbleFunding: "",
+    Vote: "",
+
     usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     usdtAdress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-    vabToken: "",
-    walletAddress: "",
+    vabToken: "0xea73dcf6f49f8d6ad5a129aaede776d78d418cfd",
+    walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
@@ -46,18 +60,18 @@ const CONFIG = {
   },
   mumbai: {
     // START: Vabble Contracts - Deployed onm Mumbai
-    FactoryFilmNFT: "0x4c232DB7F11F42b8c3b1866bC1Bd4268806df8d0",
-    FactorySubNFT: "0xF898c28dab25257b8024359443c2A69584B453b5",
-    FactoryTierNFT: "0x2B2eC4Bd0455b4994bAe767346f1D120F91b45E2",
+    FactoryFilmNFT: "0x6d0a9d3da7Bb5EE707FA3542813883ca066a48BE",
+    FactorySubNFT: "0x2Fe9b8C01651c67b752184DBD5D340D3F749B0Cc",
+    FactoryTierNFT: "0xb04460889E0aFCCc869d48d85ed078b8c436Fbd6",
     GnosisSafeL2: "0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B",
-    Ownablee: "0x7831A6F7dB14C459C15BAf10F1B2390ad07d0eF8",
-    Property: "0xcF4D2874e64121a81D4A1717da21F7Bf2051fF3b",
-    StakingPool: "0xb1f18458C9d271E530e01E59Ce91A61b5C45B1Dc",
-    Subscription: "0x6323ed885FB9092393926381EA07A2aDF699aF6f",
-    UniHelper: "0xc030Df38424b9C7c3c365194630a67C6d80F0f6a",
-    VabbleDAO: "0x9eBE3783CE5E74F36C476a5fcdC303213d51fa7d",
-    VabbleFunding: "0x4B36e63D9C11064cFF7694662dCb40E1D3fA1d72",
-    Vote: "0xF5629AB4D19EB19873A15dC16E7a14DeC6B7159B",
+    Ownablee: "0x070bDEA8cEf9B544669dcAf2Ea6A46121D623Ae1",
+    Property: "0x61a63a9B46e77D40D1efa63256b497f52E8560A4",
+    StakingPool: "0x00496B75029ab3a278fb2bAB7198975390f122D8",
+    Subscription: "0x5a8D36b6B44021592fB89BA0E584341913572E6B",
+    UniHelper: "0x5A35C4E966282676E81E9ae8331A6588425f91F2",
+    VabbleDAO: "0x756594a5EAbE5bE436b89057378803894344a4aF",
+    VabbleFunding: "0xb39B962ED941e46Ec78f126718B1c16aa20323a1",
+    Vote: "0x129D867EA53B22227825C606924b7a32186D1325",
     // END: Vabble Contracts - Deployed onm Mumbai
     
     usdcAdress: "0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c",

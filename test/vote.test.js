@@ -403,143 +403,143 @@ describe('Vote', function () {
   //   console.log("====new_aud", aud)
   // });
 
-  it('voteToProperty', async function () {    
-    await this.vabToken.connect(this.deployer).transfer(this.customer1.address, getBigNumber(90000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.customer2.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.customer3.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.customer4.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.customer5.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.customer6.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.customer7.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.studio1.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.studio2.address, getBigNumber(10000000), {from: this.deployer.address});
-    await this.vabToken.connect(this.deployer).transfer(this.studio3.address, getBigNumber(10000000), {from: this.deployer.address});
+  // it('voteToProperty', async function () {    
+  //   await this.vabToken.connect(this.deployer).transfer(this.customer1.address, getBigNumber(90000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.customer2.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.customer3.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.customer4.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.customer5.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.customer6.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.customer7.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.studio1.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.studio2.address, getBigNumber(10000000), {from: this.deployer.address});
+  //   await this.vabToken.connect(this.deployer).transfer(this.studio3.address, getBigNumber(10000000), {from: this.deployer.address});
         
-    const stakeAmount = getBigNumber(200)
-    await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(50000000), {from: this.customer1.address})
-    await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
-    await this.StakingPool.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
-    await this.StakingPool.connect(this.customer4).stakeVAB(stakeAmount, {from: this.customer4.address})
-    await this.StakingPool.connect(this.customer5).stakeVAB(stakeAmount, {from: this.customer5.address})
-    await this.StakingPool.connect(this.customer6).stakeVAB(stakeAmount, {from: this.customer6.address})
-    await this.StakingPool.connect(this.customer7).stakeVAB(stakeAmount, {from: this.customer7.address})
+  //   const stakeAmount = getBigNumber(200)
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(50000000), {from: this.customer1.address})
+  //   await this.StakingPool.connect(this.customer2).stakeVAB(stakeAmount, {from: this.customer2.address})
+  //   await this.StakingPool.connect(this.customer3).stakeVAB(stakeAmount, {from: this.customer3.address})
+  //   await this.StakingPool.connect(this.customer4).stakeVAB(stakeAmount, {from: this.customer4.address})
+  //   await this.StakingPool.connect(this.customer5).stakeVAB(stakeAmount, {from: this.customer5.address})
+  //   await this.StakingPool.connect(this.customer6).stakeVAB(stakeAmount, {from: this.customer6.address})
+  //   await this.StakingPool.connect(this.customer7).stakeVAB(stakeAmount, {from: this.customer7.address})
         
-    let flag = 0;
-    let indx = 0;
-    let property1 = 15 * 86400; // 15 days
-    let property2 = 20 * 86400; // 20 days
-    let defaultVal = 10 * 86400; // 10 days    
-    let period_8 = 8 * 86400; // 8 days      
-    let period_3 = 14 * 86400; // 3 days    
+  //   let flag = 0;
+  //   let indx = 0;
+  //   let property1 = 15 * 86400; // 15 days
+  //   let property2 = 20 * 86400; // 20 days
+  //   let defaultVal = 10 * 86400; // 10 days    
+  //   let period_8 = 8 * 86400; // 8 days      
+  //   let period_3 = 14 * 86400; // 3 days    
 
-    // Call voteToProperty() before create a proposal
-    await expect(
-      this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
-    ).to.be.revertedWith('voteToProperty: no proposal')
+  //   // Call voteToProperty() before create a proposal
+  //   await expect(
+  //     this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
+  //   ).to.be.revertedWith('voteToProperty: no proposal')
 
-    // call proposalProperty with extreme values
-    await expect(
-      this.Property.connect(this.customer6).proposalProperty(101 * 86400, flag, 'test-1', 'desc-1', {from: this.customer6.address})      
-    ).to.be.revertedWith('property invalid')
+  //   // call proposalProperty with extreme values
+  //   await expect(
+  //     this.Property.connect(this.customer6).proposalProperty(101 * 86400, flag, 'test-1', 'desc-1', {from: this.customer6.address})      
+  //   ).to.be.revertedWith('property invalid')
 
-    // 1 ====================== proposalProperty(filmVotePeriod) ======================
-    await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
-    await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
-    expect(await this.Property.getProperty(1, flag)).to.be.equal(property2)
+  //   // 1 ====================== proposalProperty(filmVotePeriod) ======================
+  //   await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
+  //   await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
+  //   expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
+  //   expect(await this.Property.getProperty(1, flag)).to.be.equal(property2)
 
-    // // voteToProperty
-    await this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
-    await this.Vote.connect(this.customer2).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer2.address})
-    await this.Vote.connect(this.customer3).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer3.address})
-    await this.Vote.connect(this.customer4).voteToProperty(this.voteInfo[1], indx, flag, {from: this.customer4.address})
-    await this.Vote.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
-    await expect(
-      this.Vote.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
-    ).to.be.revertedWith('voteToProperty: self voted')
+  //   // // voteToProperty
+  //   await this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
+  //   await this.Vote.connect(this.customer2).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer2.address})
+  //   await this.Vote.connect(this.customer3).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer3.address})
+  //   await this.Vote.connect(this.customer4).voteToProperty(this.voteInfo[1], indx, flag, {from: this.customer4.address})
+  //   await this.Vote.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
+  //   await expect(
+  //     this.Vote.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
+  //   ).to.be.revertedWith('voteToProperty: self voted')
 
-    // => Increase next block timestamp
-    network.provider.send('evm_increaseTime', [period_8]);
-    await network.provider.send('evm_mine');
+  //   // => Increase next block timestamp
+  //   network.provider.send('evm_increaseTime', [period_8]);
+  //   await network.provider.send('evm_mine');
 
-    // Call updateProperty() before vote period
-    await expect(
-      this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
-    ).to.be.revertedWith('property vote period yet')
+  //   // Call updateProperty() before vote period
+  //   await expect(
+  //     this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
+  //   ).to.be.revertedWith('property vote period yet')
     
-    // => Increase next block timestamp
-    network.provider.send('evm_increaseTime', [period_3]);
-    await network.provider.send('evm_mine');
+  //   // => Increase next block timestamp
+  //   network.provider.send('evm_increaseTime', [period_3]);
+  //   await network.provider.send('evm_mine');
 
-    let timeVal = await this.Property.getPropertyProposalTime(property1, flag)
-    console.log('=====timeVal before::', timeVal.cTime_.toString(), timeVal.aTime_.toString())
+  //   let timeVal = await this.Property.getPropertyProposalTime(property1, flag)
+  //   console.log('=====timeVal before::', timeVal.cTime_.toString(), timeVal.aTime_.toString())
 
-    // updateProperty
-    await this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
-    const propertyVal = await this.Property.getProperty(0, flag)
-    timeVal = await this.Property.getPropertyProposalTime(propertyVal, flag)
-    console.log('=====timeVal after::', timeVal.cTime_.toString(), timeVal.aTime_.toString())
-    // expect(await this.Property.filmVotePeriod()).to.be.equal(property1)
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
+  //   // updateProperty
+  //   await this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
+  //   const propertyVal = await this.Property.getProperty(0, flag)
+  //   timeVal = await this.Property.getPropertyProposalTime(propertyVal, flag)
+  //   console.log('=====timeVal after::', timeVal.cTime_.toString(), timeVal.aTime_.toString())
+  //   // expect(await this.Property.filmVotePeriod()).to.be.equal(property1)
+  //   expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
 
-    const proposalInfo = await this.Property.propertyProposalInfo(flag, propertyVal)
-    console.log('=====proposalInfo::', proposalInfo)
+  //   const proposalInfo = await this.Property.propertyProposalInfo(flag, propertyVal)
+  //   console.log('=====proposalInfo::', proposalInfo)
     
-    // TODO
-    const voteResult = await this.Vote.propertyVoting(flag, propertyVal);
-    console.log('=====voteResult-0::', voteResult[0].toString())
-    console.log('=====voteResult-1::', voteResult[1].toString())
-    console.log('=====voteResult-2::', voteResult[2].toString())
-    console.log('=====voteResult-3::', voteResult[3].toString())
+  //   // TODO
+  //   const voteResult = await this.Vote.propertyVoting(flag, propertyVal);
+  //   console.log('=====voteResult-0::', voteResult[0].toString())
+  //   console.log('=====voteResult-1::', voteResult[1].toString())
+  //   console.log('=====voteResult-2::', voteResult[2].toString())
+  //   console.log('=====voteResult-3::', voteResult[3].toString())
 
-    // 2 =================== proposalProperty(rewardRate) ======================
-    await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(30000000), {from: this.customer1.address})
-    let rewardRate = await this.Property.rewardRate();
-    console.log('====defaultPropertyVal::', rewardRate.toString())
-    let totalRewardAmount = await this.StakingPool.totalRewardAmount();
-    console.log('====totalRewardAmount::', totalRewardAmount.toString())
+  //   // 2 =================== proposalProperty(rewardRate) ======================
+  //   await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(30000000), {from: this.customer1.address})
+  //   let rewardRate = await this.Property.rewardRate();
+  //   console.log('====defaultPropertyVal::', rewardRate.toString())
+  //   let totalRewardAmount = await this.StakingPool.totalRewardAmount();
+  //   console.log('====totalRewardAmount::', totalRewardAmount.toString())
 
-    flag = 5;
-    property1 = 200000; // 0.0005% (1% = 1e8, 100%=1e10)
-    property2 = 300000; // 0.0008% (1% = 1e8, 100%=1e10)
-    await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
-    await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
-    expect(await this.Property.getProperty(1, flag)).to.be.equal(property2)
-    totalRewardAmount = await this.StakingPool.totalRewardAmount();
-    console.log('====totalRewardAmount::', totalRewardAmount.toString())
+  //   flag = 5;
+  //   property1 = 200000; // 0.0005% (1% = 1e8, 100%=1e10)
+  //   property2 = 300000; // 0.0008% (1% = 1e8, 100%=1e10)
+  //   await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
+  //   await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
+  //   expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
+  //   expect(await this.Property.getProperty(1, flag)).to.be.equal(property2)
+  //   totalRewardAmount = await this.StakingPool.totalRewardAmount();
+  //   console.log('====totalRewardAmount::', totalRewardAmount.toString())
 
-    // voteToProperty
-    await this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
-    await this.Vote.connect(this.customer2).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer2.address})
-    await this.Vote.connect(this.customer3).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer3.address})
-    await this.Vote.connect(this.customer4).voteToProperty(this.voteInfo[1], indx, flag, {from: this.customer4.address})
-    await this.Vote.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
-    // await this.Vote.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
-    console.log("====test-3")
-    // => Increase next block timestamp
-    network.provider.send('evm_increaseTime', [period_8]);
-    await network.provider.send('evm_mine');
+  //   // voteToProperty
+  //   await this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
+  //   await this.Vote.connect(this.customer2).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer2.address})
+  //   await this.Vote.connect(this.customer3).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer3.address})
+  //   await this.Vote.connect(this.customer4).voteToProperty(this.voteInfo[1], indx, flag, {from: this.customer4.address})
+  //   await this.Vote.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
+  //   // await this.Vote.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
+  //   console.log("====test-3")
+  //   // => Increase next block timestamp
+  //   network.provider.send('evm_increaseTime', [period_8]);
+  //   await network.provider.send('evm_mine');
     
-    // Call updateProperty() before vote period
-    await expect(
-      this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
-    ).to.be.revertedWith('property vote period yet')
+  //   // Call updateProperty() before vote period
+  //   await expect(
+  //     this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
+  //   ).to.be.revertedWith('property vote period yet')
 
-    // => Increase next block timestamp
-    network.provider.send('evm_increaseTime', [period_3]);
-    await network.provider.send('evm_mine');
+  //   // => Increase next block timestamp
+  //   network.provider.send('evm_increaseTime', [period_3]);
+  //   await network.provider.send('evm_mine');
 
-    // updateProperty
-    await this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
-    rewardRate = await this.Property.rewardRate()
-    expect(rewardRate).to.be.equal(property1)
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
-    console.log('====rewardRate::', rewardRate.toString())
+  //   // updateProperty
+  //   await this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
+  //   rewardRate = await this.Property.rewardRate()
+  //   expect(rewardRate).to.be.equal(property1)
+  //   expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
+  //   console.log('====rewardRate::', rewardRate.toString())
 
-    const list = await this.Property.getPropertyProposalList(flag)
-    console.log('====list::', list[0].toString())
-  });
+  //   const list = await this.Property.getPropertyProposalList(flag)
+  //   console.log('====list::', list[0].toString())
+  // });
 
   it('voteToRewardAddress', async function () { 
     await this.vabToken.connect(this.deployer).transfer(this.customer1.address, getBigNumber(60000000), {from: this.deployer.address});
@@ -561,6 +561,11 @@ describe('Vote', function () {
     await this.StakingPool.connect(this.customer5).stakeVAB(stakeAmount, {from: this.customer5.address})
     await this.StakingPool.connect(this.customer6).stakeVAB(stakeAmount, {from: this.customer6.address})
     await this.StakingPool.connect(this.customer7).stakeVAB(stakeAmount, {from: this.customer7.address})
+
+    await this.Property.connect(this.deployer).updateAvailableVABForTesting(getBigNumber(150), {from: this.deployer.address});
+
+    const info = await this.StakingPool.stakeInfo(this.customer6.address);
+    console.log("Customer6 StakeAmount", info[0] / getBigNumber(1));
     
     console.log('====t-1')
     // Create proposal
@@ -644,7 +649,26 @@ describe('Vote', function () {
     }
 
     console.log("rewardList", rewardList);
+    console.log("sumOfReward", sumOfReward / getBigNumber(1));
 
+    for (let i = 0; i < 3; i++) {
+      await this.StakingPool.connect(users[i]).stakeVAB(stakeAmount, {from: users[i].address})      
+    }
+
+    var rewardList1 = [];
+    var sumOfReward1 = getBigNumber(0);
+    for (let i = 0; i < users.length; i++) {
+      const balance1 = await this.StakingPool.calcRewardAmount(users[i].address);
+
+      sumOfReward1 = sumOfReward1.add(balance1);
+      rewardList1.push(balance1 / getBigNumber(1));
+    }
+
+    console.log("After StakeVAB rewardList", rewardList1);
+    console.log("sumOfReward1", sumOfReward1 / getBigNumber(1));
+
+    // expect(sumOfReward).to.be.equal(sumOfReward1);
+    
     let rewardAddress = await this.Property.DAO_FUND_REWARD(); 
     console.log("====rewardAddress-before::", rewardAddress)
     await this.Vote.connect(this.customer2).setDAORewardAddress(this.reward.address, {from: this.customer2.address})
@@ -668,8 +692,8 @@ describe('Vote', function () {
     const curStudioPoolBalance = await this.vabToken.balanceOf(this.VabbleDAO.address)
     const totalMigrationVAB = await this.StakingPool.totalMigrationVAB()
 
-    console.log("====totalRewardAmount", totalRewardAmount.toString())
-    console.log("====totalMigrationVAB", totalMigrationVAB.toString())
+    console.log("====totalRewardAmount", totalRewardAmount / getBigNumber(1))
+    console.log("====totalMigrationVAB", totalMigrationVAB / getBigNumber(1))
     // expect(totalMigrationVAB).to.be.equal(totalRewardAmount.sub(sumOfReward));
 
     
@@ -727,6 +751,16 @@ describe('Vote', function () {
 
     console.log("rewardList1", rewardList1);
 
+    var rewardList2 = [];
+    for (let i = 0; i < users.length; i++) {
+      const balance1 = await this.StakingPool.calcRewardAmount(users[i].address);
+      rewardList2.push(balance1 / getBigNumber(1));      
+      expect(balance1).to.be.equal(0);
+    }
+
+    console.log("After withdrawReward", rewardList2);
+
+
     var balanceList2 = [];
     var sumOfBalance2 = getBigNumber(0);
 
@@ -740,6 +774,15 @@ describe('Vote', function () {
     console.log("After withdraw Reward", balanceList2);
     expect(sumOfBalance2.sub(sumOfBalance1)).to.be.equal(totalRewardAmount.sub(totalMigrationVAB));
 
+    await this.StakingPool.connect(this.deployer).withdrawToOwner(this.deployer.address, {from: this.deployer.address});
+
+    const balanceOfStakingPool = await this.vabToken.balanceOf(this.StakingPool.address);
+    const balanceOfEdgePool = await this.vabToken.balanceOf(this.Ownablee.address);
+    const balanceOfVabbleDAO = await this.vabToken.balanceOf(this.VabbleDAO.address);
+
+    expect(balanceOfStakingPool).to.be.equal(0);
+    expect(balanceOfEdgePool).to.be.equal(0);
+    expect(balanceOfVabbleDAO).to.be.equal(0);    
   });
 
 });

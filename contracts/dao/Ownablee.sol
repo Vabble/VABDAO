@@ -74,7 +74,7 @@ contract Ownablee is IOwnablee {
         address _stakingPool
     ) external onlyDeployer {
         // TODO - N3-3 updated(add below line)
-        // require(VABBLE_DAO == address(0), "setupVote: already setup");
+        require(VABBLE_DAO == address(0), "setupVote: already setup");
 
         require(_vote != address(0), "setupVote: bad Vote Contract address");
         VOTE = _vote;    

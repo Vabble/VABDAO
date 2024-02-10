@@ -96,6 +96,7 @@ contract StakingPool is ReentrancyGuard {
         address _vote
     ) external onlyDeployer {
         // TODO - N3-3 updated(add below line)
+        require(VABBLE_DAO == address(0), "initialize: already initialized");
    
         require(_vabbleDAO != address(0), "initializePool: Zero vabbleDAO address");
         VABBLE_DAO = _vabbleDAO; 
@@ -130,6 +131,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
+        si.outstandingReward += calcCurrentRewardAmount(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
         si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
@@ -189,6 +191,9 @@ contract StakingPool is ReentrancyGuard {
             si.stakeAmount = si.stakeAmount + rewardAmount;
             si.stakeTime = block.timestamp;
             si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
+            si.outstandingReward = 0;
+
+            totalStakingAmount += rewardAmount;
 
             emit RewardContinued(msg.sender, _isCompound);
         } else {
@@ -212,8 +217,8 @@ contract StakingPool is ReentrancyGuard {
         
         emit RewardWithdraw(msg.sender, _amount);
     }
-    // TODO - PVE008 updated(calculate voteCount again)
-    /// @notice Calculate reward amount without extra reward amount for listing film vote
+
+    /// @notice Calculate reward amount with previous reward
     function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
         Stake memory si = stakeInfo[_customer];
         require(si.stakeAmount != 0, "calcRewardAmount: Not staker");
@@ -221,48 +226,59 @@ contract StakingPool is ReentrancyGuard {
         if (migrationStatus > 0) { // if migration is started
             return si.outstandingReward; // just return pre-calcuated amount
         }
-        
+
+        return si.outstandingReward + calcCurrentRewardAmount(_customer);
+    }
+
+    // TODO - PVE008 updated(calculate voteCount again)
+    /// @notice Calculate reward amount without extra reward amount for listing film vote    
+    function calcCurrentRewardAmount(address _customer) public view returns (uint256 amount_) {
+        Stake memory si = stakeInfo[_customer];
+
+        if (si.stakeTime == 0)
+            return 0;
+
         // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
         // require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
-
-        // Get proposal count started in withdrawable period of customer
-        uint256 proposalCount = 0;     
-        uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
-        for(uint256 i = 0; i < proposalCreatedTimeListLength; ++i) { 
-            if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
-                proposalCount += 1;
-            }
-        }
-
-        // Get vote count started in withdrawable period of customer
-        uint256 votedCount = 0;     
-        uint256 proposalVotedTimeListLength = proposalVotedTimeList[_customer].length;
-        for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
-            if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
-                votedCount += 1;
-            }
-        }
 
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
         
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
         uint256 rewardAmount = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
-        
-        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
-        if(proposalCount != 0) {
-            if(votedCount == 0) {
-                rewardAmount = 0;
-            } else {
-                uint256 countVal = (votedCount * 1e4) / proposalCount;
-                rewardAmount = rewardAmount * countVal / 1e4;
-            }
-        }
-        
+
         // If customer is film board member, more rewards(25%)
         if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _customer) == 2) {            
             rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
         } 
+
+        // // Get proposal count started in withdrawable period of customer
+        // uint256 proposalCount = 0;     
+        // uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
+        // for(uint256 i = 0; i < proposalCreatedTimeListLength; ++i) { 
+        //     if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
+        //         proposalCount += 1;
+        //     }
+        // }
+
+        // // Get vote count started in withdrawable period of customer
+        // uint256 votedCount = 0;     
+        // uint256 proposalVotedTimeListLength = proposalVotedTimeList[_customer].length;
+        // for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
+        //     if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
+        //         votedCount += 1;
+        //     }
+        // }
+        
+        // // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
+        // if(proposalCount != 0) {
+        //     if(votedCount == 0) {
+        //         rewardAmount = 0;
+        //     } else {
+        //         uint256 countVal = (votedCount * 1e4) / proposalCount;
+        //         rewardAmount = rewardAmount * countVal / 1e4;
+        //     }
+        // }
         
         amount_ = rewardAmount;
     }
@@ -501,9 +517,9 @@ contract StakingPool is ReentrancyGuard {
 
         // calculate the total amount of reward
         for (uint256 i = 0; i < stakerList.length; ++i) {
-            amount = calcRewardAmount(stakerList[i]);
-            stakeInfo[stakerList[i]].outstandingReward = amount;
-            totalAmount = totalAmount + amount;
+            amount = calcCurrentRewardAmount(stakerList[i]);
+            stakeInfo[stakerList[i]].outstandingReward += amount;
+            totalAmount = totalAmount + stakeInfo[stakerList[i]].outstandingReward;
         }        
 
         if (totalRewardAmount >= totalAmount)
@@ -564,4 +580,25 @@ contract StakingPool is ReentrancyGuard {
     function getWithdrawableTime(address _user) external view returns(uint256 time_) {
         time_ = stakeInfo[_user].withdrawableTime;
     }    
+
+    function withdrawToOwner(address to) external onlyDeployer nonReentrant {
+        if (Helper.isTestNet() == false)
+            return;
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+
+        uint256 sumAmount;
+
+        // withdraw from staking pool
+        uint256 balance = IERC20(vabToken).balanceOf(address(this));
+        Helper.safeTransfer(vabToken, to, balance);
+
+        sumAmount += balance;
+
+        // Transfer VAB of Edge Pool(Ownable)
+        sumAmount += IOwnablee(OWNABLE).withdrawVABFromEdgePool(to);
+        
+        // Transfer VAB of Studio Pool(VabbleDAO)
+        sumAmount += IVabbleDAO(VABBLE_DAO).withdrawVABFromStudioPool(to);
+    }
 }

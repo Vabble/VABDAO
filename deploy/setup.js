@@ -37,95 +37,129 @@ module.exports = async function ({ deployments }) {
 
   const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
   const threshold = await GnosisSafeContract.getThreshold();
-  if (threshold == 0) {
-    await GnosisSafeContract.connect(deployer).setup(
-      [signer1.address, signer2.address], 
-      2, 
-      addressZero, 
-      "0x", 
-      addressZero, 
-      addressZero, 
-      0, 
-      addressZero, 
-      {from: deployer.address}
-    )  
+  try {
+    if (threshold == 0) {
+      await GnosisSafeContract.connect(deployer).setup(
+        [signer1.address, signer2.address], 
+        2, 
+        addressZero, 
+        "0x", 
+        addressZero, 
+        addressZero, 
+        0, 
+        addressZero, 
+        {from: deployer.address}
+      )  
+    }      
+    console.log('complete => GnosisSafeL2 setup')
+  } catch (ex) {
+    console.log('error => GnosisSafeL2 setup', ex)
   }
   
-  console.log('complete => GnosisSafeL2 setup')
+  
 
   const FactoryFilmNFTContract = await ethers.getContractAt('FactoryFilmNFT', this.FactoryFilmNFT.address)
-  await FactoryFilmNFTContract.connect(deployer).initialize(
-    this.VabbleDAO.address, 
-    this.VabbleFund.address, 
-    {from: deployer.address}
-  )
+
+  try {
+    await FactoryFilmNFTContract.connect(deployer).initialize(
+      this.VabbleDAO.address, 
+      this.VabbleFund.address, 
+      {from: deployer.address}
+    )
   
-  console.log('complete => FactoryFilmNFT initialize')
+    console.log('complete => FactoryFilmNFT initialize')
+  } catch (ex) {
+    console.log('error => FactoryFilmNFT initialize', ex);
+  }
 
   const OwnableeContract = await ethers.getContractAt('Ownablee', this.Ownablee.address)
-  await OwnableeContract.connect(deployer).setup(
-    this.Vote.address, 
-    this.VabbleDAO.address, 
-    this.StakingPool.address,
-    {from: deployer.address}
-  )
+  try {    
+    await OwnableeContract.connect(deployer).setup(
+      this.Vote.address, 
+      this.VabbleDAO.address, 
+      this.StakingPool.address,
+      {from: deployer.address}
+    )
+    console.log('complete => Ownablee setup')
+  } catch (ex) {
+    console.log('error => Ownablee setup', ex)
+  }
 
   const vabToken = await OwnableeContract.PAYOUT_TOKEN();
   const usdcAdress = await OwnableeContract.USDC_TOKEN();
   const walletAddress = await OwnableeContract.VAB_WALLET();
   const {usdtAdress} = getConfig(chainId);
   
-  await OwnableeContract.connect(deployer).addDepositAsset(
-    [vabToken, usdcAdress, usdtAdress, CONFIG.addressZero], 
-    {from: deployer.address}
-  )   
+  try {
+    await OwnableeContract.connect(deployer).addDepositAsset(
+      [vabToken, usdcAdress, usdtAdress, CONFIG.addressZero], 
+      {from: deployer.address}
+    )   
 
-  console.log('complete => Ownablee setup')
+    console.log('complete => addDepositAsset')
+  } catch (ex) {
+    console.log('error => addDepositAsset', ex);
+  }
 
   const StakingPoolContract = await ethers.getContractAt('StakingPool', this.StakingPool.address)
-  await StakingPoolContract.connect(deployer).initialize(
-    this.VabbleDAO.address, 
-    this.Property.address, 
-    this.Vote.address,
-    {from: deployer.address}
-  )  
-
-  console.log('complete => StakingPool initialize')
+  try {
+    await StakingPoolContract.connect(deployer).initialize(
+      this.VabbleDAO.address, 
+      this.Property.address, 
+      this.Vote.address,
+      {from: deployer.address}
+    )  
+    console.log('complete => StakingPool initialize')
+  } catch (ex) {
+    console.log('error => StakingPool initialize', ex);
+  }
 
   const UniHelperContract = await ethers.getContractAt('UniHelper', this.UniHelper.address)
-  await UniHelperContract.connect(deployer).setWhiteList(
-    this.VabbleDAO.address, 
-    this.VabbleFund.address, 
-    this.Subscription.address, 
-    this.FactoryFilmNFT.address, 
-    this.FactorySubNFT.address, 
-    {from: deployer.address}
-  )
+  try {
+    await UniHelperContract.connect(deployer).setWhiteList(
+      this.VabbleDAO.address, 
+      this.VabbleFund.address, 
+      this.Subscription.address, 
+      this.FactoryFilmNFT.address, 
+      this.FactorySubNFT.address, 
+      {from: deployer.address}
+    )
 
-  console.log('complete => UniHelper setWhiteList')
+    console.log('complete => UniHelper setWhiteList')
+  } catch (ex) {
+    console.log('error => UniHelper setWhiteList', ex);
+  }
 
   const VabbleFundContract = await ethers.getContractAt('VabbleFund', this.VabbleFund.address)
-  await VabbleFundContract.connect(deployer).initialize(
-    this.VabbleDAO.address, 
-    {from: deployer.address}
-  )
-  
-  console.log('complete => VabbleFund initialize')
+  try {
+    await VabbleFundContract.connect(deployer).initialize(
+      this.VabbleDAO.address, 
+      {from: deployer.address}
+    )
+    
+    console.log('complete => VabbleFund initialize')
+  } catch (ex) {
+    console.log('error => VabbleFund initialize', ex)
+  }
 
   const VoteContract = await ethers.getContractAt('Vote', this.Vote.address)
-  await VoteContract.connect(deployer).initialize(
-    this.VabbleDAO.address, 
-    this.StakingPool.address, 
-    this.Property.address, 
-    {from: deployer.address}
-  )
+  try {
+    await VoteContract.connect(deployer).initialize(
+      this.VabbleDAO.address, 
+      this.StakingPool.address, 
+      this.Property.address, 
+      {from: deployer.address}
+    )
 
-  console.log('complete => Vote initialize')
+    console.log('complete => Vote initialize')
+  } catch (ex) {
+    console.log('error => Vote initialize', ex);
+  }
 
   const PropertyContract = await ethers.getContractAt('Property', this.Property.address);
-  if (isTest(chainId)) {
+  // if (isTest(chainId)) {
     await PropertyContract.updateForTesting();
-  }
+  // }
 
   console.log('complete => Property initialize')
 
@@ -178,33 +212,37 @@ module.exports = async function ({ deployments }) {
   });
 
   // add 10M VAB to Edge Pool
-  let vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
-  console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
+  // if (isTest(chainId)) {
+  //   let vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
+  //   console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
 
-  let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
-  let diff = targetAmount.sub(vab_balance_of_Ownablee);
-  
-  await vabTokenContract.connect(deployer).transfer(
-    this.Ownablee.address, diff, {from: deployer.address}
-  );
+  //   let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
+  //   if (chainId == 137) // polygon 1 VAB
+  //     targetAmount = getBigNumber(1, 0);
 
-  vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
-  console.log("vab_balance_of_Ownablee after", vab_balance_of_Ownablee.toString());
+  //   let diff = targetAmount.sub(vab_balance_of_Ownablee);
+    
+  //   await vabTokenContract.connect(deployer).transfer(
+  //     this.Ownablee.address, diff, {from: deployer.address}
+  //   );
 
-  // add 50M VAB to Edge Pool
-  let totalRewardAmount = await StakingPoolContract.connect(deployer).totalRewardAmount();        
-  console.log("vab_balance_of_totalRewardAmount before", totalRewardAmount.toString());
+  //   vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
+  //   console.log("vab_balance_of_Ownablee after", vab_balance_of_Ownablee.toString());
 
-  targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
-  diff = targetAmount.sub(totalRewardAmount);
+  //   // add 50M VAB to Edge Pool
+  //   let totalRewardAmount = await StakingPoolContract.connect(deployer).totalRewardAmount();        
+  //   console.log("vab_balance_of_totalRewardAmount before", totalRewardAmount.toString());
 
-  if (diff > 0) {
-    await vabTokenContract.connect(deployer).approve(StakingPoolContract.address, targetAmount);
-    await StakingPoolContract.connect(deployer).addRewardToPool(
-      diff, {from: deployer.address}
-    );  
-  } 
-  
+  //   targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
+  //   diff = targetAmount.sub(totalRewardAmount);
+
+  //   if (diff > 0) {
+  //     await vabTokenContract.connect(deployer).approve(StakingPoolContract.address, targetAmount);
+  //     await StakingPoolContract.connect(deployer).addRewardToPool(
+  //       diff, {from: deployer.address}
+  //     );  
+  //   }
+  // }
 };
 
 module.exports.id = 'init'
