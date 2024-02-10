@@ -208,6 +208,7 @@ contract VabbleDAO is ReentrancyGuard {
         require(fInfo.studio == msg.sender, 'cO, E1'); //changeOwner: not film owner
 
         uint256 payeeLength = fInfo.studioPayees.length;  
+        require(payeeLength < 1000, 'cO, E2');
         for(uint256 k = 0; k < payeeLength; k++) {
             if (fInfo.studioPayees[k] == msg.sender)
                 fInfo.studioPayees[k] = newOwner;
@@ -242,19 +243,21 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     function moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) private {
-        uint256 index = array1.length;
+        uint256 arrayLength = array1.length; 
+        require(arrayLength < 1e6, 'mTAA: too many length');
+        uint256 index = arrayLength;
 
-        for(uint256 i = 0; i < array1.length; ++i) {
+        for(uint256 i = 0; i < arrayLength; ++i) {
             if(array1[i] == value) {
                 index = i;
             }
         }
 
-        if (index >= array1.length) return;
+        if (index >= arrayLength) return;
 
         array2.push(value);
         
-        array1[index] = array1[array1.length - 1];
+        array1[index] = array1[arrayLength - 1];
         array1.pop();
     }
 
@@ -364,7 +367,7 @@ contract VabbleDAO is ReentrancyGuard {
     /// @notice Allocate VAB from EdgePool(Ownable) to StudioPool(VabbleDAO) by Auditor
     function allocateFromEdgePool(uint256 _amount) external onlyAuditor nonReentrant {
         uint256 userLength = edgePoolUsers.length;
-        require(userLength < 100000, "bad array");
+        require(userLength < 1e5, "bad array");
 
         IOwnablee(OWNABLE).addToStudioPool(_amount); // Transfer VAB from EdgePool to StudioPool
         StudioPool += _amount;
@@ -511,7 +514,7 @@ contract VabbleDAO is ReentrancyGuard {
 
     function __claimAllReward(uint256[] memory _filmIds) private {     
         uint256 filmLength = _filmIds.length;
-        require(filmLength < 100000, "bad array");
+        require(filmLength < 1e5, "bad array");
         
         uint256 curMonth = monthId.current();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN(); 
