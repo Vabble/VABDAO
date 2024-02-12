@@ -102,6 +102,27 @@ async function addLiquidity() {
             }
         }
 
+        console.log("------------------- Approve VAB/USDC/USDT on uniswap -------------------");
+        token_list = [vabToken, usdcToken, usdtToken];
+
+        for (var i = 0; i < token_list.length; i++) {
+            const token = token_list[i];
+            totalSupply = await token.totalSupply();
+            console.log((i + 1) + "'s totalSupply", totalSupply.toString());       
+
+            await token.connect(deployer).approve(
+                uniswapRouterAddress,
+                totalSupply,
+                {from: deployer.address}
+            );
+
+            await token.connect(deployer).approve(
+                sushiswapRouterAddress,
+                totalSupply,
+                {from: deployer.address}
+            );
+        }
+
         const deadline = Date.now() + 60 * 60 * 24 * 7;
         console.log("deadline", deadline);
 
