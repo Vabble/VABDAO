@@ -138,7 +138,7 @@ contract Property is ReentrancyGuard {
         agentVotePeriod = 10 days;
         disputeGracePeriod = 30 days;  
         propertyVotePeriod = 10 days;
-        rewardVotePeriod = 30 days;
+        rewardVotePeriod = 7 days;
         lockPeriod = 30 days;
         maxAllowPeriod = 90 days;        
         filmRewardClaimPeriod =30 days;
