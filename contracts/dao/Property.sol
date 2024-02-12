@@ -194,8 +194,8 @@ contract Property is ReentrancyGuard {
             90 days, // 7:
             500 * (10**IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $500)
             10 * 1e8, // 9: percent(10%) 
-            10000000 * (10**IERC20Metadata(usdcToken).decimals()),    // 10: amount in cash(usd dollar - $10,000,000)
-            10000000 * (10**IERC20Metadata(usdcToken).decimals()),  // 11: amount in cash(usd dollar - $10,000,000)
+            10 * 1e6 * (10**IERC20Metadata(usdcToken).decimals()),    // 10: amount in cash(usd dollar - $10,000,000)
+            10 * 1e6 * (10**IERC20Metadata(usdcToken).decimals()),  // 11: amount in cash(usd dollar - $10,000,000)
             10 * 1e8,    // 12: 10%
             10, // 13: 
             10 * 1e8, // 14: 10%

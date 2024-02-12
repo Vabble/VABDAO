@@ -274,7 +274,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
     /// @dev Remove user from investor list
     function __removeFilmInvestorList(uint256 _filmId, address _user) private { 
         uint256 length = filmInvestorList[_filmId].length;
-        require(length < 100000, "removeFilmInvestorList: bad length");
+        require(length < 1e5, "removeFilmInvestorList: bad length");
         for(uint256 k = 0; k < length; ++k) { 
             if(_user == filmInvestorList[_filmId][k]) {
                 filmInvestorList[_filmId][k] = filmInvestorList[_filmId][filmInvestorList[_filmId].length - 1];
