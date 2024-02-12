@@ -138,7 +138,7 @@ contract Property is ReentrancyGuard {
         agentVotePeriod = 10 days;
         disputeGracePeriod = 30 days;  
         propertyVotePeriod = 10 days;
-        rewardVotePeriod = 30 days;
+        rewardVotePeriod = 7 days;
         lockPeriod = 30 days;
         maxAllowPeriod = 90 days;        
         filmRewardClaimPeriod =30 days;
@@ -155,7 +155,7 @@ contract Property is ReentrancyGuard {
         proposalFeeAmount = 20 * (10**IERC20Metadata(usdcToken).decimals());   // amount in cash(usd dollar - $20)
         minDepositAmount = 50 * (10**IERC20Metadata(usdcToken).decimals());    // amount in cash(usd dollar - $50)
         maxDepositAmount = 5000 * (10**IERC20Metadata(usdcToken).decimals());  // amount in cash(usd dollar - $5000)
-        availableVABAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 75M        
+        availableVABAmount = 50 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 50M        
         subscriptionAmount = 299 * (10**IERC20Metadata(usdcToken).decimals()) / 100;   // amount in cash(usd dollar - $2.99)
         minVoteCount = 1;//5;
 
@@ -209,22 +209,22 @@ contract Property is ReentrancyGuard {
     
     }
 
-    function updateForTesting() external onlyDeployer nonReentrant {
-        // if (Helper.isTestNet() == false)
-        //     return;
+    // function updateForTesting() external onlyDeployer nonReentrant {
+    //     // if (Helper.isTestNet() == false)
+    //     //     return;
 
-        filmVotePeriod = 10 minutes;     // 10 days;   
-        boardVotePeriod = 10 minutes;    // 14 days;
-        agentVotePeriod = 10 minutes;    // 10 days;      
-        disputeGracePeriod = 10 minutes;    // 30 days
-        propertyVotePeriod = 10 minutes; // 10 days;
-        rewardVotePeriod = 10 minutes;   // 30 days;
-        lockPeriod = 10 minutes;         //30 days;
-        filmRewardClaimPeriod = 10 minutes; // 30 days;
+    //     filmVotePeriod = 10 minutes;     // 10 days;   
+    //     boardVotePeriod = 10 minutes;    // 14 days;
+    //     agentVotePeriod = 10 minutes;    // 10 days;      
+    //     disputeGracePeriod = 10 minutes;    // 30 days
+    //     propertyVotePeriod = 10 minutes; // 10 days;
+    //     rewardVotePeriod = 10 minutes;   // 30 days;
+    //     lockPeriod = 10 minutes;         //30 days;
+    //     filmRewardClaimPeriod = 10 minutes; // 30 days;
 
-        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-        availableVABAmount = (10**IERC20Metadata(vabToken).decimals()); // 1        
-    }
+    //     address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+    //     availableVABAmount = (10**IERC20Metadata(vabToken).decimals()); // 1        
+    // }
 
     /// =================== proposals for replacing auditor ==============
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
@@ -725,46 +725,46 @@ contract Property is ReentrancyGuard {
 
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
-    function updatePropertyForTesting(
-        uint256 _value, 
-        uint256 _flag
-    ) external onlyDeployer {
-        if (Helper.isTestNet() == false)
-            return;
+    // function updatePropertyForTesting(
+    //     uint256 _value, 
+    //     uint256 _flag
+    // ) external onlyDeployer {
+    //     if (Helper.isTestNet() == false)
+    //         return;
             
-        require(_value != 0, "test: Zero value");
+    //     require(_value != 0, "test: Zero value");
 
-        if(_flag == 0) filmVotePeriod = _value;
-        else if(_flag == 1) agentVotePeriod = _value;
-        else if(_flag == 2) disputeGracePeriod = _value;
-        else if(_flag == 3) propertyVotePeriod = _value;
-        else if(_flag == 4) lockPeriod = _value;
-        else if(_flag == 5) rewardRate = _value;
-        else if(_flag == 6) filmRewardClaimPeriod = _value;
-        else if(_flag == 7) maxAllowPeriod = _value;
-        else if(_flag == 8) proposalFeeAmount = _value;
-        else if(_flag == 9) fundFeePercent = _value;
-        else if(_flag == 10) minDepositAmount = _value;
-        else if(_flag == 11) maxDepositAmount = _value;
-        else if(_flag == 12) maxMintFeePercent = _value;
-        else if(_flag == 13) availableVABAmount = _value;
-        else if(_flag == 14) boardVotePeriod = _value;
-        else if(_flag == 15) boardVoteWeight = _value;
-        else if(_flag == 16) rewardVotePeriod = _value;
-        else if(_flag == 17) subscriptionAmount = _value;
-        else if(_flag == 18) minVoteCount = _value;        
-        else if(_flag == 19) minStakerCountPercent = _value;                
-    }
+    //     if(_flag == 0) filmVotePeriod = _value;
+    //     else if(_flag == 1) agentVotePeriod = _value;
+    //     else if(_flag == 2) disputeGracePeriod = _value;
+    //     else if(_flag == 3) propertyVotePeriod = _value;
+    //     else if(_flag == 4) lockPeriod = _value;
+    //     else if(_flag == 5) rewardRate = _value;
+    //     else if(_flag == 6) filmRewardClaimPeriod = _value;
+    //     else if(_flag == 7) maxAllowPeriod = _value;
+    //     else if(_flag == 8) proposalFeeAmount = _value;
+    //     else if(_flag == 9) fundFeePercent = _value;
+    //     else if(_flag == 10) minDepositAmount = _value;
+    //     else if(_flag == 11) maxDepositAmount = _value;
+    //     else if(_flag == 12) maxMintFeePercent = _value;
+    //     else if(_flag == 13) availableVABAmount = _value;
+    //     else if(_flag == 14) boardVotePeriod = _value;
+    //     else if(_flag == 15) boardVoteWeight = _value;
+    //     else if(_flag == 16) rewardVotePeriod = _value;
+    //     else if(_flag == 17) subscriptionAmount = _value;
+    //     else if(_flag == 18) minVoteCount = _value;        
+    //     else if(_flag == 19) minStakerCountPercent = _value;                
+    // }
 
     /// @dev Update the rewardAddress for only testing in the testnet
     // function updateDAOFundForTesting(address _address) external onlyDeployer {        
     //     DAO_FUND_REWARD = _address;    
     // }        
 
-    function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
-        if (Helper.isTestNet() == false)
-            return;
+    // function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
+    //     if (Helper.isTestNet() == false)
+    //         return;
 
-        availableVABAmount = _amount;
-    }     
+    //     availableVABAmount = _amount;
+    // }     
 }

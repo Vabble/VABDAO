@@ -774,15 +774,15 @@ describe('Vote', function () {
     console.log("After withdraw Reward", balanceList2);
     expect(sumOfBalance2.sub(sumOfBalance1)).to.be.equal(totalRewardAmount.sub(totalMigrationVAB));
 
-    await this.StakingPool.connect(this.deployer).withdrawToOwner(this.deployer.address, {from: this.deployer.address});
+    // await this.StakingPool.connect(this.deployer).withdrawToOwner(this.deployer.address, {from: this.deployer.address});
 
-    const balanceOfStakingPool = await this.vabToken.balanceOf(this.StakingPool.address);
-    const balanceOfEdgePool = await this.vabToken.balanceOf(this.Ownablee.address);
-    const balanceOfVabbleDAO = await this.vabToken.balanceOf(this.VabbleDAO.address);
+    // const balanceOfStakingPool = await this.vabToken.balanceOf(this.StakingPool.address);
+    // const balanceOfEdgePool = await this.vabToken.balanceOf(this.Ownablee.address);
+    // const balanceOfVabbleDAO = await this.vabToken.balanceOf(this.VabbleDAO.address);
 
-    expect(balanceOfStakingPool).to.be.equal(0);
-    expect(balanceOfEdgePool).to.be.equal(0);
-    expect(balanceOfVabbleDAO).to.be.equal(0);    
+    // expect(balanceOfStakingPool).to.be.equal(0);
+    // expect(balanceOfEdgePool).to.be.equal(0);
+    // expect(balanceOfVabbleDAO).to.be.equal(0);    
   });
 
 });

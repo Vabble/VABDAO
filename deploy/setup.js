@@ -158,7 +158,7 @@ module.exports = async function ({ deployments }) {
 
   const PropertyContract = await ethers.getContractAt('Property', this.Property.address);
   // if (isTest(chainId)) {
-    await PropertyContract.updateForTesting();
+    // await PropertyContract.updateForTesting();
   // }
 
   console.log('complete => Property initialize')
