@@ -18,7 +18,7 @@ contract StakingPool is ReentrancyGuard {
     event TokenStaked(address indexed staker, uint256 stakeAmount);
     event TokenUnstaked(address indexed unstaker, uint256 unStakeAmount);
     event RewardWithdraw(address indexed staker, uint256 rewardAmount);
-    event RewardContinued(address indexed indexed staker, uint256 isCompound);
+    event RewardContinued(address indexed staker, uint256 isCompound);
     event AllFundWithdraw(address to, uint256 amount);
     event RewardAdded(uint256 totalRewardAmount, uint256 rewardAmount, address indexed contributor);
     event VABDeposited(address indexed customer, uint256 amount);
