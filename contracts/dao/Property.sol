@@ -725,36 +725,36 @@ contract Property is ReentrancyGuard {
 
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
-    // function updatePropertyForTesting(
-    //     uint256 _value, 
-    //     uint256 _flag
-    // ) external onlyDeployer {
-    //     if (Helper.isTestNet() == false)
-    //         return;
+    function updatePropertyForTesting(
+        uint256 _value, 
+        uint256 _flag
+    ) external onlyDeployer {
+        if (Helper.isTestNet() == false)
+            return;
             
-    //     require(_value != 0, "test: Zero value");
+        require(_value != 0, "test: Zero value");
 
-    //     if(_flag == 0) filmVotePeriod = _value;
-    //     else if(_flag == 1) agentVotePeriod = _value;
-    //     else if(_flag == 2) disputeGracePeriod = _value;
-    //     else if(_flag == 3) propertyVotePeriod = _value;
-    //     else if(_flag == 4) lockPeriod = _value;
-    //     else if(_flag == 5) rewardRate = _value;
-    //     else if(_flag == 6) filmRewardClaimPeriod = _value;
-    //     else if(_flag == 7) maxAllowPeriod = _value;
-    //     else if(_flag == 8) proposalFeeAmount = _value;
-    //     else if(_flag == 9) fundFeePercent = _value;
-    //     else if(_flag == 10) minDepositAmount = _value;
-    //     else if(_flag == 11) maxDepositAmount = _value;
-    //     else if(_flag == 12) maxMintFeePercent = _value;
-    //     else if(_flag == 13) availableVABAmount = _value;
-    //     else if(_flag == 14) boardVotePeriod = _value;
-    //     else if(_flag == 15) boardVoteWeight = _value;
-    //     else if(_flag == 16) rewardVotePeriod = _value;
-    //     else if(_flag == 17) subscriptionAmount = _value;
-    //     else if(_flag == 18) minVoteCount = _value;        
-    //     else if(_flag == 19) minStakerCountPercent = _value;                
-    // }
+        if(_flag == 0) filmVotePeriod = _value;
+        else if(_flag == 1) agentVotePeriod = _value;
+        else if(_flag == 2) disputeGracePeriod = _value;
+        else if(_flag == 3) propertyVotePeriod = _value;
+        else if(_flag == 4) lockPeriod = _value;
+        else if(_flag == 5) rewardRate = _value;
+        else if(_flag == 6) filmRewardClaimPeriod = _value;
+        else if(_flag == 7) maxAllowPeriod = _value;
+        else if(_flag == 8) proposalFeeAmount = _value;
+        else if(_flag == 9) fundFeePercent = _value;
+        else if(_flag == 10) minDepositAmount = _value;
+        else if(_flag == 11) maxDepositAmount = _value;
+        else if(_flag == 12) maxMintFeePercent = _value;
+        else if(_flag == 13) availableVABAmount = _value;
+        else if(_flag == 14) boardVotePeriod = _value;
+        else if(_flag == 15) boardVoteWeight = _value;
+        else if(_flag == 16) rewardVotePeriod = _value;
+        else if(_flag == 17) subscriptionAmount = _value;
+        else if(_flag == 18) minVoteCount = _value;        
+        else if(_flag == 19) minStakerCountPercent = _value;                
+    }
 
     /// @dev Update the rewardAddress for only testing in the testnet
     // function updateDAOFundForTesting(address _address) external onlyDeployer {        
