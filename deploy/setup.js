@@ -157,9 +157,9 @@ module.exports = async function ({ deployments }) {
   }
 
   const PropertyContract = await ethers.getContractAt('Property', this.Property.address);
-  // if (isTest(chainId)) {
-    // await PropertyContract.updateForTesting();
-  // }
+  if (isTest(chainId)) {
+    await PropertyContract.updateForTesting();
+  }
 
   console.log('complete => Property initialize')
 
@@ -212,37 +212,37 @@ module.exports = async function ({ deployments }) {
   });
 
   // add 10M VAB to Edge Pool
-  // if (isTest(chainId)) {
-  //   let vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
-  //   console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
+  if (isTest(chainId)) {
+    let vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
+    console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
 
-  //   let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
-  //   if (chainId == 137) // polygon 1 VAB
-  //     targetAmount = getBigNumber(1, 0);
+    let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
+    if (chainId == 137) // polygon 1 VAB
+      targetAmount = getBigNumber(1, 0);
 
-  //   let diff = targetAmount.sub(vab_balance_of_Ownablee);
+    let diff = targetAmount.sub(vab_balance_of_Ownablee);
     
-  //   await vabTokenContract.connect(deployer).transfer(
-  //     this.Ownablee.address, diff, {from: deployer.address}
-  //   );
+    await vabTokenContract.connect(deployer).transfer(
+      this.Ownablee.address, diff, {from: deployer.address}
+    );
 
-  //   vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
-  //   console.log("vab_balance_of_Ownablee after", vab_balance_of_Ownablee.toString());
+    vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
+    console.log("vab_balance_of_Ownablee after", vab_balance_of_Ownablee.toString());
 
-  //   // add 50M VAB to Edge Pool
-  //   let totalRewardAmount = await StakingPoolContract.connect(deployer).totalRewardAmount();        
-  //   console.log("vab_balance_of_totalRewardAmount before", totalRewardAmount.toString());
+    // add 50M VAB to Edge Pool
+    let totalRewardAmount = await StakingPoolContract.connect(deployer).totalRewardAmount();        
+    console.log("vab_balance_of_totalRewardAmount before", totalRewardAmount.toString());
 
-  //   targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
-  //   diff = targetAmount.sub(totalRewardAmount);
+    targetAmount = getBigNumber(5, 25); // 50M VAB to Staking Pool
+    diff = targetAmount.sub(totalRewardAmount);
 
-  //   if (diff > 0) {
-  //     await vabTokenContract.connect(deployer).approve(StakingPoolContract.address, targetAmount);
-  //     await StakingPoolContract.connect(deployer).addRewardToPool(
-  //       diff, {from: deployer.address}
-  //     );  
-  //   }
-  // }
+    if (diff > 0) {
+      await vabTokenContract.connect(deployer).approve(StakingPoolContract.address, targetAmount);
+      await StakingPoolContract.connect(deployer).addRewardToPool(
+        diff, {from: deployer.address}
+      );  
+    }
+  }
 };
 
 module.exports.id = 'init'
