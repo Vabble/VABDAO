@@ -73,6 +73,13 @@ module.exports = {
       accounts: {
         mnemonic,
       },  
+      // accounts: [
+      //   {
+      //     privateKey: privateKey,
+      //     balance: "1000000000000000000000000000"
+      //   }
+      // ],
+
       // gasPrice: 22500000000,
       gasMultiplier: 2,
       // throwOnTransactionFailures: true,

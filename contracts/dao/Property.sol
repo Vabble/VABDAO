@@ -209,57 +209,57 @@ contract Property is ReentrancyGuard {
     
     }
 
-    // function updateForTesting() external onlyDeployer nonReentrant {
-    //     // if (Helper.isTestNet() == false)
-    //     //     return;
+    function updateForTesting() external onlyDeployer nonReentrant {
+        // if (Helper.isTestNet() == false)
+        //     return;
 
-    //     filmVotePeriod = 10 minutes;     // 10 days;   
-    //     boardVotePeriod = 10 minutes;    // 14 days;
-    //     agentVotePeriod = 10 minutes;    // 10 days;      
-    //     disputeGracePeriod = 10 minutes;    // 30 days
-    //     propertyVotePeriod = 10 minutes; // 10 days;
-    //     rewardVotePeriod = 10 minutes;   // 30 days;
-    //     lockPeriod = 10 minutes;         //30 days;
-    //     filmRewardClaimPeriod = 10 minutes; // 30 days;
+        filmVotePeriod = 10 minutes;     // 10 days;   
+        boardVotePeriod = 10 minutes;    // 14 days;
+        agentVotePeriod = 10 minutes;    // 10 days;      
+        disputeGracePeriod = 10 minutes;    // 30 days
+        propertyVotePeriod = 10 minutes; // 10 days;
+        rewardVotePeriod = 10 minutes;   // 30 days;
+        lockPeriod = 10 minutes;         //30 days;
+        filmRewardClaimPeriod = 10 minutes; // 30 days;
 
-    //     address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-    //     availableVABAmount = (10**IERC20Metadata(vabToken).decimals()); // 1        
-    // }
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        availableVABAmount = (10**IERC20Metadata(vabToken).decimals()); // 1        
+    }
 
     /// =================== proposals for replacing auditor ==============
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
-    // function proposalAuditor(
-    //     address _agent,
-    //     string memory _title,
-    //     string memory _description
-    // ) external onlyMajor nonReentrant {
-    //     require(
-    //         _agent != address(0) && IOwnablee(OWNABLE).auditor() != _agent && isGovWhitelist[1][_agent] == 0, 
-    //         "proposalAuditor: Already auditor or candidate or zero"
-    //     );         
+    function proposalAuditor(
+        address _agent,
+        string memory _title,
+        string memory _description
+    ) external onlyMajor nonReentrant {
+        require(
+            _agent != address(0) && IOwnablee(OWNABLE).auditor() != _agent && isGovWhitelist[1][_agent] == 0, 
+            "proposalAuditor: Already auditor or candidate or zero"
+        );         
 
-    //     __paidFee(proposalFeeAmount);
+        __paidFee(proposalFeeAmount);
 
-    //     agentList.push(_agent);
-    //     governanceProposalCount += 1;
-    //     userGovernProposalCount[msg.sender] += 1;        
-    //     isGovWhitelist[1][_agent] = 1;
-    //     govProposer[1][_agent] = msg.sender;
+        agentList.push(_agent);
+        governanceProposalCount += 1;
+        userGovernProposalCount[msg.sender] += 1;        
+        isGovWhitelist[1][_agent] = 1;
+        govProposer[1][_agent] = msg.sender;
 
-    //     Proposal storage ap = govProposalInfo[1][_agent];
-    //     ap.title = _title;
-    //     ap.description = _description;
-    //     ap.createTime = block.timestamp;
-    //     ap.creator = msg.sender;
-    //     ap.status = Helper.Status.LISTED;
+        Proposal storage ap = govProposalInfo[1][_agent];
+        ap.title = _title;
+        ap.description = _description;
+        ap.createTime = block.timestamp;
+        ap.creator = msg.sender;
+        ap.status = Helper.Status.LISTED;
 
-    //     allGovProposalInfo[1].push(_agent);
+        allGovProposalInfo[1].push(_agent);
 
-    //     // add timestap to array for calculating rewards
-    //     IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add timestap to array for calculating rewards
+        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-    //     emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
-    // }
+        emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
+    }
 
     /// @notice Check if proposal fee transferred from studio to stakingPool
     // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
@@ -323,49 +323,49 @@ contract Property is ReentrancyGuard {
 
     // =================== FilmBoard proposal ====================
     /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
-    // function proposalFilmBoard(
-    //     address _member, 
-    //     string memory _title,
-    //     string memory _description
-    // ) external onlyStaker nonReentrant {
-    //     require(
-    //         _member != address(0) && isGovWhitelist[2][_member] == 0, 
-    //         "proposalFilmBoard: Already candidate or zero"
-    //     );     
-    //     __paidFee(proposalFeeAmount);
+    function proposalFilmBoard(
+        address _member, 
+        string memory _title,
+        string memory _description
+    ) external onlyStaker nonReentrant {
+        require(
+            _member != address(0) && isGovWhitelist[2][_member] == 0, 
+            "proposalFilmBoard: Already candidate or zero"
+        );     
+        __paidFee(proposalFeeAmount);
 
-    //     filmBoardCandidates.push(_member);
-    //     isGovWhitelist[2][_member] = 1;
-    //     governanceProposalCount += 1;
-    //     userGovernProposalCount[msg.sender] += 1;
-    //     govProposer[2][_member] = msg.sender;
+        filmBoardCandidates.push(_member);
+        isGovWhitelist[2][_member] = 1;
+        governanceProposalCount += 1;
+        userGovernProposalCount[msg.sender] += 1;
+        govProposer[2][_member] = msg.sender;
 
-    //     Proposal storage bp = govProposalInfo[2][_member];
-    //     bp.title = _title;
-    //     bp.description = _description;
-    //     bp.createTime = block.timestamp;
-    //     bp.creator = msg.sender;
-    //     bp.status = Helper.Status.LISTED;
+        Proposal storage bp = govProposalInfo[2][_member];
+        bp.title = _title;
+        bp.description = _description;
+        bp.createTime = block.timestamp;
+        bp.creator = msg.sender;
+        bp.status = Helper.Status.LISTED;
 
-    //     allGovProposalInfo[2].push(_member);
+        allGovProposalInfo[2].push(_member);
 
-    //     // add timestap to array for calculating rewards
-    //     IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add timestap to array for calculating rewards
+        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-    //     emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
-    // }
+        emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
+    }
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
-    // function removeFilmBoardMember(address _member) external onlyStaker nonReentrant {
-    //     require(isGovWhitelist[2][_member] == 2, "removeFilmBoardMember: Not Film board member");        
-    //     require(maxAllowPeriod < block.timestamp - IVote(VOTE).getLastVoteTime(_member), 'maxAllowPeriod');
-    //     require(maxAllowPeriod > block.timestamp - IStakingPool(STAKING_POOL).lastfundProposalCreateTime(), 'lastfundProposalCreateTime');
+    function removeFilmBoardMember(address _member) external onlyStaker nonReentrant {
+        require(isGovWhitelist[2][_member] == 2, "removeFilmBoardMember: Not Film board member");        
+        require(maxAllowPeriod < block.timestamp - IVote(VOTE).getLastVoteTime(_member), 'maxAllowPeriod');
+        require(maxAllowPeriod > block.timestamp - IStakingPool(STAKING_POOL).lastfundProposalCreateTime(), 'lastfundProposalCreateTime');
 
-    //     __removeCandidate(_member, 4);
-    //     isGovWhitelist[2][_member] = 0;
+        __removeCandidate(_member, 4);
+        isGovWhitelist[2][_member] = 0;
 
-    //     emit FilmBoardMemberRemoved(msg.sender, _member);
-    // }
+        emit FilmBoardMemberRemoved(msg.sender, _member);
+    }
 
     /// @notice Get proposal list(flag=1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
     function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
@@ -379,103 +379,103 @@ contract Property is ReentrancyGuard {
 
     // ===================properties proposal ====================
     /// @notice proposals for properties
-    // function proposalProperty(
-    //     uint256 _property, 
-    //     uint256 _flag,
-    //     string memory _title,
-    //     string memory _description
-    // ) external onlyStaker nonReentrant {
-    //     require(
-    //         _property != 0 && _flag >= 0 && _flag < maxPropertyList.length && isPropertyWhitelist[_flag][_property] == 0, 
-    //         "proposalProperty: Already candidate or zero value"
-    //     );          
+    function proposalProperty(
+        uint256 _property, 
+        uint256 _flag,
+        string memory _title,
+        string memory _description
+    ) external onlyStaker nonReentrant {
+        require(
+            _property != 0 && _flag >= 0 && _flag < maxPropertyList.length && isPropertyWhitelist[_flag][_property] == 0, 
+            "proposalProperty: Already candidate or zero value"
+        );          
 
-    //     require(minPropertyList[_flag] <= _property && _property <= maxPropertyList[_flag], "property invalid");
+        require(minPropertyList[_flag] <= _property && _property <= maxPropertyList[_flag], "property invalid");
         
-    //     __paidFee(proposalFeeAmount);
+        __paidFee(proposalFeeAmount);
 
-    //     if(_flag == 0) {
-    //         require(filmVotePeriod != _property, "proposalProperty: Already filmVotePeriod");
-    //         filmVotePeriodList.push(_property);
-    //     } else if(_flag == 1) {
-    //         require(agentVotePeriod != _property, "proposalProperty: Already agentVotePeriod");
-    //         agentVotePeriodList.push(_property);
-    //     } else if(_flag == 2) {
-    //         require(disputeGracePeriod != _property, "proposalProperty: Already disputeGracePeriod");
-    //         disputeGracePeriodList.push(_property);
-    //     } else if(_flag == 3) {
-    //         require(propertyVotePeriod != _property, "proposalProperty: Already propertyVotePeriod");
-    //         propertyVotePeriodList.push(_property);
-    //     } else if(_flag == 4) {
-    //         require(lockPeriod != _property, "proposalProperty: Already lockPeriod");
-    //         lockPeriodList.push(_property);
-    //     } else if(_flag == 5) {
-    //         require(rewardRate != _property, "proposalProperty: Already rewardRate");
-    //         rewardRateList.push(_property);
-    //     } else if(_flag == 6) {
-    //         require(filmRewardClaimPeriod != _property, "proposalProperty: Already filmRewardClaimPeriod");
-    //         filmRewardClaimPeriodList.push(_property);
-    //     } else if(_flag == 7) {
-    //         require(maxAllowPeriod != _property, "proposalProperty: Already maxAllowPeriod");
-    //         maxAllowPeriodList.push(_property);
-    //     } else if(_flag == 8) {
-    //         require(proposalFeeAmount != _property, "proposalProperty: Already proposalFeeAmount");
-    //         proposalFeeAmountList.push(_property);
-    //     } else if(_flag == 9) {
-    //         require(fundFeePercent != _property, "proposalProperty: Already fundFeePercent");
-    //         fundFeePercentList.push(_property);
-    //     } else if(_flag == 10) {
-    //         require(minDepositAmount != _property, "proposalProperty: Already minDepositAmount");
-    //         minDepositAmountList.push(_property);
-    //     } else if(_flag == 11) {
-    //         require(maxDepositAmount != _property, "proposalProperty: Already maxDepositAmount");
-    //         maxDepositAmountList.push(_property);
-    //     } else if(_flag == 12) {
-    //         require(maxMintFeePercent != _property, "proposalProperty: Already maxMintFeePercent");
-    //         maxMintFeePercentList.push(_property);
-    //     } else if(_flag == 13) {
-    //         require(minVoteCount != _property, "proposalProperty: Already minVoteCount");
-    //         minVoteCountList.push(_property);
-    //     } else if(_flag == 14) {
-    //         require(minStakerCountPercent != _property, "proposalProperty: Already minStakerCountPercent");
-    //         minStakerCountPercentList.push(_property);
-    //     } else if(_flag == 15) {
-    //         require(availableVABAmount != _property, "proposalProperty: Already availableVABAmount");
-    //         availableVABAmountList.push(_property);
-    //     } else if(_flag == 16) {
-    //         require(boardVotePeriod != _property, "proposalProperty: Already boardVotePeriod");
-    //         boardVotePeriodList.push(_property);
-    //     } else if(_flag == 17) {
-    //         require(boardVoteWeight != _property, "proposalProperty: Already boardVoteWeight");
-    //         boardVoteWeightList.push(_property);
-    //     } else if(_flag == 18) {
-    //         require(rewardVotePeriod != _property, "proposalProperty: Already rewardVotePeriod");
-    //         rewardVotePeriodList.push(_property);
-    //     } else if(_flag == 19) {
-    //         require(subscriptionAmount != _property, "proposalProperty: Already subscriptionAmount");
-    //         subscriptionAmountList.push(_property);
-    //     } else if(_flag == 20) {
-    //         require(boardRewardRate != _property, "proposalProperty: Already boardRewardRate");
-    //         boardRewardRateList.push(_property);
-    //     }          
+        if(_flag == 0) {
+            require(filmVotePeriod != _property, "proposalProperty: Already filmVotePeriod");
+            filmVotePeriodList.push(_property);
+        } else if(_flag == 1) {
+            require(agentVotePeriod != _property, "proposalProperty: Already agentVotePeriod");
+            agentVotePeriodList.push(_property);
+        } else if(_flag == 2) {
+            require(disputeGracePeriod != _property, "proposalProperty: Already disputeGracePeriod");
+            disputeGracePeriodList.push(_property);
+        } else if(_flag == 3) {
+            require(propertyVotePeriod != _property, "proposalProperty: Already propertyVotePeriod");
+            propertyVotePeriodList.push(_property);
+        } else if(_flag == 4) {
+            require(lockPeriod != _property, "proposalProperty: Already lockPeriod");
+            lockPeriodList.push(_property);
+        } else if(_flag == 5) {
+            require(rewardRate != _property, "proposalProperty: Already rewardRate");
+            rewardRateList.push(_property);
+        } else if(_flag == 6) {
+            require(filmRewardClaimPeriod != _property, "proposalProperty: Already filmRewardClaimPeriod");
+            filmRewardClaimPeriodList.push(_property);
+        } else if(_flag == 7) {
+            require(maxAllowPeriod != _property, "proposalProperty: Already maxAllowPeriod");
+            maxAllowPeriodList.push(_property);
+        } else if(_flag == 8) {
+            require(proposalFeeAmount != _property, "proposalProperty: Already proposalFeeAmount");
+            proposalFeeAmountList.push(_property);
+        } else if(_flag == 9) {
+            require(fundFeePercent != _property, "proposalProperty: Already fundFeePercent");
+            fundFeePercentList.push(_property);
+        } else if(_flag == 10) {
+            require(minDepositAmount != _property, "proposalProperty: Already minDepositAmount");
+            minDepositAmountList.push(_property);
+        } else if(_flag == 11) {
+            require(maxDepositAmount != _property, "proposalProperty: Already maxDepositAmount");
+            maxDepositAmountList.push(_property);
+        } else if(_flag == 12) {
+            require(maxMintFeePercent != _property, "proposalProperty: Already maxMintFeePercent");
+            maxMintFeePercentList.push(_property);
+        } else if(_flag == 13) {
+            require(minVoteCount != _property, "proposalProperty: Already minVoteCount");
+            minVoteCountList.push(_property);
+        } else if(_flag == 14) {
+            require(minStakerCountPercent != _property, "proposalProperty: Already minStakerCountPercent");
+            minStakerCountPercentList.push(_property);
+        } else if(_flag == 15) {
+            require(availableVABAmount != _property, "proposalProperty: Already availableVABAmount");
+            availableVABAmountList.push(_property);
+        } else if(_flag == 16) {
+            require(boardVotePeriod != _property, "proposalProperty: Already boardVotePeriod");
+            boardVotePeriodList.push(_property);
+        } else if(_flag == 17) {
+            require(boardVoteWeight != _property, "proposalProperty: Already boardVoteWeight");
+            boardVoteWeightList.push(_property);
+        } else if(_flag == 18) {
+            require(rewardVotePeriod != _property, "proposalProperty: Already rewardVotePeriod");
+            rewardVotePeriodList.push(_property);
+        } else if(_flag == 19) {
+            require(subscriptionAmount != _property, "proposalProperty: Already subscriptionAmount");
+            subscriptionAmountList.push(_property);
+        } else if(_flag == 20) {
+            require(boardRewardRate != _property, "proposalProperty: Already boardRewardRate");
+            boardRewardRateList.push(_property);
+        }          
         
-    //     governanceProposalCount += 1;     
-    //     userGovernProposalCount[msg.sender] += 1;         
-    //     isPropertyWhitelist[_flag][_property] = 1;
-    //     propertyProposer[_flag][_property] = msg.sender;
+        governanceProposalCount += 1;     
+        userGovernProposalCount[msg.sender] += 1;         
+        isPropertyWhitelist[_flag][_property] = 1;
+        propertyProposer[_flag][_property] = msg.sender;
 
-    //     Proposal storage pp = propertyProposalInfo[_flag][_property];
-    //     pp.title = _title;
-    //     pp.description = _description;
-    //     pp.createTime = block.timestamp;
-    //     pp.creator = msg.sender;
-    //     pp.status = Helper.Status.LISTED;
+        Proposal storage pp = propertyProposalInfo[_flag][_property];
+        pp.title = _title;
+        pp.description = _description;
+        pp.createTime = block.timestamp;
+        pp.creator = msg.sender;
+        pp.status = Helper.Status.LISTED;
 
-    //     // add timestap to array for calculating rewards
-    //     IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add timestap to array for calculating rewards
+        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
-    //     emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
-    // }
+        emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
+    }
 
     function getProperty(
         uint256 _index, 
@@ -564,70 +564,70 @@ contract Property is ReentrancyGuard {
         aTime_ = propertyProposalInfo[_flag][_property].approveTime;
     }
     
-    // function updatePropertyProposal(
-    //     uint256 _property, 
-    //     uint256 _flag, 
-    //     uint256 _approveStatus
-    // ) external onlyVote {
-    //     // update approve time
-    //     propertyProposalInfo[_flag][_property].approveTime = block.timestamp;
+    function updatePropertyProposal(
+        uint256 _property, 
+        uint256 _flag, 
+        uint256 _approveStatus
+    ) external onlyVote {
+        // update approve time
+        propertyProposalInfo[_flag][_property].approveTime = block.timestamp;
 
-    //     // update approve status
-    //     if(_approveStatus == 1) {
-    //         propertyProposalInfo[_flag][_property].status = Helper.Status.UPDATED;
-    //         isPropertyWhitelist[_flag][_property] = 2;
-    //     } else {
-    //         propertyProposalInfo[_flag][_property].status = Helper.Status.REJECTED;
-    //         isPropertyWhitelist[_flag][_property] = 0;
-    //     }
+        // update approve status
+        if(_approveStatus == 1) {
+            propertyProposalInfo[_flag][_property].status = Helper.Status.UPDATED;
+            isPropertyWhitelist[_flag][_property] = 2;
+        } else {
+            propertyProposalInfo[_flag][_property].status = Helper.Status.REJECTED;
+            isPropertyWhitelist[_flag][_property] = 0;
+        }
 
-    //     // update main item
-    //     if(_approveStatus == 1) {
-    //         if(_flag == 0) {
-    //             filmVotePeriod = _property;
-    //         } else if(_flag == 1) {
-    //             agentVotePeriod = _property;
-    //         } else if(_flag == 2) {
-    //             disputeGracePeriod = _property;
-    //         } else if(_flag == 3) {
-    //             propertyVotePeriod = _property;
-    //         } else if(_flag == 4) {
-    //             lockPeriod = _property;
-    //         } else if(_flag == 5) {
-    //             rewardRate = _property;
-    //         } else if(_flag == 6) {
-    //             filmRewardClaimPeriod = _property;
-    //         } else if(_flag == 7) {
-    //             maxAllowPeriod = _property;
-    //         } else if(_flag == 8) {
-    //             proposalFeeAmount = _property;
-    //         } else if(_flag == 9) {
-    //             fundFeePercent = _property;
-    //         } else if(_flag == 10) {
-    //             minDepositAmount = _property;
-    //         } else if(_flag == 11) {
-    //             maxDepositAmount = _property;
-    //         } else if(_flag == 12) {
-    //             maxMintFeePercent = _property;
-    //         } else if(_flag == 13) {
-    //             minVoteCount = _property;
-    //         } else if(_flag == 14) {
-    //             minStakerCountPercent = _property;
-    //         } else if(_flag == 15) {
-    //             availableVABAmount = _property;
-    //         } else if(_flag == 16) {
-    //             boardVotePeriod = _property;
-    //         } else if(_flag == 17) {
-    //             boardVoteWeight = _property;
-    //         } else if(_flag == 18) {
-    //             rewardVotePeriod = _property;
-    //         } else if(_flag == 19) {
-    //             subscriptionAmount = _property;
-    //         } else if(_flag == 20) {
-    //             boardRewardRate = _property;
-    //         } 
-    //     }
-    // }
+        // update main item
+        if(_approveStatus == 1) {
+            if(_flag == 0) {
+                filmVotePeriod = _property;
+            } else if(_flag == 1) {
+                agentVotePeriod = _property;
+            } else if(_flag == 2) {
+                disputeGracePeriod = _property;
+            } else if(_flag == 3) {
+                propertyVotePeriod = _property;
+            } else if(_flag == 4) {
+                lockPeriod = _property;
+            } else if(_flag == 5) {
+                rewardRate = _property;
+            } else if(_flag == 6) {
+                filmRewardClaimPeriod = _property;
+            } else if(_flag == 7) {
+                maxAllowPeriod = _property;
+            } else if(_flag == 8) {
+                proposalFeeAmount = _property;
+            } else if(_flag == 9) {
+                fundFeePercent = _property;
+            } else if(_flag == 10) {
+                minDepositAmount = _property;
+            } else if(_flag == 11) {
+                maxDepositAmount = _property;
+            } else if(_flag == 12) {
+                maxMintFeePercent = _property;
+            } else if(_flag == 13) {
+                minVoteCount = _property;
+            } else if(_flag == 14) {
+                minStakerCountPercent = _property;
+            } else if(_flag == 15) {
+                availableVABAmount = _property;
+            } else if(_flag == 16) {
+                boardVotePeriod = _property;
+            } else if(_flag == 17) {
+                boardVoteWeight = _property;
+            } else if(_flag == 18) {
+                rewardVotePeriod = _property;
+            } else if(_flag == 19) {
+                subscriptionAmount = _property;
+            } else if(_flag == 20) {
+                boardRewardRate = _property;
+            } 
+        }
+    }
     
     /// @notice Get agent/board/pool proposal created time
     // agent=>1, board=>2, pool=>3
@@ -725,46 +725,46 @@ contract Property is ReentrancyGuard {
 
     ///================ @dev Update the property value for only testing in the testnet
     // we won't deploy this function in the mainnet
-    // function updatePropertyForTesting(
-    //     uint256 _value, 
-    //     uint256 _flag
-    // ) external onlyDeployer {
-    //     if (Helper.isTestNet() == false)
-    //         return;
+    function updatePropertyForTesting(
+        uint256 _value, 
+        uint256 _flag
+    ) external onlyDeployer {
+        if (Helper.isTestNet() == false)
+            return;
             
-    //     require(_value != 0, "test: Zero value");
+        require(_value != 0, "test: Zero value");
 
-    //     if(_flag == 0) filmVotePeriod = _value;
-    //     else if(_flag == 1) agentVotePeriod = _value;
-    //     else if(_flag == 2) disputeGracePeriod = _value;
-    //     else if(_flag == 3) propertyVotePeriod = _value;
-    //     else if(_flag == 4) lockPeriod = _value;
-    //     else if(_flag == 5) rewardRate = _value;
-    //     else if(_flag == 6) filmRewardClaimPeriod = _value;
-    //     else if(_flag == 7) maxAllowPeriod = _value;
-    //     else if(_flag == 8) proposalFeeAmount = _value;
-    //     else if(_flag == 9) fundFeePercent = _value;
-    //     else if(_flag == 10) minDepositAmount = _value;
-    //     else if(_flag == 11) maxDepositAmount = _value;
-    //     else if(_flag == 12) maxMintFeePercent = _value;
-    //     else if(_flag == 13) availableVABAmount = _value;
-    //     else if(_flag == 14) boardVotePeriod = _value;
-    //     else if(_flag == 15) boardVoteWeight = _value;
-    //     else if(_flag == 16) rewardVotePeriod = _value;
-    //     else if(_flag == 17) subscriptionAmount = _value;
-    //     else if(_flag == 18) minVoteCount = _value;        
-    //     else if(_flag == 19) minStakerCountPercent = _value;                
-    // }
+        if(_flag == 0) filmVotePeriod = _value;
+        else if(_flag == 1) agentVotePeriod = _value;
+        else if(_flag == 2) disputeGracePeriod = _value;
+        else if(_flag == 3) propertyVotePeriod = _value;
+        else if(_flag == 4) lockPeriod = _value;
+        else if(_flag == 5) rewardRate = _value;
+        else if(_flag == 6) filmRewardClaimPeriod = _value;
+        else if(_flag == 7) maxAllowPeriod = _value;
+        else if(_flag == 8) proposalFeeAmount = _value;
+        else if(_flag == 9) fundFeePercent = _value;
+        else if(_flag == 10) minDepositAmount = _value;
+        else if(_flag == 11) maxDepositAmount = _value;
+        else if(_flag == 12) maxMintFeePercent = _value;
+        else if(_flag == 13) availableVABAmount = _value;
+        else if(_flag == 14) boardVotePeriod = _value;
+        else if(_flag == 15) boardVoteWeight = _value;
+        else if(_flag == 16) rewardVotePeriod = _value;
+        else if(_flag == 17) subscriptionAmount = _value;
+        else if(_flag == 18) minVoteCount = _value;        
+        else if(_flag == 19) minStakerCountPercent = _value;                
+    }
 
     /// @dev Update the rewardAddress for only testing in the testnet
     // function updateDAOFundForTesting(address _address) external onlyDeployer {        
     //     DAO_FUND_REWARD = _address;    
     // }        
 
-    // function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
-    //     if (Helper.isTestNet() == false)
-    //         return;
+    function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
+        if (Helper.isTestNet() == false)
+            return;
 
-    //     availableVABAmount = _amount;
-    // }     
+        availableVABAmount = _amount;
+    }     
 }
