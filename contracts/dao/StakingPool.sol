@@ -252,33 +252,33 @@ contract StakingPool is ReentrancyGuard {
             rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
         } 
 
-        // // Get proposal count started in withdrawable period of customer
-        // uint256 proposalCount = 0;     
-        // uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
-        // for(uint256 i = 0; i < proposalCreatedTimeListLength; ++i) { 
-        //     if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
-        //         proposalCount += 1;
-        //     }
-        // }
+        // Get proposal count started in withdrawable period of customer
+        uint256 proposalCount = 0;     
+        uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
+        for(uint256 i = 0; i < proposalCreatedTimeListLength; ++i) { 
+            if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
+                proposalCount += 1;
+            }
+        }
 
-        // // Get vote count started in withdrawable period of customer
-        // uint256 votedCount = 0;     
-        // uint256 proposalVotedTimeListLength = proposalVotedTimeList[_customer].length;
-        // for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
-        //     if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
-        //         votedCount += 1;
-        //     }
-        // }
+        // Get vote count started in withdrawable period of customer
+        uint256 votedCount = 0;     
+        uint256 proposalVotedTimeListLength = proposalVotedTimeList[_customer].length;
+        for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
+            if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
+                votedCount += 1;
+            }
+        }
         
-        // // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
-        // if(proposalCount != 0) {
-        //     if(votedCount == 0) {
-        //         rewardAmount = 0;
-        //     } else {
-        //         uint256 countVal = (votedCount * 1e4) / proposalCount;
-        //         rewardAmount = rewardAmount * countVal / 1e4;
-        //     }
-        // }
+        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
+        if(proposalCount != 0) {
+            if(votedCount == 0) {
+                rewardAmount = 0;
+            } else {
+                uint256 countVal = (votedCount * 1e4) / proposalCount;
+                rewardAmount = rewardAmount * countVal / 1e4;
+            }
+        }
         
         amount_ = rewardAmount;
     }

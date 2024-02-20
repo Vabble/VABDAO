@@ -761,10 +761,10 @@ contract Property is ReentrancyGuard {
     //     DAO_FUND_REWARD = _address;    
     // }        
 
-    // function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
-    //     if (Helper.isTestNet() == false)
-    //         return;
+    function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
+        if (Helper.isTestNet() == false)
+            return;
 
-    //     availableVABAmount = _amount;
-    // }     
+        availableVABAmount = _amount;
+    }     
 }
