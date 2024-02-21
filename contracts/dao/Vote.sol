@@ -276,24 +276,14 @@ contract Vote is IVote, ReentrancyGuard {
             );
         }
 
-        // get proposer
-        address proposer = IProperty(DAO_PROPERTY).getGovProposer(1, _agent);
-
-        // get stake amount of proposer
-        uint256 proposerAmount = IStakingPool(STAKING_POOL).getStakeAmount(proposer);
-
         uint256 reason = 0;
         uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2;
-
-
-        // must be over 51%, dispute staking amount must be less than 150m
-        //  a user must have staked double the stake of the initial proposer of the auditor change proposal 
-        // in order to make dispute
+        // must be over 51%, staking amount must be over 75m, dispute staking amount must be less than 150m
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
             av.stakeAmount_1 > av.stakeAmount_2 &&
-            av.disputeVABAmount < 2 * proposerAmount
-            // av.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
+            // av.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() &&
+            av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IOwnablee(OWNABLE).replaceAuditor(_agent);
             IProperty(DAO_PROPERTY).updateGovProposal(_agent, 1, 1);
@@ -305,7 +295,9 @@ contract Vote is IVote, ReentrancyGuard {
                 reason = 1;
             } else if(av.stakeAmount_1 <= av.stakeAmount_2) {
                 reason = 2;
-            } else if(av.disputeVABAmount >= 2 * proposerAmount) {
+            } else if(av.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
+                reason = 3;
+            } else if(av.disputeVABAmount >= 2 * IProperty(DAO_PROPERTY).availableVABAmount()) {
                 reason = 4;
             } else {
                 reason = 10;
