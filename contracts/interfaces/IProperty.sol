@@ -22,7 +22,8 @@ interface IProperty {
     function boardVoteWeight() external view returns (uint256);       // 17 
     function rewardVotePeriod() external view returns (uint256);      // 18    
     function subscriptionAmount() external view returns (uint256);    // 19
-    function boardRewardRate() external view returns (uint256);       // 20
+    function boardRewardRate() external view returns (uint256);       // 20      
+    function disputLimitAmount() external view returns (uint256);    
 
     function getProperty(uint256 _propertyIndex, uint256 _flag) external view returns (uint256 property_);
 
