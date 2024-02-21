@@ -305,7 +305,7 @@ contract Vote is IVote, ReentrancyGuard {
                 reason = 1;
             } else if(av.stakeAmount_1 <= av.stakeAmount_2) {
                 reason = 2;
-            } else if(av.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
+            } else if(av.stakeAmount_1 <= 2 * proposerAmount) {
                 reason = 3;
             } else if(av.disputeVABAmount >= 2 * IProperty(DAO_PROPERTY).availableVABAmount()) {
                 reason = 4;
