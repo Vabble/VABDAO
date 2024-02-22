@@ -108,7 +108,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Add reward token(VAB)
     function addRewardToPool(uint256 _amount) external onlyNormal nonReentrant {
-        require(_amount != 0, 'addRewardToPool: Zero amount');
+        require(_amount > 0, 'addRewardToPool: Zero amount');
         
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
         totalRewardAmount = totalRewardAmount + _amount;
@@ -118,20 +118,19 @@ contract StakingPool is ReentrancyGuard {
     
     /// @notice Staking VAB token by staker
     function stakeVAB(uint256 _amount) external onlyNormal nonReentrant {
-        require(_amount != 0, "stakeVAB: Zero amount");
-        // TODO - N2 updated(remove msg.sender != address(0))
+        require(_amount > 0, "stakeVAB: Zero amount");
 
         uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
         require(_amount > minAmount, "stakeVAB: less amount than 0.01");
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
 
-        Stake storage si = stakeInfo[msg.sender];
+        Stake storage si = stakeInfo[msg.sender];        
         if(si.stakeAmount == 0 && si.stakeTime == 0) {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
-        si.outstandingReward += calcCurrentRewardAmount(msg.sender);
+        // si.outstandingReward = calcRewardAmount(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
         si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
@@ -151,7 +150,7 @@ contract StakingPool is ReentrancyGuard {
 
         // first, withdraw reward
         uint256 rewardAmount = calcRewardAmount(msg.sender);
-        if(totalRewardAmount >= rewardAmount && rewardAmount != 0) {
+        if(totalRewardAmount >= rewardAmount && rewardAmount > 0) {
             __withdrawReward(rewardAmount);
         }
 
@@ -182,9 +181,13 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Withdraw reward.  isCompound=1 => compound reward, isCompound=0 => withdraw
     function withdrawReward(uint256 _isCompound) external nonReentrant {
-        require(stakeInfo[msg.sender].stakeAmount != 0, "withdrawReward: Zero staking amount");
+        require(_isCompound == 0 || _isCompound == 1, "invalid compound");
+        require(stakeInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
         require(migrationStatus > 0 || block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
         
+        if(migrationStatus > 0)
+            require(_isCompound == 0, "migration is on going");
+
         uint256 rewardAmount = calcRewardAmount(msg.sender);
         if(_isCompound == 1) {
             Stake storage si = stakeInfo[msg.sender];
@@ -197,7 +200,7 @@ contract StakingPool is ReentrancyGuard {
 
             emit RewardContinued(msg.sender, _isCompound);
         } else {
-            require(rewardAmount != 0, "withdrawReward: zero reward amount");
+            require(rewardAmount > 0, "withdrawReward: zero reward amount");
             require(totalRewardAmount >= rewardAmount, "withdrawReward: Insufficient total reward amount");
 
             __withdrawReward(rewardAmount);
@@ -219,38 +222,39 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Calculate reward amount with previous reward
-    function calcRewardAmount(address _customer) public view returns (uint256 amount_) {
-        Stake memory si = stakeInfo[_customer];
-        require(si.stakeAmount != 0, "calcRewardAmount: Not staker");
+    function calcRewardAmount(address _user) public view returns (uint256) {
+        Stake memory si = stakeInfo[_user];
+        
+        if(si.stakeAmount == 0) return 0;
 
         if (migrationStatus > 0) { // if migration is started
-            return si.outstandingReward; // just return pre-calcuated amount
-        }
-
-        return si.outstandingReward + calcCurrentRewardAmount(_customer);
+            return si.outstandingReward; // just return pre-calculated amount
+        } else {
+            return calcStakingRewards(_user) + calcPendingRewards(_user);
+        }        
     }
 
-    // TODO - PVE008 updated(calculate voteCount again)
-    /// @notice Calculate reward amount without extra reward amount for listing film vote    
-    function calcCurrentRewardAmount(address _customer) public view returns (uint256 amount_) {
-        Stake memory si = stakeInfo[_customer];
+    /// @notice Calculate staking rewards
+    function calcStakingRewards(address _user) public view returns (uint256 amount_) {
+        Stake memory si = stakeInfo[_user];
 
-        if (si.stakeTime == 0)
-            return 0;
-
-        // uint256 minAmount = 10**IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
-        // require(si.stakeAmount > minAmount, "calcRewardAmount: less amount than 0.01");
+        if (si.stakeAmount == 0) return 0;
 
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
         
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
-        uint256 rewardAmount = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
+        amount_ = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
 
-        // If customer is film board member, more rewards(25%)
-        if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _customer) == 2) {            
-            rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+        // If user is film board member, more rewards(25%)
+        if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _user) == 2) {            
+            amount_ += amount_ * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
         } 
+    }
+
+    /// @notice Calculate pending rewards
+    function calcPendingRewards(address _user) public view returns (uint256) { 
+        Stake memory si = stakeInfo[_user];   
 
         // Get proposal count started in withdrawable period of customer
         uint256 proposalCount = 0;     
@@ -263,24 +267,23 @@ contract StakingPool is ReentrancyGuard {
 
         // Get vote count started in withdrawable period of customer
         uint256 votedCount = 0;     
-        uint256 proposalVotedTimeListLength = proposalVotedTimeList[_customer].length;
+        uint256 proposalVotedTimeListLength = proposalVotedTimeList[_user].length;
         for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
-            if(proposalVotedTimeList[_customer][i] > si.stakeTime && proposalVotedTimeList[_customer][i] < si.withdrawableTime) {
+            if(proposalVotedTimeList[_user][i] > si.stakeTime && proposalVotedTimeList[_user][i] < si.withdrawableTime) {
                 votedCount += 1;
             }
         }
         
-        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
-        if(proposalCount != 0) {
-            if(votedCount == 0) {
-                rewardAmount = 0;
-            } else {
+        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
+        if(proposalCount > 0) {
+            if(votedCount == 0) return 0;
+            else {
                 uint256 countVal = (votedCount * 1e4) / proposalCount;
-                rewardAmount = rewardAmount * countVal / 1e4;
+                return calcStakingRewards(_user) * countVal / 1e4;
             }
-        }
-        
-        amount_ = rewardAmount;
+        } else {
+            return 0;
+        } 
     }
 
     // 500 * 1e10 / 1000 = 50*1e8 = 50% 
@@ -298,37 +301,37 @@ contract StakingPool is ReentrancyGuard {
         uint256 _voteCount,
         bool isBoardMember      // filmboard member or not
     ) external view returns (uint256 amount_) {
-        require(_period != 0, "apr: zero period");
-        require(_stakeAmount != 0, "apr: zero staker");
+        require(_period > 0, "apr: zero period");
+        require(_stakeAmount > 0, "apr: zero staker");
         require(_proposalCount >= _voteCount, "apr: bad vote count");
 
         // Annual rate = daily rate x period(ex: 365)
         uint256 rewardPercent = __rewardPercent(_stakeAmount); // 0.0125*1e8 = 0.0125%        
-        uint256 rewardAmount = totalRewardAmount * rewardPercent * _period / 1e10;
-        
-        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
-        if(_proposalCount != 0) {
-            if(_voteCount == 0) {
-                rewardAmount = 0;
-            } else {
-                uint256 countVal = (_voteCount * 1e4) / _proposalCount;
-                rewardAmount = rewardAmount * countVal / 1e4;
-            }
-        }
+        uint256 stakingRewards = totalRewardAmount * rewardPercent * _period / 1e10;
         
         // If customer is film board member, more rewards(25%)
         if(isBoardMember) {            
-            rewardAmount = rewardAmount + rewardAmount * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
-        }        
+            stakingRewards += stakingRewards * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+        }  
 
-        amount_ = rewardAmount;
+        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
+        uint256 pendingRewards;
+        if(_proposalCount > 0) {
+            if(_voteCount == 0) pendingRewards = 0;
+            else {
+                uint256 countVal = (_voteCount * 1e4) / _proposalCount;
+                pendingRewards = stakingRewards * countVal / 1e4;
+            }
+        }              
+
+        amount_ = stakingRewards + pendingRewards;
     }
     
     // =================== Customer deposit/withdraw VAB START =================    
     /// @notice Deposit VAB token from customer for renting the films
     function depositVAB(uint256 _amount) external onlyNormal nonReentrant {
         require(msg.sender != address(0), "depositVAB: Zero address");
-        require(_amount != 0, "depositVAB: Zero amount");
+        require(_amount > 0, "depositVAB: Zero amount");
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
         userRentInfo[msg.sender].vabAmount += _amount;
@@ -339,7 +342,7 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Pending Withdraw VAB token by customer
     function pendingWithdraw(uint256 _amount) external nonReentrant {
         require(msg.sender != address(0), "pendingWithdraw: zero address");
-        require(_amount != 0, "pendingWithdraw: zero VAB amount");
+        require(_amount > 0, "pendingWithdraw: zero VAB amount");
         require(!userRentInfo[msg.sender].pending, "pendingWithdraw: already pending status");
 
         uint256 cAmount = userRentInfo[msg.sender].vabAmount;
@@ -354,7 +357,7 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Approve pending-withdraw of given customers by Auditor
     function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
-        require(_customers.length != 0 && _customers.length < 1000, "approvePendingWithdraw: No customer");
+        require(_customers.length > 0 && _customers.length < 1000, "approvePendingWithdraw: No customer");
         
         uint256[] memory withdrawAmounts = new uint256[](_customers.length);
         // Transfer withdrawable amount to _customers
@@ -369,7 +372,7 @@ contract StakingPool is ReentrancyGuard {
     /// @dev Transfer VAB token to user's withdraw request
     function __transferVABWithdraw(address _to) private returns (uint256) {
         uint256 payAmount = userRentInfo[_to].withdrawAmount;
-        require(payAmount != 0, "approveWithdraw: zero withdraw amount");
+        require(payAmount > 0, "approveWithdraw: zero withdraw amount");
         require(payAmount <= userRentInfo[_to].vabAmount, "approveWithdraw: insufficuent amount");
         require(userRentInfo[_to].pending, "approveWithdraw: no pending");
 
@@ -412,12 +415,12 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Deny pending-withdraw of given customers by Auditor
     function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
-        require(_customers.length != 0 && _customers.length < 1000, "denyWithdraw: bad customers");
+        require(_customers.length > 0 && _customers.length < 1000, "denyWithdraw: bad customers");
 
         // Release withdrawable amount for _customers
         uint256 customerLength = _customers.length;
         for(uint256 i = 0; i < customerLength; ++i) {
-            require(userRentInfo[_customers[i]].withdrawAmount != 0, "denyWithdraw: zero withdraw amount");
+            require(userRentInfo[_customers[i]].withdrawAmount > 0, "denyWithdraw: zero withdraw amount");
             require(userRentInfo[_customers[i]].pending, "denyWithdraw: no pending");
             
             userRentInfo[_customers[i]].withdrawAmount = 0;
@@ -491,9 +494,9 @@ contract StakingPool is ReentrancyGuard {
 
         uint256 sumAmount;
         // Transfer rewards of Staking Pool        
-        if(IERC20(vabToken).balanceOf(address(this)) >= totalMigrationVAB && totalMigrationVAB != 0) {
+        if(IERC20(vabToken).balanceOf(address(this)) >= totalMigrationVAB && totalMigrationVAB > 0) {
             Helper.safeTransfer(vabToken, to, totalMigrationVAB);
-            sumAmount = sumAmount + totalMigrationVAB;
+            sumAmount += sumAmount + totalMigrationVAB;
             totalRewardAmount = totalRewardAmount - totalMigrationVAB;
             totalMigrationVAB = 0;     
         }        
@@ -513,13 +516,13 @@ contract StakingPool is ReentrancyGuard {
         require(msg.sender == DAO_PROPERTY, "caller is not Property contract");
         
         uint256 amount = 0;
-        uint256 totalAmount = 0;
+        uint256 totalAmount = 0; // sum of each staker's rewards
 
         // calculate the total amount of reward
         for (uint256 i = 0; i < stakerList.length; ++i) {
-            amount = calcCurrentRewardAmount(stakerList[i]);
-            stakeInfo[stakerList[i]].outstandingReward += amount;
-            totalAmount = totalAmount + stakeInfo[stakerList[i]].outstandingReward;
+            amount = calcRewardAmount(stakerList[i]);
+            stakeInfo[stakerList[i]].outstandingReward = amount;
+            totalAmount = totalAmount + amount;
         }        
 
         if (totalRewardAmount >= totalAmount)
