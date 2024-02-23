@@ -311,17 +311,7 @@ contract Property is ReentrancyGuard {
         IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
 
         emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
-    }
-
-    /// @notice Get reward fund proposal title and description
-    function getRewardProposalInfo(address _rewardAddress) external view returns (string memory, string memory, uint256) {
-        Proposal memory rp = govProposalInfo[3][_rewardAddress];
-        string memory title_ = rp.title;
-        string memory desc_ = rp.description;        
-        uint256 time_ = rp.createTime;
-
-        return (title_, desc_, time_);
-    }
+    }    
 
     // =================== FilmBoard proposal ====================
     /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
@@ -369,7 +359,8 @@ contract Property is ReentrancyGuard {
         emit FilmBoardMemberRemoved(msg.sender, _member);
     }
 
-    /// @notice Get proposal list(flag=1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
+    /// @notice Get proposal list
+    // (1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
     function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
         require(_flag != 0 && _flag < 5, "bad flag");
 
@@ -377,6 +368,21 @@ contract Property is ReentrancyGuard {
         else if(_flag == 2) return filmBoardCandidates;
         else if(_flag == 3) return rewardAddressList;
         else return filmBoardMembers;
+    }    
+
+    /// @notice Get govProposalInfo(agent=>1, board=>2, pool=>3)
+    function getGovProposalInfo(address _member, uint256 _flag)
+    external view returns (string memory, string memory, uint256, uint256, address, Helper.Status) 
+    {
+        Proposal memory rp = govProposalInfo[_flag][_member];
+        string memory title_ = rp.title;
+        string memory desc_ = rp.description;        
+        uint256 cTime_ = rp.createTime;
+        uint256 aTime_ = rp.approveTime;
+        address creator_ = rp.creator;
+        Helper.Status status_ = rp.status;
+
+        return (title_, desc_, cTime_, aTime_, creator_, status_);
     }    
 
     // ===================properties proposal ====================
@@ -558,12 +564,20 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice Get property proposal created time
-    function getPropertyProposalTime(
+    function getPropertyProposalInfo(
         uint256 _property, 
         uint256 _flag
-    ) external view returns (uint256 cTime_, uint256 aTime_) {
-        cTime_ = propertyProposalInfo[_flag][_property].createTime;
-        aTime_ = propertyProposalInfo[_flag][_property].approveTime;
+    ) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status) 
+    {
+        Proposal memory rp = propertyProposalInfo[_flag][_property];
+        string memory title_ = rp.title;
+        string memory desc_ = rp.description;        
+        uint256 cTime_ = rp.createTime;
+        uint256 aTime_ = rp.approveTime;
+        address creator_ = rp.creator;
+        Helper.Status status_ = rp.status;
+
+        return (title_, desc_, cTime_, aTime_, creator_, status_);
     }
     
     function updatePropertyProposal(
@@ -631,13 +645,6 @@ contract Property is ReentrancyGuard {
         }
     }
     
-    /// @notice Get agent/board/pool proposal created time
-    // agent=>1, board=>2, pool=>3
-    function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_) {
-        cTime_ = govProposalInfo[_flag][_member].createTime;
-        aTime_ = govProposalInfo[_flag][_member].approveTime;
-    }
-
     function updateGovProposal(
         address _member, 
         uint256 _flag,  // 1=>agent, 2=>board, 3=>pool

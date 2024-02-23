@@ -130,7 +130,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
-        // si.outstandingReward = calcRewardAmount(msg.sender);
+        si.outstandingReward = calcRewardAmount(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
         si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
@@ -244,7 +244,7 @@ contract StakingPool is ReentrancyGuard {
         
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
-        amount_ = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
+        amount_ = si.outstandingReward + totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
 
         // If user is film board member, more rewards(25%)
         if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _user) == 2) {            
@@ -252,33 +252,34 @@ contract StakingPool is ReentrancyGuard {
         } 
     }
 
-    /// @notice Calculate pending rewards
+    /// @notice Calculate pending rewards    
+    // TODO This function would be called after a proposal is finalized    
     function calcPendingRewards(address _user) public view returns (uint256) { 
         Stake memory si = stakeInfo[_user];   
 
-        // Get proposal count started in withdrawable period of customer
-        uint256 proposalCount = 0;     
-        uint256 proposalCreatedTimeListLength = proposalCreatedTimeList.length;
-        for(uint256 i = 0; i < proposalCreatedTimeListLength; ++i) { 
-            if(proposalCreatedTimeList[i] > si.stakeTime && proposalCreatedTimeList[i] < si.withdrawableTime) {
-                proposalCount += 1;
+        // Get proposal count from staked/unstaked/withdrawn to current
+        uint256 pCount = 0;     
+        uint256 pLength = proposalCreatedTimeList.length;
+        for(uint256 i = 0; i < pLength; ++i) { 
+            if(proposalCreatedTimeList[i] >= si.stakeTime && proposalCreatedTimeList[i] < block.timestamp) {
+                pCount += 1;
             }
         }
 
-        // Get vote count started in withdrawable period of customer
-        uint256 votedCount = 0;     
-        uint256 proposalVotedTimeListLength = proposalVotedTimeList[_user].length;
-        for(uint256 i = 0; i < proposalVotedTimeListLength; ++i) { 
-            if(proposalVotedTimeList[_user][i] > si.stakeTime && proposalVotedTimeList[_user][i] < si.withdrawableTime) {
-                votedCount += 1;
+        // Get vote count from staked/unstaked/withdrawn to current
+        uint256 vCount = 0;     
+        uint256 vLength = proposalVotedTimeList[_user].length;
+        for(uint256 i = 0; i < vLength; ++i) { 
+            if(proposalVotedTimeList[_user][i] >= si.stakeTime && proposalVotedTimeList[_user][i] < block.timestamp) {
+                vCount += 1;
             }
         }
         
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
-        if(proposalCount > 0) {
-            if(votedCount == 0) return 0;
+        if(pCount > 0) {
+            if(vCount == 0) return 0;
             else {
-                uint256 countVal = (votedCount * 1e4) / proposalCount;
+                uint256 countVal = (vCount * 1e4) / pCount;
                 return calcStakingRewards(_user) * countVal / 1e4;
             }
         } else {
@@ -531,16 +532,8 @@ contract StakingPool is ReentrancyGuard {
         migrationStatus = 1;
     }
 
-    /// @notice Update lastStakedTime for a staker when vote
-    function updateWithdrawableTime(
-        address _user, 
-        uint256 _time
-    ) external onlyVote {
-        stakeInfo[_user].withdrawableTime = _time;
-    }
-
     /// @notice Add voted time for a staker when vote
-    function updateVotedTime(address _user, uint256 _time) external onlyVote {
+    function addVotedTime(address _user, uint256 _time) external onlyVote {
         proposalVotedTimeList[_user].push(_time);
     }
 

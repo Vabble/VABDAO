@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import "../libraries/Helper.sol";
+
 interface IProperty {  
     function filmVotePeriod() external view returns (uint256);        // 0
     function agentVotePeriod() external view returns (uint256);       // 1
@@ -31,9 +33,9 @@ interface IProperty {
 
     function updateLastVoteTime(address _member) external;
 
-    function getPropertyProposalTime(uint256 _property, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_);
-    function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_);
-    
+    function getPropertyProposalInfo(uint256 _property, uint256 _flag) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status);
+    function getGovProposalInfo(address _member, uint256 _flag) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status);
+
     function updatePropertyProposal(uint256 _property, uint256 _flag, uint256 _approveStatus) external;
     function updateGovProposal(address _member, uint256 _flag, uint256 _approveStatus) external;
 
@@ -42,4 +44,7 @@ interface IProperty {
 
     function checkGovWhitelist(uint256 _flag, address _address) external view returns (uint256);
     function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view returns (uint256);
+
+    function getPropertyProposalList(uint256 _flag) external view returns (uint256[] memory _list);
+    function getGovProposalList(uint256 _flag) external view returns (address[] memory);
 }

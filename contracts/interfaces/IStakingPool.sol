@@ -7,9 +7,7 @@ interface IStakingPool {
 
     function getWithdrawableTime(address _user) external view returns(uint256 time_);
 
-    function updateWithdrawableTime(address _user, uint256 _time) external;
-
-    function updateVotedTime(address _user, uint256 _time) external;
+    function addVotedTime(address _user, uint256 _time) external;
 
     function addRewardToPool(uint256 _amount) external;
     
