@@ -130,7 +130,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
-        si.outstandingReward = calcRewardAmount(msg.sender);
+        si.outstandingReward = calcStakingRewards(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
         si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
@@ -230,7 +230,8 @@ contract StakingPool is ReentrancyGuard {
         if (migrationStatus > 0) { // if migration is started
             return si.outstandingReward; // just return pre-calculated amount
         } else {
-            return calcStakingRewards(_user) + calcPendingRewards(_user);
+            // return calcStakingRewards(_user) + calcPendingRewards(_user);
+            return si.outstandingReward + calcStakingRewards(_user); // Todo: consider pending reward
         }        
     }
 
@@ -521,7 +522,7 @@ contract StakingPool is ReentrancyGuard {
 
         // calculate the total amount of reward
         for (uint256 i = 0; i < stakerList.length; ++i) {
-            amount = calcRewardAmount(stakerList[i]);
+            amount = calcStakingRewards(stakerList[i]); // ToDo: consider pending reward
             stakeInfo[stakerList[i]].outstandingReward = amount;
             totalAmount = totalAmount + amount;
         }        
