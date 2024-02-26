@@ -143,7 +143,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
-        si.outstandingReward = calcStakingRewards(msg.sender) + calcPendingRewards(msg.sender);
+        si.outstandingReward += calcStakingRewards(msg.sender) + calcPendingRewards(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
 
