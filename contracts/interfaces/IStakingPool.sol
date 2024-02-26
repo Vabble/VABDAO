@@ -7,8 +7,15 @@ interface IStakingPool {
 
     function getWithdrawableTime(address _user) external view returns(uint256 time_);
 
-    function addVotedTime(address _user, uint256 _time) external;
-
+    function addVotedData(
+        address _user, 
+        uint256 _time, 
+        uint256 _vFlag, // 101=film, 102=agent, 103=board, 104=V2fund, 105=property
+        address _item,
+        uint256 _property,
+        uint256 _flag
+    ) external;
+    
     function addRewardToPool(uint256 _amount) external;
     
     function getLimitCount() external view returns(uint256 count_);
@@ -17,7 +24,7 @@ interface IStakingPool {
 
     function updateLastfundProposalCreateTime(uint256 _time) external;
 
-    function updateProposalCreatedTimeList(uint256 _time) external;
+    function addProposalData(address _creator, uint256 _time) external;
 
     function getRentVABAmount(address _user) external view returns(uint256 amount_);
     

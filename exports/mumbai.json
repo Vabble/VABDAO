@@ -4732,7 +4732,7 @@
               "type": "uint256"
             }
           ],
-          "name": "updateProposalCreatedTimeList",
+          "name": "addProposalData",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"

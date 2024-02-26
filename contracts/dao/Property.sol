@@ -257,8 +257,8 @@ contract Property is ReentrancyGuard {
 
         allGovProposalInfo[1].push(_agent);
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
     }
@@ -307,8 +307,8 @@ contract Property is ReentrancyGuard {
 
         allGovProposalInfo[3].push(_rewardAddress);
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
     }    
@@ -341,8 +341,8 @@ contract Property is ReentrancyGuard {
 
         allGovProposalInfo[2].push(_member);
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
     }
@@ -479,8 +479,8 @@ contract Property is ReentrancyGuard {
         pp.creator = msg.sender;
         pp.status = Helper.Status.LISTED;
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
     }

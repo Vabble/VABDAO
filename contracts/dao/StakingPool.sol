@@ -28,7 +28,6 @@ contract StakingPool is ReentrancyGuard {
 
     struct Stake {
         uint256 stakeAmount;     // staking amount per staker
-        uint256 withdrawableTime;// last staked time(here, means the time that staker withdrawable time)
         uint256 stakeTime;  
         uint256 outstandingReward; // after migration is started, this amount will be holded       
     }
@@ -37,6 +36,19 @@ contract StakingPool is ReentrancyGuard {
         uint256 vabAmount;       // current VAB amount in DAO
         uint256 withdrawAmount;  // pending withdraw amount for a customer
         bool pending;            // pending status for withdraw
+    }
+
+    struct Vote {
+        address item;
+        uint256 vFlag; // 101=film, 102=agent, 103=board, 104=V2fund, 105=property
+        uint256 time;
+        uint256 property;
+        uint256 flag;
+    }    
+
+    struct Props {
+        address creator;
+        uint256 time;
     }
 
     address private immutable OWNABLE;     // Ownablee contract address
@@ -49,9 +61,10 @@ contract StakingPool is ReentrancyGuard {
     uint256 public totalRewardAmount;    
     uint256 public totalRewardIssuedAmount;
     uint256 public lastfundProposalCreateTime; // funding proposal created time(block.timestamp)
-    uint256[] private proposalCreatedTimeList;                   // need for calculating rewards
-    mapping(address => uint256[]) private proposalVotedTimeList; // need for calculating rewards
-    
+    // uint256[] private proposalCreatedTimeList; // need for calculating rewards
+
+    Props[] private propsList;                    // need for calculating rewards    
+    mapping(address => Vote[]) private votedList; // need for calculating rewards    
     mapping(address => Stake) public stakeInfo;
     address[] public stakerList;
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
@@ -130,10 +143,9 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
-        si.outstandingReward = calcStakingRewards(msg.sender);
+        si.outstandingReward = calcStakingRewards(msg.sender) + calcPendingRewards(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
-        si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
 
         totalStakingAmount += _amount;
 
@@ -145,9 +157,10 @@ contract StakingPool is ReentrancyGuard {
         require(msg.sender != address(0), "unstakeVAB: Zero staker address");
 
         Stake storage si = stakeInfo[msg.sender];
+        uint256 withdrawTime = si.stakeTime + IProperty(DAO_PROPERTY).lockPeriod();
         require(si.stakeAmount >= _amount, "unstakeVAB: Insufficient stake amount");
-        require(migrationStatus > 0 || block.timestamp > si.withdrawableTime, "unstakeVAB: lock period yet");
-
+        require(migrationStatus > 0 || block.timestamp > withdrawTime, "unstakeVAB: lock period yet");
+        
         // first, withdraw reward
         uint256 rewardAmount = calcRewardAmount(msg.sender);
         if(totalRewardAmount >= rewardAmount && rewardAmount > 0) {
@@ -158,7 +171,6 @@ contract StakingPool is ReentrancyGuard {
         Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);        
 
         si.stakeTime = block.timestamp;
-        si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
         si.stakeAmount -= _amount;        
         totalStakingAmount -= _amount;
 
@@ -183,7 +195,9 @@ contract StakingPool is ReentrancyGuard {
     function withdrawReward(uint256 _isCompound) external nonReentrant {
         require(_isCompound == 0 || _isCompound == 1, "invalid compound");
         require(stakeInfo[msg.sender].stakeAmount > 0, "withdrawReward: Zero staking amount");
-        require(migrationStatus > 0 || block.timestamp > stakeInfo[msg.sender].withdrawableTime, "withdrawReward: lock period yet");
+
+        uint256 withdrawTime = stakeInfo[msg.sender].stakeTime + IProperty(DAO_PROPERTY).lockPeriod();
+        require(migrationStatus > 0 || block.timestamp > withdrawTime, "withdrawReward: lock period yet");
         
         if(migrationStatus > 0)
             require(_isCompound == 0, "migration is on going");
@@ -193,7 +207,6 @@ contract StakingPool is ReentrancyGuard {
             Stake storage si = stakeInfo[msg.sender];
             si.stakeAmount = si.stakeAmount + rewardAmount;
             si.stakeTime = block.timestamp;
-            si.withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
             si.outstandingReward = 0;
 
             totalStakingAmount += rewardAmount;
@@ -209,15 +222,15 @@ contract StakingPool is ReentrancyGuard {
 
     /// @dev Transfer reward amount
     function __withdrawReward(uint256 _amount) private {
-        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);        
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);  
+
         totalRewardAmount -= _amount;
         receivedRewardAmount[msg.sender] += _amount;
         totalRewardIssuedAmount += _amount;
 
         stakeInfo[msg.sender].stakeTime = block.timestamp;
-        stakeInfo[msg.sender].withdrawableTime = block.timestamp + IProperty(DAO_PROPERTY).lockPeriod();
         stakeInfo[msg.sender].outstandingReward = 0;
-        
+    
         emit RewardWithdraw(msg.sender, _amount);
     }
 
@@ -231,7 +244,7 @@ contract StakingPool is ReentrancyGuard {
             return si.outstandingReward; // just return pre-calculated amount
         } else {
             // return calcStakingRewards(_user) + calcPendingRewards(_user);
-            return si.outstandingReward + calcStakingRewards(_user); // Todo: consider pending reward
+            return si.outstandingReward + calcStakingRewards(_user) + calcPendingRewards(_user); // Todo: consider pending reward
         }        
     }
 
@@ -245,7 +258,7 @@ contract StakingPool is ReentrancyGuard {
         
         // Get time with accuracy(10**4) from after lockPeriod 
         uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
-        amount_ = si.outstandingReward + totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
+        amount_ = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
 
         // If user is film board member, more rewards(25%)
         if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _user) == 2) {            
@@ -256,25 +269,8 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Calculate pending rewards    
     // TODO This function would be called after a proposal is finalized    
     function calcPendingRewards(address _user) public view returns (uint256) { 
-        Stake memory si = stakeInfo[_user];   
-
-        // Get proposal count from staked/unstaked/withdrawn to current
-        uint256 pCount = 0;     
-        uint256 pLength = proposalCreatedTimeList.length;
-        for(uint256 i = 0; i < pLength; ++i) { 
-            if(proposalCreatedTimeList[i] >= si.stakeTime && proposalCreatedTimeList[i] < block.timestamp) {
-                pCount += 1;
-            }
-        }
-
         // Get vote count from staked/unstaked/withdrawn to current
-        uint256 vCount = 0;     
-        uint256 vLength = proposalVotedTimeList[_user].length;
-        for(uint256 i = 0; i < vLength; ++i) { 
-            if(proposalVotedTimeList[_user][i] >= si.stakeTime && proposalVotedTimeList[_user][i] < block.timestamp) {
-                vCount += 1;
-            }
-        }
+        (uint256 pCount, uint256 vCount) = __getApprovedVoteCount(_user);   
         
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
         if(pCount > 0) {
@@ -286,6 +282,48 @@ contract StakingPool is ReentrancyGuard {
         } else {
             return 0;
         } 
+    }
+
+    function __getApprovedVoteCount(address _user) private view returns (uint256, uint256) {
+        Stake memory si = stakeInfo[_user];   
+
+        // Get proposal count from staked/unstaked/withdrawn to current
+        uint256 pCount = 0;     
+        Props memory pData;
+        uint256 pLength = propsList.length;
+        for(uint256 i = 0; i < pLength; ++i) { 
+            pData = propsList[i];
+
+            if(pData.creator == _user) continue;
+
+            if(pData.time >= si.stakeTime && pData.time < block.timestamp) {
+                pCount += 1;
+            }
+        }
+
+        uint256 vCount = 0;
+        uint256 aTime = 0;
+        Vote memory vData;
+        uint256 vLength = votedList[_user].length;
+        for(uint256 i = 0; i < vLength; ++i) { 
+            vData = votedList[_user][i];    
+            
+            if(vData.vFlag == 101) {        // film=>(101,0)
+                (, aTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(vData.property);
+            } else if(vData.vFlag == 105) { // property=>(105,0~20)
+                (, , , aTime, , ) = IProperty(DAO_PROPERTY).getPropertyProposalInfo(vData.property, vData.flag);
+            } else {                        // agent=>(102,1), board=>(103,2), pool=>(104,3)
+                (, , , aTime, , ) = IProperty(DAO_PROPERTY).getGovProposalInfo(vData.item, vData.flag);                
+            }
+
+            if(aTime == 0) continue;
+
+            if(vData.time >= si.stakeTime && vData.time < block.timestamp) {                
+                vCount += 1;
+            }
+        }
+
+        return (pCount, vCount);
     }
 
     // 500 * 1e10 / 1000 = 50*1e8 = 50% 
@@ -522,7 +560,7 @@ contract StakingPool is ReentrancyGuard {
 
         // calculate the total amount of reward
         for (uint256 i = 0; i < stakerList.length; ++i) {
-            amount = calcStakingRewards(stakerList[i]); // ToDo: consider pending reward
+            amount = calcRewardAmount(stakerList[i]); // ToDo: consider pending reward
             stakeInfo[stakerList[i]].outstandingReward = amount;
             totalAmount = totalAmount + amount;
         }        
@@ -534,8 +572,17 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Add voted time for a staker when vote
-    function addVotedTime(address _user, uint256 _time) external onlyVote {
-        proposalVotedTimeList[_user].push(_time);
+    function addVotedData(
+        address _user, 
+        uint256 _time, 
+        uint256 _vFlag, // 101=film, 102=agent, 103=board, 104=V2fund, 105=property
+        address _item,
+        uint256 _property,
+        uint256 _flag   // film(101), agent(102), board(103), V2fund(104), property(0~20)
+    ) external onlyVote {        
+        votedList[_user].push(
+            Vote(_item, _vFlag, _time, _property, _flag)
+        );
     }
 
     /// @notice Update lastfundProposalCreateTime for only fund film proposal
@@ -543,10 +590,12 @@ contract StakingPool is ReentrancyGuard {
         lastfundProposalCreateTime = _time;
     }
 
-    /// @notice Update ProposalCreateTimeList for calculating rewards
-    function updateProposalCreatedTimeList(uint256 _time) external {
+    /// @notice Add proposal data to array for calculating rewards
+    function addProposalData(address _creator, uint256 _time) external {
         require(msg.sender == VABBLE_DAO || msg.sender == DAO_PROPERTY, "caller is not VabbleDAO/Property contract");
-        proposalCreatedTimeList.push(_time);
+        propsList.push(
+            Props(_creator, _time)
+        );
     }    
 
     /// @notice Get staking amount for a staker
@@ -573,9 +622,9 @@ contract StakingPool is ReentrancyGuard {
         }
     }
 
-    /// @notice Get withdrawableTime for a staker
+    /// @notice Get withdrawTime for a staker
     function getWithdrawableTime(address _user) external view returns(uint256 time_) {
-        time_ = stakeInfo[_user].withdrawableTime;
+        time_ = stakeInfo[_user].stakeTime + IProperty(DAO_PROPERTY).lockPeriod();
     }    
 
     function withdrawToOwner(address to) external onlyDeployer nonReentrant {

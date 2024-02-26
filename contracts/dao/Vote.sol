@@ -144,7 +144,9 @@ contract Vote is IVote, ReentrancyGuard {
         lastVoteTime[msg.sender] = block.timestamp;
 
         // 1++ for calculating the rewards
-        IStakingPool(STAKING_POOL).addVotedTime(msg.sender, block.timestamp);
+        IStakingPool(STAKING_POOL).addVotedData(
+            msg.sender, block.timestamp, 101, address(0), _filmId, 0
+        );
         
         emit VotedToFilm(msg.sender, _filmId, _voteInfo);
     }
@@ -213,7 +215,9 @@ contract Vote is IVote, ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        IStakingPool(STAKING_POOL).addVotedTime(msg.sender, block.timestamp);
+        IStakingPool(STAKING_POOL).addVotedData(
+            msg.sender, block.timestamp, 102, _agent, 0, 1
+        );
 
         emit VotedToAgent(msg.sender, _agent, _voteInfo);
     }
@@ -338,7 +342,9 @@ contract Vote is IVote, ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        IStakingPool(STAKING_POOL).addVotedTime(msg.sender, block.timestamp);
+        IStakingPool(STAKING_POOL).addVotedData(
+            msg.sender, block.timestamp, 103, _candidate, 0, 2
+        );
 
         emit VotedToFilmBoard(msg.sender, _candidate, _voteInfo);
     }
@@ -408,7 +414,9 @@ contract Vote is IVote, ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        IStakingPool(STAKING_POOL).addVotedTime(msg.sender, block.timestamp);
+        IStakingPool(STAKING_POOL).addVotedData(
+            msg.sender, block.timestamp, 104, _rewardAddress, 0, 3
+        );
 
         emit VotedToPoolAddress(msg.sender, _rewardAddress, _voteInfo);
     }
@@ -479,7 +487,9 @@ contract Vote is IVote, ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
-        IStakingPool(STAKING_POOL).addVotedTime(msg.sender, block.timestamp);
+        IStakingPool(STAKING_POOL).addVotedData(
+            msg.sender, block.timestamp, 105, address(0), propertyVal, _flag
+        );
 
         emit VotedToProperty(msg.sender, _flag, propertyVal, _voteInfo);
     }

@@ -23,7 +23,6 @@ import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFund.sol";
 import "../interfaces/IVabbleDAO.sol";
-// import "../libraries/VabbleDAOUtils.sol";
 
 
 contract VabbleDAO is ReentrancyGuard {
@@ -34,7 +33,6 @@ contract VabbleDAO is ReentrancyGuard {
     event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime);
     event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod);
     event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
-    // event RewardClaimed(address user, uint256 monthId, uint256 filmId, uint256 claimAmount, uint256 claimTime);  
     event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);  
     event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);  
     event ChangeFilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);  
@@ -131,6 +129,7 @@ contract VabbleDAO is ReentrancyGuard {
 
         emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender);
     }
+    
     function proposalFilmUpdate(
         uint256 _filmId, 
         string memory _title,
@@ -147,7 +146,7 @@ contract VabbleDAO is ReentrancyGuard {
         
         bytes memory titleByte = bytes(_title);
         require(titleByte.length != 0, "proposalUpdate: empty title");
-
+        
         IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
         if(fInfo.fundType != 0) {            
             require(_fundPeriod != 0, 'proposalUpdate: invalid fund period');
@@ -185,7 +184,8 @@ contract VabbleDAO is ReentrancyGuard {
         updatedProposalFilmIds.push(_filmId);
         userUpdatedFilmProposalIds[msg.sender].push(_filmId);
 
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp); // add timestap to array for calculating rewards
+        // add proposal data to array for calculating rewards
+        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         // If proposal is for fund, update "lastfundProposalCreateTime"
         if(fInfo.fundType != 0) {
@@ -202,7 +202,10 @@ contract VabbleDAO is ReentrancyGuard {
         emit FilmProposalUpdated(_filmId, fInfo.fundType, msg.sender);     
     }
 
-    function changeOwner(uint256 _filmId, address newOwner) external nonReentrant returns (bool) {
+    function changeOwner(
+        uint256 _filmId, 
+        address newOwner
+    ) external nonReentrant returns (bool) {
         IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
 
         require(fInfo.studio == msg.sender, 'cO, E1'); //changeOwner: not film owner
@@ -217,16 +220,16 @@ contract VabbleDAO is ReentrancyGuard {
         fInfo.studio = newOwner;
 
         if (fInfo.status == Helper.Status.LISTED) {
-            moveToAnotherArray(userFilmProposalIds[msg.sender], userFilmProposalIds[newOwner], _filmId);
+            __moveToAnotherArray(userFilmProposalIds[msg.sender], userFilmProposalIds[newOwner], _filmId);
         }
 
         if (fInfo.status == Helper.Status.UPDATED) {            
-            moveToAnotherArray(userUpdatedFilmProposalIds[msg.sender], userUpdatedFilmProposalIds[newOwner], _filmId);
+            __moveToAnotherArray(userUpdatedFilmProposalIds[msg.sender], userUpdatedFilmProposalIds[newOwner], _filmId);
         }
         
         if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
-            moveToAnotherArray(userApprovedFilmIds[msg.sender], userApprovedFilmIds[newOwner], _filmId);
-            moveToAnotherArray(userFinalFilmIds[msg.sender], userFinalFilmIds[newOwner], _filmId);
+            __moveToAnotherArray(userApprovedFilmIds[msg.sender], userApprovedFilmIds[newOwner], _filmId);
+            __moveToAnotherArray(userFinalFilmIds[msg.sender], userFinalFilmIds[newOwner], _filmId);
 
             if (isInvested[msg.sender][_filmId]) {
                 isInvested[msg.sender][_filmId] = false;
@@ -234,7 +237,7 @@ contract VabbleDAO is ReentrancyGuard {
             }
             
             uint256 curMonth = monthId.current();        
-            updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner);
+            __updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner);
         }
         
         emit ChangeFilmOwner(_filmId, msg.sender, newOwner);
@@ -242,7 +245,11 @@ contract VabbleDAO is ReentrancyGuard {
         return true;
     }
 
-    function moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) private {
+    function __moveToAnotherArray(
+        uint256[] storage array1, 
+        uint256[] storage array2, 
+        uint256 value
+    ) private {
         uint256 arrayLength = array1.length; 
         require(arrayLength < 1e6, 'mTAA: too many length');
         uint256 index = arrayLength;
@@ -545,7 +552,7 @@ contract VabbleDAO is ReentrancyGuard {
         __claimAllReward(filmIds);   
     }
 
-    function getUserRewardAmountBetweenMonthsForUser (
+    function getUserRewardAmountBetweenMonths(
         uint256 _filmId, 
         uint256 _preMonth, 
         uint256 _curMonth, 
@@ -561,23 +568,23 @@ contract VabbleDAO is ReentrancyGuard {
     function getAllAvailableRewards(
         uint256 _curMonth,
         address _user
-    ) public view returns (uint256 reward_) {
+    ) public view returns (uint256) {
         uint256[] memory filmIds = userFinalFilmIds[_user];
 
-        uint256 rewardSum;
-        uint256 preMonth;
+        uint256 rewardSum = 0;
+        uint256 preMonth = 0;
         uint256 filmLength = filmIds.length;
         for(uint256 i = 0; i < filmLength; ++i) {  
             preMonth = latestClaimMonthId[filmIds[i]][_user];
-            rewardSum += getUserRewardAmountBetweenMonthsForUser(filmIds[i], preMonth, _curMonth, _user);                        
+            rewardSum += getUserRewardAmountBetweenMonths(filmIds[i], preMonth, _curMonth, _user);                        
         }
 
-        reward_ = rewardSum;
+        return rewardSum;
     }
      
-    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user) public view returns (uint256 amount_) {        
+    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user) public view returns (uint256) {        
         uint256 preMonth = latestClaimMonthId[_filmId][_user];
-        amount_ = getUserRewardAmountBetweenMonthsForUser(_filmId, preMonth, _curMonth, _user);
+        return getUserRewardAmountBetweenMonths(_filmId, preMonth, _curMonth, _user);
     }
 
     function getUserFinalFilmIds(address _user) external view returns (uint256[] memory) {        
@@ -585,17 +592,17 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// @notice Get film status based on Id
-    function getFilmStatus(uint256 _filmId) public view returns (Helper.Status status_) {
+    function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_) {
         status_ = filmInfo[_filmId].status;
     }
 
     /// @notice Get film owner(studio) based on Id
-    function getFilmOwner(uint256 _filmId) public view returns (address owner_) {
+    function getFilmOwner(uint256 _filmId) external view returns (address owner_) {
         owner_ = filmInfo[_filmId].studio;
     }
 
     /// @notice Get film fund info based on Id
-    function getFilmFund(uint256 _filmId) public view 
+    function getFilmFund(uint256 _filmId) external view 
     returns (
         uint256 raiseAmount_, 
         uint256 fundPeriod_, 
@@ -625,16 +632,16 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /// @notice Get enableClaimer based on Id
-    function isEnabledClaimer(uint256 _filmId) external view returns (bool enable_) {
-        if(filmInfo[_filmId].enableClaimer == 1) enable_ = true;
-        else enable_ = false;
-    }
+    // function isEnabledClaimer(uint256 _filmId) external view returns (bool enable_) {
+    //     if(filmInfo[_filmId].enableClaimer == 1) enable_ = true;
+    //     else enable_ = false;
+    // }
     
     /// @notice Set enableClaimer based on Id by studio
     function updateEnabledClaimer(uint256 _filmId, uint256 _enable) external {
-        require(filmInfo[_filmId].studio == msg.sender, "updateEnableClaimer: not film owner");
+    require(filmInfo[_filmId].studio == msg.sender, "updateEnableClaimer: not film owner");
 
-        filmInfo[_filmId].enableClaimer = _enable;
+    filmInfo[_filmId].enableClaimer = _enable;
     }
 
     /// @notice Get film Ids
@@ -651,21 +658,11 @@ contract VabbleDAO is ReentrancyGuard {
         else if(_flag == 2) list_ = edgePoolUsers;
     }
 
-    function getFinalizedFilmIds(uint256 _monthId) external view returns (uint256[] memory) {           
-        return finalizedFilmIds[_monthId];
-    }
+    // function getFinalizedFilmIds(uint256 _monthId) external view returns (uint256[] memory) {           
+    //     return finalizedFilmIds[_monthId];
+    // }  
 
-    // function getUserFilmIds(uint256 _flag, address _user) external view returns (uint256[] memory list_) {           
-    //     if(_flag == 1) list_ = userUpdatedFilmProposalIds[_user];
-    //     else if(_flag == 2) list_ = userFilmProposalIds[_user];
-    //     else if(_flag == 3) list_ = userApprovedFilmIds[_user];
-    // }
-
-    // function getUserFilmListForMigrate(address _user) external view returns (IVabbleDAO.Film[] memory filmList_) {   
-    //     filmList_ = VabbleDAOUtils.getUserFilmListForMigrate(_user, userApprovedFilmIds, filmInfo);
-    // }    
-
-    function updateFinalizeAmountAndLastClaimMonth (
+    function __updateFinalizeAmountAndLastClaimMonth (
         uint256 _filmId, 
         uint256 _curMonth, 
         address _oldOwner,
