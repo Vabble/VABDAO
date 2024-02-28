@@ -38,17 +38,9 @@ contract StakingPool is ReentrancyGuard {
         bool pending;            // pending status for withdraw
     }
 
-    struct Vote {
-        address item;
-        uint256 vFlag; // 101=film, 102=agent, 103=board, 104=V2fund, 105=property
-        uint256 time;
-        uint256 property;
-        uint256 flag;
-    }    
-
     struct Props {
         address creator;
-        uint256 time;
+        uint256 finalizeTime;
         uint256 proposalID;
     }
 
@@ -62,7 +54,6 @@ contract StakingPool is ReentrancyGuard {
     uint256 public totalRewardAmount;    
     uint256 public totalRewardIssuedAmount;
     uint256 public lastfundProposalCreateTime; // funding proposal created time(block.timestamp)
-    // uint256[] private proposalCreatedTimeList; // need for calculating rewards
 
     Props[] private propsList;                    // need for calculating rewards    
     mapping(address => mapping(uint256 => uint256)) private votedTime; // (user, proposalID) => voteTime need for calculating rewards    
@@ -245,7 +236,6 @@ contract StakingPool is ReentrancyGuard {
         if (migrationStatus > 0) { // if migration is started
             return si.outstandingReward; // just return pre-calculated amount
         } else {
-            // return calcStakingRewards(_user) + calcPendingRewards(_user);
             return si.outstandingReward + calcStakingRewards(_user) + calcPendingRewards(_user); // Todo: consider pending reward
         }        
     }
@@ -294,39 +284,17 @@ contract StakingPool is ReentrancyGuard {
         uint256 vCount = 0;
         Props memory pData;
         uint256 pLength = propsList.length;
-
         for(uint256 i = 0; i < pLength; ++i) { 
             pData = propsList[i];
 
             if(pData.creator == _user) continue;
 
-            if(pData.time >= si.stakeTime && pData.time < block.timestamp) {
+            if(pData.finalizeTime >= si.stakeTime && pData.finalizeTime < block.timestamp) {
                 pCount += 1;
                 if (votedTime[_user][pData.proposalID] > 0)
                     vCount += 1;
             }
         }
-
-        // uint256 aTime = 0;
-        // Vote memory vData;
-        // uint256 vLength = votedList[_user].length;
-        // for(uint256 i = 0; i < vLength; ++i) { 
-        //     vData = votedList[_user][i];    
-            
-        //     if(vData.vFlag == 101) {        // film=>(101,0)
-        //         (, aTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(vData.property);
-        //     } else if(vData.vFlag == 105) { // property=>(105,0~20)
-        //         (, , , aTime, , ) = IProperty(DAO_PROPERTY).getPropertyProposalInfo(vData.property, vData.flag);
-        //     } else {                        // agent=>(102,1), board=>(103,2), pool=>(104,3)
-        //         (, , , aTime, , ) = IProperty(DAO_PROPERTY).getGovProposalInfo(vData.item, vData.flag);                
-        //     }
-
-        //     if(aTime == 0) continue;
-
-        //     if(vData.time >= si.stakeTime && vData.time < block.timestamp) {                
-        //         vCount += 1;
-        //     }
-        // }
 
         return (pCount, vCount);
     }
@@ -581,10 +549,7 @@ contract StakingPool is ReentrancyGuard {
         address _user, 
         uint256 _time, 
         uint256 _proposalID
-    ) external onlyVote {        
-        // votedList[_user].push(
-        //     Vote(_item, _vFlag, _time, _property, _flag)
-        // );
+    ) external onlyVote {    
         votedTime[_user][_proposalID] = _time;
     }
 
@@ -594,13 +559,13 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Add proposal data to array for calculating rewards
-    function addProposalData(address _creator, uint256 _time) external returns (uint256) {
+    function addProposalData(address _creator, uint256 _finalizeTime) external returns (uint256) {
         require(msg.sender == VABBLE_DAO || msg.sender == DAO_PROPERTY, "caller is not VabbleDAO/Property contract");
 
         proposalCount.increment();
         uint256 proposalID = proposalCount.current();
         propsList.push(
-            Props(_creator, _time, proposalID)
+            Props(_creator, _finalizeTime, proposalID)
         );
 
         return proposalID;
