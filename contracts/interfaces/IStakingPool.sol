@@ -10,10 +10,7 @@ interface IStakingPool {
     function addVotedData(
         address _user, 
         uint256 _time, 
-        uint256 _vFlag, // 101=film, 102=agent, 103=board, 104=V2fund, 105=property
-        address _item,
-        uint256 _property,
-        uint256 _flag
+        uint256 _proposalID
     ) external;
     
     function addRewardToPool(uint256 _amount) external;
@@ -24,7 +21,7 @@ interface IStakingPool {
 
     function updateLastfundProposalCreateTime(uint256 _time) external;
 
-    function addProposalData(address _creator, uint256 _time) external;
+    function addProposalData(address _creator, uint256 _time) external returns (uint256);
 
     function getRentVABAmount(address _user) external view returns(uint256 amount_);
     

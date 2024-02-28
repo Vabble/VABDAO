@@ -58,6 +58,7 @@ contract Vote is IVote, ReentrancyGuard {
     mapping(address => uint256) public userGovernVoteCount; //(user => governance vote count)
     mapping(uint256 => uint256) public govPassedVoteCount;  //(flag => pased vote count) 1: agent, 2: disput, 3: board, 4: pool, 5: property    
     mapping(address => uint256) private lastVoteTime;        // (staker => block.timestamp) for removing filmboard member
+    mapping(uint256 => uint256) private proposalFilmIds;     // filmId => proposalID
        
     modifier onlyDeployer() {
         require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
@@ -145,10 +146,14 @@ contract Vote is IVote, ReentrancyGuard {
 
         // 1++ for calculating the rewards
         IStakingPool(STAKING_POOL).addVotedData(
-            msg.sender, block.timestamp, 101, address(0), _filmId, 0
+            msg.sender, block.timestamp, proposalFilmIds[_filmId]
         );
         
         emit VotedToFilm(msg.sender, _filmId, _voteInfo);
+    }
+
+    function saveProposalWithFilm(uint256 _filmId, uint256 _proposalID) external override {
+        proposalFilmIds[_filmId] = _proposalID;
     }
 
     /// @notice Approve multi films that votePeriod has elapsed after votePeriod(10 days) by anyone
@@ -215,8 +220,9 @@ contract Vote is IVote, ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
+        uint256 proposalID =  IProperty(DAO_PROPERTY).getGovProposalID(_agent, 1);
         IStakingPool(STAKING_POOL).addVotedData(
-            msg.sender, block.timestamp, 102, _agent, 0, 1
+            msg.sender, block.timestamp, proposalID
         );
 
         emit VotedToAgent(msg.sender, _agent, _voteInfo);
@@ -342,8 +348,9 @@ contract Vote is IVote, ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
+        uint256 proposalID = IProperty(DAO_PROPERTY).getGovProposalID(_candidate, 2);
         IStakingPool(STAKING_POOL).addVotedData(
-            msg.sender, block.timestamp, 103, _candidate, 0, 2
+            msg.sender, block.timestamp, proposalID
         );
 
         emit VotedToFilmBoard(msg.sender, _candidate, _voteInfo);
@@ -413,9 +420,11 @@ contract Vote is IVote, ReentrancyGuard {
 
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
-        // 1++ for calculating the rewards
+
+        // 1++ for calculating the rewards        
+        uint256 proposalID = IProperty(DAO_PROPERTY).getGovProposalID(_rewardAddress, 3);
         IStakingPool(STAKING_POOL).addVotedData(
-            msg.sender, block.timestamp, 104, _rewardAddress, 0, 3
+            msg.sender, block.timestamp, proposalID
         );
 
         emit VotedToPoolAddress(msg.sender, _rewardAddress, _voteInfo);
@@ -487,8 +496,9 @@ contract Vote is IVote, ReentrancyGuard {
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
+        uint256 proposalID = IProperty(DAO_PROPERTY).getPropertyProposalID(propertyVal, _flag);
         IStakingPool(STAKING_POOL).addVotedData(
-            msg.sender, block.timestamp, 105, address(0), propertyVal, _flag
+            msg.sender, block.timestamp, proposalID
         );
 
         emit VotedToProperty(msg.sender, _flag, propertyVal, _voteInfo);

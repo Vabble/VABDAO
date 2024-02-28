@@ -36,6 +36,9 @@ interface IProperty {
     function getPropertyProposalInfo(uint256 _property, uint256 _flag) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status);
     function getGovProposalInfo(address _member, uint256 _flag) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status);
 
+    function getPropertyProposalID(uint256 _property, uint256 _flag) external view returns (uint256);
+    function getGovProposalID(address _member, uint256 _flag) external view returns (uint256);
+
     function updatePropertyProposal(uint256 _property, uint256 _flag, uint256 _approveStatus) external;
     function updateGovProposal(address _member, uint256 _flag, uint256 _approveStatus) external;
 

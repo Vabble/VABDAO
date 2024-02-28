@@ -26,6 +26,7 @@ contract Property is ReentrancyGuard {
         uint256 approveTime;   // proposal approved timestamp
         address creator;       // proposal creator address        
         Helper.Status status;  // status of proposal
+        uint256 proposalID;    // proposal ID
     }
   
     address private immutable OWNABLE;        // Ownablee contract address 
@@ -258,7 +259,7 @@ contract Property is ReentrancyGuard {
         allGovProposalInfo[1].push(_agent);
 
         // add proposal data to array for calculating rewards
-        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
+        ap.proposalID = IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
     }
@@ -308,7 +309,7 @@ contract Property is ReentrancyGuard {
         allGovProposalInfo[3].push(_rewardAddress);
 
         // add proposal data to array for calculating rewards
-        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
+        rp.proposalID = IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
     }    
@@ -342,7 +343,7 @@ contract Property is ReentrancyGuard {
         allGovProposalInfo[2].push(_member);
 
         // add proposal data to array for calculating rewards
-        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
+        bp.proposalID = IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
     }
@@ -383,6 +384,12 @@ contract Property is ReentrancyGuard {
         Helper.Status status_ = rp.status;
 
         return (title_, desc_, cTime_, aTime_, creator_, status_);
+    }    
+
+    function getGovProposalID(address _member, uint256 _flag)
+        external view returns (uint256) 
+    {
+        return govProposalInfo[_flag][_member].proposalID;        
     }    
 
     // ===================properties proposal ====================
@@ -480,7 +487,7 @@ contract Property is ReentrancyGuard {
         pp.status = Helper.Status.LISTED;
 
         // add proposal data to array for calculating rewards
-        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
+        pp.proposalID = IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
 
         emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
     }
@@ -578,6 +585,14 @@ contract Property is ReentrancyGuard {
         Helper.Status status_ = rp.status;
 
         return (title_, desc_, cTime_, aTime_, creator_, status_);
+    }
+
+    function getPropertyProposalID(
+        uint256 _property, 
+        uint256 _flag
+    ) external view returns (uint256) 
+    {
+        return propertyProposalInfo[_flag][_property].proposalID;       
     }
     
     function updatePropertyProposal(

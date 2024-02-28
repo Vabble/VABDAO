@@ -49,6 +49,7 @@ contract StakingPool is ReentrancyGuard {
     struct Props {
         address creator;
         uint256 time;
+        uint256 proposalID;
     }
 
     address private immutable OWNABLE;     // Ownablee contract address
@@ -64,7 +65,7 @@ contract StakingPool is ReentrancyGuard {
     // uint256[] private proposalCreatedTimeList; // need for calculating rewards
 
     Props[] private propsList;                    // need for calculating rewards    
-    mapping(address => Vote[]) private votedList; // need for calculating rewards    
+    mapping(address => mapping(uint256 => uint256)) private votedTime; // (user, proposalID) => voteTime need for calculating rewards    
     mapping(address => Stake) public stakeInfo;
     address[] public stakerList;
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
@@ -74,6 +75,7 @@ contract StakingPool is ReentrancyGuard {
     uint256 public totalMigrationVAB = 0;
 
     Counters.Counter public stakerCount;   // count of stakers is from No.1
+    Counters.Counter public proposalCount;   // count of stakers is from No.1
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not vote contract");
@@ -289,8 +291,10 @@ contract StakingPool is ReentrancyGuard {
 
         // Get proposal count from staked/unstaked/withdrawn to current
         uint256 pCount = 0;     
+        uint256 vCount = 0;
         Props memory pData;
         uint256 pLength = propsList.length;
+
         for(uint256 i = 0; i < pLength; ++i) { 
             pData = propsList[i];
 
@@ -298,30 +302,31 @@ contract StakingPool is ReentrancyGuard {
 
             if(pData.time >= si.stakeTime && pData.time < block.timestamp) {
                 pCount += 1;
+                if (votedTime[_user][pData.proposalID] > 0)
+                    vCount += 1;
             }
         }
 
-        uint256 vCount = 0;
-        uint256 aTime = 0;
-        Vote memory vData;
-        uint256 vLength = votedList[_user].length;
-        for(uint256 i = 0; i < vLength; ++i) { 
-            vData = votedList[_user][i];    
+        // uint256 aTime = 0;
+        // Vote memory vData;
+        // uint256 vLength = votedList[_user].length;
+        // for(uint256 i = 0; i < vLength; ++i) { 
+        //     vData = votedList[_user][i];    
             
-            if(vData.vFlag == 101) {        // film=>(101,0)
-                (, aTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(vData.property);
-            } else if(vData.vFlag == 105) { // property=>(105,0~20)
-                (, , , aTime, , ) = IProperty(DAO_PROPERTY).getPropertyProposalInfo(vData.property, vData.flag);
-            } else {                        // agent=>(102,1), board=>(103,2), pool=>(104,3)
-                (, , , aTime, , ) = IProperty(DAO_PROPERTY).getGovProposalInfo(vData.item, vData.flag);                
-            }
+        //     if(vData.vFlag == 101) {        // film=>(101,0)
+        //         (, aTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(vData.property);
+        //     } else if(vData.vFlag == 105) { // property=>(105,0~20)
+        //         (, , , aTime, , ) = IProperty(DAO_PROPERTY).getPropertyProposalInfo(vData.property, vData.flag);
+        //     } else {                        // agent=>(102,1), board=>(103,2), pool=>(104,3)
+        //         (, , , aTime, , ) = IProperty(DAO_PROPERTY).getGovProposalInfo(vData.item, vData.flag);                
+        //     }
 
-            if(aTime == 0) continue;
+        //     if(aTime == 0) continue;
 
-            if(vData.time >= si.stakeTime && vData.time < block.timestamp) {                
-                vCount += 1;
-            }
-        }
+        //     if(vData.time >= si.stakeTime && vData.time < block.timestamp) {                
+        //         vCount += 1;
+        //     }
+        // }
 
         return (pCount, vCount);
     }
@@ -575,14 +580,12 @@ contract StakingPool is ReentrancyGuard {
     function addVotedData(
         address _user, 
         uint256 _time, 
-        uint256 _vFlag, // 101=film, 102=agent, 103=board, 104=V2fund, 105=property
-        address _item,
-        uint256 _property,
-        uint256 _flag   // film(101), agent(102), board(103), V2fund(104), property(0~20)
+        uint256 _proposalID
     ) external onlyVote {        
-        votedList[_user].push(
-            Vote(_item, _vFlag, _time, _property, _flag)
-        );
+        // votedList[_user].push(
+        //     Vote(_item, _vFlag, _time, _property, _flag)
+        // );
+        votedTime[_user][_proposalID] = _time;
     }
 
     /// @notice Update lastfundProposalCreateTime for only fund film proposal
@@ -591,11 +594,16 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Add proposal data to array for calculating rewards
-    function addProposalData(address _creator, uint256 _time) external {
+    function addProposalData(address _creator, uint256 _time) external returns (uint256) {
         require(msg.sender == VABBLE_DAO || msg.sender == DAO_PROPERTY, "caller is not VabbleDAO/Property contract");
+
+        proposalCount.increment();
+        uint256 proposalID = proposalCount.current();
         propsList.push(
-            Props(_creator, _time)
+            Props(_creator, _time, proposalID)
         );
+
+        return proposalID;
     }    
 
     /// @notice Get staking amount for a staker

@@ -23,6 +23,7 @@ import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFund.sol";
 import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IVote.sol";
 
 
 contract VabbleDAO is ReentrancyGuard {
@@ -127,6 +128,9 @@ contract VabbleDAO is ReentrancyGuard {
         proposalFilmIds.push(filmId);
         userFilmProposalIds[msg.sender].push(filmId);
 
+        uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
+        IVote(VOTE).saveProposalWithFilm(filmId, proposalID); 
+
         emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender);
     }
     
@@ -184,8 +188,10 @@ contract VabbleDAO is ReentrancyGuard {
         updatedProposalFilmIds.push(_filmId);
         userUpdatedFilmProposalIds[msg.sender].push(_filmId);
 
-        // add proposal data to array for calculating rewards
-        IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
+        // add proposal data to array for calculating rewards        
+        // uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(msg.sender, block.timestamp);
+        //IVote(VOTE).saveProposalWithFilm(_filmId, proposalID); 
+        
 
         // If proposal is for fund, update "lastfundProposalCreateTime"
         if(fInfo.fundType != 0) {
