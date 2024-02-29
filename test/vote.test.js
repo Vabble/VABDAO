@@ -471,14 +471,11 @@ describe('Vote', function () {
     network.provider.send('evm_increaseTime', [period_3]);
     await network.provider.send('evm_mine');
 
-    let timeVal = await this.Property.getPropertyProposalTime(property1, flag)
-    console.log('=====timeVal before::', timeVal.cTime_.toString(), timeVal.aTime_.toString())
-
     // updateProperty
     await this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
     const propertyVal = await this.Property.getProperty(0, flag)
-    timeVal = await this.Property.getPropertyProposalTime(propertyVal, flag)
-    console.log('=====timeVal after::', timeVal.cTime_.toString(), timeVal.aTime_.toString())
+    pData = await this.Property.getPropertyProposalInfo(propertyVal, flag)
+    console.log('=====timeVal after::', pData[2].toString(), pData[3].toString())
     // expect(await this.Property.filmVotePeriod()).to.be.equal(property1)
     expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
 
@@ -680,7 +677,7 @@ describe('Vote', function () {
     //      900000000000000000000
     expect(rewardAddress).to.be.equal(this.reward.address)
 
-    const item = await this.Property.getRewardProposalInfo(this.reward.address)
+    const item = await this.Property.getGovProposalInfo(this.reward.address, 3)
     console.log("====item.title::", item)
     expect(title).to.be.equal(item[0])
     expect(desc).to.be.equal(item[1])

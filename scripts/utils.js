@@ -355,6 +355,11 @@ async function getNetworkConfig() {
   return CONFIG[network];
 }
 
+async function increaseTime(period) {
+  network.provider.send('evm_increaseTime', [period]);
+  await network.provider.send('evm_mine');
+}
+
 
 module.exports = {
   ZERO_ADDRESS,
@@ -378,5 +383,6 @@ module.exports = {
   getConfig,
   isTest,
   setupProvider,
-  getNetworkConfig
+  getNetworkConfig,
+  increaseTime
 };
