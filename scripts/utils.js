@@ -81,7 +81,7 @@ const CONFIG = {
     // vabToken: "0x61Ff1D74C20655ef4563b5838B78B551f80F0b32", // Child VAB
     exmAddress: "0x53BeF80E0EBE5A89dfb67782b12435aBeB943754",
     wmatic: "0x1fE108421Bc27B98aD52ae78dD8A3D7aB4199A00",
-    walletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
+    walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
       router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
