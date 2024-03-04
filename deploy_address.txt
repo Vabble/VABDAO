@@ -443,7 +443,7 @@ VAB Token 0x5cBbA5484594598a660636eFb0A1AD953aFa4e32
 walletAddress: 0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1
 
 
-// 2024-03-01 Polygon(Mumbai testnet)
+// 2024-03-01 Polygon(Mumbai testnet - new pending reward logic)
 FactoryFilmNFT (0x39aE94E5aab8A6Fa8232851fd87F79Aa51edde0f)
 FactorySubNFT (0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12)
 FactoryTierNFT (0xdE758e55f5D3a94311137f8665417800f0d94747)

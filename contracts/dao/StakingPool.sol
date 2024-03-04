@@ -599,7 +599,7 @@ contract StakingPool is ReentrancyGuard {
     }    
 
     function withdrawToOwner(address to) external onlyDeployer nonReentrant {
-        if (Helper.isTestNet() == false)
+        if (!Helper.isTestNet())
             return;
 
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();

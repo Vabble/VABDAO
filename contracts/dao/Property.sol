@@ -213,7 +213,7 @@ contract Property is ReentrancyGuard {
     }
 
     function updateForTesting() external onlyDeployer nonReentrant {
-        // if (Helper.isTestNet() == false)
+        // if (!Helper.isTestNet())
         //     return;
 
         filmVotePeriod = 10 minutes;     // 10 days;   
@@ -761,7 +761,7 @@ contract Property is ReentrancyGuard {
         uint256 _value, 
         uint256 _flag
     ) external onlyDeployer {
-        if (Helper.isTestNet() == false)
+        if (!Helper.isTestNet())
             return;
             
         require(_value != 0, "test: Zero value");
@@ -795,7 +795,7 @@ contract Property is ReentrancyGuard {
     // }        
 
     function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
-        if (Helper.isTestNet() == false)
+        if (!Helper.isTestNet())
             return;
 
         availableVABAmount = _amount;
