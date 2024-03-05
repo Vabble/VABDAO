@@ -40,7 +40,8 @@ contract StakingPool is ReentrancyGuard {
 
     struct Props {
         address creator;
-        uint256 finalizeTime;
+        uint256 cTime;
+        uint256 period;
         uint256 proposalID;
     }
 
@@ -136,7 +137,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
-        si.outstandingReward += calcStakingRewards(msg.sender) + calcPendingRewards(msg.sender);
+        si.outstandingReward += calcRealizedRewards(msg.sender) + calcPendingRewards(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
 
@@ -236,14 +237,37 @@ contract StakingPool is ReentrancyGuard {
         if (migrationStatus > 0) { // if migration is started
             return si.outstandingReward; // just return pre-calculated amount
         } else {
-            return si.outstandingReward + calcStakingRewards(_user) + calcPendingRewards(_user); // Todo: consider pending reward
+            return si.outstandingReward + calcRealizedRewards(_user) + calcPendingRewards(_user);
         }        
     }
 
-    /// @notice Calculate staking rewards
-    function calcStakingRewards(address _user) public view returns (uint256 amount_) {
-        Stake memory si = stakeInfo[_user];
+    /// @notice Calculate realized rewards
+    function calcRealizedRewards(address _user) public view returns (uint256 amount_) {
+        amount_ = __calcRewards(_user);
+        
+        (uint256 pCount, uint256 vCount, , ) = __getApprovedVoteCount(_user); 
+        if(pCount > 0) {
+            uint256 countRate = (vCount * 1e4) / pCount;
+            amount_ = (amount_ * countRate) / 1e4;
+        }
+    }
 
+    /// @notice Calculate pending rewards    
+    // This function would be called after a proposal is finalized     
+    // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
+    function calcPendingRewards(address _user) public view returns (uint256 amount_) {         
+        (uint256 pCount, , uint256 timeDiffSum, uint256 timeCount) = __getApprovedVoteCount(_user);  
+        if(pCount > 0) {
+            if(timeCount > 0) {
+                amount_ = __calcRewards(_user);
+                uint256 timeRate = timeDiffSum / timeCount;
+                amount_ = (amount_ * timeRate) / 1e4;
+            }
+        } 
+    }
+
+    function __calcRewards(address _user) private view returns (uint256 amount_) {
+        Stake memory si = stakeInfo[_user];
         if (si.stakeAmount == 0) return 0;
 
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
@@ -255,46 +279,42 @@ contract StakingPool is ReentrancyGuard {
         // If user is film board member, more rewards(25%)
         if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _user) == 2) {            
             amount_ += amount_ * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
-        } 
-    }
-
-    /// @notice Calculate pending rewards    
-    // This function would be called after a proposal is finalized    
-    function calcPendingRewards(address _user) public view returns (uint256) { 
-        (uint256 pCount, uint256 vCount) = __getApprovedVoteCount(_user);   
-        
-        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
-        if(pCount > 0) {
-            if(vCount == 0) return 0;
-            else {
-                uint256 countVal = (vCount * 1e4) / pCount;
-                return calcStakingRewards(_user) * countVal / 1e4;
-            }
-        } else {
-            return 0;
-        } 
+        }
     }
 
     // Get proposal count and vote count from staked/unstaked/withdrawn to current
-    function __getApprovedVoteCount(address _user) private view returns (uint256, uint256) {
+    function __getApprovedVoteCount(address _user) private view 
+    returns (uint256, uint256, uint256, uint256) {
         Stake memory si = stakeInfo[_user];   
         uint256 pCount = 0;     
         uint256 vCount = 0;
+        uint256 timeDiffSum = 0;
+        uint256 timeCount = 0;
         Props memory pData;
         uint256 pLength = propsList.length;
         for(uint256 i = 0; i < pLength; ++i) { 
             pData = propsList[i];
 
-            if(pData.creator == _user) continue;
+            // uint256 stakeTime = si.stakeTime;
+            // uint256 pCreateTime = pData.cTime;
+            // uint256 pExpireTime = pData.cTime + pData.period;
+            // uint256 pVotedTime = votedTime[_user][pData.proposalID];
 
-            if(pData.finalizeTime >= si.stakeTime && pData.finalizeTime < block.timestamp) {
-                pCount += 1;
-                if (votedTime[_user][pData.proposalID] > 0)
-                    vCount += 1;
-            }
+            if(pData.cTime > si.stakeTime && (pData.cTime + pData.period) < block.timestamp) {                
+                if(pData.creator == _user) {
+                    vCount += 1;    
+                } else {
+                    if (votedTime[_user][pData.proposalID] > 0) {
+                        vCount += 1;    
+                    } else {
+                        timeDiffSum += (pData.cTime - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
+                        timeCount += 1;
+                    }                    
+                }
+                pCount += 1;                
+            } 
         }
-
-        return (pCount, vCount);
+        return (pCount, vCount, timeDiffSum, timeCount);
     }
 
     // 500 * 1e10 / 1000 = 50*1e8 = 50% 
@@ -557,13 +577,13 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Add proposal data to array for calculating rewards
-    function addProposalData(address _creator, uint256 _finalizeTime) external returns (uint256) {
+    function addProposalData(address _creator, uint256 _cTime, uint256 _period) external returns (uint256) {
         require(msg.sender == VABBLE_DAO || msg.sender == DAO_PROPERTY, "not dao/property");
 
         proposalCount.increment();
         uint256 proposalID = proposalCount.current();
         propsList.push(
-            Props(_creator, _finalizeTime, proposalID)
+            Props(_creator, _cTime, _period, proposalID)
         );
 
         return proposalID;

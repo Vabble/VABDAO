@@ -125,7 +125,7 @@ contract VabbleDAO is ReentrancyGuard {
         userFilmIds[msg.sender][1].push(filmId); // create
         
         uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(
-            msg.sender, block.timestamp + IProperty(DAO_PROPERTY).filmVotePeriod()
+            msg.sender, block.timestamp, IProperty(DAO_PROPERTY).filmVotePeriod()
         );
         IVote(VOTE).saveProposalWithFilm(filmId, proposalID); 
 

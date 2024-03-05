@@ -260,7 +260,7 @@ contract Property is ReentrancyGuard {
 
         // add proposal data to array for calculating rewards
         ap.proposalID = IStakingPool(STAKING_POOL).addProposalData(
-            msg.sender, block.timestamp + agentVotePeriod
+            msg.sender, block.timestamp, agentVotePeriod
         );
 
         emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
@@ -312,7 +312,7 @@ contract Property is ReentrancyGuard {
 
         // add proposal data to array for calculating rewards
         rp.proposalID = IStakingPool(STAKING_POOL).addProposalData(
-            msg.sender, block.timestamp + rewardVotePeriod
+            msg.sender, block.timestamp, rewardVotePeriod
         );
 
         emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
@@ -348,7 +348,7 @@ contract Property is ReentrancyGuard {
 
         // add proposal data to array for calculating rewards
         bp.proposalID = IStakingPool(STAKING_POOL).addProposalData(
-            msg.sender, block.timestamp + boardVotePeriod
+            msg.sender, block.timestamp, boardVotePeriod
         );
 
         emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
@@ -494,7 +494,7 @@ contract Property is ReentrancyGuard {
 
         // add proposal data to array for calculating rewards
         pp.proposalID = IStakingPool(STAKING_POOL).addProposalData(
-            msg.sender, block.timestamp + propertyVotePeriod
+            msg.sender, block.timestamp, propertyVotePeriod
         );
 
         emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
