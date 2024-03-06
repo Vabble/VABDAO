@@ -278,7 +278,7 @@ contract StakingPool is ReentrancyGuard {
 
             if (pData.cTime + pData.period >= stakeTime) {
                 times_[2 * count + 1] = pData.cTime;
-                times_[2 * count + 2] = pData.cTime + propsList[i].period;
+                times_[2 * count + 2] = pData.cTime + pData.period;
                 if (times_[2 * count + 1] < stakeTime)
                     times_[2 * count + 1] = stakeTime;
 
@@ -294,6 +294,43 @@ contract StakingPool is ReentrancyGuard {
 
         count_ = count;
     }
+
+
+    // function __calcProposalTimeIntervalsTest(address _user) public view returns (uint256[] memory times_, uint256 count_) {
+    //     uint256 pLength = propsList.length;
+    //     Props memory pData;
+    //     uint256 stakeTime = stakeInfo[_user].stakeTime;        
+    //     uint256 end = block.timestamp;
+
+    //     // find all start/end proposal whose end >= stakeTime
+    //     uint256 count = 0;
+    //     uint256 minIndex = minProposalIndex[_user];
+    //     for(uint256 i = minIndex; i < pLength; ++i) { 
+    //         if (propsList[i].cTime + propsList[i].period >= stakeInfo[_user].stakeTime) {
+    //             count++;
+    //         }            
+    //     }
+
+    //     times_ = new uint[](2 * count + 2);
+
+    //     times_[0] = stakeTime;
+        
+    //     // find all start/end proposal whose end >= stakeTime        
+    //     count = 0;
+        
+    //     for(uint256 i = minIndex; i < pLength; ++i) {
+    //         pData = propsList[i];
+
+    //         if (pData.cTime + pData.period >= stakeTime) {
+    //             times_[2 * count + 1] = pData.cTime;
+    //             times_[2 * count + 2] = pData.cTime + pData.period;               
+    //             count++;
+    //         }
+    //     }
+    //     times_[2 * count + 1] = end;
+
+    //     count_ = count;
+    // }
     
     function __getProposalVoteCount(address _user, uint256 minIndex, uint256 _start, uint256 _end) public view returns (uint256, uint256) {
         uint256 pCount = 0;     

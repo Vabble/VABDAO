@@ -285,15 +285,15 @@ describe('StakingPool', function () {
     let stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address)
     let outstandRewards = stakeInfo.outstandingReward
     let stakeTime = stakeInfo.stakeTime;
-    let stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    let realizedRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     let pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     let rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('realized==========::', stakingRewards.toString())
+    console.log('realized==========::', realizedRewards.toString())
     console.log('pending==========::', pendingRewards.toString())
     console.log('rewards==========::', rewards.toString())
     console.log('outstandRewards-1::', outstandRewards.toString())
 
-    let sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
+    let sum = BigNumber.from(outstandRewards).add(realizedRewards).add(pendingRewards)
     console.log('sum    ==========::', sum.toString()) // 7.112710993736291126
     console.log('==============================')
     expect(rewards).to.be.equal(sum) 
@@ -351,16 +351,16 @@ describe('StakingPool', function () {
 
     console.log('-------- Just Before 2nd Stake Feb 15 ---------')
     outstandRewards = stakeInfo.outstandingReward
-    stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    realizedRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    console.log('realized==========::', stakingRewards.toString())
+    console.log('realized==========::', realizedRewards.toString())
     console.log('pending==========::', pendingRewards.toString())
     console.log('rewards==========::', rewards.toString())
     console.log('outstandRewards-2::', outstandRewards.toString())
     console.log('==============================')
 
-    sum = BigNumber.from(outstandRewards).add(stakingRewards)
+    sum = BigNumber.from(outstandRewards).add(realizedRewards)
     expect(rewards).to.be.equal(sum) 
 
     await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
@@ -369,17 +369,17 @@ describe('StakingPool', function () {
     
     stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address)
     outstandRewards = stakeInfo.outstandingReward
-    stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    realizedRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
     
-    console.log('realized==========::', stakingRewards.toString())
+    console.log('realized==========::', realizedRewards.toString())
     console.log('pending==========::', pendingRewards.toString())
     console.log('rewards==========::', rewards.toString())
     console.log('outstandRewards-2::', outstandRewards.toString())
     console.log('==============================')
 
-    sum = BigNumber.from(outstandRewards).add(stakingRewards)
+    sum = BigNumber.from(outstandRewards).add(realizedRewards)
     expect(rewards).to.be.equal(sum) 
 
     proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer1.address);
@@ -406,55 +406,74 @@ describe('StakingPool', function () {
     }
     // await this.Vote.connect(this.customer1).voteToFilms(pId1, vInfo, {from: this.customer1.address})
 
-    // //======= Feb 18: create p-2
-    // increaseTime(86400 * 2); // 2 days    
-    // await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
-    // await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-    //   getBigNumber(2, 0), 
-    //   title4,
-    //   desc4,
-    //   sharePercents, 
-    //   studioPayees,  
-    //   raiseAmount, 
-    //   fundPeriod, 
-    //   0,
-    //   enableClaimer,
-    //   {from: this.studio1.address}
-    // )
+    //======= Feb 18: create p-2
+    increaseTime(86400 * 2); // 2 days    
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+      getBigNumber(2, 0), 
+      title4,
+      desc4,
+      sharePercents, 
+      studioPayees,  
+      raiseAmount, 
+      fundPeriod, 
+      0,
+      enableClaimer,
+      {from: this.studio1.address}
+    )
+
+    proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer1.address);
     
-    // //======= Feb 25: vote to p-2    
-    // increaseTime(86400 * 7); // 7 days    
-    // // await this.Vote.connect(this.customer1).voteToFilms(pId2, vInfo, {from: this.customer1.address})
+    expect(proposalTimeIntervals.count_).to.be.equal(2);
+    expect(proposalTimeIntervals.times_.length).to.be.equal(6);
+    console.log("proposalTimeIntervals at Feb 18", proposalTimeIntervals.times_)
+    for (let i = 0; i < proposalTimeIntervals.times_.length - 1; i++) {
+      expect(proposalTimeIntervals.times_[i] <= proposalTimeIntervals.times_[i + 1]).to.be.true;
+    }
     
-    // const rewardRate = await this.Property.rewardRate()
-    // const totalRewardAmount = await this.StakingPool.totalRewardAmount()
-    // const totalStakingAmount = await this.StakingPool.totalStakingAmount()
-    // console.log('rewardRate==========::', rewardRate.toString())
-    // console.log('totalRewardAmount===::', totalRewardAmount.toString()) // 861.458247218036034477
-    // console.log('totalStakingAmount==::', totalStakingAmount.toString())// 200.000000000000000000
-    // console.log('==============================')
+    //======= Feb 25: vote to p-2    
+    increaseTime(86400 * 7); // 7 days    
+    // await this.Vote.connect(this.customer1).voteToFilms(pId2, vInfo, {from: this.customer1.address})
+
+    proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer1.address);
+
+    expect(proposalTimeIntervals.count_).to.be.equal(2);
+    expect(proposalTimeIntervals.times_.length).to.be.equal(6);
+    console.log("proposalTimeIntervals at Feb 25", proposalTimeIntervals.times_)
+    for (let i = 0; i < proposalTimeIntervals.times_.length - 1; i++) {
+      expect(proposalTimeIntervals.times_[i] <= proposalTimeIntervals.times_[i + 1]).to.be.true;
+    }
+    
+    const rewardRate = await this.Property.rewardRate()
+    const totalRewardAmount = await this.StakingPool.totalRewardAmount()
+    const totalStakingAmount = await this.StakingPool.totalStakingAmount()
+    console.log('rewardRate==========::', rewardRate.toString())
+    console.log('totalRewardAmount===::', totalRewardAmount.toString()) // 861.458247218036034477
+    console.log('totalStakingAmount==::', totalStakingAmount.toString())// 200.000000000000000000
+    console.log('==============================')
 
 
-    // //======= Feb 28: checking . . .
-    // increaseTime(86400 * 3); // 3 days    
-    // stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
-    // pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
-    // rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    // sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
-    // console.log('realized==========::', stakingRewards.toString())
-    // console.log('pending==========::', pendingRewards.toString())
-    // console.log('rewards==========::', rewards.toString())
-    // console.log('==============================')
-    // expect(rewards).to.be.equal(sum) 
+    //======= Feb 28: checking . . .
+    increaseTime(86400 * 3); // 3 days    
+    realizedRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
+    rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    sum = BigNumber.from(outstandRewards).add(realizedRewards)
+    console.log("------------ At Feb 28 -------------------")
+    console.log('realized==========::', realizedRewards.toString())
+    console.log('pending==========::', pendingRewards.toString())
+    console.log('rewards==========::', rewards.toString())
+    console.log('==============================')
+    expect(rewards).to.be.equal(sum) 
     
     // //======= March 16: withdraw rewards
     // increaseTime(86400 * 17); // 17 days        
     // outstandRewards = stakeInfo.outstandingReward
-    // stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    // realizedRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     // pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     // rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    // sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
-    // console.log('realized==========::', stakingRewards.toString())
+    // sum = BigNumber.from(outstandRewards).add(realizedRewards).add(pendingRewards)
+    // console.log('realized==========::', realizedRewards.toString())
     // console.log('pending==========::', pendingRewards.toString())
     // console.log('rewards==========::', rewards.toString())
 
