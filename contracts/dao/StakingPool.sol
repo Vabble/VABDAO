@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-
+// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Arrays.sol
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Arrays.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
@@ -14,6 +15,8 @@ import "../interfaces/IOwnablee.sol";
 contract StakingPool is ReentrancyGuard {
     
     using Counters for Counters.Counter;
+    using Arrays for uint[];
+    
 
     event TokenStaked(address indexed staker, uint256 stakeAmount);
     event TokenUnstaked(address indexed unstaker, uint256 unStakeAmount);
@@ -68,6 +71,8 @@ contract StakingPool is ReentrancyGuard {
 
     Counters.Counter public stakerCount;   // count of stakers is from No.1
     Counters.Counter public proposalCount;   // count of stakers is from No.1
+
+    mapping(address => uint256) public minProposalIndex;
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "not vote");
@@ -137,7 +142,7 @@ contract StakingPool is ReentrancyGuard {
             stakerCount.increment();
             stakerList.push(msg.sender);
         }
-        si.outstandingReward += calcRealizedRewards(msg.sender) + calcPendingRewards(msg.sender);
+        si.outstandingReward += calcRealizedRewards(msg.sender);
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
 
@@ -237,84 +242,140 @@ contract StakingPool is ReentrancyGuard {
         if (migrationStatus > 0) { // if migration is started
             return si.outstandingReward; // just return pre-calculated amount
         } else {
-            return si.outstandingReward + calcRealizedRewards(_user) + calcPendingRewards(_user);
+            return si.outstandingReward + calcRealizedRewards(_user);
         }        
+    }
+
+    function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_, uint256 count_) {
+        uint256 pLength = propsList.length;
+        uint256 pCount = 0;     
+        uint256 vCount = 0;
+        Props memory pData;
+        uint256 realizeReward = 0;
+
+        // find all start/end proposal whose end >= stakeTime
+        uint256 count = 0;
+        uint256 minIndex = minProposalIndex[_user];
+        for(uint256 i = minIndex; i < pLength; ++i) { 
+            if (propsList[i].cTime + propsList[i].period >= stakeInfo[_user].stakeTime) {
+                count++;
+            }            
+        }
+
+        uint[] memory times_ = new uint[](2 * count + 2);
+
+        times_[0] = stakeInfo[_user].stakeTime;
+        
+        // find all start/end proposal whose end >= stakeTime        
+        count = 0;
+        
+        for(uint256 i = minIndex; i < pLength; ++i) {
+            if (propsList[i].cTime + propsList[i].period >= stakeInfo[_user].stakeTime) {
+                times_[2 * count + 1] = propsList[i].cTime;
+                times_[2 * count + 2] = propsList[i].cTime + propsList[i].period;
+                count++;
+            }
+        }
+        times_[2 * count + 1] = block.timestamp;
+
+        // sort times
+        times_.sort();
+
+        count_ = count;
+    }
+    
+    function __getProposalVoteCount(address _user, uint256 minIndex, uint256 _start, uint256 _end) public view returns (uint256, uint256) {
+        uint256 pCount = 0;     
+        uint256 vCount = 0;
+        Props memory pData;
+        uint256 pLength = propsList.length;
+
+      
+        for (uint256 j = minIndex; j < pLength; ++j) {
+            pData = propsList[j];
+
+            if (pData.cTime <= _start && _end <= pData.cTime + pData.period) {
+                pCount++;
+                if (pData.creator == _user || votedTime[_user][pData.proposalID] > 0) {
+                    vCount += 1;
+                }
+            }
+        }
+
+        return (pCount, vCount);
     }
 
     /// @notice Calculate realized rewards
     function calcRealizedRewards(address _user) public view returns (uint256 amount_) {
-        amount_ = __calcRewards(_user);
-        
-        (uint256 pCount, uint256 vCount, , ) = __getApprovedVoteCount(_user); 
-        if(pCount > 0) {
-            uint256 countRate = (vCount * 1e4) / pCount;
-            amount_ = (amount_ * countRate) / 1e4;
+        uint256 pLength = propsList.length;
+        Props memory pData;
+        uint256 realizeReward = 0;
+
+        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user);
+
+        uint256 minIndex = minProposalIndex[_user];
+
+        uint256 intervalCount = 2 * count + 1;
+        uint256 start;
+        uint256 end;
+        for (uint256 i = 0; i < intervalCount; ++i) {
+            // determine proposal start and end time
+            start = times[i];
+            end = times[i + 1];
+
+            // count all proposals which contains interval [t(i), t(i + 1))]            
+            // and also count vote proposals which contains  interval [t(i), t(i + 1))]
+            (uint256 pCount, uint256 vCount) = __getProposalVoteCount(_user, minIndex, start, end);
+            amount_ = __calcRewards(_user, start);
+
+            if (pCount > 0) {
+                uint256 countRate = (vCount * 1e4) / pCount;
+                amount_ = (amount_ * countRate) / 1e4;
+            }
+
+            realizeReward += amount_;
         }
+
+        // // update minProposalIndex
+        // for(uint256 i = minProposalIndex; i < pLength; ++i) { 
+        //     if (propsList[i].cTime + propsList[i].period >= stakeInfo[_user].stakeTime) {
+        //         minProposalIndex = i;
+        //         break;
+        //     }            
+        // }
+
+        return realizeReward;
     }
+
+    
 
     /// @notice Calculate pending rewards    
     // This function would be called after a proposal is finalized     
     // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
     function calcPendingRewards(address _user) public view returns (uint256 amount_) {         
-        (uint256 pCount, , uint256 timeDiffSum, uint256 timeCount) = __getApprovedVoteCount(_user);  
-        if(pCount > 0) {
-            if(timeCount > 0) {
-                amount_ = __calcRewards(_user);
-                uint256 timeRate = timeDiffSum / timeCount;
-                amount_ = (amount_ * timeRate) / 1e4;
-            }
-        } 
+        if (stakeInfo[_user].stakeAmount == 0) return 0;
+        if (stakeInfo[_user].stakeTime == 0) return 0;
+
+        uint256 totalReward = __calcRewards(_user, stakeInfo[_user].stakeTime);
+
+        return totalReward - calcRealizedRewards(_user);
     }
 
-    function __calcRewards(address _user) private view returns (uint256 amount_) {
+    function __calcRewards(address _user, uint256 startTime) private view returns (uint256 amount_) {
         Stake memory si = stakeInfo[_user];
         if (si.stakeAmount == 0) return 0;
+        if (startTime == 0) return 0;
 
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
         
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 period = (block.timestamp - si.stakeTime) * 1e4 / 1 days;
+        uint256 period = (block.timestamp - startTime) * 1e4 / 1 days;
         amount_ = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
 
         // If user is film board member, more rewards(25%)
         if(IProperty(DAO_PROPERTY).checkGovWhitelist(2, _user) == 2) {            
             amount_ += amount_ * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
         }
-    }
-
-    // Get proposal count and vote count from staked/unstaked/withdrawn to current
-    function __getApprovedVoteCount(address _user) private view 
-    returns (uint256, uint256, uint256, uint256) {
-        Stake memory si = stakeInfo[_user];   
-        uint256 pCount = 0;     
-        uint256 vCount = 0;
-        uint256 timeDiffSum = 0;
-        uint256 timeCount = 0;
-        Props memory pData;
-        uint256 pLength = propsList.length;
-        for(uint256 i = 0; i < pLength; ++i) { 
-            pData = propsList[i];
-
-            // uint256 stakeTime = si.stakeTime;
-            // uint256 pCreateTime = pData.cTime;
-            // uint256 pExpireTime = pData.cTime + pData.period;
-            // uint256 pVotedTime = votedTime[_user][pData.proposalID];
-
-            if(pData.cTime > si.stakeTime && (pData.cTime + pData.period) < block.timestamp) {                
-                if(pData.creator == _user) {
-                    vCount += 1;    
-                } else {
-                    if (votedTime[_user][pData.proposalID] > 0) {
-                        vCount += 1;    
-                    } else {
-                        timeDiffSum += (pData.cTime - si.stakeTime) * 1e4 / IProperty(DAO_PROPERTY).lockPeriod();
-                        timeCount += 1;
-                    }                    
-                }
-                pCount += 1;                
-            } 
-        }
-        return (pCount, vCount, timeDiffSum, timeCount);
     }
 
     // 500 * 1e10 / 1000 = 50*1e8 = 50% 
@@ -637,5 +698,16 @@ contract StakingPool is ReentrancyGuard {
         
         // Transfer VAB of Studio Pool(VabbleDAO)
         sumAmount += IVabbleDAO(VABBLE_DAO).withdrawVABFromStudioPool(to);
+    }
+
+    function sortInsideFunction() public pure returns (uint256[] memory) {
+        uint[] memory array = new uint[](3);
+        array[0] = 2;
+        array[1] = 1;
+        array[2] = 3;
+        
+        array.sort();
+
+        return array;
     }
 }
