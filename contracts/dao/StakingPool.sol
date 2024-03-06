@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/Arrays.sol";
 import "../libraries/Helper.sol";
+import "../libraries/Arrays.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
@@ -15,7 +15,7 @@ import "../interfaces/IOwnablee.sol";
 contract StakingPool is ReentrancyGuard {
     
     using Counters for Counters.Counter;
-    using Arrays for uint[];
+    using Arrays for uint256[];
     
 
     event TokenStaked(address indexed staker, uint256 stakeAmount);
