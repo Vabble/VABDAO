@@ -267,7 +267,7 @@ contract StakingPool is ReentrancyGuard {
             }            
         }
 
-        uint[] memory times_ = new uint[](2 * count + 2);
+        times_ = new uint[](2 * count + 2);
 
         times_[0] = stakeInfo[_user].stakeTime;
         

@@ -278,16 +278,13 @@ describe('StakingPool', function () {
     // p-2: create at Feb 18, vote Feb 25
     // withdraw rewards at March 16
 
-    // Feb 1: staking VAB
-    let result = await this.StakingPool.sortInsideFunction();
-    console.log("sorted", result);
-
-    // const stakeAmount = getBigNumber(100)
-    // await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+    
+    const stakeAmount = getBigNumber(100)
+    await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
     
     // let stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address)
     // let outstandRewards = stakeInfo.outstandingReward
-    // let stakingRewards = await this.StakingPool.calcStakingRewards(this.customer1.address)
+    // let stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     // let pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     // let rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
     // console.log('staking==========::', stakingRewards.toString())
@@ -336,7 +333,7 @@ describe('StakingPool', function () {
     
     // stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address)
     // outstandRewards = stakeInfo.outstandingReward
-    // stakingRewards = await this.StakingPool.calcStakingRewards(this.customer1.address)
+    // stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     // pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     // rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
     // sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
@@ -384,7 +381,7 @@ describe('StakingPool', function () {
 
     // //======= Feb 28: checking . . .
     // increaseTime(86400 * 3); // 3 days    
-    // stakingRewards = await this.StakingPool.calcStakingRewards(this.customer1.address)
+    // stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     // pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     // rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
     // sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
@@ -397,7 +394,7 @@ describe('StakingPool', function () {
     // //======= March 16: withdraw rewards
     // increaseTime(86400 * 17); // 17 days        
     // outstandRewards = stakeInfo.outstandingReward
-    // stakingRewards = await this.StakingPool.calcStakingRewards(this.customer1.address)
+    // stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     // pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
     // rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
     // sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
