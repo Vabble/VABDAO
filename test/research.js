@@ -503,6 +503,7 @@ describe('StakingPool', function () {
     //======= March 21: check reward
     increaseTime(86400 * 4); // 4 days      
 
+    console.log("------------ At Mar 21 -------------------")
     stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address)
     outstandRewards = stakeInfo.outstandingReward
     realizedRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
@@ -512,5 +513,10 @@ describe('StakingPool', function () {
     console.log('realized==========::', realizedRewards.toString())
     console.log('pending==========::', pendingRewards.toString())
     console.log('rewards==========::', rewards.toString())
+
+    expect(outstandRewards).to.be.equal(0);
+    expect(realizedRewards > 0).to.be.true;
+    expect(pendingRewards).to.be.equal(0);
+    expect(realizedRewards).to.be.equal(realizedRewards);
   });  
 });
