@@ -282,50 +282,57 @@ describe('StakingPool', function () {
     const stakeAmount = getBigNumber(100)
     await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
     
-    // let stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address)
-    // let outstandRewards = stakeInfo.outstandingReward
-    // let stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
-    // let pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
-    // let rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    // console.log('staking==========::', stakingRewards.toString())
-    // console.log('pending==========::', pendingRewards.toString())
-    // console.log('rewards==========::', rewards.toString())
-    // console.log('outstandRewards-1::', outstandRewards.toString())
+    let stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address)
+    let outstandRewards = stakeInfo.outstandingReward
+    let stakeTime = stakeInfo.stakeTime;
+    let stakingRewards = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    let pendingRewards = await this.StakingPool.calcPendingRewards(this.customer1.address)
+    let rewards = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    console.log('staking==========::', stakingRewards.toString())
+    console.log('pending==========::', pendingRewards.toString())
+    console.log('rewards==========::', rewards.toString())
+    console.log('outstandRewards-1::', outstandRewards.toString())
 
-    // let sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
-    // console.log('sum    ==========::', sum.toString()) // 7.112710993736291126
-    // console.log('==============================')
-    // expect(rewards).to.be.equal(sum) 
+    let sum = BigNumber.from(outstandRewards).add(stakingRewards).add(pendingRewards)
+    console.log('sum    ==========::', sum.toString()) // 7.112710993736291126
+    console.log('==============================')
+    expect(rewards).to.be.equal(sum) 
 
 
-    // const sharePercents = [getBigNumber(60, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
-    // const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
-    // const raiseAmount = getBigNumber(150, 6)
-    // const fundPeriod = getBigNumber(20, 0)
-    // const fundType = getBigNumber(3, 0)
-    // const title4 = 'film title - 4'
-    // const desc4 = 'film description - 4'
-    // const enableClaimer = 1;
-    // let ethVal = ethers.utils.parseEther('1')
-    // const pId1 = [1]; // 1, 2
-    // const pId2 = [2]; // 1, 2
-    // const vInfo = [1];
+    const sharePercents = [getBigNumber(60, 8), getBigNumber(15, 8), getBigNumber(25, 8)]
+    const studioPayees = [this.customer1.address, this.customer2.address, this.customer3.address]
+    const raiseAmount = getBigNumber(150, 6)
+    const fundPeriod = getBigNumber(20, 0)
+    const fundType = getBigNumber(3, 0)
+    const title4 = 'film title - 4'
+    const desc4 = 'film description - 4'
+    const enableClaimer = 1;
+    let ethVal = ethers.utils.parseEther('1')
+    const pId1 = [1]; // 1, 2
+    const pId2 = [2]; // 1, 2
+    const vInfo = [1];
         
-    // //======= Feb 11: create p-1 
-    // increaseTime(86400 * 10); // 10 days    
-    // await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
-    // await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
-    //   getBigNumber(1, 0), 
-    //   title4,
-    //   desc4,
-    //   sharePercents, 
-    //   studioPayees,  
-    //   raiseAmount, 
-    //   fundPeriod, 
-    //   0,
-    //   enableClaimer,
-    //   {from: this.studio1.address}
-    // )
+    //======= Feb 11: create p-1 
+    increaseTime(86400 * 10); // 10 days    
+    await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, CONFIG.addressZero, {from: this.studio1.address, value: ethVal})
+    await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
+      getBigNumber(1, 0), 
+      title4,
+      desc4,
+      sharePercents, 
+      studioPayees,  
+      raiseAmount, 
+      fundPeriod, 
+      0,
+      enableClaimer,
+      {from: this.studio1.address}
+    )
+
+    let proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer1.address, stakeTime);
+    
+    expect(proposalTimeIntervals.count_).to.be.equal(1);
+    expect(proposalTimeIntervals.times_.length).to.be.equal(4);
+    console.log("proposalTimeIntervals", proposalTimeIntervals.times_)
 
     // //======= Feb 15: stake VAB
     // increaseTime(86400 * 4); // 4 days    
