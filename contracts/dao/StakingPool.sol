@@ -254,7 +254,6 @@ contract StakingPool is ReentrancyGuard {
     function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_, uint256 count_) {
         uint256 pLength = propsList.length;
         Props memory pData;
-        uint256 realizeReward = 0;
         uint256 stakeTime = stakeInfo[_user].stakeTime;        
         uint256 end = block.timestamp;
 
