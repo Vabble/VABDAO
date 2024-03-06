@@ -251,12 +251,13 @@ contract StakingPool is ReentrancyGuard {
         }        
     }
 
-    function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_, uint256 count_) {
+    function __calcProposalTimeIntervals(address _user, uint256 start, uint256 end) public view returns (uint256[] memory times_, uint256 count_) {
         uint256 pLength = propsList.length;
         uint256 pCount = 0;     
         uint256 vCount = 0;
         Props memory pData;
         uint256 realizeReward = 0;
+        uint256 stakeTime = stakeInfo[_user].stakeTime;
 
         // find all start/end proposal whose end >= stakeTime
         uint256 count = 0;
@@ -269,19 +270,26 @@ contract StakingPool is ReentrancyGuard {
 
         times_ = new uint[](2 * count + 2);
 
-        times_[0] = stakeInfo[_user].stakeTime;
+        times_[0] = stakeTime;
         
         // find all start/end proposal whose end >= stakeTime        
         count = 0;
         
         for(uint256 i = minIndex; i < pLength; ++i) {
-            if (propsList[i].cTime + propsList[i].period >= stakeInfo[_user].stakeTime) {
-                times_[2 * count + 1] = propsList[i].cTime;
-                times_[2 * count + 2] = propsList[i].cTime + propsList[i].period;
+            pData = propsList[i];
+
+            if (pData.cTime + pData.period >= stakeTime) {
+                times_[2 * count + 1] = pData.cTime;
+                times_[2 * count + 2] = pData.cTime + propsList[i].period;
+                if (times_[2 * count + 1] < start)
+                    times_[2 * count + 1] = start;
+
+                if (times_[2 * count + 2] > end)
+                    times_[2 * count + 2] = end;
                 count++;
             }
         }
-        times_[2 * count + 1] = block.timestamp;
+        times_[2 * count + 1] = end;
 
         // sort times
         times_.sort();
@@ -327,7 +335,7 @@ contract StakingPool is ReentrancyGuard {
         Props memory pData;
         uint256 realizeReward = 0;
 
-        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user);
+        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user, stakeInfo[_user].stakeTime, block.timestamp);
 
         uint256 minIndex = minProposalIndex[_user];
 
