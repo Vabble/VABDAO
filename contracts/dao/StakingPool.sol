@@ -212,6 +212,8 @@ contract StakingPool is ReentrancyGuard {
 
             totalStakingAmount += rewardAmount;
 
+            __updateMinProposalIndex(msg.sender);
+
             emit RewardContinued(msg.sender, _isCompound);
         } else {
             require(rewardAmount > 0, "wR: zero reward");
