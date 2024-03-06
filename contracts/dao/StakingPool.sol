@@ -148,6 +148,8 @@ contract StakingPool is ReentrancyGuard {
 
         totalStakingAmount += _amount;
 
+        __updateMinProposalIndex(msg.sender);
+
         emit TokenStaked(msg.sender, _amount);
     }
 
@@ -231,6 +233,9 @@ contract StakingPool is ReentrancyGuard {
         stakeInfo[msg.sender].outstandingReward = 0;
     
         emit RewardWithdraw(msg.sender, _amount);
+
+        // update minProposalIndex
+        __updateMinProposalIndex(msg.sender);
     }
 
     /// @notice Calculate reward amount with previous reward
@@ -305,6 +310,17 @@ contract StakingPool is ReentrancyGuard {
         return (pCount, vCount);
     }
 
+    function __updateMinProposalIndex(address _user) private {
+        uint256 pLength = propsList.length;
+        uint256 minIndex = minProposalIndex[_user];
+        for(uint256 i = minIndex; i < pLength; ++i) { 
+            if (propsList[i].cTime + propsList[i].period >= stakeInfo[_user].stakeTime) {
+                minProposalIndex[_user] = i;
+                break;
+            }            
+        }
+    }
+
     /// @notice Calculate realized rewards
     function calcRealizedRewards(address _user) public view returns (uint256 amount_) {
         uint256 pLength = propsList.length;
@@ -336,14 +352,7 @@ contract StakingPool is ReentrancyGuard {
             realizeReward += amount_;
         }
 
-        // // update minProposalIndex
-        // for(uint256 i = minProposalIndex; i < pLength; ++i) { 
-        //     if (propsList[i].cTime + propsList[i].period >= stakeInfo[_user].stakeTime) {
-        //         minProposalIndex = i;
-        //         break;
-        //     }            
-        // }
-
+        
         return realizeReward;
     }
 
@@ -698,16 +707,5 @@ contract StakingPool is ReentrancyGuard {
         
         // Transfer VAB of Studio Pool(VabbleDAO)
         sumAmount += IVabbleDAO(VABBLE_DAO).withdrawVABFromStudioPool(to);
-    }
-
-    function sortInsideFunction() public pure returns (uint256[] memory) {
-        uint[] memory array = new uint[](3);
-        array[0] = 2;
-        array[1] = 1;
-        array[2] = 3;
-        
-        array.sort();
-
-        return array;
     }
 }
