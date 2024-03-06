@@ -332,7 +332,7 @@ describe('StakingPool', function () {
     
     expect(proposalTimeIntervals.count_).to.be.equal(1);
     expect(proposalTimeIntervals.times_.length).to.be.equal(4);
-    console.log("proposalTimeIntervals", proposalTimeIntervals.times_)
+    console.log("proposalTimeIntervals at Feb 11", proposalTimeIntervals.times_)
     for (let i = 0; i < proposalTimeIntervals.times_.length - 1; i++) {
       expect(proposalTimeIntervals.times_[i] <= proposalTimeIntervals.times_[i + 1]).to.be.true;
     }
@@ -344,7 +344,7 @@ describe('StakingPool', function () {
     
     expect(proposalTimeIntervals.count_).to.be.equal(1);
     expect(proposalTimeIntervals.times_.length).to.be.equal(4);
-    console.log("proposalTimeIntervals", proposalTimeIntervals.times_)
+    console.log("proposalTimeIntervals at Feb 15", proposalTimeIntervals.times_)
     for (let i = 0; i < proposalTimeIntervals.times_.length - 1; i++) {
       expect(proposalTimeIntervals.times_[i] <= proposalTimeIntervals.times_[i + 1]).to.be.true;
     }
@@ -386,7 +386,7 @@ describe('StakingPool', function () {
     
     expect(proposalTimeIntervals.count_).to.be.equal(1);
     expect(proposalTimeIntervals.times_.length).to.be.equal(4);
-    console.log("proposalTimeIntervals", proposalTimeIntervals.times_)
+    console.log("proposalTimeIntervals at Feb 15", proposalTimeIntervals.times_)
     for (let i = 0; i < proposalTimeIntervals.times_.length - 1; i++) {
       expect(proposalTimeIntervals.times_[i] <= proposalTimeIntervals.times_[i + 1]).to.be.true;
     }
@@ -395,6 +395,15 @@ describe('StakingPool', function () {
     //======= Feb 16: vote to p-1 
     increaseTime(86400 * 1); // 1 days    
     await network.provider.send('evm_mine');
+
+    proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer1.address);
+    
+    expect(proposalTimeIntervals.count_).to.be.equal(1);
+    expect(proposalTimeIntervals.times_.length).to.be.equal(4);
+    console.log("proposalTimeIntervals at Feb 16", proposalTimeIntervals.times_)
+    for (let i = 0; i < proposalTimeIntervals.times_.length - 1; i++) {
+      expect(proposalTimeIntervals.times_[i] <= proposalTimeIntervals.times_[i + 1]).to.be.true;
+    }
     // await this.Vote.connect(this.customer1).voteToFilms(pId1, vInfo, {from: this.customer1.address})
 
     // //======= Feb 18: create p-2

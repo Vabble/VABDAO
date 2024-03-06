@@ -253,8 +253,6 @@ contract StakingPool is ReentrancyGuard {
 
     function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_, uint256 count_) {
         uint256 pLength = propsList.length;
-        uint256 pCount = 0;     
-        uint256 vCount = 0;
         Props memory pData;
         uint256 realizeReward = 0;
         uint256 stakeTime = stakeInfo[_user].stakeTime;        
@@ -331,9 +329,7 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice Calculate realized rewards
-    function calcRealizedRewards(address _user) public view returns (uint256 amount_) {
-        uint256 pLength = propsList.length;
-        Props memory pData;
+    function calcRealizedRewards(address _user) public view returns (uint256) {
         uint256 realizeReward = 0;
 
         (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user);
@@ -343,6 +339,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 intervalCount = 2 * count + 1;
         uint256 start;
         uint256 end;
+        uint256 amount = 0;
         for (uint256 i = 0; i < intervalCount; ++i) {
             // determine proposal start and end time
             start = times[i];
@@ -351,17 +348,16 @@ contract StakingPool is ReentrancyGuard {
             // count all proposals which contains interval [t(i), t(i + 1))]            
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
             (uint256 pCount, uint256 vCount) = __getProposalVoteCount(_user, minIndex, start, end);
-            amount_ = __calcRewards(_user, start);
+            amount = __calcRewards(_user, start);
 
             if (pCount > 0) {
                 uint256 countRate = (vCount * 1e4) / pCount;
-                amount_ = (amount_ * countRate) / 1e4;
+                amount = (amount * countRate) / 1e4;
             }
 
-            realizeReward += amount_;
+            realizeReward += amount;
         }
 
-        
         return realizeReward;
     }
 
