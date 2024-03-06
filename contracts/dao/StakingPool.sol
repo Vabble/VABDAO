@@ -251,13 +251,13 @@ contract StakingPool is ReentrancyGuard {
         }        
     }
 
-    function __calcProposalTimeIntervals(address _user, uint256 start) public view returns (uint256[] memory times_, uint256 count_) {
+    function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_, uint256 count_) {
         uint256 pLength = propsList.length;
         uint256 pCount = 0;     
         uint256 vCount = 0;
         Props memory pData;
         uint256 realizeReward = 0;
-        uint256 stakeTime = stakeInfo[_user].stakeTime;
+        uint256 stakeTime = stakeInfo[_user].stakeTime;        
         uint256 end = block.timestamp;
 
         // find all start/end proposal whose end >= stakeTime
@@ -282,8 +282,8 @@ contract StakingPool is ReentrancyGuard {
             if (pData.cTime + pData.period >= stakeTime) {
                 times_[2 * count + 1] = pData.cTime;
                 times_[2 * count + 2] = pData.cTime + propsList[i].period;
-                if (times_[2 * count + 1] < start)
-                    times_[2 * count + 1] = start;
+                if (times_[2 * count + 1] < stakeTime)
+                    times_[2 * count + 1] = stakeTime;
 
                 if (times_[2 * count + 2] > end)
                     times_[2 * count + 2] = end;
@@ -336,7 +336,7 @@ contract StakingPool is ReentrancyGuard {
         Props memory pData;
         uint256 realizeReward = 0;
 
-        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user, stakeInfo[_user].stakeTime);
+        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user);
 
         uint256 minIndex = minProposalIndex[_user];
 
