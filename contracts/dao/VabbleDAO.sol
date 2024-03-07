@@ -45,9 +45,9 @@ contract VabbleDAO is ReentrancyGuard {
     address public immutable DAO_PROPERTY;
     address public immutable VABBLE_FUND;  
 
-    uint256[] private updatedProposalFilmIds;    
-    uint256[] private approvedFundingFilmIds;
-    uint256[] private approvedListingFilmIds;
+    // (flag => filmId list) flag: 1=proposal, 2=approveListing, 3=approveFunding, 4=updated
+    mapping(uint256 => uint256[]) private totalFilmIds; 
+
     address[] private studioPoolUsers;            // (which => user list)
     address[] private edgePoolUsers;              // (which => user list)
 
@@ -122,6 +122,7 @@ contract VabbleDAO is ReentrancyGuard {
         fInfo.studio = msg.sender;
         fInfo.status = Helper.Status.LISTED;
 
+        totalFilmIds[1].push(filmId);
         userFilmIds[msg.sender][1].push(filmId); // create
         
         uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(
@@ -183,7 +184,7 @@ contract VabbleDAO is ReentrancyGuard {
         fInfo.status = Helper.Status.UPDATED;
 
         updatedFilmCount.increment();
-        updatedProposalFilmIds.push(_filmId);
+        totalFilmIds[4].push(_filmId);
         userFilmIds[msg.sender][2].push(_filmId); // update
 
         // If proposal is for fund, update "lastfundProposalCreateTime"
@@ -193,7 +194,7 @@ contract VabbleDAO is ReentrancyGuard {
             if(fInfo.noVote == 1) {
                 fInfo.status = Helper.Status.APPROVED_FUNDING;
                 fInfo.pApproveTime = block.timestamp;
-                approvedFundingFilmIds.push(_filmId);
+                totalFilmIds[3].push(_filmId);
                 userFilmIds[msg.sender][3].push(_filmId); // approve
             } 
         }       
@@ -309,12 +310,14 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 fundType = filmInfo[_filmId].fundType;
         if(_flag == 0) {
             if(fundType != 0) { // in case of fund film
-                filmInfo[_filmId].status = Helper.Status.APPROVED_FUNDING;
-                approvedFundingFilmIds.push(_filmId);
+                filmInfo[_filmId].status = Helper.Status.APPROVED_FUNDING;                
+                totalFilmIds[3].push(_filmId);
             } else {
-                filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;    
-                approvedListingFilmIds.push(_filmId);
+                filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;                    
+                totalFilmIds[2].push(_filmId);
             }        
+            
+            
             address studioA = filmInfo[_filmId].studio;
             userFilmIds[studioA][3].push(_filmId); // approve
         } else {
@@ -644,10 +647,7 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @notice Get film Ids
     function getFilmIds(uint256 _flag) external view returns (uint256[] memory list_) {        
-        // if(_flag == 1) list_ = proposalFilmIds;
-        if(_flag == 2) list_ = approvedListingFilmIds;        
-        else if(_flag == 3) list_ = approvedFundingFilmIds;        
-        else if(_flag == 4) list_ = updatedProposalFilmIds;     
+        return totalFilmIds[_flag];
     }
 
     /// @notice flag=1 => studioPoolUsers, flag=2 => edgePoolUsers

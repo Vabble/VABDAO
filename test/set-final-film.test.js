@@ -390,7 +390,7 @@ describe('SetFinalFilm', function () {
             ).to.be.revertedWith('cO, E1'); // changeOwner: not film owner
 
             // Create proposal for a film by studio with EXM token
-            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.EXM.address, 
+            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.USDC.address, 
                 {from: this.studio1.address})
             await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
                 fId2, 
@@ -456,6 +456,7 @@ describe('SetFinalFilm', function () {
 
             // Vote to proposal films(1,2,3,4) from customer1, 2, 3
             const pIds = await this.VabbleDAO.getFilmIds(1); // 1, 2, 3, 4, 5
+            console.log("film Ids", pIds);
 
             // Staking VAB token from customrs 1, 2, 3 to Staking Pool for voting
             await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(400), {from: this.customer1.address})
@@ -803,7 +804,7 @@ describe('SetFinalFilm', function () {
 
             await expect(
                 this.VabbleDAO.connect(this.customer3).claimReward([fId4], {from: this.customer3.address})
-            ).to.be.revertedWith('claimReward: zero amount');
+            ).to.be.revertedWith('cAR: zero amount');
 
             // => Increase next block timestamp for only testing
             period = 30 * 24 * 3600; // 31 days

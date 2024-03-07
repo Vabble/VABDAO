@@ -622,7 +622,7 @@ describe('VabbleDAO-test-5', function () {
 
     await expect(
       this.VabbleDAO.connect(this.customer3).claimReward([fId1], {from: this.customer3.address})
-    ).to.be.revertedWith('claimReward: zero amount');
+    ).to.be.revertedWith('cAR: zero amount');
     
     // withdrawFunding
     await expect(
@@ -671,7 +671,7 @@ describe('VabbleDAO-test-5', function () {
 
     await expect(
       this.VabbleDAO.connect(this.customer1).claimReward([fId1], {from: this.customer1.address})
-    ).to.be.revertedWith('claimReward: zero amount');
+    ).to.be.revertedWith('cAR: zero amount');
 
     const v_2 = await this.vabToken.balanceOf(this.customer1.address)
     const claimedAmount_1 = v_2.sub(v_1)
@@ -756,7 +756,7 @@ describe('VabbleDAO-test-5', function () {
 
     await expect(
       this.VabbleDAO.connect(this.customer3).claimReward([fId4], {from: this.customer3.address})
-    ).to.be.revertedWith('claimReward: zero amount');
+    ).to.be.revertedWith('cAR: zero amount');
 
     // => Increase next block timestamp for only testing
     period = 30 * 24 * 3600; // 31 days

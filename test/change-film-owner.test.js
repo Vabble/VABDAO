@@ -988,7 +988,7 @@ describe('ChangeFilmOwner', function () {
 
             await expect(
                 this.VabbleDAO.connect(this.studio1).claimReward([fId4], {from: this.studio1.address})
-            ).to.be.revertedWith('claimReward: zero amount');
+            ).to.be.revertedWith('cAR: zero amount');
             
         } catch (error) {
             console.error("Error:", error);
