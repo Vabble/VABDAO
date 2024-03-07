@@ -404,7 +404,7 @@ contract StakingPool is ReentrancyGuard {
     /// @notice Calculate pending rewards    
     // This function would be called after a proposal is finalized     
     // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
-    function calcPendingRewards(address _user) public view returns (uint256 amount_) {         
+    function calcPendingRewards(address _user) public view returns (uint256) {         
         if (stakeInfo[_user].stakeAmount == 0) return 0;
         if (stakeInfo[_user].stakeTime == 0) return 0;
 

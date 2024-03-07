@@ -44,6 +44,7 @@ const CONFIG = {
     usdcAdress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     usdtAdress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
     vabToken: "0xea73dcf6f49f8d6ad5a129aaede776d78d418cfd",
+    wMatic: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
     walletAddress: "0x3E5e853d1784cDB519DB1eB175B374FB53FE285C",
     uniswap: { // Mainnet, Mumbai
       factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
@@ -79,6 +80,7 @@ const CONFIG = {
     daiAddress: "0x001B3B4d0F3714Ca98ba10F6042DaEbF0B1B7b6F",
     vabToken: "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32", // Testcase VAB
     // vabToken: "0x61Ff1D74C20655ef4563b5838B78B551f80F0b32", // Child VAB
+    wMatic: "0x5B67676a984807a212b1c59eBFc9B3568a474F0a",
     exmAddress: "0x53BeF80E0EBE5A89dfb67782b12435aBeB943754",
     wmatic: "0x1fE108421Bc27B98aD52ae78dD8A3D7aB4199A00",
     walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
@@ -253,6 +255,14 @@ function getUploadGateContent(filmId, nftAddresses, tokenIds, tokenTypes) {
   const uint8Arr = ethers.utils.arrayify(hexStr);
   return ethers.utils.hexlify(uint8Arr);
 }
+
+function getByteForSwap(depositAmount, depositAsset, incomingAsset) {
+  const hexStr = ethers.utils.defaultAbiCoder.encode(
+    [ "uint256", "address", "address" ], [depositAmount, depositAsset, incomingAsset]
+  );
+  const uint8Arr = ethers.utils.arrayify(hexStr); // Uint8Array [ 18, 52 ]
+  return ethers.utils.hexlify(uint8Arr);// '0x01020304'
+}
 /// ============== end ==============
 
 function r_address() {
@@ -384,5 +394,6 @@ module.exports = {
   isTest,
   setupProvider,
   getNetworkConfig,
-  increaseTime
+  increaseTime,
+  getByteForSwap
 };
