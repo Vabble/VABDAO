@@ -230,13 +230,13 @@ describe('UniHelper', function () {
     // 2075.818288540931184042
 
     
-    // const vabAmount2 = await this.UniHelper.connect(this.customer1).expectedAmountForTest(
-    //   usdcAmount,
-    //   this.USDC.address,
-    //   this.vabToken.address,
-    //   {from: this.customer1.address}
-    // )
-    // console.log("vab amount old =====>", vabAmount2.toString())
+    const vabAmount2 = await this.UniHelper.connect(this.customer1).expectedAmountForTest(
+      usdcAmount,
+      this.USDC.address,
+      this.vabToken.address,
+      {from: this.customer1.address}
+    )
+    console.log("vab amount old =====>", vabAmount2.toString())
 
     const maticAmount = getBigNumber(10) // 10 WMATIC  
     const vabAmount3 = await this.UniHelper.connect(this.auditor).expectedAmount(

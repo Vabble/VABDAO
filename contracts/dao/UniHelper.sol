@@ -99,18 +99,18 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         }    
     }
 
-    // function expectedAmountForTest(
-    //     uint256 _depositAmount,
-    //     address _depositAsset, 
-    //     address _incomingAsset
-    // ) external view returns (uint256 amount_) {   
-    //     require(Helper.isTestNet(), "only avaiable on testnet");
+    function expectedAmountForTest(
+        uint256 _depositAmount,
+        address _depositAsset, 
+        address _incomingAsset
+    ) external view returns (uint256 amount_) {   
+        require(Helper.isTestNet(), "only avaiable on testnet");
                          
-    //     (address router, address[] memory path) = __checkPool(_depositAsset, _incomingAsset);        
-    //     require(router != address(0), "expectedAmount: No Pool");
+        (address router, address[] memory path) = __checkPool(_depositAsset, _incomingAsset);        
+        require(router != address(0), "expectedAmount: No Pool");
 
-    //     amount_ = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
-    // }
+        amount_ = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
+    }
 
     /// @notice check pool exist on uniswap
     function __checkPool(
