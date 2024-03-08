@@ -281,9 +281,7 @@ contract StakingPool is ReentrancyGuard {
             if (pData.cTime + pData.period >= stakeTime) {
                 times_[2 * count + 1] = pData.cTime;
                 times_[2 * count + 2] = pData.cTime + pData.period;
-                if (times_[2 * count + 1] < stakeTime)
-                    times_[2 * count + 1] = stakeTime;
-
+                
                 if (times_[2 * count + 2] > end)
                     times_[2 * count + 2] = end;
                 count++;
@@ -340,7 +338,6 @@ contract StakingPool is ReentrancyGuard {
         uint256 pendingVoteCount = 0;
         Props memory pData;
         uint256 pLength = propsList.length;
-
       
         for (uint256 j = minIndex; j < pLength; ++j) {
             pData = propsList[j];
@@ -348,7 +345,15 @@ contract StakingPool is ReentrancyGuard {
             if (pData.cTime <= _start && _end <= pData.cTime + pData.period) {
                 pCount++;
                 if (pData.creator == _user || votedTime[_user][pData.proposalID] > 0) {
-                    vCount += 1;
+                    if (_start >= stakeInfo[_user].stakeTime) { // interval is after stake
+                        vCount += 1;    
+                    } else { // interval is before stake
+                        if (pData.creator == _user || votedTime[_user][pData.proposalID] <= stakeInfo[_user].stakeTime) { // already vote in previous peorid
+                            // ignore
+                        } else {
+                            vCount += 1;    
+                        }
+                    }                    
                 } else {
                     if (block.timestamp <= pData.cTime + pData.period) { // vote period is not over
                         pendingVoteCount += 1;
