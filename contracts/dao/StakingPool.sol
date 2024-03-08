@@ -386,7 +386,7 @@ contract StakingPool is ReentrancyGuard {
             // count all proposals which contains interval [t(i), t(i + 1))]            
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
             (uint256 pCount, uint256 vCount) = __getProposalVoteCount(_user, minIndex, start, end);
-            amount = __calcRewards(_user, start);
+            amount = __calcRewards(_user, start, end);
 
             if (pCount > 0) {
                 uint256 countRate = (vCount * 1e4) / pCount;
@@ -408,12 +408,14 @@ contract StakingPool is ReentrancyGuard {
         if (stakeInfo[_user].stakeAmount == 0) return 0;
         if (stakeInfo[_user].stakeTime == 0) return 0;
 
-        uint256 totalReward = __calcRewards(_user, stakeInfo[_user].stakeTime);
+        uint256 realizedReward = calcRealizedRewards(_user);
+        uint256 totalReward = __calcRewards(_user, stakeInfo[_user].stakeTime, block.timestamp);
 
-        return totalReward - calcRealizedRewards(_user);
+        if (totalReward > realizedReward) return totalReward - realizedReward;
+        return 0;
     }
 
-    function __calcRewards(address _user, uint256 startTime) private view returns (uint256 amount_) {
+    function __calcRewards(address _user, uint256 startTime, uint256 endTime) private view returns (uint256 amount_) {
         Stake memory si = stakeInfo[_user];
         if (si.stakeAmount == 0) return 0;
         if (startTime == 0) return 0;
@@ -421,7 +423,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
         
         // Get time with accuracy(10**4) from after lockPeriod 
-        uint256 period = (block.timestamp - startTime) * 1e4 / 1 days;
+        uint256 period = (endTime - startTime) * 1e4 / 1 days;
         amount_ = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
 
         // If user is film board member, more rewards(25%)
