@@ -535,7 +535,7 @@ describe('StakingPool', function () {
 
     let realizedReward1, totalReward1, pendingRewards1, realizedReward2, totalReward2, pendingRewards2;
     
-    console.log("--------------- Feb 11 ---------------------")
+    console.log("\n\n--------------- Feb 11 ---------------------")
     increaseTime(86400 * 10); // 10 days
 
     // check User1, 2 reward
@@ -586,7 +586,7 @@ describe('StakingPool', function () {
       {from: this.customer2.address}
     )
 
-    console.log("--------------- Feb 16 ---------------------")
+    console.log("\n\n--------------- Feb 16 ---------------------")
     increaseTime(86400 * 5); // 5 days
 
     let stakeInfo = await this.StakingPool.stakeInfo(this.customer1.address);
@@ -594,7 +594,7 @@ describe('StakingPool', function () {
     let proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer1.address);
     
     console.log("stakeTime At Feb 1", stakeTime);
-    console.log("proposalTimeIntervals at Feb 16", proposalTimeIntervals)
+    console.log("proposalTimeIntervals User1 at Feb 16", proposalTimeIntervals)
     
     realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
@@ -615,24 +615,31 @@ describe('StakingPool', function () {
     // stake VAB again At Feb 16
     await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
     
+    console.log("\n\n------------------ User 1 After stake VAB -------------------------")
     realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
-    pendingRewards1 = await this.StakingPool.calcPendingRewards(this.customer1.address)
-    console.log("------------------ User 1 After stake VAB -------------------------")
+    pendingRewards1 = await this.StakingPool.calcPendingRewards(this.customer1.address)    
     console.log("realizedReward1::", realizedReward1.toString());
     console.log("totalReward1::", totalReward1.toString());
     console.log("pendingRewards1::", pendingRewards1.toString());
 
+    console.log("------------------ User 2 -------------------------")
     realizedReward2 = await this.StakingPool.calcRealizedRewards(this.customer2.address);
     totalReward2 = await this.StakingPool.calcRewardAmount(this.customer2.address)
-    pendingRewards2 = await this.StakingPool.calcPendingRewards(this.customer2.address);
-    console.log("------------------ User 2 -------------------------")
-    console.log("realizedReward2::", realizedReward2.toString());
+    pendingRewards2 = await this.StakingPool.calcPendingRewards(this.customer2.address);    
+    console.log("realizedReward21111::", realizedReward2.toString());
     console.log("totalReward2::", totalReward2.toString());
     console.log("pendingRewards2::", pendingRewards2.toString());
+
+    stakeInfo = await this.StakingPool.stakeInfo(this.customer2.address);
+    stakeTime = stakeInfo.stakeTime;
+    console.log("stakeTime At Feb 1 User 2", stakeTime);
+    proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer2.address);
+    console.log("proposalTimeIntervals User2 at Feb 16", proposalTimeIntervals)
+    
     
 
-    console.log("--------------- Feb 19 ---------------------")
+    console.log("\n\n--------------- Feb 19 ---------------------")
     console.log("------------------ Proposal is going -------------------------")
     increaseTime(86400 * 3); // 3 days
 
@@ -640,7 +647,6 @@ describe('StakingPool', function () {
     realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
     pendingRewards1 = await this.StakingPool.calcPendingRewards(this.customer1.address)
-    console.log("------------------ User 1 After stake VAB -------------------------")
     console.log("realizedReward1::", realizedReward1.toString());
     console.log("totalReward1::", totalReward1.toString());
     console.log("pendingRewards1(>0)::", pendingRewards1.toString());
@@ -654,7 +660,7 @@ describe('StakingPool', function () {
     console.log("pendingRewards2::", pendingRewards2.toString());
 
 
-    console.log("--------------- Feb 22 ---------------------")
+    console.log("\n\n--------------- Feb 22 ---------------------")
     console.log("------------------ Proposal is finalized -------------------------")
     increaseTime(86400 * 3); // 3 days
 
