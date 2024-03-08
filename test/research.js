@@ -622,5 +622,59 @@ describe('StakingPool', function () {
     console.log("realizedReward1::", realizedReward1.toString());
     console.log("totalReward1::", totalReward1.toString());
     console.log("pendingRewards1::", pendingRewards1.toString());
+
+    realizedReward2 = await this.StakingPool.calcRealizedRewards(this.customer2.address);
+    totalReward2 = await this.StakingPool.calcRewardAmount(this.customer2.address)
+    pendingRewards2 = await this.StakingPool.calcPendingRewards(this.customer2.address);
+    console.log("------------------ User 2 -------------------------")
+    console.log("realizedReward2::", realizedReward2.toString());
+    console.log("totalReward2::", totalReward2.toString());
+    console.log("pendingRewards2::", pendingRewards2.toString());
+    
+
+    console.log("--------------- Feb 19 ---------------------")
+    console.log("------------------ Proposal is going -------------------------")
+    increaseTime(86400 * 3); // 3 days
+
+  
+    realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    pendingRewards1 = await this.StakingPool.calcPendingRewards(this.customer1.address)
+    console.log("------------------ User 1 After stake VAB -------------------------")
+    console.log("realizedReward1::", realizedReward1.toString());
+    console.log("totalReward1::", totalReward1.toString());
+    console.log("pendingRewards1(>0)::", pendingRewards1.toString());
+
+    realizedReward2 = await this.StakingPool.calcRealizedRewards(this.customer2.address);
+    totalReward2 = await this.StakingPool.calcRewardAmount(this.customer2.address)
+    pendingRewards2 = await this.StakingPool.calcPendingRewards(this.customer2.address);
+    console.log("------------------ User 2 -------------------------")
+    console.log("realizedReward2::", realizedReward2.toString());
+    console.log("totalReward2::", totalReward2.toString());
+    console.log("pendingRewards2::", pendingRewards2.toString());
+
+
+    console.log("--------------- Feb 22 ---------------------")
+    console.log("------------------ Proposal is finalized -------------------------")
+    increaseTime(86400 * 6); // 6 days
+
+    realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    pendingRewards1 = await this.StakingPool.calcPendingRewards(this.customer1.address)
+    
+    console.log("realizedReward1::", realizedReward1.toString());
+    console.log("totalReward1::", totalReward1.toString());
+    console.log("pendingRewards1(==0)::", pendingRewards1.toString()); // should be 0 because p-1 is finalized
+    
+    realizedReward2 = await this.StakingPool.calcRealizedRewards(this.customer2.address);
+    totalReward2 = await this.StakingPool.calcRewardAmount(this.customer2.address)
+    pendingRewards2 = await this.StakingPool.calcPendingRewards(this.customer2.address);
+    console.log("------------------ User 2 -------------------------")
+    console.log("realizedReward2::", realizedReward2.toString());
+    console.log("totalReward2::", totalReward2.toString());
+    console.log("pendingRewards2::", pendingRewards2.toString());
+
+
+
   });  
 });
