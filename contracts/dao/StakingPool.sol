@@ -334,9 +334,10 @@ contract StakingPool is ReentrancyGuard {
     //     count_ = count;
     // }
     
-    function __getProposalVoteCount(address _user, uint256 minIndex, uint256 _start, uint256 _end) public view returns (uint256, uint256) {
+    function __getProposalVoteCount(address _user, uint256 minIndex, uint256 _start, uint256 _end) public view returns (uint256, uint256, uint256) {
         uint256 pCount = 0;     
         uint256 vCount = 0;
+        uint256 pendingVoteCount = 0;
         Props memory pData;
         uint256 pLength = propsList.length;
 
@@ -348,12 +349,17 @@ contract StakingPool is ReentrancyGuard {
                 pCount++;
                 if (pData.creator == _user || votedTime[_user][pData.proposalID] > 0) {
                     vCount += 1;
+                } else {
+                    if (block.timestamp <= pData.cTime + pData.period) { // vote period is not over
+                        pendingVoteCount += 1;
+                    }
                 }
             }
         }
 
-        return (pCount, vCount);
+        return (pCount, vCount, pendingVoteCount);
     }
+
 
     function __updateMinProposalIndex(address _user) private {
         uint256 pLength = propsList.length;
@@ -385,7 +391,7 @@ contract StakingPool is ReentrancyGuard {
 
             // count all proposals which contains interval [t(i), t(i + 1))]            
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
-            (uint256 pCount, uint256 vCount) = __getProposalVoteCount(_user, minIndex, start, end);
+            (uint256 pCount, uint256 vCount, ) = __getProposalVoteCount(_user, minIndex, start, end);
             amount = __calcRewards(_user, start, end);
 
             if (pCount > 0) {
@@ -417,11 +423,11 @@ contract StakingPool is ReentrancyGuard {
 
             // count all proposals which contains interval [t(i), t(i + 1))]            
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
-            (uint256 pCount, uint256 vCount) = __getProposalVoteCount(_user, minIndex, start, end);
+            (uint256 pCount, ,uint256 pendingVoteCount) = __getProposalVoteCount(_user, minIndex, start, end);
             amount = __calcRewards(_user, start, end);
 
             if (pCount > 0) {
-                uint256 countRate = ((pCount - vCount) * 1e4) / pCount;
+                uint256 countRate = (pendingVoteCount * 1e4) / pCount;
                 amount = (amount * countRate) / 1e4;
             } else {
                 amount = 0;
