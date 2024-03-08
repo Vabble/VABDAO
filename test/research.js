@@ -612,5 +612,15 @@ describe('StakingPool', function () {
     console.log("totalReward2::", totalReward2.toString());
     console.log("pendingRewards2::", pendingRewards2.toString());
 
+    // stake VAB again At Feb 16
+    await this.StakingPool.connect(this.customer1).stakeVAB(stakeAmount, {from: this.customer1.address})
+    
+    realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
+    totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
+    pendingRewards1 = await this.StakingPool.calcPendingRewards(this.customer1.address)
+    console.log("------------------ User 1 After stake VAB -------------------------")
+    console.log("realizedReward1::", realizedReward1.toString());
+    console.log("totalReward1::", totalReward1.toString());
+    console.log("pendingRewards1::", pendingRewards1.toString());
   });  
 });

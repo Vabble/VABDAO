@@ -399,20 +399,38 @@ contract StakingPool is ReentrancyGuard {
         return realizeReward;
     }
 
-    
+    function calcPendingRewards(address _user) public view returns (uint256) {
+        uint256 pendingReward = 0;
 
-    /// @notice Calculate pending rewards    
-    // This function would be called after a proposal is finalized     
-    // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5                
-    function calcPendingRewards(address _user) public view returns (uint256) {         
-        if (stakeInfo[_user].stakeAmount == 0) return 0;
-        if (stakeInfo[_user].stakeTime == 0) return 0;
+        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user);
 
-        uint256 realizedReward = calcRealizedRewards(_user);
-        uint256 totalReward = __calcRewards(_user, stakeInfo[_user].stakeTime, block.timestamp);
+        uint256 minIndex = minProposalIndex[_user];
 
-        if (totalReward > realizedReward) return totalReward - realizedReward;
-        return 0;
+        uint256 intervalCount = 2 * count + 1;
+        uint256 start;
+        uint256 end;
+        uint256 amount = 0;
+        for (uint256 i = 0; i < intervalCount; ++i) {
+            // determine proposal start and end time
+            start = times[i];
+            end = times[i + 1];
+
+            // count all proposals which contains interval [t(i), t(i + 1))]            
+            // and also count vote proposals which contains  interval [t(i), t(i + 1))]
+            (uint256 pCount, uint256 vCount) = __getProposalVoteCount(_user, minIndex, start, end);
+            amount = __calcRewards(_user, start, end);
+
+            if (pCount > 0) {
+                uint256 countRate = ((pCount - vCount) * 1e4) / pCount;
+                amount = (amount * countRate) / 1e4;
+            } else {
+                amount = 0;
+            }
+
+            pendingReward += amount;
+        }
+
+        return pendingReward;
     }
 
     function __calcRewards(address _user, uint256 startTime, uint256 endTime) private view returns (uint256 amount_) {
