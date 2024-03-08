@@ -19,7 +19,7 @@ interface IVabbleDAO {
         uint256 pCreateTime;     // proposal created time(block.timestamp) by studio
         uint256 pApproveTime;    // proposal approved time(block.timestamp) by vote
         address studio;          // studio address(film owner)
-        Helper.Status status;    // status of film
+        Helper.Status status;    // status of film      
     }  
 
     function getFilmFund(uint256 _filmId) external view returns (uint256 raiseAmount_, uint256 fundPeriod_, uint256 fundType_, uint256 rewardPercent_);

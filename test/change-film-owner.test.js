@@ -414,7 +414,7 @@ describe('ChangeFilmOwner', function () {
             this.VabbleDAO.connect(this.studio1).changeOwner(fId1, this.deployer.address, {from: this.studio1.address})                
             
             // Create proposal for a film by studio with EXM token
-            await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(0, 0, this.EXM.address, 
+            await this.VabbleDAO.connect(this.deployer).proposalFilmCreate(0, 0, this.USDC.address, 
                 {from: this.deployer.address})
             await this.VabbleDAO.connect(this.deployer).proposalFilmUpdate(
                 fId2, 
@@ -741,7 +741,7 @@ describe('ChangeFilmOwner', function () {
             const rewardAmount_Old = await this.VabbleDAO.connect(this.deployer).getUserRewardAmountForUser(fId3, monthId, this.deployer.address, {from: this.deployer.address});
             console.log("rewardAmount_Old", rewardAmount_Old / getBigNumber(1));    
 
-            const userFinaFilmIds_Old = await this.VabbleDAO.getUserFinalFilmIds(this.deployer.address);
+            const userFinaFilmIds_Old = await this.VabbleDAO.getUserFilmIds(this.deployer.address, 4);
             console.log("userFinaFilmIds_Old", userFinaFilmIds_Old);
         
             const allRewardAmount1_Old = await this.VabbleDAO.getAllAvailableRewards(monthId, this.deployer.address, {from: this.deployer.address});
@@ -774,7 +774,7 @@ describe('ChangeFilmOwner', function () {
                 console.log(`====finalizedAmount2_${i + 1}::`, fa_list);
             }
 
-            const userFinaFilmIds_New = await this.VabbleDAO.getUserFinalFilmIds(this.studio1.address);
+            const userFinaFilmIds_New = await this.VabbleDAO.getUserFilmIds(this.studio1.address, 4);
             console.log("userFinaFilmIds_New", userFinaFilmIds_New);
 
             const rewardAmount_New_1 = await this.VabbleDAO.connect(this.studio1).getUserRewardAmountForUser(fId1, monthId, this.studio1.address, {from: this.studio1.address});
@@ -988,7 +988,7 @@ describe('ChangeFilmOwner', function () {
 
             await expect(
                 this.VabbleDAO.connect(this.studio1).claimReward([fId4], {from: this.studio1.address})
-            ).to.be.revertedWith('claimReward: zero amount');
+            ).to.be.revertedWith('cAR: zero amount');
             
         } catch (error) {
             console.error("Error:", error);

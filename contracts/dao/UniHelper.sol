@@ -71,23 +71,52 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         isInitialized = true;
     }
 
-    /// @notice Get incoming token amount from deposit token and amount
+    /// @notice Get incoming amount <- WETH <- deposit amount
     function expectedAmount(
         uint256 _depositAmount,
         address _depositAsset, 
         address _incomingAsset
-    ) external view override returns (uint256 amount_) {                
-        (address router, , , address[] memory path) = __checkPool(_depositAsset, _incomingAsset);        
+    ) external view override returns (uint256 amount_) {      
+        // deposit -> WETH
+        uint256 weth_amount;
+        if(_depositAsset == address(0)) {
+            weth_amount = _depositAmount;
+        } else {
+            (address router, address[] memory path) = __checkPool(_depositAsset, address(0));                
+            require(router != address(0), "eA: no pool dA/weth");
+
+            weth_amount = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
+        }        
+
+        // WETH -> income
+        if(_incomingAsset == address(0)) {
+            amount_ = weth_amount;
+        } else {
+            (address router, address[] memory path) = __checkPool(address(0), _incomingAsset);        
+            require(router != address(0), "eA: no pool weth/iA");
+
+            amount_ = IUniswapV2Router(router).getAmountsOut(weth_amount, path)[1];
+        }    
+    }
+
+    function expectedAmountForTest(
+        uint256 _depositAmount,
+        address _depositAsset, 
+        address _incomingAsset
+    ) external view returns (uint256 amount_) {   
+        require(Helper.isTestNet(), "only avaiable on testnet");
+                         
+        (address router, address[] memory path) = __checkPool(_depositAsset, _incomingAsset);        
         require(router != address(0), "expectedAmount: No Pool");
 
         amount_ = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
     }
 
-    /// @notice check if special pool exist on uniswap
+    /// @notice check pool exist on uniswap
     function __checkPool(
         address _depositAsset, 
         address _incomeAsset
-    ) private view returns (address router, address factory, address weth, address[] memory path) {
+    ) private view returns (address router, address[] memory path) {
         address WETH1 = IUniswapV2Router(UNISWAP2_ROUTER).WETH();
         address WETH2 = IUniswapV2Router(SUSHI_ROUTER).WETH();
 
@@ -120,17 +149,17 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address sushiPool = IUniswapV2Factory(SUSHI_FACTORY).getPair(path2[0], path2[1]);
         
         if(uniPool == address(0) && sushiPool != address(0)) {
-            return (SUSHI_ROUTER, SUSHI_FACTORY, WETH2, path2);
+            return (SUSHI_ROUTER, path2);
         } else if(uniPool != address(0) && sushiPool == address(0)) {
-            return (UNISWAP2_ROUTER, UNISWAP2_FACTORY, WETH1, path1);
+            return (UNISWAP2_ROUTER, path1);
         } else if(uniPool != address(0) && sushiPool != address(0)) {
-            return (UNISWAP2_ROUTER, UNISWAP2_FACTORY, WETH1, path1);
+            return (UNISWAP2_ROUTER, path1);
         } else if(uniPool == address(0) && sushiPool == address(0)) {
-            return (address(0), address(0), WETH1, path1);
+            return (address(0), path1);
         }
     }
 
-    /// @notice Swap eth/token to another token
+    /// @notice Swap depositAsset -> WETH -> incomingAsset
     function swapAsset(bytes calldata _swapArgs) external override nonReentrant returns (uint256 amount_) {
         (
             uint256 depositAmount,
@@ -138,24 +167,31 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
             address incomingAsset
         ) = abi.decode(_swapArgs, (uint256, address, address));
 
-        if(depositAsset != address(0)) {
-            Helper.safeTransferFrom(depositAsset, msg.sender, address(this), depositAmount);
-        }
-
-        // TODO - PVE002 updated(Sandwich/MEV: update to callable from only related contracts)
         require(isVabbleContract[msg.sender], "caller is not one of vabble contracts");
 
-        (address router, , address weth, address[] memory path) = __checkPool(depositAsset, incomingAsset);        
-        require(router != address(0), "swapAsset: No Pool");
+        // Swap depositAsset -> WETH
+        uint256 weth_amount = depositAmount;
+        if(depositAsset != address(0)) {
+            Helper.safeTransferFrom(depositAsset, msg.sender, address(this), depositAmount);
 
-        // Get payoutAmount from depositAsset on Uniswap
-        uint256 expectAmount = IUniswapV2Router(router).getAmountsOut(depositAmount, path)[1];
-        
-        if(path[0] == weth) {
-            amount_ = __swapETHToToken(depositAmount, expectAmount, router, path)[1];
-        } else {
-            amount_ = __swapTokenToToken(depositAmount, expectAmount, router, path)[1];
-        } 
+            (address router, address[] memory path) = __checkPool(depositAsset, address(0));        
+            require(router != address(0), "sA: no pool dA/weth");
+
+            uint256 expectAmount = IUniswapV2Router(router).getAmountsOut(depositAmount, path)[1];            
+            
+            weth_amount = __swapTokenToETH(depositAmount, expectAmount, router, path)[1];
+        }
+
+        // Swap WETH -> incomingAsset
+        amount_ = weth_amount;
+        if(incomingAsset != address(0)) {
+            (address router, address[] memory path) = __checkPool(address(0), incomingAsset);        
+            require(router != address(0), "sA: no pool weth/iA");
+
+            uint256 expectAmount = IUniswapV2Router(router).getAmountsOut(weth_amount, path)[1];
+                               
+            amount_ = __swapETHToToken(weth_amount, expectAmount, router, path)[1];
+        }
 
         // remain asset to send caller back
         __transferAssetToCaller(payable(msg.sender), depositAsset);        
@@ -164,22 +200,22 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
 
     // TODO - N6 updated(private)
     /// @notice Swap ERC20 Token to ERC20 Token
-    function __swapTokenToToken(
-        uint256 _depositAmount,
-        uint256 _expectedAmount,
-        address _router,
-        address[] memory _path
-    ) private returns (uint256[] memory amounts_) {
-        __approveMaxAsNeeded(_path[0], _router, _depositAmount);
+    // function __swapTokenToToken(
+    //     uint256 _depositAmount,
+    //     uint256 _expectedAmount,
+    //     address _router,
+    //     address[] memory _path
+    // ) private returns (uint256[] memory amounts_) {
+    //     __approveMaxAsNeeded(_path[0], _router, _depositAmount);
         
-        amounts_ = IUniswapV2Router(_router).swapExactTokensForTokens(
-            _depositAmount,
-            _expectedAmount,
-            _path,
-            address(this),
-            block.timestamp + 1
-        );
-    }
+    //     amounts_ = IUniswapV2Router(_router).swapExactTokensForTokens(
+    //         _depositAmount,
+    //         _expectedAmount,
+    //         _path,
+    //         address(this),
+    //         block.timestamp + 1
+    //     );
+    // }
 
     /// @notice Swap ETH to ERC20 Token
     function __swapETHToToken(
@@ -188,9 +224,29 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address _router,
         address[] memory _path
     ) private returns (uint256[] memory amounts_) {
-        require(address(this).balance >= _depositAmount, "swapETHToToken: Insufficient paid");
+        require(address(this).balance >= _depositAmount, "sEToT: insufficient");
+
+        __approveMaxAsNeeded(_path[0], _router, _depositAmount);
 
         amounts_ = IUniswapV2Router(_router).swapExactETHForTokens{value: address(this).balance}(
+            _expectedAmount,
+            _path,
+            address(this),
+            block.timestamp + 1
+        );
+    }
+
+    /// @notice Swap Token to ETH
+    function __swapTokenToETH(
+        uint256 _depositAmount,
+        uint256 _expectedAmount,
+        address _router,
+        address[] memory _path
+    ) private returns (uint256[] memory amounts_) {        
+        __approveMaxAsNeeded(_path[0], _router, _depositAmount);
+
+        amounts_ = IUniswapV2Router(_router).swapExactTokensForETH(
+            _depositAmount,
             _expectedAmount,
             _path,
             address(this),

@@ -26,6 +26,7 @@ contract Property is ReentrancyGuard {
         uint256 approveTime;   // proposal approved timestamp
         address creator;       // proposal creator address        
         Helper.Status status;  // status of proposal
+        uint256 proposalID;    // proposal ID
     }
   
     address private immutable OWNABLE;        // Ownablee contract address 
@@ -55,6 +56,7 @@ contract Property is ReentrancyGuard {
     uint256 public rewardVotePeriod;     // 18 - withdraw address setup for moving to V2
     uint256 public subscriptionAmount;   // 19 - user need to have an active subscription(pay $1 per month) for rent films.    
     uint256 public boardRewardRate;      // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
+    uint256 public disputLimitAmount;
 
     uint256[] private maxPropertyList;
     uint256[] private minPropertyList;
@@ -155,7 +157,8 @@ contract Property is ReentrancyGuard {
         proposalFeeAmount = 20 * (10**IERC20Metadata(usdcToken).decimals());   // amount in cash(usd dollar - $20)
         minDepositAmount = 50 * (10**IERC20Metadata(usdcToken).decimals());    // amount in cash(usd dollar - $50)
         maxDepositAmount = 5000 * (10**IERC20Metadata(usdcToken).decimals());  // amount in cash(usd dollar - $5000)
-        availableVABAmount = 50 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 50M        
+        availableVABAmount = 50 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 50M 
+        disputLimitAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals());    // 75M 
         subscriptionAmount = 299 * (10**IERC20Metadata(usdcToken).decimals()) / 100;   // amount in cash(usd dollar - $2.99)
         minVoteCount = 1;//5;
 
@@ -210,7 +213,7 @@ contract Property is ReentrancyGuard {
     }
 
     function updateForTesting() external onlyDeployer nonReentrant {
-        // if (Helper.isTestNet() == false)
+        // if (!Helper.isTestNet())
         //     return;
 
         filmVotePeriod = 10 minutes;     // 10 days;   
@@ -255,8 +258,10 @@ contract Property is ReentrancyGuard {
 
         allGovProposalInfo[1].push(_agent);
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        ap.proposalID = IStakingPool(STAKING_POOL).addProposalData(
+            msg.sender, block.timestamp, agentVotePeriod
+        );
 
         emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
     }
@@ -305,21 +310,13 @@ contract Property is ReentrancyGuard {
 
         allGovProposalInfo[3].push(_rewardAddress);
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        rp.proposalID = IStakingPool(STAKING_POOL).addProposalData(
+            msg.sender, block.timestamp, rewardVotePeriod
+        );
 
         emit RewardFundProposalCreated(msg.sender, _rewardAddress, _title, _description);
-    }
-
-    /// @notice Get reward fund proposal title and description
-    function getRewardProposalInfo(address _rewardAddress) external view returns (string memory, string memory, uint256) {
-        Proposal memory rp = govProposalInfo[3][_rewardAddress];
-        string memory title_ = rp.title;
-        string memory desc_ = rp.description;        
-        uint256 time_ = rp.createTime;
-
-        return (title_, desc_, time_);
-    }
+    }    
 
     // =================== FilmBoard proposal ====================
     /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
@@ -349,8 +346,10 @@ contract Property is ReentrancyGuard {
 
         allGovProposalInfo[2].push(_member);
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        bp.proposalID = IStakingPool(STAKING_POOL).addProposalData(
+            msg.sender, block.timestamp, boardVotePeriod
+        );
 
         emit FilmBoardProposalCreated(msg.sender, _member, _title, _description);
     }
@@ -367,7 +366,8 @@ contract Property is ReentrancyGuard {
         emit FilmBoardMemberRemoved(msg.sender, _member);
     }
 
-    /// @notice Get proposal list(flag=1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
+    /// @notice Get proposal list
+    // (1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
     function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
         require(_flag != 0 && _flag < 5, "bad flag");
 
@@ -375,6 +375,27 @@ contract Property is ReentrancyGuard {
         else if(_flag == 2) return filmBoardCandidates;
         else if(_flag == 3) return rewardAddressList;
         else return filmBoardMembers;
+    }    
+
+    /// @notice Get govProposalInfo(agent=>1, board=>2, pool=>3)
+    function getGovProposalInfo(address _member, uint256 _flag)
+    external view returns (string memory, string memory, uint256, uint256, address, Helper.Status) 
+    {
+        Proposal memory rp = govProposalInfo[_flag][_member];
+        string memory title_ = rp.title;
+        string memory desc_ = rp.description;        
+        uint256 cTime_ = rp.createTime;
+        uint256 aTime_ = rp.approveTime;
+        address creator_ = rp.creator;
+        Helper.Status status_ = rp.status;
+
+        return (title_, desc_, cTime_, aTime_, creator_, status_);
+    }    
+
+    function getGovProposalID(address _member, uint256 _flag)
+        external view returns (uint256) 
+    {
+        return govProposalInfo[_flag][_member].proposalID;        
     }    
 
     // ===================properties proposal ====================
@@ -471,8 +492,10 @@ contract Property is ReentrancyGuard {
         pp.creator = msg.sender;
         pp.status = Helper.Status.LISTED;
 
-        // add timestap to array for calculating rewards
-        IStakingPool(STAKING_POOL).updateProposalCreatedTimeList(block.timestamp);
+        // add proposal data to array for calculating rewards
+        pp.proposalID = IStakingPool(STAKING_POOL).addProposalData(
+            msg.sender, block.timestamp, propertyVotePeriod
+        );
 
         emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
     }
@@ -556,12 +579,28 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice Get property proposal created time
-    function getPropertyProposalTime(
+    function getPropertyProposalInfo(
         uint256 _property, 
         uint256 _flag
-    ) external view returns (uint256 cTime_, uint256 aTime_) {
-        cTime_ = propertyProposalInfo[_flag][_property].createTime;
-        aTime_ = propertyProposalInfo[_flag][_property].approveTime;
+    ) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status) 
+    {
+        Proposal memory rp = propertyProposalInfo[_flag][_property];
+        string memory title_ = rp.title;
+        string memory desc_ = rp.description;        
+        uint256 cTime_ = rp.createTime;
+        uint256 aTime_ = rp.approveTime;
+        address creator_ = rp.creator;
+        Helper.Status status_ = rp.status;
+
+        return (title_, desc_, cTime_, aTime_, creator_, status_);
+    }
+
+    function getPropertyProposalID(
+        uint256 _property, 
+        uint256 _flag
+    ) external view returns (uint256) 
+    {
+        return propertyProposalInfo[_flag][_property].proposalID;       
     }
     
     function updatePropertyProposal(
@@ -629,13 +668,6 @@ contract Property is ReentrancyGuard {
         }
     }
     
-    /// @notice Get agent/board/pool proposal created time
-    // agent=>1, board=>2, pool=>3
-    function getGovProposalTime(address _member, uint256 _flag) external view returns (uint256 cTime_, uint256 aTime_) {
-        cTime_ = govProposalInfo[_flag][_member].createTime;
-        aTime_ = govProposalInfo[_flag][_member].approveTime;
-    }
-
     function updateGovProposal(
         address _member, 
         uint256 _flag,  // 1=>agent, 2=>board, 3=>pool
@@ -729,7 +761,7 @@ contract Property is ReentrancyGuard {
         uint256 _value, 
         uint256 _flag
     ) external onlyDeployer {
-        if (Helper.isTestNet() == false)
+        if (!Helper.isTestNet())
             return;
             
         require(_value != 0, "test: Zero value");
@@ -754,6 +786,7 @@ contract Property is ReentrancyGuard {
         else if(_flag == 17) subscriptionAmount = _value;
         else if(_flag == 18) minVoteCount = _value;        
         else if(_flag == 19) minStakerCountPercent = _value;                
+        else if(_flag == 20) disputLimitAmount = _value;
     }
 
     /// @dev Update the rewardAddress for only testing in the testnet
@@ -762,7 +795,7 @@ contract Property is ReentrancyGuard {
     // }        
 
     function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {        
-        if (Helper.isTestNet() == false)
+        if (!Helper.isTestNet())
             return;
 
         availableVABAmount = _amount;
