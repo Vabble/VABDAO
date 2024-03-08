@@ -62,7 +62,9 @@ contract StakingPool is ReentrancyGuard {
     Props[] private propsList;                    // need for calculating rewards    
     mapping(address => mapping(uint256 => uint256)) private votedTime; // (user, proposalID) => voteTime need for calculating rewards    
     mapping(address => Stake) public stakeInfo;
+    mapping(address => Stake[]) public stakeInfoHistory;
     address[] public stakerList;
+    
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
     mapping(address => UserRent) public userRentInfo;
 
@@ -146,6 +148,8 @@ contract StakingPool is ReentrancyGuard {
         si.stakeAmount += _amount;
         si.stakeTime = block.timestamp;
 
+        stakeInfoHistory[msg.sender].push(si);
+
         totalStakingAmount += _amount;
 
         __updateMinProposalIndex(msg.sender);
@@ -174,6 +178,8 @@ contract StakingPool is ReentrancyGuard {
         si.stakeTime = block.timestamp;
         si.stakeAmount -= _amount;        
         totalStakingAmount -= _amount;
+
+        stakeInfoHistory[msg.sender].push(si);
 
         if(si.stakeAmount == 0) {
             stakerCount.decrement();
@@ -210,6 +216,8 @@ contract StakingPool is ReentrancyGuard {
             si.stakeTime = block.timestamp;
             si.outstandingReward = 0;
 
+            stakeInfoHistory[msg.sender].push(si);
+
             totalStakingAmount += rewardAmount;
 
             __updateMinProposalIndex(msg.sender);
@@ -220,6 +228,8 @@ contract StakingPool is ReentrancyGuard {
             require(totalRewardAmount >= rewardAmount, "wR: insufficient total");
 
             __withdrawReward(rewardAmount);
+
+            stakeInfoHistory[msg.sender].push(stakeInfo[msg.sender]);
         }
     }
 
@@ -253,11 +263,12 @@ contract StakingPool is ReentrancyGuard {
         }        
     }
 
-    function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_, uint256 count_) {
+    function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_) {
         uint256 pLength = propsList.length;
         Props memory pData;
         uint256 stakeTime = stakeInfo[_user].stakeTime;        
         uint256 end = block.timestamp;
+        uint256 stakeLength = stakeInfoHistory[_user].length;
 
         // find all start/end proposal whose end >= stakeTime
         uint256 count = 0;
@@ -268,9 +279,11 @@ contract StakingPool is ReentrancyGuard {
             }            
         }
 
-        times_ = new uint[](2 * count + 2);
+        times_ = new uint[](2 * count + stakeLength + 1);
 
-        times_[0] = stakeTime;
+        for (uint256 i = 0; i < stakeLength; ++i) {
+            times_[i] = stakeInfoHistory[_user][i].stakeTime;
+        }
         
         // find all start/end proposal whose end >= stakeTime        
         count = 0;
@@ -279,20 +292,18 @@ contract StakingPool is ReentrancyGuard {
             pData = propsList[i];
 
             if (pData.cTime + pData.period >= stakeTime) {
-                times_[2 * count + 1] = pData.cTime;
-                times_[2 * count + 2] = pData.cTime + pData.period;
+                times_[2 * count + stakeLength] = pData.cTime;
+                times_[2 * count + stakeLength + 1] = pData.cTime + pData.period;
                 
-                if (times_[2 * count + 2] > end)
-                    times_[2 * count + 2] = end;
+                if (times_[2 * count + stakeLength + 1] > end)
+                    times_[2 * count + stakeLength + 1] = end;
                 count++;
             }
         }
-        times_[2 * count + 1] = end;
+        times_[2 * count + stakeLength] = end;
 
         // sort times
         times_.sort();
-
-        count_ = count;
     }
 
 
@@ -381,11 +392,11 @@ contract StakingPool is ReentrancyGuard {
     function calcRealizedRewards(address _user) public view returns (uint256) {
         uint256 realizeReward = 0;
 
-        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user);
+        uint256[] memory times = __calcProposalTimeIntervals(_user);
 
         uint256 minIndex = minProposalIndex[_user];
 
-        uint256 intervalCount = 2 * count + 1;
+        uint256 intervalCount = times.length - 1;
         uint256 start;
         uint256 end;
         uint256 amount = 0;
@@ -413,11 +424,11 @@ contract StakingPool is ReentrancyGuard {
     function calcPendingRewards(address _user) public view returns (uint256) {
         uint256 pendingReward = 0;
 
-        (uint256[] memory times, uint256 count) = __calcProposalTimeIntervals(_user);
+        uint256[] memory times = __calcProposalTimeIntervals(_user);
 
         uint256 minIndex = minProposalIndex[_user];
 
-        uint256 intervalCount = 2 * count + 1;
+        uint256 intervalCount = times.length - 1;
         uint256 start;
         uint256 end;
         uint256 amount = 0;

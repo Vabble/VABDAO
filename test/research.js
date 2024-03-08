@@ -594,7 +594,7 @@ describe('StakingPool', function () {
     let proposalTimeIntervals = await this.StakingPool.__calcProposalTimeIntervals(this.customer1.address);
     
     console.log("stakeTime At Feb 1", stakeTime);
-    console.log("proposalTimeIntervals at Feb 16", proposalTimeIntervals.times_)
+    console.log("proposalTimeIntervals at Feb 16", proposalTimeIntervals)
     
     realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
@@ -656,7 +656,7 @@ describe('StakingPool', function () {
 
     console.log("--------------- Feb 22 ---------------------")
     console.log("------------------ Proposal is finalized -------------------------")
-    increaseTime(86400 * 6); // 6 days
+    increaseTime(86400 * 3); // 3 days
 
     realizedReward1 = await this.StakingPool.calcRealizedRewards(this.customer1.address)
     totalReward1 = await this.StakingPool.calcRewardAmount(this.customer1.address)
