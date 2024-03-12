@@ -595,6 +595,8 @@ describe('Vote', function () {
 
     await this.Property.connect(this.deployer).updateAvailableVABForTesting(getBigNumber(150), {from: this.deployer.address});
 
+    let indx = 0;
+
     const info = await this.StakingPool.stakeInfo(this.customer6.address);
     console.log("Customer6 StakeAmount", info[0] / getBigNumber(1));
     
@@ -611,27 +613,28 @@ describe('Vote', function () {
 
     const customer1Balance = await this.vabToken.balanceOf(this.customer1.address)
     console.log("====customer1Balance::", customer1Balance.toString())
-       
+      
+
     await this.Vote.connect(this.customer2).voteToRewardAddress(
-      this.reward.address, this.voteInfo[0], {from: this.customer2.address}
+      indx, this.voteInfo[0], {from: this.customer2.address}
     );
     await this.Vote.connect(this.customer3).voteToRewardAddress(
-      this.reward.address, this.voteInfo[2], {from: this.customer3.address}
+      indx, this.voteInfo[2], {from: this.customer3.address}
     );
     await this.Vote.connect(this.customer4).voteToRewardAddress(
-      this.reward.address, this.voteInfo[2], {from: this.customer4.address}
+      indx, this.voteInfo[2], {from: this.customer4.address}
     );
     await this.Vote.connect(this.customer5).voteToRewardAddress(
-      this.reward.address, this.voteInfo[2], {from: this.customer5.address}
+      indx, this.voteInfo[2], {from: this.customer5.address}
     );
     await expect(
       this.Vote.connect(this.customer6).voteToRewardAddress(
-        this.reward.address, this.voteInfo[2], {from: this.customer6.address}
+        indx, this.voteInfo[2], {from: this.customer6.address}
       )
-    ).to.be.revertedWith('voteToRewardAddress: self voted')
+    ).to.be.revertedWith('vRA: self voted')
 
     let tx = await this.Vote.connect(this.customer1).voteToRewardAddress(
-      this.reward.address, this.voteInfo[0], {from: this.customer1.address}
+      indx, this.voteInfo[0], {from: this.customer1.address}
     );
     this.events = (await tx.wait()).events
     // console.log("====events::", this.events)
@@ -643,17 +646,17 @@ describe('Vote', function () {
     // Call voteToRewardAddress again
     await expect(
       this.Vote.connect(this.customer2).voteToRewardAddress(
-        this.reward.address, this.voteInfo[0], {from: this.customer2.address}
+        indx, this.voteInfo[0], {from: this.customer2.address}
       )
-    ).to.be.revertedWith('voteToRewardAddress: Already voted')
+    ).to.be.revertedWith('vRA: already voted')
 
     // => Change the minVoteCount from 5 ppl to 3 ppl for testing
     await this.Property.connect(this.deployer).updatePropertyForTesting(3, 18, {from: this.deployer.address})
     
     // setDAORewardAddress
     await expect(
-      this.Vote.connect(this.customer2).setDAORewardAddress(this.reward.address, {from: this.customer2.address})
-    ).to.be.revertedWith('reward vote period yet')
+      this.Vote.connect(this.customer2).setDAORewardAddress(indx, {from: this.customer2.address})
+    ).to.be.revertedWith('sRA: vote period yet')
 
     // => Increase next block timestamp
     const defaultAgentVotePeriod = 31 * 86400; // 31 days
@@ -702,7 +705,7 @@ describe('Vote', function () {
     
     let rewardAddress = await this.Property.DAO_FUND_REWARD(); 
     console.log("====rewardAddress-before::", rewardAddress)
-    await this.Vote.connect(this.customer2).setDAORewardAddress(this.reward.address, {from: this.customer2.address})
+    await this.Vote.connect(this.customer2).setDAORewardAddress(indx, {from: this.customer2.address})
 
     rewardAddress = await this.Property.DAO_FUND_REWARD(); 
     console.log("====rewardAddress-after::", rewardAddress)
@@ -711,7 +714,7 @@ describe('Vote', function () {
     //      900000000000000000000
     expect(rewardAddress).to.be.equal(this.reward.address)
 
-    const item = await this.Property.getGovProposalInfo(this.reward.address, 3)
+    const item = await this.Property.getGovProposalStr(indx, 3)
     console.log("====item.title::", item)
     expect(title).to.be.equal(item[0])
     expect(desc).to.be.equal(item[1])
@@ -749,10 +752,6 @@ describe('Vote', function () {
     expect(aStakPoolBalance).to.be.equal(curStakPoolBalance.sub(totalMigrationVAB))
     expect(aEdgePoolBalance).to.be.equal(0)
     expect(aStudioPoolBalance).to.be.equal(0)
-
-    console.log("====stakingPool", curStakPoolBalance.toString(), aStakPoolBalance.toString())
-    console.log("====edgePool", curEdgePoolBalance.toString(), aEdgePoolBalance.toString())
-    console.log("====studioPool", curStudioPoolBalance.toString(), aStudioPoolBalance.toString())
 
     newAddrBalance = await this.vabToken.balanceOf(rewardAddress)
     expect(newAddrBalance).to.be.equal(totalMigrationVAB.add(curEdgePoolBalance).add(curStudioPoolBalance))
