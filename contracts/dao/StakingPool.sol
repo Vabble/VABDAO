@@ -62,7 +62,7 @@ contract StakingPool is ReentrancyGuard {
     Props[] private propsList;                    // need for calculating rewards    
     mapping(address => mapping(uint256 => uint256)) private votedTime; // (user, proposalID) => voteTime need for calculating rewards    
     mapping(address => Stake) public stakeInfo;
-    address[] public stakerList;
+    address[] private stakerList;
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
     mapping(address => UserRent) public userRentInfo;
 
@@ -759,6 +759,10 @@ contract StakingPool is ReentrancyGuard {
     function getWithdrawableTime(address _user) external view returns(uint256 time_) {
         time_ = stakeInfo[_user].stakeTime + IProperty(DAO_PROPERTY).lockPeriod();
     }    
+
+    function getStakerList() external view returns(address[] memory) {
+        return stakerList;
+    }
 
     function withdrawToOwner(address to) external onlyDeployer nonReentrant {
         require(Helper.isTestNet(), "apply on testnet");
