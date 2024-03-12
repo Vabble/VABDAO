@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 import "../libraries/Helper.sol";
 
-interface IProperty {  
+interface IProperty {
     function filmVotePeriod() external view returns (uint256);        // 0
     function agentVotePeriod() external view returns (uint256);       // 1
     function disputeGracePeriod() external view returns (uint256);    // 2
@@ -39,7 +39,6 @@ interface IProperty {
 
     function checkGovWhitelist(uint256 _flag, address _address) external view returns (uint256);
     function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view returns (uint256);
-
-    function getPropertyProposalList(uint256 _flag) external view returns (uint256[] memory _list);
-    function getGovProposalList(uint256 _flag) external view returns (address[] memory);
+    
+    function getAgentProposerStakeAmount(uint256 _index) external view returns (uint256);
 }

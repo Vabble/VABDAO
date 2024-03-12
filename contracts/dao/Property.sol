@@ -40,6 +40,11 @@ contract Property is ReentrancyGuard {
         address creator;       // creator address        
         Helper.Status status;  // status
     }
+
+    struct Agent {
+        address agent;         // agent address        
+        uint256 stakeAmount;   // stake amount of agent proposal creator
+    }
   
     address private immutable OWNABLE;        // Ownablee contract address 
     address private immutable VOTE;           // Vote contract address
@@ -96,7 +101,7 @@ contract Property is ReentrancyGuard {
     uint256[] private subscriptionAmountList;      // 19
     uint256[] private boardRewardRateList;         // 20
 
-    address[] private agentList;             // for replacing auditor
+    Agent[] private agentList;               // for replacing auditor
     address[] private rewardAddressList;     // for adding v2 pool address
     address[] private filmBoardCandidates;   // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
     address[] private filmBoardMembers;      // filmBoard members
@@ -265,7 +270,9 @@ contract Property is ReentrancyGuard {
         userGovProposalCount[msg.sender] += 1;        
         isGovWhitelist[1][_agent] = 1;
         allGovProposalInfo[1].push(_agent);
-        agentList.push(_agent);
+        agentList.push(
+            Agent(_agent, IStakingPool(STAKING_POOL).getStakeAmount(msg.sender))
+        );
 
         emit AuditorProposalCreated(msg.sender, _agent, _title, _description);
     }
@@ -376,16 +383,26 @@ contract Property is ReentrancyGuard {
         }    
     } 
 
-    /// @notice Get proposal list
+    /// @notice Get gov address list
     // (1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
     function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
         require(_flag != 0 && _flag < 5, "bad flag");
 
-        if(_flag == 1) return agentList;
-        else if(_flag == 2) return filmBoardCandidates;
+        if(_flag == 1) {
+            address[] memory list = new address[](agentList.length);
+            for(uint256 k = 0; k < agentList.length; k++) { 
+                list[k] = agentList[k].agent;
+            }
+            return list;
+        } else if(_flag == 2) return filmBoardCandidates;
         else if(_flag == 3) return rewardAddressList;
         else return filmBoardMembers;
-    }    
+    } 
+
+    /// @notice Get agent list
+    function getAgentProposerStakeAmount(uint256 _index) external view returns (uint256) {
+        return agentList[_index].stakeAmount;
+    }   
 
     /// @notice Get govProposalInfo(agent=>1, board=>2, pool=>3)
     function getGovProposalInfo(uint256 _index, uint256 _flag)
