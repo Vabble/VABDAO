@@ -435,7 +435,7 @@ describe('Vote', function () {
     // Call voteToProperty() before create a proposal
     await expect(
       this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
-    ).to.be.revertedWith('voteToProperty: no proposal')
+    ).to.be.revertedWith('vP: no proposal')
 
     // call proposalProperty with extreme values
     await expect(
@@ -445,8 +445,20 @@ describe('Vote', function () {
     // 1 ====================== proposalProperty(filmVotePeriod) ======================
     await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
     await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
-    expect(await this.Property.getProperty(1, flag)).to.be.equal(property2)
+    let proposal1 = await this.Property.getPropertyProposalInfo(0, flag);
+    let proposal2 = await this.Property.getPropertyProposalInfo(1, flag);
+    // console.log('====proposal1', proposal1)
+    // console.log('====proposal2', proposal2)
+
+    expect(proposal1[1]).to.be.equal(0)
+    expect(proposal1[3]).to.be.equal(property1)
+    expect(proposal1[4]).to.be.equal(this.customer6.address)
+    expect(proposal1[5]).to.be.equal(0)
+    
+    expect(proposal2[1]).to.be.equal(0)
+    expect(proposal2[3]).to.be.equal(property2)
+    expect(proposal2[4]).to.be.equal(this.customer7.address)
+    expect(proposal2[5]).to.be.equal(0)
 
     // // voteToProperty
     await this.Vote.connect(this.customer1).voteToProperty(this.voteInfo[0], indx, flag, {from: this.customer1.address})
@@ -456,7 +468,7 @@ describe('Vote', function () {
     await this.Vote.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
     await expect(
       this.Vote.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
-    ).to.be.revertedWith('voteToProperty: self voted')
+    ).to.be.revertedWith('vP: self voted')
 
     // => Increase next block timestamp
     network.provider.send('evm_increaseTime', [period_8]);
@@ -465,7 +477,7 @@ describe('Vote', function () {
     // Call updateProperty() before vote period
     await expect(
       this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
-    ).to.be.revertedWith('property vote period yet')
+    ).to.be.revertedWith('pV: vote period yet')
     
     // => Increase next block timestamp
     network.provider.send('evm_increaseTime', [period_3]);
@@ -473,15 +485,18 @@ describe('Vote', function () {
 
     // updateProperty
     await this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
-    const propertyVal = await this.Property.getProperty(0, flag)
-    pData = await this.Property.getPropertyProposalInfo(propertyVal, flag)
-    console.log('=====timeVal after::', pData[2].toString(), pData[3].toString())
-    // expect(await this.Property.filmVotePeriod()).to.be.equal(property1)
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
+    proposal1 = await this.Property.getPropertyProposalInfo(indx, flag)
 
-    const proposalInfo = await this.Property.propertyProposalInfo(flag, propertyVal)
-    console.log('=====proposalInfo::', proposalInfo)
+    let propertyVal = proposal1[3];
     
+    expect(proposal1[1] > 0).to.be.true
+    expect(propertyVal).to.be.equal(property1)
+    expect(proposal1[4]).to.be.equal(this.customer6.address)
+    expect(proposal1[5]).to.be.equal(1) // approved
+
+    // expect(await this.Property.filmVotePeriod()).to.be.equal(property1)
+    expect(await this.Property.filmVotePeriod()).to.be.equal(property1)
+
     // TODO
     const voteResult = await this.Vote.propertyVoting(flag, propertyVal);
     console.log('=====voteResult-0::', voteResult[0].toString())
@@ -490,6 +505,7 @@ describe('Vote', function () {
     console.log('=====voteResult-3::', voteResult[3].toString())
 
     // 2 =================== proposalProperty(rewardRate) ======================
+    console.log("\n\n=================== proposalProperty(rewardRate) ======================\n")
     await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(30000000), {from: this.customer1.address})
     let rewardRate = await this.Property.rewardRate();
     console.log('====defaultPropertyVal::', rewardRate.toString())
@@ -501,8 +517,20 @@ describe('Vote', function () {
     property2 = 300000; // 0.0008% (1% = 1e8, 100%=1e10)
     await this.Property.connect(this.customer6).proposalProperty(property1, flag, 'test-1', 'desc-1', {from: this.customer6.address})
     await this.Property.connect(this.customer7).proposalProperty(property2, flag, 'test-1', 'desc-1', {from: this.customer7.address})
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
-    expect(await this.Property.getProperty(1, flag)).to.be.equal(property2)
+    
+    proposal1 = await this.Property.getPropertyProposalInfo(0, flag);
+    proposal2 = await this.Property.getPropertyProposalInfo(1, flag);
+
+    expect(proposal1[1]).to.be.equal(0)
+    expect(proposal1[3]).to.be.equal(property1)
+    expect(proposal1[4]).to.be.equal(this.customer6.address)
+    expect(proposal1[5]).to.be.equal(0)
+    
+    expect(proposal2[1]).to.be.equal(0)
+    expect(proposal2[3]).to.be.equal(property2)
+    expect(proposal2[4]).to.be.equal(this.customer7.address)
+    expect(proposal2[5]).to.be.equal(0)
+
     totalRewardAmount = await this.StakingPool.totalRewardAmount();
     console.log('====totalRewardAmount::', totalRewardAmount.toString())
 
@@ -512,8 +540,7 @@ describe('Vote', function () {
     await this.Vote.connect(this.customer3).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer3.address})
     await this.Vote.connect(this.customer4).voteToProperty(this.voteInfo[1], indx, flag, {from: this.customer4.address})
     await this.Vote.connect(this.customer5).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer5.address})
-    // await this.Vote.connect(this.customer6).voteToProperty(this.voteInfo[2], indx, flag, {from: this.customer6.address})
-    console.log("====test-3")
+   
     // => Increase next block timestamp
     network.provider.send('evm_increaseTime', [period_8]);
     await network.provider.send('evm_mine');
@@ -521,7 +548,7 @@ describe('Vote', function () {
     // Call updateProperty() before vote period
     await expect(
       this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
-    ).to.be.revertedWith('property vote period yet')
+    ).to.be.revertedWith('pV: vote period yet')
 
     // => Increase next block timestamp
     network.provider.send('evm_increaseTime', [period_3]);
@@ -531,11 +558,18 @@ describe('Vote', function () {
     await this.Vote.connect(this.customer1).updateProperty(indx, flag, {from: this.customer1.address})
     rewardRate = await this.Property.rewardRate()
     expect(rewardRate).to.be.equal(property1)
-    expect(await this.Property.getProperty(0, flag)).to.be.equal(property1)
     console.log('====rewardRate::', rewardRate.toString())
 
+    proposal1 = await this.Property.getPropertyProposalInfo(0, flag);
+    propertyVal = proposal1[3];
+
+    expect(proposal1[1] > 0).to.be.true
+    expect(propertyVal).to.be.equal(property1)
+    expect(proposal1[4]).to.be.equal(this.customer6.address)
+    expect(proposal1[5]).to.be.equal(1) // approved
+
     const list = await this.Property.getPropertyProposalList(flag)
-    console.log('====list::', list[0].toString())
+    expect(list.length).to.be.equal(2)
   });
 
   it('voteToRewardAddress', async function () { 
