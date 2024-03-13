@@ -272,8 +272,8 @@ contract Vote is IVote, ReentrancyGuard {
         (, uint256 aTime, , address agent, address creator, Helper.Status stats) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
         
         require(msg.sender != creator, "dTA: creator dispute");
-        require(stats == Helper.Status.UPDATED, "dTA: no dispute stats");
-        require(!isAttendToDisput[msg.sender][_index], "dTA: already attend to dispute");
+        require(stats == Helper.Status.UPDATED, "dTA: not pass vote");
+        require(!isAttendToDisput[msg.sender][_index], "dTA: already dispute");
         require(
             __isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), 
             "dTA: elapsed dispute period"
@@ -281,7 +281,7 @@ contract Vote is IVote, ReentrancyGuard {
         
         // caller must have staked double the stake of the initial proposer of the auditor change proposal            
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);        
-        uint256 proposerAmount = IProperty(DAO_PROPERTY).getAgentProposerStakeAmount(_index);     
+        uint256 proposerAmount = IProperty(DAO_PROPERTY).getAgentProposerStakeAmount(_index);
         require(stakeAmount >= 2 * proposerAmount, "dTA: stake more");
 
         agentVoting[_index].disputeVABAmount += stakeAmount;
@@ -297,26 +297,24 @@ contract Vote is IVote, ReentrancyGuard {
     function replaceAuditor(uint256 _index) external onlyStaker nonReentrant {
         (, uint256 aTime, , address agent, , Helper.Status stats) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
             
-        require(stats == Helper.Status.UPDATED, "rA: no dispute stats");
+        require(stats == Helper.Status.UPDATED, "rA: not pass vote");
         require(
             !__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), 
-            "rA: dispute period yet"
+            "rA: grace period yet"
         );
         
-        isAttendToDisput[msg.sender][_index] = false;
+        // isAttendToDisput[msg.sender][_index] = false;
 
         AgentVoting memory av = agentVoting[_index];
         uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2;
-        if (
-            totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
-            av.stakeAmount_1 > av.stakeAmount_2 &&
-            av.stakeAmount_1 > IProperty(DAO_PROPERTY).disputLimitAmount() &&
-            av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).disputLimitAmount()
-        ) {
-            IOwnablee(OWNABLE).replaceAuditor(agent);
+        require(totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "rA: e1");
+        require(av.stakeAmount_1 > av.stakeAmount_2, "rA: e2");
+        require(av.stakeAmount_1 > IProperty(DAO_PROPERTY).disputLimitAmount(), "rA: e3");
+        require(av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).disputLimitAmount(), "rA: e4");
+        
+        IOwnablee(OWNABLE).replaceAuditor(agent);
 
-            emit AuditorReplaced(agent, msg.sender);
-        }
+        emit AuditorReplaced(agent, msg.sender);
     }
 
     function voteToFilmBoard(
