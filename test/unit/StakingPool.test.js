@@ -269,5 +269,11 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
           expect(stakeInfo.stakeAmount).to.equal(stakingAmount);
           expect(endingStakerBalance).to.equal(startingStakerBalance.sub(stakingAmount));
         });
+
+        it('emits the TokenStaked event', async function () {
+          await expect(stakingPool.connect(staker1).stakeVAB(stakingAmount))
+            .to.emit(stakingPool, 'TokenStaked')
+            .withArgs(staker1.address, stakingAmount);
+        });
       });
     });
