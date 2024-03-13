@@ -38,6 +38,8 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
 
       const vabFaucetAmount = ethers.utils.parseEther('50000'); // 50k is the max amount that can be faucet
       const stakingAmount = ethers.utils.parseEther('100');
+      const poolRewardAmount = ethers.utils.parseEther('10000'); // 10k
+      const zeroEtherAmount = ethers.utils.parseEther('0');
 
       //! Question: Should this be it's own function in a separate file, because we might need this for every other test file ?
       beforeEach(async function () {
@@ -220,8 +222,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
 
       describe('StakeVAB', function () {
         it('Should revert if staking with an amount of zero', async function () {
-          const amount = ethers.utils.parseEther('0');
-          await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith('sVAB: zero amount');
+          await expect(stakingPool.connect(staker1).stakeVAB(zeroEtherAmount)).to.be.revertedWith('sVAB: zero amount');
         });
 
         it('Should revert if staking with an amount less than the minimum', async function () {
@@ -256,37 +257,42 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
           expect(endingTotalStakingAmount.toString()).to.equal(expectedEndValue.toString());
         });
 
-        it('emits the TokenStaked event', async function () {
+        it('Should emit TokenStaked event', async function () {
           await expect(stakingPool.connect(staker1).stakeVAB(stakingAmount))
             .to.emit(stakingPool, 'TokenStaked')
             .withArgs(staker1.address, stakingAmount);
         });
       });
 
-      // describe('addRewardToPool', function () {
-      //   it('Should add reward to the pool', async function () {
-      //     const rewardAmount = ethers.utils.parseEther('10');
-      //     await stakingPool.connect(addr1).addRewardToPool(rewardAmount);
+      describe('addRewardToPool', function () {
+        it('Should add reward to the pool and update the balance of the caller', async function () {
+          //? Arrange
+          const startingDeployerBalance = await vabTokenContract.balanceOf(deployer.address);
+          //? Act
+          await stakingPool.connect(deployer).addRewardToPool(poolRewardAmount);
+          //? Assert
+          const endingDeployerBalance = await vabTokenContract.balanceOf(deployer.address);
+          const totalRewardAmount = await stakingPool.totalRewardAmount();
+          expect(totalRewardAmount).to.equal(poolRewardAmount);
+          expect(endingDeployerBalance).to.equal(startingDeployerBalance.sub(poolRewardAmount));
+        });
 
-      //     const totalRewardAmount = await stakingPool.totalRewardAmount();
-      //     expect(totalRewardAmount).to.equal(rewardAmount);
-      //   });
+        it('Should revert if amount is zero', async function () {
+          await expect(stakingPool.connect(deployer).addRewardToPool(zeroEtherAmount)).to.be.revertedWith(
+            'aRTP: zero amount'
+          );
+        });
 
-      //   it('Should emit RewardAdded event', async function () {
-      //     const rewardAmount = ethers.utils.parseEther('10');
-      //     await expect(stakingPool.connect(addr1).addRewardToPool(rewardAmount))
-      //       .to.emit(stakingPool, 'RewardAdded')
-      //       .withArgs(ethers.utils.parseEther('10'), rewardAmount, addr1.address);
-      //   });
+        it('Should emit RewardAdded event', async function () {
+          const totalRewardAmount = poolRewardAmount;
 
-      //   it('Should revert if amount is zero', async function () {
-      //     await expect(stakingPool.connect(addr1).addRewardToPool(0)).to.be.revertedWith('aRTP: zero amount');
-      //   });
+          await expect(stakingPool.connect(deployer).addRewardToPool(poolRewardAmount))
+            .to.emit(stakingPool, 'RewardAdded')
+            .withArgs(totalRewardAmount, poolRewardAmount, deployer.address);
+        });
 
-      //   it('Should revert if not called by a normal user', async function () {
-      //     // Assuming there's a function in the contract that sets the user as a non-normal user
-      //     await stakingPool.connect(owner).setUserAsNonNormal(addr1.address);
-      //     await expect(stakingPool.connect(addr1).addRewardToPool(1)).to.be.revertedWith('Migration is on going');
-      //   });
-      // });
+        it('Should revert if migration has started', async function () {
+          //? How do we set the migration status to 1 ???
+        });
+      });
     });
