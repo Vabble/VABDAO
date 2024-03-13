@@ -761,5 +761,6 @@ contract Property is ReentrancyGuard {
     function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer { 
         require(Helper.isTestNet(), "apply on testnet");
         availableVABAmount = _amount;
+        disputLimitAmount = _amount * 3;
     }     
 }
