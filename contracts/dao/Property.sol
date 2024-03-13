@@ -139,13 +139,13 @@ contract Property is ReentrancyGuard {
         address _vote,
         address _staking
     ) {
-        require(_ownable != address(0), "ownableContract: Zero address");
+        require(_ownable != address(0), "ownable: zero address");
         OWNABLE = _ownable;  
-        require(_uniHelper != address(0), "uniHelperContract: Zero address");
+        require(_uniHelper != address(0), "uniHelper: zero address");
         UNI_HELPER = _uniHelper;
-        require(_vote != address(0), "voteContract: Zero address");
+        require(_vote != address(0), "vote: zero address");
         VOTE = _vote;
-        require(_staking != address(0), "stakingContract: Zero address");
+        require(_staking != address(0), "staking: zero address");
         STAKING_POOL = _staking;       
 
         filmVotePeriod = 10 days;   
@@ -284,7 +284,7 @@ contract Property is ReentrancyGuard {
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();   
         uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(_payAmount, usdcToken, vabToken);
 
-        require(expectVABAmount != 0, '__paidFee: Not paid fee');        
+        require(expectVABAmount != 0, 'pFee: Not paid fee');        
     
         Helper.safeTransferFrom(vabToken, msg.sender, address(this), expectVABAmount);
         if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
@@ -432,98 +432,95 @@ contract Property is ReentrancyGuard {
         string memory _title,
         string memory _description
     ) external onlyStaker nonReentrant {
-        require(
-            _property != 0 && _flag >= 0 && _flag < maxPropertyList.length && isPropertyWhitelist[_flag][_property] == 0, 
-            "proposalProperty: Already candidate or zero value"
-        );          
-
-        require(minPropertyList[_flag] <= _property && _property <= maxPropertyList[_flag], "property invalid");
+        require(_property != 0 && _flag >= 0 && _flag < maxPropertyList.length, "pP: bad value");          
+        require(isPropertyWhitelist[_flag][_property] == 0, "pP: already candidate");          
+        require(minPropertyList[_flag] <= _property && _property <= maxPropertyList[_flag], "pP: invalid");
         
         __paidFee(proposalFeeAmount);
 
         uint256 len;
         if(_flag == 0) {
-            require(filmVotePeriod != _property, "proposalProperty: Already filmVotePeriod");
+            require(filmVotePeriod != _property, "pP: already filmVotePeriod");
             len = filmVotePeriodList.length;
             filmVotePeriodList.push(_property);
         } else if(_flag == 1) {
-            require(agentVotePeriod != _property, "proposalProperty: Already agentVotePeriod");
+            require(agentVotePeriod != _property, "pP: already agentVotePeriod");
             len = agentVotePeriodList.length;
             agentVotePeriodList.push(_property);
         } else if(_flag == 2) {
-            require(disputeGracePeriod != _property, "proposalProperty: Already disputeGracePeriod");
+            require(disputeGracePeriod != _property, "pP: already disputeGracePeriod");
             len = disputeGracePeriodList.length;
             disputeGracePeriodList.push(_property);
         } else if(_flag == 3) {
-            require(propertyVotePeriod != _property, "proposalProperty: Already propertyVotePeriod");
+            require(propertyVotePeriod != _property, "pP: already propertyVotePeriod");
             len = propertyVotePeriodList.length;
             propertyVotePeriodList.push(_property);
         } else if(_flag == 4) {
-            require(lockPeriod != _property, "proposalProperty: Already lockPeriod");
+            require(lockPeriod != _property, "pP: already lockPeriod");
             len = lockPeriodList.length;
             lockPeriodList.push(_property);
         } else if(_flag == 5) {
-            require(rewardRate != _property, "proposalProperty: Already rewardRate");
+            require(rewardRate != _property, "pP: already rewardRate");
             len = rewardRateList.length;
             rewardRateList.push(_property);
         } else if(_flag == 6) {
-            require(filmRewardClaimPeriod != _property, "proposalProperty: Already filmRewardClaimPeriod");
+            require(filmRewardClaimPeriod != _property, "pP: already filmRewardClaimPeriod");
             len = filmRewardClaimPeriodList.length;
             filmRewardClaimPeriodList.push(_property);
         } else if(_flag == 7) {
-            require(maxAllowPeriod != _property, "proposalProperty: Already maxAllowPeriod");
+            require(maxAllowPeriod != _property, "pP: already maxAllowPeriod");
             len = maxAllowPeriodList.length;
             maxAllowPeriodList.push(_property);
         } else if(_flag == 8) {
-            require(proposalFeeAmount != _property, "proposalProperty: Already proposalFeeAmount");
+            require(proposalFeeAmount != _property, "pP: already proposalFeeAmount");
             len = proposalFeeAmountList.length;
             proposalFeeAmountList.push(_property);
         } else if(_flag == 9) {
-            require(fundFeePercent != _property, "proposalProperty: Already fundFeePercent");
+            require(fundFeePercent != _property, "pP: already fundFeePercent");
             len = fundFeePercentList.length;
             fundFeePercentList.push(_property);
         } else if(_flag == 10) {
-            require(minDepositAmount != _property, "proposalProperty: Already minDepositAmount");
+            require(minDepositAmount != _property, "pP: already minDepositAmount");
             len = minDepositAmountList.length;
             minDepositAmountList.push(_property);
         } else if(_flag == 11) {
-            require(maxDepositAmount != _property, "proposalProperty: Already maxDepositAmount");
+            require(maxDepositAmount != _property, "pP: already maxDepositAmount");
             len = maxDepositAmountList.length;
             maxDepositAmountList.push(_property);
         } else if(_flag == 12) {
-            require(maxMintFeePercent != _property, "proposalProperty: Already maxMintFeePercent");
+            require(maxMintFeePercent != _property, "pP: already maxMintFeePercent");
             len = maxMintFeePercentList.length;
             maxMintFeePercentList.push(_property);
         } else if(_flag == 13) {
-            require(minVoteCount != _property, "proposalProperty: Already minVoteCount");
+            require(minVoteCount != _property, "pP: already minVoteCount");
             len = minVoteCountList.length;
             minVoteCountList.push(_property);
         } else if(_flag == 14) {
-            require(minStakerCountPercent != _property, "proposalProperty: Already minStakerCountPercent");
+            require(minStakerCountPercent != _property, "pP: already minStakerCountPercent");
             len = minStakerCountPercentList.length;
             minStakerCountPercentList.push(_property);
         } else if(_flag == 15) {
-            require(availableVABAmount != _property, "proposalProperty: Already availableVABAmount");
+            require(availableVABAmount != _property, "pP: already availableVABAmount");
             len = availableVABAmountList.length;
             availableVABAmountList.push(_property);
         } else if(_flag == 16) {
-            require(boardVotePeriod != _property, "proposalProperty: Already boardVotePeriod");
+            require(boardVotePeriod != _property, "pP: already boardVotePeriod");
             len = boardVotePeriodList.length;
             boardVotePeriodList.push(_property);
         } else if(_flag == 17) {
-            require(boardVoteWeight != _property, "proposalProperty: Already boardVoteWeight");
+            require(boardVoteWeight != _property, "pP: already boardVoteWeight");
             len = boardVoteWeightList.length;
             boardVoteWeightList.push(_property);
         } else if(_flag == 18) {
-            require(rewardVotePeriod != _property, "proposalProperty: Already rewardVotePeriod");
+            require(rewardVotePeriod != _property, "pP: already rewardVotePeriod");
             len = rewardVotePeriodList.length;
             rewardVotePeriodList.push(_property);
         } else if(_flag == 19) {
-            require(subscriptionAmount != _property, "proposalProperty: Already subscriptionAmount");
+            require(subscriptionAmount != _property, "pP: already subscriptionAmount");
             len = subscriptionAmountList.length;
             subscriptionAmountList.push(_property);
         } else if(_flag == 20) {
-            require(boardRewardRate != _property, "proposalProperty: Already boardRewardRate");
+            require(boardRewardRate != _property, "pP: already boardRewardRate");
             len = boardRewardRateList.length;
             boardRewardRateList.push(_property);
         }          
@@ -605,12 +602,6 @@ contract Property is ReentrancyGuard {
 
         return (title_, desc_);
     }
-    // function getPropertyProposalID(
-    //     uint256 _index, 
-    //     uint256 _flag
-    // ) external view returns (uint256) {
-    //     return proProposalInfo[_flag][_index].proposalID;       
-    // }
     
     function updatePropertyProposal(
         uint256 _index, 

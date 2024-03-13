@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.4;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/Helper.sol";
 import "../interfaces/IVabbleDAO.sol";
@@ -9,6 +10,7 @@ import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVote.sol";
+import "../interfaces/IUniHelper.sol";
 
 contract Vote is IVote, ReentrancyGuard {
 
@@ -43,7 +45,8 @@ contract Vote is IVote, ReentrancyGuard {
     address private immutable OWNABLE;     // Ownablee contract address
     address private VABBLE_DAO;
     address private STAKING_POOL;
-    address private DAO_PROPERTY;             
+    address private DAO_PROPERTY;     
+    address private UNI_HELPER;
 
     mapping(uint256 => Voting) public filmVoting;                            // (filmId => Voting)
     mapping(address => mapping(uint256 => bool)) public isAttendToFilmVote;  // (staker => (filmId => true/false))
@@ -80,7 +83,8 @@ contract Vote is IVote, ReentrancyGuard {
     function initialize(
         address _vabbleDAO,
         address _stakingPool,
-        address _property
+        address _property,
+        address _uniHelper
     ) external onlyDeployer {
         require(VABBLE_DAO == address(0), "init: already initialized");
 
@@ -90,6 +94,8 @@ contract Vote is IVote, ReentrancyGuard {
         STAKING_POOL = _stakingPool;
         require(_property != address(0) && Helper.isContract(_property), "init: zero property");
         DAO_PROPERTY = _property;
+        require(_uniHelper != address(0), "init: zero uniHelper");
+        UNI_HELPER = _uniHelper;
     }        
 
     /// @notice Vote to multi films from a staker
@@ -246,8 +252,7 @@ contract Vote is IVote, ReentrancyGuard {
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
             av.stakeAmount_1 > av.stakeAmount_2
-        ) {  
-            
+        ) {              
             IProperty(DAO_PROPERTY).updateGovProposal(_index, 1, 1);
             govPassedVoteCount[1] += 1;
         } else {
@@ -262,36 +267,61 @@ contract Vote is IVote, ReentrancyGuard {
             }
         }
 
-        isAttendToAgentVote[msg.sender][_index] = false;
-
         emit UpdatedAgentStats(agent, msg.sender, reason, _index);
     }
     
-    
-    function disputeToAgent(uint256 _index) external onlyStaker nonReentrant {  
-        (, uint256 aTime, , address agent, address creator, Helper.Status stats) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
+    /// @notice Dispute to agent proposal with staked double or paid double
+    function disputeToAgent(uint256 _index, bool _pay) external onlyStaker nonReentrant {  
+        (, uint256 aTime, , address agent, , Helper.Status stats) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
         
-        require(msg.sender != creator, "dTA: creator dispute");
         require(stats == Helper.Status.UPDATED, "dTA: not pass vote");
         require(!isAttendToDisput[msg.sender][_index], "dTA: already dispute");
-        require(
-            __isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), 
-            "dTA: elapsed dispute period"
-        );
+        require(__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), "dTA: elapsed dispute period");
         
-        // caller must have staked double the stake of the initial proposer of the auditor change proposal            
-        uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);        
-        uint256 proposerAmount = IProperty(DAO_PROPERTY).getAgentProposerStakeAmount(_index);
-        require(stakeAmount >= 2 * proposerAmount, "dTA: stake more");
+        // staked double than agent proposer or pay double of proposalFeeAmount
+        if(_pay) {
+            require(__paidDoubleFee(), "dTA: pay double");
+        } else {
+            require(isDoubleStaked(_index), "dTA: stake more");
+        }
 
-        agentVoting[_index].disputeVABAmount += stakeAmount;
+        agentVoting[_index].disputeVABAmount += IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
 
         isAttendToDisput[msg.sender][_index] = true;
         
         emit DisputedToAgent(msg.sender, agent, _index);
     }
 
-    
+    function isDoubleStaked(uint256 _index) public view returns (bool) {
+        uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);        
+        uint256 proposerAmount = IProperty(DAO_PROPERTY).getAgentProposerStakeAmount(_index);
+        
+        if(stakeAmount >= 2 * proposerAmount) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /// @notice Check if proposal fee transferred from studio to stakingPool
+    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
+    function __paidDoubleFee() private returns (bool paid_) {    
+        uint256 amount = 2 * IProperty(DAO_PROPERTY).proposalFeeAmount();
+        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();   
+        uint256 expectVABAmount = IUniHelper(UNI_HELPER).expectedAmount(amount, usdcToken, vabToken);
+
+        if(expectVABAmount > 0 && IERC20(vabToken).balanceOf(msg.sender) >= expectVABAmount) {
+            Helper.safeTransferFrom(vabToken, msg.sender, address(this), expectVABAmount);
+            if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
+                Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
+            }  
+            IStakingPool(STAKING_POOL).addRewardToPool(expectVABAmount);
+
+            paid_ = true;
+        }
+    } 
+
     // must be over 51%, staking amount must be over 75m, 
     // dispute staking amount must be less than 150m
     function replaceAuditor(uint256 _index) external onlyStaker nonReentrant {
@@ -303,8 +333,6 @@ contract Vote is IVote, ReentrancyGuard {
             "rA: grace period yet"
         );
         
-        // isAttendToDisput[msg.sender][_index] = false;
-
         AgentVoting memory av = agentVoting[_index];
         uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2;
         require(totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "rA: e1");
