@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for dao/FactoryTierNFT.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">dao/</a> FactoryTierNFT.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">6% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>3/50</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">5.17% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>3/58</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">8.33% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>1/12</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">9.09% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>6/66</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity ^0.8.4;
+&nbsp;
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../interfaces/IOwnablee.sol";
+import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IVabbleFund.sol";
+import "./VabbleNFT.sol";
+&nbsp;
+contract FactoryTierNFT is ReentrancyGuard {
+&nbsp;
+    event TierERC721Created(address nftCreator, address nftContract, uint indexed tier);// if tier != 0 then tierNFTContract
+    event TierERC721Minted(address nftContract, uint256 indexed tokenId, address receiver);
+    event TierInfoSetted(address filmOwner, uint256 indexed filmId, uint256 tierCount);
+&nbsp;
+    struct TierNFT {
+        string name;
+        string symbol;
+    }
+&nbsp;
+    struct Tier {
+        uint256 maxAmount;    // invested min amount(ex: $1000)
+        uint256 minAmount;    // invested max amount(ex: $50)
+    }
+    
+    string public baseUri;                     // Base URI    
+    string public collectionUri;               // Collection URI  
+&nbsp;
+    mapping(address =&gt; TierNFT) public nftInfo;             // (nft address =&gt; TierNFT)
+    mapping(address =&gt; address[]) private userTierNFTs;          // (user =&gt; tier nft address list)
+    mapping(uint256 =&gt; mapping(uint256 =&gt; Tier)) public tierInfo;              // (filmId =&gt; (tier number =&gt; Tier))
+    mapping(uint256 =&gt; uint256) public tierCount;                              // (filmId =&gt; tier count)
+    mapping(uint256 =&gt; mapping(uint256 =&gt; VabbleNFT)) public tierNFTContract;  // (filmId =&gt; (tier number =&gt; nft contract))
+    mapping(uint256 =&gt; mapping(uint256 =&gt; uint256[])) public tierNFTTokenList; // (filmId =&gt; (tier number =&gt; minted tokenId list))
+    
+    address private immutable OWNABLE;          // Ownablee contract address
+    address private immutable VABBLE_DAO;       // VabbleDAO contract address
+    address private immutable VABBLE_FUND;      // VabbleFund contract address
+&nbsp;
+<span class="fstat-no" title="function not covered" >    modifier onlyAuditor() {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor")</span>;
+        _;
+    }
+&nbsp;
+    // receive() external payable {}
+&nbsp;
+    constructor(
+        address _ownable,
+        address _vabbleDAO,
+        address _vabbleFund
+    ) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_ownable != address(0), "ownableContract: zero address");
+        OWNABLE = _ownable; 
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_vabbleDAO != address(0), "daoContract: zero address");
+        VABBLE_DAO = _vabbleDAO; 
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_vabbleFund!= address(0), "vabbleFund: zero address");
+        VABBLE_FUND = _vabbleFund;  
+    }
+&nbsp;
+    /// @notice Set baseURI by Auditor.
+<span class="fstat-no" title="function not covered" >    function setBaseURI(</span>
+        string memory _baseUri,
+        string memory _collectionUri
+    ) external onlyAuditor {
+<span class="cstat-no" title="statement not covered" >        bytes memory baseUriByte = bytes(_baseUri);</span>
+<span class="cstat-no" title="statement not covered" >        require(baseUriByte.length != 0, "empty baseUri")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        bytes memory collectionUriByte = bytes(_collectionUri);</span>
+<span class="cstat-no" title="statement not covered" >        require(collectionUriByte.length != 0, "empty collectionUri")</span>;
+&nbsp;
+        baseUri = _baseUri;
+        collectionUri = _collectionUri;
+    }
+&nbsp;
+    /// @notice onlyStudio set tier info for his films
+<span class="fstat-no" title="function not covered" >    function setTierInfo(</span>
+        uint256 _filmId,
+        uint256[] calldata _minAmounts,
+        uint256[] calldata _maxAmounts
+    ) external nonReentrant {                 
+<span class="cstat-no" title="statement not covered" >        uint256 amountsLength = _minAmounts.length;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        require(amountsLength != 0 &amp;&amp; amountsLength &lt; 1000, "setTier: bad minAmount length")</span>;        
+<span class="cstat-no" title="statement not covered" >        require(amountsLength == _maxAmounts.length, "setTier: bad maxAmount length")</span>;        
+<span class="cstat-no" title="statement not covered" >        require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "setTier: not film owner")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        (uint256 raiseAmount, uint256 fundPeriod, uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >        (, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >        require(fundPeriod &lt; block.timestamp - pApproveTime, "setTier: fund period yet")</span>; 
+<span class="cstat-no" title="statement not covered" >        require(fundType != 0, "setTier: not fund film")</span>; 
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);        </span>
+<span class="cstat-no" title="statement not covered" >        require(raisedAmount != 0 &amp;&amp; raisedAmount &gt;= raiseAmount, "setTier: not raised yet")</span>;
+        
+        
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; amountsLength; ++i) {</span>
+<span class="cstat-no" title="statement not covered" >            require(_minAmounts[i] != 0, "setTier: zero value")</span>;        
+            // TODO - N3-2 updated(add below line)
+<span class="cstat-no" title="statement not covered" >            require(_minAmounts[i] &lt; _maxAmounts[i] || _maxAmounts[i] == 0, "setTier: invalid min/max value")</span>;        
+&nbsp;
+            tierInfo[_filmId][i+1].minAmount = _minAmounts[i];
+            tierInfo[_filmId][i+1].maxAmount = _maxAmounts[i];
+        }
+&nbsp;
+        tierCount[_filmId] = amountsLength;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit TierInfoSetted(msg.sender, _filmId, tierCount[_filmId]);</span>
+    }
+&nbsp;
+    /// @notice Studio deploy a nft contract per filmId
+<span class="fstat-no" title="function not covered" >    function deployTierNFTContract(</span>
+        uint256 _filmId,
+        uint256 _tier,      // tier = 0 =&gt; filmNFT and tier != 0 =&gt; tierNFT
+        string memory _name,
+        string memory _symbol
+    ) external nonReentrant {        
+<span class="cstat-no" title="statement not covered" >        require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "deployTier: not film owner")</span>;
+<span class="cstat-no" title="statement not covered" >        require(_tier != 0, "deployTier: zero tier")</span>;
+<span class="cstat-no" title="statement not covered" >        require(tierInfo[_filmId][_tier].minAmount != 0, "deployTier: not set tier")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));</span>
+        tierNFTContract[_filmId][_tier] = t;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        userTierNFTs[msg.sender].push(address(t))</span>;             
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        TierNFT storage nInfo = nftInfo[address(t)];</span>
+        nInfo.name = _name;
+        nInfo.symbol = _symbol;
+        
+<span class="cstat-no" title="statement not covered" >        emit TierERC721Created(msg.sender, address(t), _tier);</span>
+    }  
+&nbsp;
+    /// @notice Should be called //before fundProcess() of VabbleDAO contract
+<span class="fstat-no" title="function not covered" >    function mintTierNft(uint256 _filmId) external nonReentrant  {        </span>
+<span class="cstat-no" title="statement not covered" >        require(tierCount[_filmId] != 0, "mintTier: not set tier")</span>;
+<span class="cstat-no" title="statement not covered" >        require(IVabbleDAO(VABBLE_DAO).isEnabledClaimer(_filmId), "deployTier: not allow to mint tierNft")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 tier = 0;</span>
+<span class="cstat-no" title="statement not covered" >        uint256 fund = IVabbleFund(VABBLE_FUND).getUserFundAmountPerFilm(msg.sender, _filmId);</span>
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 1; i &lt;= tierCount[_filmId]; ++i) {</span>
+<span class="cstat-no" title="statement not covered" >            if(tierInfo[_filmId][i].maxAmount == 0) {</span>
+<span class="cstat-no" title="statement not covered" >                if(tierInfo[_filmId][i].minAmount &gt;= fund) {</span>
+                    tier = i;
+                    break;
+                }    
+            } else {
+<span class="cstat-no" title="statement not covered" >                if(fund &gt;= tierInfo[_filmId][i].minAmount &amp;&amp; fund &lt; tierInfo[_filmId][i].maxAmount) {</span>
+                    tier = i;
+                    break;
+                }    
+            }            
+        }
+        
+<span class="cstat-no" title="statement not covered" >        require(tier != 0, "mintTier: bad investor")</span>;
+<span class="cstat-no" title="statement not covered" >        uint256[] memory list = getUserTokenIdList(_filmId, msg.sender, tier);</span>
+<span class="cstat-no" title="statement not covered" >        require(list.length == 0, "mintTier: already minted")</span>; 
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        VabbleNFT t = tierNFTContract[_filmId][tier];</span>
+<span class="cstat-no" title="statement not covered" >        uint256 tokenId = t.mintTo(msg.sender);</span>
+<span class="cstat-no" title="statement not covered" >        tierNFTTokenList[_filmId][tier].push(tokenId)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit TierERC721Minted(address(t), tokenId, msg.sender);</span>
+    }
+&nbsp;
+    /// @notice userTierNFTs
+<span class="fstat-no" title="function not covered" >    function getUserTierNFTs(address _user) external view returns (address[] memory) {</span>
+<span class="cstat-no" title="statement not covered" >        return userTierNFTs[_user];</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getNFTOwner(</span>
+        uint256 _filmId, 
+        uint256 _tokenId, 
+        uint256 _tier
+    ) external view returns (address) {
+<span class="cstat-no" title="statement not covered" >        return tierNFTContract[_filmId][_tier].ownerOf(_tokenId);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getTotalSupply(</span>
+        uint256 _filmId, 
+        uint256 _tier
+    ) public view returns (uint256) {
+<span class="cstat-no" title="statement not covered" >        return tierNFTContract[_filmId][_tier].totalSupply();</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getTierTokenIdList(</span>
+        uint256 _filmId, 
+        uint256 _tier
+    ) external view returns (uint256[] memory) {
+<span class="cstat-no" title="statement not covered" >        return tierNFTTokenList[_filmId][_tier];</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getUserTokenIdList(</span>
+        uint256 _filmId, 
+        address _owner, 
+        uint256 _tier
+    ) public view returns (uint256[] memory) {
+<span class="cstat-no" title="statement not covered" >        return tierNFTContract[_filmId][_tier].userTokenIdList(_owner);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getTokenUri(</span>
+        uint256 _filmId, 
+        uint256 _tokenId, 
+        uint256 _tier
+    ) external view returns (string memory) {
+<span class="cstat-no" title="statement not covered" >        return tierNFTContract[_filmId][_tier].tokenURI(_tokenId);</span>
+    }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Wed Mar 13 2024 17:02:58 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

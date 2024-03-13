@@ -1,0 +1,2120 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for dao/VabbleDAO.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">dao/</a> VabbleDAO.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/201</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/202</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">2.56% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>1/39</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">2.21% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>6/271</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482
+483
+484
+485
+486
+487
+488
+489
+490
+491
+492
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503
+504
+505
+506
+507
+508
+509
+510
+511
+512
+513
+514
+515
+516
+517
+518
+519
+520
+521
+522
+523
+524
+525
+526
+527
+528
+529
+530
+531
+532
+533
+534
+535
+536
+537
+538
+539
+540
+541
+542
+543
+544
+545
+546
+547
+548
+549
+550
+551
+552
+553
+554
+555
+556
+557
+558
+559
+560
+561
+562
+563
+564
+565
+566
+567
+568
+569
+570
+571
+572
+573
+574
+575
+576
+577
+578
+579
+580
+581
+582
+583
+584
+585
+586
+587
+588
+589
+590
+591
+592
+593
+594
+595
+596
+597
+598
+599
+600
+601
+602
+603
+604
+605
+606
+607
+608
+609
+610
+611
+612
+613
+614
+615
+616
+617
+618
+619
+620
+621
+622
+623
+624
+625
+626
+627
+628
+629
+630
+631
+632
+633
+634
+635
+636
+637
+638
+639
+640
+641
+642
+643
+644
+645
+646
+647
+648
+649
+650
+651
+652
+653
+654
+655
+656
+657
+658
+659
+660
+661
+662
+663
+664
+665
+666
+667
+668
+669
+670
+671
+672
+673
+674
+675
+676
+677
+678
+679
+680
+681
+682
+683
+684
+685
+686</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+// 88             88            B8         B8         B8
+//  88           88             88         88         88
+//   88         88              88         88         88 
+//    88       88   .d88888b.   88b8888b.  88b8888b.  88  .d88888b. 
+//     88     88    88'   `88   88'   `88  88'   `88  88  88'   `8b
+//      88   88     88     88   88     88  88     88  88  88b8888P`
+//       88 88      88.   .88   88.   .88  88.   .88  88  88.   
+//        88        `88888P`88  BBP88888'  BBP88888`  88  `888888P
+// ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+&nbsp;
+// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity ^0.8.4;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "../libraries/Helper.sol";
+import "../interfaces/IUniHelper.sol";
+import "../interfaces/IStakingPool.sol";
+import "../interfaces/IProperty.sol";
+import "../interfaces/IOwnablee.sol";
+import "../interfaces/IVabbleFund.sol";
+import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IVote.sol";
+&nbsp;
+&nbsp;
+contract VabbleDAO is ReentrancyGuard {
+    using Counters for Counters.Counter;
+&nbsp;
+    event FilmProposalCreated(uint256 indexed filmId, uint256 noVote, uint256 fundType, address studio);
+    event FilmProposalUpdated(uint256 indexed filmId, uint256 fundType, address studio);  
+    event FinalFilmSetted(address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime);
+    event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod);
+    event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
+    event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);  
+    event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);  
+    event ChangeFilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);  
+&nbsp;
+    address public immutable OWNABLE;         // Ownablee contract address
+    address public immutable VOTE;            // Vote contract address
+    address public immutable STAKING_POOL;    // StakingPool contract address
+    address public immutable UNI_HELPER;      // UniHelper contract address
+    address public immutable DAO_PROPERTY;
+    address public immutable VABBLE_FUND;  
+&nbsp;
+    // (flag =&gt; filmId list) flag: 1=proposal, 2=approveListing, 3=approveFunding, 4=updated
+    mapping(uint256 =&gt; uint256[]) private totalFilmIds; 
+&nbsp;
+    address[] private studioPoolUsers;            // (which =&gt; user list)
+    address[] private edgePoolUsers;              // (which =&gt; user list)
+&nbsp;
+    mapping(uint256 =&gt; IVabbleDAO.Film) public filmInfo;              // Each film information(filmId =&gt; Film)
+    // (user =&gt; (flag =&gt; filmId list)) flag: 1=create, 2=update, 3=approve, 4=final
+    mapping(address =&gt; mapping(uint256 =&gt; uint256[])) private userFilmIds; 
+&nbsp;
+    mapping(uint256 =&gt; uint256[]) private finalizedFilmIds;           // (monthId =&gt; filmId list)
+    mapping(uint256 =&gt; mapping(uint256 =&gt; mapping(address =&gt; uint256))) public finalizedAmount; 
+    mapping(uint256 =&gt; mapping(address =&gt; uint256)) public latestClaimMonthId;      // (filmId =&gt; (user =&gt; monthId))    
+    mapping(address =&gt; mapping(uint256 =&gt; bool)) private isInvested;  // (investor =&gt; (filmId =&gt; true/false))
+        
+    mapping(address =&gt; bool) private isStudioPoolUser;
+    mapping(address =&gt; bool) private isEdgePoolUser;
+&nbsp;
+    uint256 public StudioPool; 
+    mapping(uint256 =&gt; uint256) public finalFilmCalledTime;           // (filmId =&gt; finalized time)
+&nbsp;
+    Counters.Counter public filmCount;          // created filmId is from No.1
+    Counters.Counter public updatedFilmCount;   // updated filmId is from No.1
+    Counters.Counter public monthId;            // monthId
+&nbsp;
+<span class="fstat-no" title="function not covered" >    modifier onlyAuditor() {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == IOwnablee(OWNABLE).auditor(), "only auditor")</span>;
+        _;
+    }  
+<span class="fstat-no" title="function not covered" >    modifier onlyVote() {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == VOTE, "only vote")</span>;
+        _;
+    }
+<span class="fstat-no" title="function not covered" >    modifier onlyStakingPool() {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == STAKING_POOL, "only stakingPool")</span>;
+        _;
+    }
+&nbsp;
+    receive() external payable {}
+    
+    constructor(
+        address _ownable,
+        address _uniHelper,
+        address _vote,
+        address _staking,
+        address _property,
+        address _vabbleFund
+    ) {        
+        OWNABLE = _ownable;     
+        UNI_HELPER = _uniHelper;
+        VOTE = _vote;
+        STAKING_POOL = _staking;      
+        DAO_PROPERTY = _property; 
+        VABBLE_FUND = _vabbleFund;  
+    }
+&nbsp;
+    // ======================== Film proposal ==============================
+    /// @notice Staker create multi proposal for a lot of films | noVote: if 0 =&gt; false, 1 =&gt; true
+    /// _feeToken : Matic/USDC/USDT, not VAB
+<span class="fstat-no" title="function not covered" >    function proposalFilmCreate(uint256 _fundType, uint256 _noVote, address _feeToken) external payable nonReentrant {     </span>
+<span class="cstat-no" title="statement not covered" >        require(_feeToken != IOwnablee(OWNABLE).PAYOUT_TOKEN(), "pF: not allowed VAB")</span>;
+<span class="cstat-no" title="statement not covered" >        if(_feeToken != address(0)) {</span>
+<span class="cstat-no" title="statement not covered" >            require(IOwnablee(OWNABLE).isDepositAsset(_feeToken), "pF: not allowed asset")</span>;   
+        }
+<span class="cstat-no" title="statement not covered" >        if(_fundType == 0) <span class="cstat-no" title="statement not covered" >require(_noVote == 0, "pF: pass vote")</span>;</span>
+        
+<span class="cstat-no" title="statement not covered" >        __paidFee(_feeToken, _noVote)</span>;
+ 
+<span class="cstat-no" title="statement not covered" >        filmCount.increment()</span>;
+<span class="cstat-no" title="statement not covered" >        uint256 filmId = filmCount.current();</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        IVabbleDAO.Film storage fInfo = filmInfo[filmId];</span>
+        fInfo.fundType = _fundType;
+        fInfo.noVote = _noVote;
+        fInfo.studio = msg.sender;
+        fInfo.status = Helper.Status.LISTED;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        totalFilmIds[1].push(filmId)</span>;
+<span class="cstat-no" title="statement not covered" >        userFilmIds[msg.sender][1].push(filmId)</span>; // create
+        
+<span class="cstat-no" title="statement not covered" >        uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(</span>
+            msg.sender, block.timestamp, IProperty(DAO_PROPERTY).filmVotePeriod()
+        );
+<span class="cstat-no" title="statement not covered" >        IVote(VOTE).saveProposalWithFilm(filmId, proposalID)</span>; 
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender);</span>
+    }
+    
+<span class="fstat-no" title="function not covered" >    function proposalFilmUpdate(</span>
+        uint256 _filmId, 
+        string memory _title,
+        string memory _description,
+        uint256[] calldata _sharePercents,
+        address[] calldata _studioPayees,
+        uint256 _raiseAmount,
+        uint256 _fundPeriod,
+        uint256 _rewardPercent,
+        uint256 _enableClaimer
+    ) external nonReentrant {                
+<span class="cstat-no" title="statement not covered" >        require(_studioPayees.length != 0, 'pU: e1')</span>;
+<span class="cstat-no" title="statement not covered" >        require(_studioPayees.length == _sharePercents.length, 'pU: e2')</span>;
+        
+<span class="cstat-no" title="statement not covered" >        bytes memory titleByte = bytes(_title);</span>
+<span class="cstat-no" title="statement not covered" >        require(titleByte.length != 0, "pU: e3")</span>;
+        
+<span class="cstat-no" title="statement not covered" >        IVabbleDAO.Film storage fInfo = filmInfo[_filmId];</span>
+<span class="cstat-no" title="statement not covered" >        if(fInfo.fundType != 0) {            </span>
+<span class="cstat-no" title="statement not covered" >            require(_fundPeriod != 0, 'pU: e4')</span>;
+<span class="cstat-no" title="statement not covered" >            require(_raiseAmount &gt; IProperty(DAO_PROPERTY).minDepositAmount(), 'pU: e5')</span>;
+<span class="cstat-no" title="statement not covered" >            require(_rewardPercent &lt;= 1e10, 'pU: e6')</span>;
+        } else {
+<span class="cstat-no" title="statement not covered" >            require(_rewardPercent == 0, 'pU: e7')</span>;
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 totalPercent = 0;</span>
+<span class="cstat-no" title="statement not covered" >        if(_studioPayees.length == 1) totalPercent = _sharePercents[0];</span>
+        else {
+<span class="cstat-no" title="statement not covered" >            for(uint256 i = 0; i &lt; _studioPayees.length; ++i) {</span>
+                totalPercent += _sharePercents[i];
+            }
+        }
+<span class="cstat-no" title="statement not covered" >        require(totalPercent == 1e10, 'pU: e8')</span>;
+        
+<span class="cstat-no" title="statement not covered" >        require(fInfo.status == Helper.Status.LISTED, 'pU: NL')</span>; // proposalUpdate: Not listed
+<span class="cstat-no" title="statement not covered" >        require(fInfo.studio == msg.sender, 'pU: NFO')</span>; // proposalUpdate: not film owner
+&nbsp;
+        fInfo.title = _title;
+        fInfo.description = _description;
+        fInfo.sharePercents = _sharePercents;
+        fInfo.studioPayees = _studioPayees;    
+        fInfo.raiseAmount = _raiseAmount;
+        fInfo.fundPeriod = _fundPeriod;
+        fInfo.rewardPercent = _rewardPercent;
+        fInfo.enableClaimer = _enableClaimer;
+        fInfo.pCreateTime = block.timestamp;
+        fInfo.studio = msg.sender;
+        fInfo.status = Helper.Status.UPDATED;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        updatedFilmCount.increment()</span>;
+<span class="cstat-no" title="statement not covered" >        totalFilmIds[4].push(_filmId)</span>;
+<span class="cstat-no" title="statement not covered" >        userFilmIds[msg.sender][2].push(_filmId)</span>; // update
+&nbsp;
+        // If proposal is for fund, update "lastfundProposalCreateTime"
+<span class="cstat-no" title="statement not covered" >        if(fInfo.fundType != 0) {</span>
+<span class="cstat-no" title="statement not covered" >            IStakingPool(STAKING_POOL).updateLastfundProposalCreateTime(block.timestamp)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            if(fInfo.noVote == 1) {</span>
+                fInfo.status = Helper.Status.APPROVED_FUNDING;
+                fInfo.pApproveTime = block.timestamp;
+<span class="cstat-no" title="statement not covered" >                totalFilmIds[3].push(_filmId)</span>;
+<span class="cstat-no" title="statement not covered" >                userFilmIds[msg.sender][3].push(_filmId)</span>; // approve
+            } 
+        }       
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit FilmProposalUpdated(_filmId, fInfo.fundType, msg.sender);     </span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function changeOwner(</span>
+        uint256 _filmId, 
+        address newOwner
+    ) external nonReentrant returns (bool) {
+<span class="cstat-no" title="statement not covered" >        IVabbleDAO.Film storage fInfo = filmInfo[_filmId];</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        require(fInfo.studio == msg.sender, 'cO, E1')</span>; //changeOwner: not film owner
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 payeeLength = fInfo.studioPayees.length;  </span>
+<span class="cstat-no" title="statement not covered" >        require(payeeLength &lt; 1000, 'cO, E2')</span>;
+<span class="cstat-no" title="statement not covered" >        for(uint256 k = 0; k &lt; payeeLength; k++) {</span>
+<span class="cstat-no" title="statement not covered" >            if (fInfo.studioPayees[k] == msg.sender)</span>
+                fInfo.studioPayees[k] = newOwner;
+        }
+&nbsp;
+        fInfo.studio = newOwner;
+        
+<span class="cstat-no" title="statement not covered" >        if (fInfo.status == Helper.Status.LISTED) </span>
+<span class="cstat-no" title="statement not covered" >            __moveToAnotherArray(userFilmIds[msg.sender][1], userFilmIds[newOwner][1], _filmId)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if (fInfo.status == Helper.Status.UPDATED)             </span>
+<span class="cstat-no" title="statement not covered" >            __moveToAnotherArray(userFilmIds[msg.sender][2], userFilmIds[newOwner][2], _filmId)</span>;
+        
+<span class="cstat-no" title="statement not covered" >        if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {</span>
+<span class="cstat-no" title="statement not covered" >            __moveToAnotherArray(userFilmIds[msg.sender][3], userFilmIds[newOwner][3], _filmId)</span>;
+<span class="cstat-no" title="statement not covered" >            __moveToAnotherArray(userFilmIds[msg.sender][4], userFilmIds[newOwner][4], _filmId)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            if (isInvested[msg.sender][_filmId]) {</span>
+                isInvested[msg.sender][_filmId] = false;
+                isInvested[newOwner][_filmId] = true;
+            }
+            
+<span class="cstat-no" title="statement not covered" >            uint256 curMonth = monthId.current();        </span>
+<span class="cstat-no" title="statement not covered" >            __updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner)</span>;
+        }
+        
+<span class="cstat-no" title="statement not covered" >        emit ChangeFilmOwner(_filmId, msg.sender, newOwner);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        return true;</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __moveToAnotherArray(</span>
+        uint256[] storage array1, 
+        uint256[] storage array2, 
+        uint256 value
+    ) private {
+<span class="cstat-no" title="statement not covered" >        uint256 arrayLength = array1.length; </span>
+<span class="cstat-no" title="statement not covered" >        require(arrayLength &lt; 1e6, 'mTAA: too many length')</span>;
+<span class="cstat-no" title="statement not covered" >        uint256 index = arrayLength;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; arrayLength; ++i) {</span>
+<span class="cstat-no" title="statement not covered" >            if(array1[i] == value) {</span>
+                index = i;
+            }
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if (index &gt;= arrayLength) <span class="cstat-no" title="statement not covered" >return;</span></span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        array2.push(value)</span>;
+        
+        array1[index] = array1[arrayLength - 1];
+<span class="cstat-no" title="statement not covered" >        array1.pop()</span>;
+    }
+&nbsp;
+    /// @notice Check if proposal fee transferred from studio to stakingPool
+    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -&gt; stakingPool.
+<span class="fstat-no" title="function not covered" >    function __paidFee(address _dToken, uint256 _noVote) private {    </span>
+<span class="cstat-no" title="statement not covered" >        uint256 feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount();</span> // in cash(usdc)
+<span class="cstat-no" title="statement not covered" >        if(_noVote == 1) feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount() * 2;</span>
+        
+<span class="cstat-no" title="statement not covered" >        uint256 expectTokenAmount = feeAmount;</span>
+<span class="cstat-no" title="statement not covered" >        if(_dToken != IOwnablee(OWNABLE).USDC_TOKEN()) {</span>
+            expectTokenAmount = IUniHelper(UNI_HELPER).expectedAmount(feeAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _dToken);
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if(_dToken == address(0)) {</span>
+<span class="cstat-no" title="statement not covered" >            require(msg.value &gt;= expectTokenAmount, "paidFee: Insufficient paid")</span>;
+<span class="cstat-no" title="statement not covered" >            if (msg.value &gt; expectTokenAmount) {</span>
+<span class="cstat-no" title="statement not covered" >                Helper.safeTransferETH(msg.sender, msg.value - expectTokenAmount)</span>;
+            }
+            // Send ETH from this contract to UNI_HELPER contract
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransferETH(UNI_HELPER, expectTokenAmount)</span>;
+        } else {
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransferFrom(_dToken, msg.sender, address(this), expectTokenAmount)</span>;
+<span class="cstat-no" title="statement not covered" >            if(IERC20(_dToken).allowance(address(this), UNI_HELPER) == 0) {</span>
+<span class="cstat-no" title="statement not covered" >                Helper.safeApprove(_dToken, UNI_HELPER, IERC20(_dToken).totalSupply())</span>;
+            }
+        }                
+        
+<span class="cstat-no" title="statement not covered" >        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();</span>
+<span class="cstat-no" title="statement not covered" >        bytes memory swapArgs = abi.encode(expectTokenAmount, _dToken, vabToken);</span>
+<span class="cstat-no" title="statement not covered" >        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);    </span>
+        
+<span class="cstat-no" title="statement not covered" >        if(IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {</span>
+<span class="cstat-no" title="statement not covered" >            Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply())</span>;
+        }  
+<span class="cstat-no" title="statement not covered" >        IStakingPool(STAKING_POOL).addRewardToPool(vabAmount)</span>;
+    } 
+&nbsp;
+    /// @notice Approve a film for funding/listing from vote contract
+<span class="fstat-no" title="function not covered" >    function approveFilmByVote(uint256 _filmId, uint256 _flag) external onlyVote {</span>
+<span class="cstat-no" title="statement not covered" >        require(_filmId != 0, "aFV: e1")</span>; 
+&nbsp;
+        filmInfo[_filmId].pApproveTime = block.timestamp;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 fundType = filmInfo[_filmId].fundType;</span>
+<span class="cstat-no" title="statement not covered" >        if(_flag == 0) {</span>
+<span class="cstat-no" title="statement not covered" >            if(fundType != 0) { // in case of fund film</span>
+                filmInfo[_filmId].status = Helper.Status.APPROVED_FUNDING;                
+<span class="cstat-no" title="statement not covered" >                totalFilmIds[3].push(_filmId)</span>;
+            } else {
+                filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;                    
+<span class="cstat-no" title="statement not covered" >                totalFilmIds[2].push(_filmId)</span>;
+            }        
+            
+            
+<span class="cstat-no" title="statement not covered" >            address studioA = filmInfo[_filmId].studio;</span>
+<span class="cstat-no" title="statement not covered" >            userFilmIds[studioA][3].push(_filmId)</span>; // approve
+        } else {
+            filmInfo[_filmId].status = Helper.Status.REJECTED;
+        } 
+    }
+&nbsp;
+    /// @notice onlyStudio update film fund period
+<span class="fstat-no" title="function not covered" >    function updateFilmFundPeriod(uint256 _filmId, uint256 _fundPeriod) external nonReentrant {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == filmInfo[_filmId].studio, "uFP: 1")</span>; // updateFundPeriod: not film owner
+<span class="cstat-no" title="statement not covered" >        require(filmInfo[_filmId].fundType != 0, "uFP: 2")</span>; // updateFundPeriod: not fund film
+&nbsp;
+        filmInfo[_filmId].fundPeriod = _fundPeriod;
+        
+<span class="cstat-no" title="statement not covered" >        emit FilmFundPeriodUpdated(_filmId, msg.sender, _fundPeriod);</span>
+    }   
+&nbsp;
+    /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO) by Auditor
+    // _which = 1 =&gt; to EdgePool, _which = 2 =&gt; to StudioPool
+<span class="fstat-no" title="function not covered" >    function allocateToPool(</span>
+        address[] calldata _users,
+        uint256[] calldata _amounts,
+        uint256 _which
+    ) external onlyAuditor nonReentrant {
+<span class="cstat-no" title="statement not covered" >        uint256 userLength = _users.length;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        require(userLength == _amounts.length &amp;&amp; userLength &lt; 1000, "aTP: e1")</span>;
+<span class="cstat-no" title="statement not covered" >        require(_which == 1 || _which == 2, "aTP: e2")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if(_which == 1) {            </span>
+<span class="cstat-no" title="statement not covered" >            IStakingPool(STAKING_POOL).sendVAB(_users, OWNABLE, _amounts)</span>;
+        } else {
+            StudioPool += IStakingPool(STAKING_POOL).sendVAB(_users, address(this), _amounts);
+        }
+&nbsp;
+        
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; userLength; ++i) {   </span>
+<span class="cstat-no" title="statement not covered" >            if(_which == 1) {</span>
+<span class="cstat-no" title="statement not covered" >                if(isEdgePoolUser[_users[i]]) continue;</span>
+&nbsp;
+                isEdgePoolUser[_users[i]] = true;
+<span class="cstat-no" title="statement not covered" >                edgePoolUsers.push(_users[i])</span>;
+            } else {
+<span class="cstat-no" title="statement not covered" >                if(isStudioPoolUser[_users[i]]) continue;</span>
+&nbsp;
+                isStudioPoolUser[_users[i]] = true;
+<span class="cstat-no" title="statement not covered" >                studioPoolUsers.push(_users[i])</span>;
+            }
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit AllocatedToPool(_users, _amounts, _which);</span>
+    }
+&nbsp;
+    /// @notice Allocate VAB from EdgePool(Ownable) to StudioPool(VabbleDAO) by Auditor
+<span class="fstat-no" title="function not covered" >    function allocateFromEdgePool(uint256 _amount) external onlyAuditor nonReentrant {</span>
+<span class="cstat-no" title="statement not covered" >        uint256 userLength = edgePoolUsers.length;</span>
+<span class="cstat-no" title="statement not covered" >        require(userLength &lt; 1e5, "aFEP: bad length")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        IOwnablee(OWNABLE).addToStudioPool(_amount)</span>; // Transfer VAB from EdgePool to StudioPool
+        StudioPool += _amount;
+&nbsp;
+                
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; userLength; ++i) {   </span>
+<span class="cstat-no" title="statement not covered" >            if(isStudioPoolUser[edgePoolUsers[i]]) continue;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            studioPoolUsers.push(edgePoolUsers[i])</span>;
+        }
+&nbsp;
+        delete edgePoolUsers;
+    }
+&nbsp;
+    /// @notice Withdraw VAB token from StudioPool(VabbleDAO) to V2 by StakingPool contract
+<span class="fstat-no" title="function not covered" >    function withdrawVABFromStudioPool(address _to) external onlyStakingPool nonReentrant returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();    </span>
+<span class="cstat-no" title="statement not covered" >        uint256 poolBalance = IERC20(vabToken).balanceOf(address(this));    </span>
+<span class="cstat-no" title="statement not covered" >        if(poolBalance != 0) {</span>
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransfer(vabToken, _to, poolBalance)</span>;
+            
+            StudioPool = 0;
+            delete studioPoolUsers;
+        }
+        
+<span class="cstat-no" title="statement not covered" >        return poolBalance;</span>
+    }
+&nbsp;
+    /// Pre-Checking for set Final Film
+<span class="fstat-no" title="function not covered" >    function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {</span>
+<span class="cstat-no" title="statement not covered" >        uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();</span>
+&nbsp;
+        _valids = new bool[](_filmIds.length);
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 filmLength = _filmIds.length;</span>
+<span class="cstat-no" title="statement not covered" >        for (uint256 i = 0; i &lt; filmLength; ++i) {</span>
+<span class="cstat-no" title="statement not covered" >            if (finalFilmCalledTime[_filmIds[i]] != 0) {</span>
+                _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] &gt;= fPeriod;                
+            } else {
+                _valids[i] = true;
+            }
+        }      
+    }
+&nbsp;
+    /// @notice Set final films for a customer with watched 
+    // Auditor call this function per month
+<span class="fstat-no" title="function not covered" >    function setFinalFilms(        </span>
+        uint256[] calldata _filmIds,
+        uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
+    ) external onlyAuditor nonReentrant {
+<span class="cstat-no" title="statement not covered" >        uint256 filmLength = _filmIds.length;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        require(filmLength != 0 &amp;&amp; filmLength &lt; 1000 &amp;&amp; filmLength == _payouts.length, "sFF: bad length")</span>;
+        
+<span class="cstat-no" title="statement not covered" >        bool[] memory _valids = checkSetFinalFilms(_filmIds);</span>
+        
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; filmLength; ++i) {     </span>
+<span class="cstat-no" title="statement not covered" >            if(_filmIds[i] == 0 || _payouts[i] == 0) continue;</span>
+<span class="cstat-no" title="statement not covered" >            if (!_valids[i]) continue;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            __setFinalFilm(_filmIds[i], _payouts[i])</span>;
+            finalFilmCalledTime[_filmIds[i]] = block.timestamp;
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit SetFinalFilms(msg.sender, _filmIds, _payouts);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function startNewMonth() external onlyAuditor nonReentrant {</span>
+<span class="cstat-no" title="statement not covered" >        monthId.increment()</span>;        
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __setFinalFilm(</span>
+        uint256 _filmId, 
+        uint256 _payout  
+    ) private {     
+<span class="cstat-no" title="statement not covered" >        IVabbleDAO.Film memory fInfo = filmInfo[_filmId];</span>
+<span class="cstat-no" title="statement not covered" >        require(fInfo.status == Helper.Status.APPROVED_LISTING || fInfo.status == Helper.Status.APPROVED_FUNDING, "sFF: Not approved")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 curMonth = monthId.current();        </span>
+<span class="cstat-no" title="statement not covered" >        if(fInfo.status == Helper.Status.APPROVED_LISTING) {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            __setFinalAmountToPayees(_filmId, _payout, curMonth)</span>;                
+&nbsp;
+        } else <span class="cstat-no" title="statement not covered" >if(fInfo.status == Helper.Status.APPROVED_FUNDING) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 rewardAmount = _payout * fInfo.rewardPercent / 1e10;</span>
+<span class="cstat-no" title="statement not covered" >            uint256 payAmount = _payout - rewardAmount;                 </span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            if(!IVabbleFund(VABBLE_FUND).isRaisedFullAmount(_filmId)) {</span>
+                rewardAmount = 0;
+                payAmount = _payout;
+            }
+&nbsp;
+            // set to funders
+<span class="cstat-no" title="statement not covered" >            if(rewardAmount != 0) <span class="cstat-no" title="statement not covered" >__setFinalAmountToHelpers(_filmId, rewardAmount, curMonth)</span>;</span>
+&nbsp;
+            // set to studioPayees
+<span class="cstat-no" title="statement not covered" >            if(payAmount != 0) <span class="cstat-no" title="statement not covered" >__setFinalAmountToPayees(_filmId, payAmount, curMonth)</span>;  </span>
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        finalizedFilmIds[curMonth].push(_filmId)</span>;
+    }  
+&nbsp;
+    /// @dev Avoid deep error
+<span class="fstat-no" title="function not covered" >    function __setFinalAmountToPayees(uint256 _filmId, uint256 _payout, uint256 _curMonth) private {       </span>
+<span class="cstat-no" title="statement not covered" >        IVabbleDAO.Film memory fInfo = filmInfo[_filmId];       </span>
+<span class="cstat-no" title="statement not covered" >        uint256 payeeLength = fInfo.studioPayees.length;  </span>
+<span class="cstat-no" title="statement not covered" >        for(uint256 k = 0; k &lt; payeeLength; k++) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 shareAmount = _payout * fInfo.sharePercents[k] / 1e10;</span>
+            finalizedAmount[_curMonth][_filmId][fInfo.studioPayees[k]] += shareAmount;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            __addFinalFilmId(fInfo.studioPayees[k], _filmId)</span>;
+        } 
+    }
+    /// @dev Avoid deep error
+<span class="fstat-no" title="function not covered" >    function __setFinalAmountToHelpers(uint256 _filmId, uint256 _rewardAmount, uint256 _curMonth) private {                </span>
+<span class="cstat-no" title="statement not covered" >        uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >        if(raisedAmount != 0) {</span>
+<span class="cstat-no" title="statement not covered" >            address[] memory investors = IVabbleFund(VABBLE_FUND).getFilmInvestorList(_filmId); </span>
+<span class="cstat-no" title="statement not covered" >            for(uint256 i = 0; i &lt; investors.length; ++i) {   </span>
+<span class="cstat-no" title="statement not covered" >                uint256 userAmount = IVabbleFund(VABBLE_FUND).getUserFundAmountPerFilm(investors[i], _filmId);</span>
+<span class="cstat-no" title="statement not covered" >                if(userAmount == 0) continue;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                uint256 percent = (userAmount * 1e10) / raisedAmount;</span>
+<span class="cstat-no" title="statement not covered" >                uint256 amount = (_rewardAmount * percent) / 1e10;     </span>
+                finalizedAmount[_curMonth][_filmId][investors[i]] += amount;
+                
+<span class="cstat-no" title="statement not covered" >                __addFinalFilmId(investors[i], _filmId)</span>;
+            }
+        }
+    }
+<span class="fstat-no" title="function not covered" >    function __addFinalFilmId(address _user, uint256 _filmId) private {</span>
+<span class="cstat-no" title="statement not covered" >        if(!isInvested[_user][_filmId]) {</span>
+<span class="cstat-no" title="statement not covered" >            userFilmIds[_user][4].push(_filmId)</span>; // final
+            isInvested[_user][_filmId] = true;
+        }
+    }
+&nbsp;
+    // Claim reward for multi-filmIds till current from when auditor call setFinalFilms()
+<span class="fstat-no" title="function not covered" >    function claimReward(uint256[] memory _filmIds) external nonReentrant {             </span>
+<span class="cstat-no" title="statement not covered" >        require(_filmIds.length != 0 &amp;&amp; _filmIds.length &lt; 1000, "cR: bad filmIds")</span>;
+         
+<span class="cstat-no" title="statement not covered" >        __claimAllReward(_filmIds)</span>;        
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __claimAllReward(uint256[] memory _filmIds) private {     </span>
+<span class="cstat-no" title="statement not covered" >        uint256 filmLength = _filmIds.length;</span>
+<span class="cstat-no" title="statement not covered" >        require(filmLength &lt; 1e5, "cAR: bad array")</span>;
+        
+<span class="cstat-no" title="statement not covered" >        uint256 curMonth = monthId.current();</span>
+<span class="cstat-no" title="statement not covered" >        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN(); </span>
+<span class="cstat-no" title="statement not covered" >        uint256 rewardSum;        </span>
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; filmLength; ++i) {  </span>
+<span class="cstat-no" title="statement not covered" >            if (finalFilmCalledTime[_filmIds[i]] == 0) // not still call final film</span>
+                continue;
+&nbsp;
+            rewardSum += getUserRewardAmountForUser(_filmIds[i], curMonth, msg.sender);
+            latestClaimMonthId[_filmIds[i]][msg.sender] = curMonth;
+        }
+        
+<span class="cstat-no" title="statement not covered" >        require(rewardSum != 0, "cAR: zero amount")</span>;
+<span class="cstat-no" title="statement not covered" >        require(StudioPool &gt;= rewardSum, "cAR: insufficient 1")</span>;
+<span class="cstat-no" title="statement not covered" >        require(IERC20(vabToken).balanceOf(address(this)) &gt;= StudioPool, "cAR: insufficient 2")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        Helper.safeTransfer(vabToken, msg.sender, rewardSum)</span>;
+        StudioPool -= rewardSum; 
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit RewardAllClaimed(msg.sender, curMonth, _filmIds, rewardSum);</span>
+    }
+&nbsp;
+    // Claim reward of all filmIds for each user
+<span class="fstat-no" title="function not covered" >    function claimAllReward() external nonReentrant {     </span>
+<span class="cstat-no" title="statement not covered" >        uint256[] memory filmIds = userFilmIds[msg.sender][4];</span> // final
+<span class="cstat-no" title="statement not covered" >        require(filmIds.length != 0 &amp;&amp; filmIds.length &lt; 1000, "cAR: zero filmIds")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        __claimAllReward(filmIds)</span>;   
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getUserRewardAmountBetweenMonths(</span>
+        uint256 _filmId, 
+        uint256 _preMonth, 
+        uint256 _curMonth, 
+        address _user
+    ) public view returns (uint256 amount_) {
+<span class="cstat-no" title="statement not covered" >        if(_preMonth &lt; _curMonth) {</span>
+<span class="cstat-no" title="statement not covered" >            for(uint256 mon = _preMonth + 1; mon &lt;= _curMonth; ++mon) {</span>
+                amount_ += finalizedAmount[mon][_filmId][_user];
+            }                   
+        }
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getAllAvailableRewards(</span>
+        uint256 _curMonth,
+        address _user
+    ) public view returns (uint256) {
+<span class="cstat-no" title="statement not covered" >        uint256[] memory filmIds = userFilmIds[_user][4];</span> // final
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 rewardSum = 0;</span>
+<span class="cstat-no" title="statement not covered" >        uint256 preMonth = 0;</span>
+<span class="cstat-no" title="statement not covered" >        uint256 filmLength = filmIds.length;</span>
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; filmLength; ++i) {  </span>
+            preMonth = latestClaimMonthId[filmIds[i]][_user];
+            rewardSum += getUserRewardAmountBetweenMonths(filmIds[i], preMonth, _curMonth, _user);                        
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        return rewardSum;</span>
+    }
+     
+<span class="fstat-no" title="function not covered" >    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user) public view returns (uint256) {        </span>
+<span class="cstat-no" title="statement not covered" >        uint256 preMonth = latestClaimMonthId[_filmId][_user];</span>
+<span class="cstat-no" title="statement not covered" >        return getUserRewardAmountBetweenMonths(_filmId, preMonth, _curMonth, _user);</span>
+    }
+&nbsp;
+    /// @notice flag: create=1, update=2, approve=3, final=4
+<span class="fstat-no" title="function not covered" >    function getUserFilmIds(address _user, uint256 _flag) external view returns (uint256[] memory) {        </span>
+<span class="cstat-no" title="statement not covered" >        return userFilmIds[_user][_flag];</span>
+    }
+&nbsp;
+    /// @notice Get film status based on Id
+<span class="fstat-no" title="function not covered" >    function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_) {</span>
+        status_ = filmInfo[_filmId].status;
+    }
+&nbsp;
+    /// @notice Get film owner(studio) based on Id
+<span class="fstat-no" title="function not covered" >    function getFilmOwner(uint256 _filmId) external view returns (address owner_) {</span>
+        owner_ = filmInfo[_filmId].studio;
+    }
+&nbsp;
+    /// @notice Get film fund info based on Id
+<span class="fstat-no" title="function not covered" >    function getFilmFund(uint256 _filmId) external view </span>
+    returns (
+        uint256 raiseAmount_, 
+        uint256 fundPeriod_, 
+        uint256 fundType_,
+        uint256 rewardPercent_        
+    ) {
+        raiseAmount_ = filmInfo[_filmId].raiseAmount;
+        fundPeriod_ = filmInfo[_filmId].fundPeriod;
+        fundType_ = filmInfo[_filmId].fundType;
+        rewardPercent_ = filmInfo[_filmId].rewardPercent;
+    }
+&nbsp;
+    /// @notice Get film fund info based on Id
+<span class="fstat-no" title="function not covered" >    function getFilmShare(uint256 _filmId) external view </span>
+    returns (
+        uint256[] memory sharePercents_, 
+        address[] memory studioPayees_
+    ) {
+        sharePercents_ = filmInfo[_filmId].sharePercents;
+        studioPayees_ = filmInfo[_filmId].studioPayees;
+    }
+&nbsp;
+    /// @notice Get film proposal created time based on Id
+<span class="fstat-no" title="function not covered" >    function getFilmProposalTime(uint256 _filmId) public view returns (uint256 cTime_, uint256 aTime_) {</span>
+        cTime_ = filmInfo[_filmId].pCreateTime;
+        aTime_ = filmInfo[_filmId].pApproveTime;
+    }
+&nbsp;
+    /// @notice Get enableClaimer based on Id
+<span class="fstat-no" title="function not covered" >    function isEnabledClaimer(uint256 _filmId) external view returns (bool enable_) {</span>
+<span class="cstat-no" title="statement not covered" >        if(filmInfo[_filmId].enableClaimer == 1) enable_ = true;</span>
+        else enable_ = false;
+    }
+    
+    /// @notice Set enableClaimer based on Id by studio
+<span class="fstat-no" title="function not covered" >    function updateEnabledClaimer(uint256 _filmId, uint256 _enable) external {</span>
+<span class="cstat-no" title="statement not covered" >    require(filmInfo[_filmId].studio == msg.sender, "uEC: not film owner")</span>;
+&nbsp;
+    filmInfo[_filmId].enableClaimer = _enable;
+    }
+&nbsp;
+    /// @notice Get film Ids
+<span class="fstat-no" title="function not covered" >    function getFilmIds(uint256 _flag) external view returns (uint256[] memory list_) {        </span>
+<span class="cstat-no" title="statement not covered" >        return totalFilmIds[_flag];</span>
+    }
+&nbsp;
+    /// @notice flag=1 =&gt; studioPoolUsers, flag=2 =&gt; edgePoolUsers
+<span class="fstat-no" title="function not covered" >    function getPoolUsers(uint256 _flag) external onlyAuditor view returns (address[] memory list_) {         </span>
+<span class="cstat-no" title="statement not covered" >        if(_flag == 1) list_ = studioPoolUsers;</span>
+        else <span class="cstat-no" title="statement not covered" >if(_flag == 2) list_ = edgePoolUsers;</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getFinalizedFilmIds(uint256 _monthId) external view returns (uint256[] memory) {           </span>
+<span class="cstat-no" title="statement not covered" >        return finalizedFilmIds[_monthId];</span>
+    }  
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __updateFinalizeAmountAndLastClaimMonth (</span>
+        uint256 _filmId, 
+        uint256 _curMonth, 
+        address _oldOwner,
+        address _newOwner
+    ) private {
+<span class="cstat-no" title="statement not covered" >        uint256 _preMonth = latestClaimMonthId[_filmId][_oldOwner];</span>
+&nbsp;
+        // update last claim month for newOwner
+        latestClaimMonthId[_filmId][_newOwner] = _preMonth;
+        
+<span class="cstat-no" title="statement not covered" >        if(_preMonth &lt; _curMonth) {</span>
+<span class="cstat-no" title="statement not covered" >            for(uint256 mon = _preMonth + 1; mon &lt;= _curMonth; ++mon) {</span>
+                // set finalizedAmount for new owner
+                finalizedAmount[mon][_filmId][_newOwner] = finalizedAmount[mon][_filmId][_oldOwner];
+&nbsp;
+                // set 0 for old owner
+                finalizedAmount[mon][_filmId][_oldOwner] = 0;
+            }                   
+        }
+        
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Wed Mar 13 2024 17:02:58 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
