@@ -218,6 +218,51 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         });
       });
 
+      describe('StakeVAB', function () {
+        it('Should revert if staking with an amount of zero', async function () {
+          const amount = ethers.utils.parseEther('0');
+          await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith('sVAB: zero amount');
+        });
+
+        it('Should revert if staking with an amount less than the minimum', async function () {
+          const amount = ethers.utils.parseEther('0.009');
+          await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith('sVAB: min 0.01');
+        });
+
+        it('Should allow staking with a valid amount and update the stakers balance', async function () {
+          //? Arrange
+          const startingStakerBalance = await vabTokenContract.balanceOf(staker1.address);
+
+          //? Act
+          await stakingPool.connect(staker1).stakeVAB(stakingAmount);
+          const stakeInfo = await stakingPool.stakeInfo(staker1.address);
+          const endingStakerBalance = await vabTokenContract.balanceOf(staker1.address);
+
+          //? Assert
+          expect(stakeInfo.stakeAmount).to.equal(stakingAmount);
+          expect(endingStakerBalance).to.equal(startingStakerBalance.sub(stakingAmount));
+        });
+
+        it('Should update the total staking amount after staking', async function () {
+          //? Arrange
+          const startingTotalStakingAmount = await stakingPool.totalStakingAmount();
+
+          //? Act
+          await stakingPool.connect(staker1).stakeVAB(stakingAmount);
+          const endingTotalStakingAmount = await stakingPool.totalStakingAmount();
+
+          //? Assert
+          const expectedEndValue = startingTotalStakingAmount.add(stakingAmount);
+          expect(endingTotalStakingAmount.toString()).to.equal(expectedEndValue.toString());
+        });
+
+        it('emits the TokenStaked event', async function () {
+          await expect(stakingPool.connect(staker1).stakeVAB(stakingAmount))
+            .to.emit(stakingPool, 'TokenStaked')
+            .withArgs(staker1.address, stakingAmount);
+        });
+      });
+
       // describe('addRewardToPool', function () {
       //   it('Should add reward to the pool', async function () {
       //     const rewardAmount = ethers.utils.parseEther('10');
@@ -244,36 +289,4 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
       //     await expect(stakingPool.connect(addr1).addRewardToPool(1)).to.be.revertedWith('Migration is on going');
       //   });
       // });
-
-      describe('StakeVAB', function () {
-        it('Should revert if staking with an amount of zero', async function () {
-          const amount = ethers.utils.parseEther('0');
-          await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith('sVAB: zero amount');
-        });
-
-        it('Should revert if staking with an amount less than the minimum', async function () {
-          const amount = ethers.utils.parseEther('0.009');
-          await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith('sVAB: min 0.01');
-        });
-
-        it('Should allow staking with a valid amount and update the stakers balance', async function () {
-          //? Arrange
-          const startingStakerBalance = await vabTokenContract.balanceOf(staker1.address);
-
-          //? Act
-          await stakingPool.connect(staker1).stakeVAB(stakingAmount);
-          const stakeInfo = await stakingPool.stakeInfo(staker1.address);
-          const endingStakerBalance = await vabTokenContract.balanceOf(staker1.address);
-
-          //? Assert
-          expect(stakeInfo.stakeAmount).to.equal(stakingAmount);
-          expect(endingStakerBalance).to.equal(startingStakerBalance.sub(stakingAmount));
-        });
-
-        it('emits the TokenStaked event', async function () {
-          await expect(stakingPool.connect(staker1).stakeVAB(stakingAmount))
-            .to.emit(stakingPool, 'TokenStaked')
-            .withArgs(staker1.address, stakingAmount);
-        });
-      });
     });
