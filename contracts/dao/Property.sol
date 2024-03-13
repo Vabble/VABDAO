@@ -299,10 +299,8 @@ contract Property is ReentrancyGuard {
         string memory _title,
         string memory _description
     ) external onlyMajor nonReentrant {
-        require(
-            _rewardAddress != address(0) && isGovWhitelist[3][_rewardAddress] == 0, 
-            "proposalRewardFund: Already candidate or zero"
-        );
+        require(_rewardAddress != address(0), "pRF: zero");
+        require(isGovWhitelist[3][_rewardAddress] == 0, "pRF: already candidate");
         
         __paidFee(10 * proposalFeeAmount);
 
@@ -334,10 +332,9 @@ contract Property is ReentrancyGuard {
         string memory _title,
         string memory _description
     ) external onlyStaker nonReentrant {
-        require(
-            _member != address(0) && isGovWhitelist[2][_member] == 0, 
-            "proposalFilmBoard: Already candidate or zero"
-        );     
+        require(_member != address(0), "pFB: zero");     
+        require(isGovWhitelist[2][_member] == 0, "pFB: already candidate");     
+
         __paidFee(proposalFeeAmount);
 
         GovProposal storage bp = govProposalInfo[2][filmBoardCandidates.length];
@@ -363,11 +360,12 @@ contract Property is ReentrancyGuard {
 
     /// @notice Remove a member from whitelist if he didn't vote to any propsoal for over 3 months
     function removeFilmBoardMember(address _member) external onlyStaker nonReentrant {
-        require(isGovWhitelist[2][_member] == 2, "rFBM: Not Film board member");        
-        require(maxAllowPeriod < block.timestamp - IVote(VOTE).getLastVoteTime(_member), 'maxAllowPeriod');
-        require(maxAllowPeriod > block.timestamp - IStakingPool(STAKING_POOL).lastfundProposalCreateTime(), 'lastfundProposalCreateTime');
+        require(isGovWhitelist[2][_member] == 2, "rFBM: not board member");        
+        require(maxAllowPeriod < block.timestamp - IVote(VOTE).getLastVoteTime(_member), 'rFBM: e1');
+        require(maxAllowPeriod > block.timestamp - IStakingPool(STAKING_POOL).lastfundProposalCreateTime(), 'rFBM: e2');
 
         __removeBoardMember(_member);
+
         isGovWhitelist[2][_member] = 0;
 
         emit FilmBoardMemberRemoved(msg.sender, _member);

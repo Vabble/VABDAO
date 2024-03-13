@@ -13,17 +13,17 @@ import "../interfaces/IVote.sol";
 contract Vote is IVote, ReentrancyGuard {
 
     event VotedToFilm(address indexed voter, uint256 indexed filmId, uint256 voteInfo);
-    event VotedToAgent(address indexed voter, address indexed agent, uint256 voteInfo);
-    event DisputedToAgent(address indexed caller, address indexed agent);
-    event VotedToProperty(address indexed voter, uint256 flag, uint256 propertyVal, uint256 voteInfo);
-    event VotedToPoolAddress(address indexed voter, address rewardAddress, uint256 voteInfo);
-    event VotedToFilmBoard(address indexed voter, address candidate, uint256 voteInfo);       
+    event VotedToAgent(address indexed voter, address indexed agent, uint256 voteInfo, uint256 index);
+    event DisputedToAgent(address indexed caller, address indexed agent, uint256 index);
+    event VotedToProperty(address indexed voter, uint256 flag, uint256 propertyVal, uint256 voteInfo, uint256 index);
+    event VotedToPoolAddress(address indexed voter, address rewardAddress, uint256 voteInfo, uint256 index);
+    event VotedToFilmBoard(address indexed voter, address candidate, uint256 voteInfo, uint256 index);       
     event FilmApproved(uint256 indexed filmId, uint256 fundType, uint256 reason);
     event AuditorReplaced(address indexed agent, address caller);
-    event UpdatedAgentStats(address indexed agent, address caller, uint256 reason);
-    event FilmBoardAdded(address indexed boardMember, address caller, uint256 reason);
-    event PoolAddressAdded(address indexed pool, address caller, uint256 reason);
-    event PropertyUpdated(uint256 indexed whichProperty, uint256 propertyValue, address caller, uint256 reason);
+    event UpdatedAgentStats(address indexed agent, address caller, uint256 reason, uint256 index);
+    event FilmBoardAdded(address indexed boardMember, address caller, uint256 reason, uint256 index);
+    event PoolAddressAdded(address indexed pool, address caller, uint256 reason, uint256 index);
+    event PropertyUpdated(uint256 indexed whichProperty, uint256 propertyValue, address caller, uint256 reason, uint256 index);
     
     struct Voting {
         uint256 stakeAmount_1;  // staking amount of voter with status(yes)
@@ -47,15 +47,15 @@ contract Vote is IVote, ReentrancyGuard {
 
     mapping(uint256 => Voting) public filmVoting;                            // (filmId => Voting)
     mapping(address => mapping(uint256 => bool)) public isAttendToFilmVote;  // (staker => (filmId => true/false))
-    mapping(address => Voting) public filmBoardVoting;                       // (filmBoard candidate => Voting) 
-    mapping(address => mapping(address => bool)) public isAttendToBoardVote; // (staker => (filmBoard candidate => true/false))    
-    mapping(address => Voting) public rewardAddressVoting;                   // (rewardAddress candidate => Voting)  
-    mapping(address => mapping(address => bool)) public isAttendToRewardAddressVote; // (staker => (reward address => true/false))    
-    mapping(address => AgentVoting) public agentVoting;                      // (agent => AgentVoting) 
-    mapping(address => mapping(address => bool)) public isAttendToAgentVote; // (staker => (agent => true/false)) 
-    mapping(address => mapping(address => bool)) public isAttendToDisput;    // (staker => (agent => true/false)) 
-    mapping(uint256 => mapping(uint256 => Voting)) public propertyVoting;    // (flag => (property value => Voting))
-    mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isAttendToPropertyVote; // (flag => (staker => (property => true/false)))    
+    mapping(uint256 => Voting) public filmBoardVoting;                       // (filmBoard index => Voting) 
+    mapping(address => mapping(uint256 => bool)) public isAttendToBoardVote; // (staker => (filmBoard index => true/false))    
+    mapping(uint256 => Voting) public rewardAddressVoting;                   // (rewardAddress index => Voting)  
+    mapping(address => mapping(uint256 => bool)) public isAttendToRewardAddressVote; // (staker => (reward index => true/false))    
+    mapping(uint256 => AgentVoting) public agentVoting;                      // (agent index => AgentVoting) 
+    mapping(address => mapping(uint256 => bool)) public isAttendToAgentVote; // (staker => (agent index => true/false)) 
+    mapping(address => mapping(uint256 => bool)) public isAttendToDisput;    // (staker => (agent index => true/false)) 
+    mapping(uint256 => mapping(uint256 => Voting)) public propertyVoting;    // (flag => (property index => Voting))
+    mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isAttendToPropertyVote; // (flag => (staker => (property index => true/false)))    
     mapping(address => uint256) public userFilmVoteCount;   //(user => film vote count)
     mapping(address => uint256) public userGovernVoteCount; //(user => governance vote count)
     mapping(uint256 => uint256) public govPassedVoteCount;  //(flag => pased vote count) 1: agent, 2: disput, 3: board, 4: pool, 5: property    
@@ -72,7 +72,7 @@ contract Vote is IVote, ReentrancyGuard {
     }
 
     constructor(address _ownable) {
-        require(_ownable != address(0), "ownableContract: Zero address");
+        require(_ownable != address(0), "ownablee: zero address");
         OWNABLE = _ownable; 
     }
 
@@ -82,13 +82,13 @@ contract Vote is IVote, ReentrancyGuard {
         address _stakingPool,
         address _property
     ) external onlyDeployer {
-        require(VABBLE_DAO == address(0), "initialize: already initialized");
+        require(VABBLE_DAO == address(0), "init: already initialized");
 
-        require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "initializeVote: Zero vabbleDAO address");
+        require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "init: zero vabbleDAO");
         VABBLE_DAO = _vabbleDAO;        
-        require(_stakingPool != address(0) && Helper.isContract(_stakingPool), "initializeVote: Zero stakingPool address");
+        require(_stakingPool != address(0) && Helper.isContract(_stakingPool), "init: zero stakingPool");
         STAKING_POOL = _stakingPool;
-        require(_property != address(0) && Helper.isContract(_property), "initializeVote: Zero property address");
+        require(_property != address(0) && Helper.isContract(_property), "init: zero property");
         DAO_PROPERTY = _property;
     }        
 
@@ -98,8 +98,8 @@ contract Vote is IVote, ReentrancyGuard {
         uint256[] calldata _voteInfos
     ) external onlyStaker nonReentrant {
         uint256 filmLength = _filmIds.length;
-        require(filmLength != 0 && filmLength < 1000, "voteToFilm: zero length");
-        require(filmLength == _voteInfos.length, "voteToFilm: Bad item length");
+        require(filmLength != 0 && filmLength < 1000, "vF: zero length");
+        require(filmLength == _voteInfos.length, "vF: Bad item length");
 
         for(uint256 i = 0; i < filmLength; ++i) { 
             __voteToFilm(_filmIds[i], _voteInfos[i]);
@@ -110,16 +110,16 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 _filmId, 
         uint256 _voteInfo
     ) private {
-        require(msg.sender != IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId), "filmVote: film owner");
-        require(!isAttendToFilmVote[msg.sender][_filmId], "_voteToFilm: Already voted");    
-        require(_voteInfo == 1 || _voteInfo == 2, "_voteToFilm: bad vote info");    
+        require(msg.sender != IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId), "vF: film owner");
+        require(!isAttendToFilmVote[msg.sender][_filmId], "vF: already voted");    
+        require(_voteInfo == 1 || _voteInfo == 2, "vF: bad vote info");    
 
         Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);
-        require(status == Helper.Status.UPDATED, "Not updated");        
+        require(status == Helper.Status.UPDATED, "vF: not updated1");        
 
         (uint256 cTime, ) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
-        require(cTime != 0, "not updated");
-        require(__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), cTime), "film elapsed vote period");
+        require(cTime != 0, "vF: not updated2");
+        require(__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), cTime), "vF: elapsed period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
         (, , uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
@@ -162,7 +162,7 @@ contract Vote is IVote, ReentrancyGuard {
     // if isFund is true then "APPROVED_FUNDING", if isFund is false then "APPROVED_LISTING"
     function approveFilms(uint256[] calldata _filmIds) external onlyStaker nonReentrant {
         uint256 filmLength = _filmIds.length;
-        require(filmLength != 0 && filmLength < 1000, "approveFilms: Invalid items");
+        require(filmLength != 0 && filmLength < 1000, "aF: invalid items");
 
         for(uint256 i = 0; i < filmLength; ++i) {
             __approveFilm(_filmIds[i]);
@@ -175,8 +175,8 @@ contract Vote is IVote, ReentrancyGuard {
         // Example: stakeAmount of "YES" is 2000 and stakeAmount("NO") is 1000 in 10 days(votePeriod)
         // In this case, Approved since 2000 > 1000 + 500 (it means ">50%") and stakeAmount of "YES" > 75m          
         (uint256 pCreateTime, uint256 pApproveTime) = IVabbleDAO(VABBLE_DAO).getFilmProposalTime(_filmId);
-        require(!__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), pCreateTime), "approveFilms: vote period yet");
-        require(pApproveTime == 0, "film already approved");
+        require(!__isVotePeriod(IProperty(DAO_PROPERTY).filmVotePeriod(), pCreateTime), "aF: vote period yet");
+        require(pApproveTime == 0, "aF: already approved");
         
         (, , uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);
         uint256 reason = 0;
@@ -208,11 +208,11 @@ contract Vote is IVote, ReentrancyGuard {
         require(_voteInfo == 1 || _voteInfo == 2, "vA: bad vote info"); 
         require(cTime != 0, "vA: no proposal");
 
-        AgentVoting storage av = agentVoting[agent];
+        AgentVoting storage av = agentVoting[_index];
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);        
-        require(!isAttendToAgentVote[msg.sender][agent], "vA: already voted");
+        require(!isAttendToAgentVote[msg.sender][_index], "vA: already voted");
         require(msg.sender != creator, "vA: self voted");    
-        require(__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), cTime), "vA elapsed period");               
+        require(__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), cTime), "vA: elapsed period");               
 
         if(_voteInfo == 1) {
             av.stakeAmount_1 += stakeAmount;
@@ -221,7 +221,7 @@ contract Vote is IVote, ReentrancyGuard {
             av.stakeAmount_2 += stakeAmount;
             av.voteCount_2++;            
         }      
-        isAttendToAgentVote[msg.sender][agent] = true;
+        isAttendToAgentVote[msg.sender][_index] = true;
         userGovernVoteCount[msg.sender] += 1;
 
         // for removing board member if he don't vote for some period
@@ -229,17 +229,17 @@ contract Vote is IVote, ReentrancyGuard {
         // 1++ for calculating the rewards
         IStakingPool(STAKING_POOL).addVotedData(msg.sender, block.timestamp, pID);
 
-        emit VotedToAgent(msg.sender, agent, _voteInfo);
+        emit VotedToAgent(msg.sender, agent, _voteInfo, _index);
     }
 
     /// @notice update proposal status based on vote result
     function updateAgentStats(uint256 _index) external onlyStaker nonReentrant {
         (uint256 cTime, uint256 aTime, , address agent, , ) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
             
-        require(!__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), cTime), "rA: vote period yet"); 
-        require(aTime == 0, "rA: already updated"); 
+        require(!__isVotePeriod(IProperty(DAO_PROPERTY).agentVotePeriod(), cTime), "uAS: vote period yet"); 
+        require(aTime == 0, "uAS: already updated"); 
         
-        AgentVoting memory av = agentVoting[agent];
+        AgentVoting memory av = agentVoting[_index];
         uint256 reason = 0;
         uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2;
         // must be over 51%
@@ -262,9 +262,9 @@ contract Vote is IVote, ReentrancyGuard {
             }
         }
 
-        isAttendToAgentVote[msg.sender][agent] = false;
+        isAttendToAgentVote[msg.sender][_index] = false;
 
-        emit UpdatedAgentStats(agent, msg.sender, reason);
+        emit UpdatedAgentStats(agent, msg.sender, reason, _index);
     }
     
     
@@ -273,7 +273,7 @@ contract Vote is IVote, ReentrancyGuard {
         
         require(msg.sender != creator, "dTA: creator dispute");
         require(stats == Helper.Status.UPDATED, "dTA: no dispute stats");
-        require(!isAttendToDisput[msg.sender][agent], "dTA: already attend to dispute");
+        require(!isAttendToDisput[msg.sender][_index], "dTA: already attend to dispute");
         require(
             __isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), 
             "dTA: elapsed dispute period"
@@ -284,11 +284,11 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 proposerAmount = IProperty(DAO_PROPERTY).getAgentProposerStakeAmount(_index);     
         require(stakeAmount >= 2 * proposerAmount, "dTA: stake more");
 
-        agentVoting[agent].disputeVABAmount += stakeAmount;
+        agentVoting[_index].disputeVABAmount += stakeAmount;
 
-        isAttendToDisput[msg.sender][agent] = true;
+        isAttendToDisput[msg.sender][_index] = true;
         
-        emit DisputedToAgent(msg.sender, agent);
+        emit DisputedToAgent(msg.sender, agent, _index);
     }
 
     
@@ -297,15 +297,15 @@ contract Vote is IVote, ReentrancyGuard {
     function replaceAuditor(uint256 _index) external onlyStaker nonReentrant {
         (, uint256 aTime, , address agent, , Helper.Status stats) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
             
-        require(stats == Helper.Status.UPDATED, "dTA: no dispute stats");
+        require(stats == Helper.Status.UPDATED, "rA: no dispute stats");
         require(
             !__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), 
             "rA: dispute period yet"
         );
         
-        isAttendToDisput[msg.sender][agent] = false;
-        
-        AgentVoting memory av = agentVoting[agent];
+        isAttendToDisput[msg.sender][_index] = false;
+
+        AgentVoting memory av = agentVoting[_index];
         uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2;
         if (
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
@@ -326,15 +326,15 @@ contract Vote is IVote, ReentrancyGuard {
         (uint256 cTime, , uint256 pID, address member, address creator, ) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 2);
         
         require(IProperty(DAO_PROPERTY).checkGovWhitelist(2, member) == 1, "vFB: not candidate");
-        require(!isAttendToBoardVote[msg.sender][member], "vFB: already voted");   
+        require(!isAttendToBoardVote[msg.sender][_index], "vFB: already voted");   
         require(_voteInfo == 1 || _voteInfo == 2, "vFB: bad vote info");  
         require(msg.sender != member && msg.sender != creator, "vFB: self voted");   
         require(cTime != 0, "vFB: no proposal");
-        require(__isVotePeriod(IProperty(DAO_PROPERTY).boardVotePeriod(), cTime), "vFB: elapsed vote period");
+        require(__isVotePeriod(IProperty(DAO_PROPERTY).boardVotePeriod(), cTime), "vFB: elapsed period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
         
-        Voting storage fbp = filmBoardVoting[member];     
+        Voting storage fbp = filmBoardVoting[_index];     
         if(_voteInfo == 1) {
             fbp.stakeAmount_1 += stakeAmount; // Yes
             fbp.voteCount_1++;
@@ -345,14 +345,14 @@ contract Vote is IVote, ReentrancyGuard {
 
         userGovernVoteCount[msg.sender] += 1;
 
-        isAttendToBoardVote[msg.sender][member] = true;
+        isAttendToBoardVote[msg.sender][_index] = true;
 
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
         IStakingPool(STAKING_POOL).addVotedData(msg.sender, block.timestamp, pID);
 
-        emit VotedToFilmBoard(msg.sender, member, _voteInfo);
+        emit VotedToFilmBoard(msg.sender, member, _voteInfo, _index);
     }
     
     function addFilmBoard(uint256 _index) external onlyStaker nonReentrant {
@@ -363,12 +363,11 @@ contract Vote is IVote, ReentrancyGuard {
         require(aTime == 0, "aFB: already approved");
 
         uint256 reason = 0;
-        Voting memory fbp = filmBoardVoting[member];
+        Voting memory fbp = filmBoardVoting[_index];
         uint256 totalVoteCount = fbp.voteCount_1 + fbp.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&
             fbp.stakeAmount_1 > fbp.stakeAmount_2
-            // fbp.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IProperty(DAO_PROPERTY).updateGovProposal(_index, 2, 1);
             govPassedVoteCount[3] += 1;
@@ -379,13 +378,11 @@ contract Vote is IVote, ReentrancyGuard {
                 reason = 1;
             } else if(fbp.stakeAmount_1 <= fbp.stakeAmount_2) {
                 reason = 2;
-            } else if(fbp.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
-                reason = 3;
             } else {
                 reason = 10;
             }
         }        
-        emit FilmBoardAdded(member, msg.sender, reason);
+        emit FilmBoardAdded(member, msg.sender, reason, _index);
     }
 
     ///@notice Stakers vote to proposal for setup the address to reward DAO fund
@@ -393,15 +390,15 @@ contract Vote is IVote, ReentrancyGuard {
         (uint256 cTime, , uint256 pID, address member, address creator, ) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 3);
         
         require(IProperty(DAO_PROPERTY).checkGovWhitelist(3, member) == 1, "vRA: not candidate");
-        require(!isAttendToRewardAddressVote[msg.sender][member], "vRA: already voted");   
+        require(!isAttendToRewardAddressVote[msg.sender][_index], "vRA: already voted");   
         require(_voteInfo == 1 || _voteInfo == 2, "vRA: bad vote info");    
         require(msg.sender != member && msg.sender != creator, "vRA: self voted");       
         require(cTime != 0, "vRA: no proposal");
-        require(__isVotePeriod(IProperty(DAO_PROPERTY).rewardVotePeriod(), cTime), "vRA elapsed vote period");
+        require(__isVotePeriod(IProperty(DAO_PROPERTY).rewardVotePeriod(), cTime), "vRA elapsed period");
         
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
 
-        Voting storage rav = rewardAddressVoting[member];
+        Voting storage rav = rewardAddressVoting[_index];
         if(_voteInfo == 1) {
             rav.stakeAmount_1 += stakeAmount;   // Yes
             rav.voteCount_1++;
@@ -412,14 +409,14 @@ contract Vote is IVote, ReentrancyGuard {
 
         userGovernVoteCount[msg.sender] += 1;
 
-        isAttendToRewardAddressVote[msg.sender][member] = true;
+        isAttendToRewardAddressVote[msg.sender][_index] = true;
 
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards        
         IStakingPool(STAKING_POOL).addVotedData(msg.sender, block.timestamp, pID);
 
-        emit VotedToPoolAddress(msg.sender, member, _voteInfo);
+        emit VotedToPoolAddress(msg.sender, member, _voteInfo, _index);
     }
 
     function setDAORewardAddress(uint256 _index) external onlyStaker nonReentrant {
@@ -430,12 +427,11 @@ contract Vote is IVote, ReentrancyGuard {
         require(aTime == 0, "sRA: already approved");
         
         uint256 reason = 0;
-        Voting memory rav = rewardAddressVoting[member];
+        Voting memory rav = rewardAddressVoting[_index];
         uint256 totalVoteCount = rav.voteCount_1 + rav.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() &&       // Less than limit count
             rav.stakeAmount_1 > rav.stakeAmount_2                          // less 51%
-            // rav.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount() // less than permit amount
         ) {
             IProperty(DAO_PROPERTY).updateGovProposal(_index, 3, 1);
             govPassedVoteCount[4] += 1;
@@ -446,13 +442,11 @@ contract Vote is IVote, ReentrancyGuard {
                 reason = 1;
             } else if(rav.stakeAmount_1 <= rav.stakeAmount_2) {
                 reason = 2;
-            } else if(rav.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
-                reason = 3;
             } else {
                 reason = 10;
             }
         }        
-        emit PoolAddressAdded(member, msg.sender, reason);
+        emit PoolAddressAdded(member, msg.sender, reason, _index);
     }
 
     /// @notice Stakers vote(1,2 => Yes, No) to proposal for updating properties(filmVotePeriod, rewardRate, ...)
@@ -463,7 +457,7 @@ contract Vote is IVote, ReentrancyGuard {
     ) external onlyStaker nonReentrant {
         (uint256 cTime, , uint256 pID, uint256 value, address creator, ) = IProperty(DAO_PROPERTY).getPropertyProposalInfo(_index, _flag);
         
-        require(!isAttendToPropertyVote[_flag][msg.sender][value], "vP: already voted"); 
+        require(!isAttendToPropertyVote[_flag][msg.sender][_index], "vP: already voted"); 
         require(msg.sender != creator, "vP: self voted");    
         require(_voteInfo == 1 || _voteInfo == 2, "vP: bad vote info");            
         require(cTime != 0, "vP: no proposal");
@@ -471,7 +465,7 @@ contract Vote is IVote, ReentrancyGuard {
 
         uint256 stakeAmount = IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
 
-        Voting storage pv = propertyVoting[_flag][value];
+        Voting storage pv = propertyVoting[_flag][_index];
         if(_voteInfo == 1) {
             pv.stakeAmount_1 += stakeAmount;
             pv.voteCount_1++;
@@ -482,14 +476,14 @@ contract Vote is IVote, ReentrancyGuard {
         
         userGovernVoteCount[msg.sender] += 1;
 
-        isAttendToPropertyVote[_flag][msg.sender][value] = true;
+        isAttendToPropertyVote[_flag][msg.sender][_index] = true;
         
         // for removing board member if he don't vote for some period
         lastVoteTime[msg.sender] = block.timestamp;
         // 1++ for calculating the rewards
         IStakingPool(STAKING_POOL).addVotedData(msg.sender, block.timestamp, pID);
 
-        emit VotedToProperty(msg.sender, _flag, value, _voteInfo);
+        emit VotedToProperty(msg.sender, _flag, value, _voteInfo, _index);
     }
 
     /// @notice Update properties based on vote result(>=51% and stakeAmount of "Yes" > 75m)
@@ -503,12 +497,11 @@ contract Vote is IVote, ReentrancyGuard {
         require(aTime == 0, "pV: already approved");
 
         uint256 reason = 0;
-        Voting memory pv = propertyVoting[_flag][value];
+        Voting memory pv = propertyVoting[_flag][_index];
         uint256 totalVoteCount = pv.voteCount_1 + pv.voteCount_2;
         if(
             totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount() && 
             pv.stakeAmount_1 > pv.stakeAmount_2 
-            // pv.stakeAmount_1 > IProperty(DAO_PROPERTY).availableVABAmount()
         ) {
             IProperty(DAO_PROPERTY).updatePropertyProposal(_index, _flag, 1);
             govPassedVoteCount[5] += 1;              
@@ -519,20 +512,18 @@ contract Vote is IVote, ReentrancyGuard {
                 reason = 1;
             } else if(pv.stakeAmount_1 <= pv.stakeAmount_2) {
                 reason = 2;
-            } else if(pv.stakeAmount_1 <= IProperty(DAO_PROPERTY).availableVABAmount()) {
-                reason = 3;
             } else {
                 reason = 10;
             }
         }
-        emit PropertyUpdated(_flag, value, msg.sender, reason);
+        emit PropertyUpdated(_flag, value, msg.sender, reason, _index);
     }
 
     function __isVotePeriod(
         uint256 _period, 
         uint256 _startTime
     ) private view returns (bool) {
-        require(_startTime != 0, "bad startTime");
+        require(_startTime != 0, "zero start time");
         if(_period >= block.timestamp - _startTime) return true;
         else return false;
     }
