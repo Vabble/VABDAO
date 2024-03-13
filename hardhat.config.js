@@ -1,17 +1,17 @@
-const { utils } = require("ethers");
+const { utils } = require('ethers');
 
-require("@nomiclabs/hardhat-waffle");
-require("hardhat-deploy");
-require("hardhat-deploy-ethers");
-require("@nomiclabs/hardhat-etherscan");
-require("hardhat-contract-sizer");
-require("hardhat-gas-reporter")
+require('@nomiclabs/hardhat-waffle');
+require('hardhat-deploy');
+require('hardhat-deploy-ethers');
+require('@nomiclabs/hardhat-etherscan');
+require('hardhat-contract-sizer');
+require('hardhat-gas-reporter');
 require('dotenv').config();
 
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
+task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
 
-  for(const account of accounts) {
+  for (const account of accounts) {
     console.log(account.address);
   }
 });
@@ -34,45 +34,52 @@ const chainIds = {
   mainnet: 1,
   rinkeby: 4,
   ropsten: 3,
-  bscTest: 97,   // BSC testnet
-  bscMain: 56,   // BSC mainnet
+  bscTest: 97, // BSC testnet
+  bscMain: 56, // BSC mainnet
   mumbai: 80001, // Polygon testnet
-  matic: 137,    // Polygon mainnet
-  fuji: 43113,   // Avalance testnet
-  avax: 43114,   // Avalance mainnet
+  matic: 137, // Polygon mainnet
+  fuji: 43113, // Avalance testnet
+  avax: 43114 // Avalance mainnet
 };
 if (!mnemonic || !alchemy_key) {
-  throw new Error("Please set your data in a .env file");
+  throw new Error('Please set your data in a .env file');
 }
 
 module.exports = {
   defaultNetwork: 'hardhat',
   gasReporter: {
     coinmarketcap: coinmarketcap_api_key,
-    currency: "USD",
+    currency: 'USD',
     enabled: false
   },
   namedAccounts: {
     deployer: {
       default: 0,
+      1: 0
     },
     dev: {
-      default: 1,
+      default: 1
     },
+    auditor: {
+      default: 2
+    },
+    staker: {
+      default: 3
+    }
   },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      chainId: chainIds.ganache,
+      chainId: chainIds.mumbai,
       saveDeployments: true,
       forking: {
         // url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
         // blockNumber: 11328709,
         url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`
       },
-      accounts: {
-        mnemonic,
-      },  
+      // accounts: {
+      //   mnemonic,
+      // },
       // accounts: [
       //   {
       //     privateKey: privateKey,
@@ -81,111 +88,97 @@ module.exports = {
       // ],
 
       // gasPrice: 22500000000,
-      gasMultiplier: 2,
+      gasMultiplier: 2
       // throwOnTransactionFailures: true,
-      // blockGasLimit: 1245000000 
+      // blockGasLimit: 1245000000
     },
     // Ethereum mainnet
-    mainnet: { 
+    mainnet: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${alchemy_key}`,
-      accounts: [
-        privateKey
-      ],
+      accounts: [privateKey],
       chainId: chainIds.mainnet,
       live: false,
       saveDeployments: true
     },
     // Ethereum testnet(Goerli)
-    goerli: { 
+    goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
-      accounts: [
-        privateKey
-      ],
+      accounts: [privateKey],
       chainId: chainIds.goerli,
       live: false,
       saveDeployments: true,
-      tags: ["staging"],
+      tags: ['staging'],
       gasPrice: 5000000000,
-      gasMultiplier: 2,
+      gasMultiplier: 2
     },
     // BSC testnet
-    bscTest: { 
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+    bscTest: {
+      url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
       chainId: chainIds.bscTest,
-      accounts: [
-        privateKey
-      ],
+      accounts: [privateKey],
       live: true,
       saveDeployments: true,
-      gasMultiplier: 2,
+      gasMultiplier: 2
     },
     // BSC mainnet
-    bscMain: { 
-      url: "https://bsc-dataseed.binance.org/",
+    bscMain: {
+      url: 'https://bsc-dataseed.binance.org/',
       chainId: chainIds.bscMain,
-      accounts: [
-        privateKey
-      ],
+      accounts: [privateKey],
       live: true,
       saveDeployments: true
     },
     // Polygon testnet
-    mumbai: { 
-      url: "https://rpc-mumbai.maticvigil.com",
+    mumbai: {
+      url: 'https://rpc-mumbai.maticvigil.com',
       chainId: chainIds.mumbai,
-      accounts: [
-        privateKey
-      ],
+      accounts: [privateKey],
       live: false,
       saveDeployments: true,
       gasPrice: 22500000000,
-      gasMultiplier: 2,
+      gasMultiplier: 2
     },
     // Polygon mainnet
-    matic: { 
-      url: "https://polygon-rpc.com",
+    matic: {
+      url: 'https://polygon-rpc.com',
       chainId: chainIds.matic,
-      accounts: [
-        privateKey
-      ],
+      accounts: [privateKey],
       live: true,
       saveDeployments: true
     },
     // Avalance testnet(Fuji: C-Chain)
-    fuji: { 
-      url: "https://api.avax-test.network/ext/C/rpc",
+    fuji: {
+      url: 'https://api.avax-test.network/ext/C/rpc',
       gasPrice: 225000000000,
       chainId: chainIds.fuji,
-      accounts: [
-        privateKey
-      ],
+      accounts: [privateKey]
     },
     // Avalance mainnet
-    avax: { 
-      url: "https://api.avax.network/ext/bc/C/rpc",
+    avax: {
+      url: 'https://api.avax.network/ext/bc/C/rpc',
       gasPrice: 225000000000,
       chainId: chainIds.avax,
       accounts: {
-        mnemonic,
+        mnemonic
       },
       live: true,
       saveDeployments: true
-    },
+    }
   },
   etherscan: {
     // apiKey: etherScan_api_key
-    // apiKey: bscScan_api_key    
+    // apiKey: bscScan_api_key
     apiKey: polyScan_api_key
-    // apiKey: avaxScan_api_key 
+    // apiKey: avaxScan_api_key
   },
   paths: {
-    deploy: "deploy",
-    deployments: "deployments",
-    sources: "contracts",
-    tests: "test"
+    deploy: 'deploy',
+    deployments: 'deployments',
+    sources: 'contracts',
+    tests: 'test'
   },
   mocha: {
-    timeout: 200e3
+    timeout: 500000
   },
   solidity: {
     compilers: [
@@ -194,10 +187,10 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
-          },
-        },        
-      },
-    ],
+            runs: 200
+          }
+        }
+      }
+    ]
   }
 };
