@@ -148,6 +148,7 @@ module.exports = async function ({ deployments }) {
       this.VabbleDAO.address, 
       this.StakingPool.address, 
       this.Property.address, 
+      this.UniHelper.address,
       {from: deployer.address}
     )
 

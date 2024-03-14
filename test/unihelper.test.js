@@ -164,6 +164,7 @@ describe('UniHelper', function () {
         this.VabbleDAO.address,
         this.StakingPool.address,
         this.Property.address,
+        this.UniHelper.address,
         {from: this.deployer.address}
     )
 
