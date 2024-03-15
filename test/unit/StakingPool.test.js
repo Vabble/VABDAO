@@ -48,7 +48,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         const stakingPoolFactory = await ethers.getContractFactory('StakingPool');
 
         //? get accounts
-        const [deployer, dev, auditor, staker1] = await ethers.getSigners();
+        const [deployer, dev, auditor, staker1, staker2] = await ethers.getSigners();
 
         //? token contracts
         //! Question: Should we use FxERC20 or ERC20 ??
@@ -150,19 +150,19 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
           ]);
 
         //? Get some testnet VAB from the faucet
-        const stakerConnectedContract = vabTokenContract.connect(staker1);
-        await stakerConnectedContract.faucet(vabFaucetAmount);
-        await stakerConnectedContract.approve(stakingPool.address, vabFaucetAmount);
+        const accounts = [deployer, staker1, staker2];
 
-        const deployerConnectedContract = vabTokenContract.connect(deployer);
-        await deployerConnectedContract.faucet(vabFaucetAmount);
-        await deployerConnectedContract.approve(stakingPool.address, vabFaucetAmount);
+        for (const account of accounts) {
+          await vabTokenContract.connect(account).faucet(vabFaucetAmount);
+          await vabTokenContract.connect(account).approve(stakingPool.address, vabFaucetAmount);
+        }
 
         return {
           deployer,
           dev,
           auditor,
           staker1,
+          staker2,
           stakingPool,
           ownable,
           vabTokenContract,
@@ -263,6 +263,29 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
           //? Assert
           expect(stakeInfo.stakeAmount).to.equal(stakingAmount);
           expect(endingStakerBalance).to.equal(startingStakerBalance.sub(stakingAmount));
+        });
+
+        it('Should increment the staker count and update the staker list when first time staking with multiple stakers', async function () {
+          //? Arrange
+          const { stakingPool, staker1, staker2 } = await loadFixture(deployContractsFixture);
+          const startingTotalStakingAmount = await stakingPool.totalStakingAmount();
+
+          //? Act
+          // Stake two times with each staker
+          await stakingPool.connect(staker1).stakeVAB(stakingAmount);
+          await stakingPool.connect(staker1).stakeVAB(stakingAmount);
+          await stakingPool.connect(staker2).stakeVAB(stakingAmount);
+          await stakingPool.connect(staker2).stakeVAB(stakingAmount);
+
+          //? Assert
+          const stakerCount = await stakingPool.stakerCount();
+          const endingTotalStakingAmount = await stakingPool.totalStakingAmount();
+          const expectedEndValue = startingTotalStakingAmount.add(stakingAmount.mul(4));
+
+          assert.equal(stakerCount, 2);
+          assert.equal(await stakingPool.stakerList(0), staker1.address);
+          assert.equal(await stakingPool.stakerList(1), staker2.address);
+          assert.equal(endingTotalStakingAmount.toString(), expectedEndValue.toString());
         });
 
         it('Should update the total staking amount after staking', async function () {
