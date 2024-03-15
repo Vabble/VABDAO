@@ -39,7 +39,6 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 stakeAmount_2;    // staking amount of voter with status(no)
         uint256 voteCount_1;      // number of accumulated votes(yes)
         uint256 voteCount_2;      // number of accumulated votes(no)
-        uint256 disputeVABAmount; // VAB of disputed staker stake amount
     }
 
     address private immutable OWNABLE;     // Ownablee contract address
@@ -56,7 +55,6 @@ contract Vote is IVote, ReentrancyGuard {
     mapping(address => mapping(uint256 => bool)) public isAttendToRewardAddressVote; // (staker => (reward index => true/false))    
     mapping(uint256 => AgentVoting) public agentVoting;                      // (agent index => AgentVoting) 
     mapping(address => mapping(uint256 => bool)) public isAttendToAgentVote; // (staker => (agent index => true/false)) 
-    mapping(address => mapping(uint256 => bool)) public isAttendToDisput;    // (staker => (agent index => true/false)) 
     mapping(uint256 => mapping(uint256 => Voting)) public propertyVoting;    // (flag => (property index => Voting))
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isAttendToPropertyVote; // (flag => (staker => (property index => true/false)))    
     mapping(address => uint256) public userFilmVoteCount;   //(user => film vote count)
@@ -271,11 +269,11 @@ contract Vote is IVote, ReentrancyGuard {
     }
     
     /// @notice Dispute to agent proposal with staked double or paid double
+    // one user enough to dispute
     function disputeToAgent(uint256 _index, bool _pay) external onlyStaker nonReentrant {  
         (, uint256 aTime, , address agent, , Helper.Status stats) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
         
         require(stats == Helper.Status.UPDATED, "dTA: not pass vote");
-        require(!isAttendToDisput[msg.sender][_index], "dTA: already dispute");
         require(__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), "dTA: elapsed dispute period");
         
         // staked double than agent proposer or pay double of proposalFeeAmount
@@ -285,9 +283,7 @@ contract Vote is IVote, ReentrancyGuard {
             require(isDoubleStaked(_index), "dTA: stake more");
         }
 
-        agentVoting[_index].disputeVABAmount += IStakingPool(STAKING_POOL).getStakeAmount(msg.sender);
-
-        isAttendToDisput[msg.sender][_index] = true;
+        IProperty(DAO_PROPERTY).updateGovProposal(_index, 1, 0);
         
         emit DisputedToAgent(msg.sender, agent, _index);
     }
@@ -338,7 +334,6 @@ contract Vote is IVote, ReentrancyGuard {
         require(totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "rA: e1");
         require(av.stakeAmount_1 > av.stakeAmount_2, "rA: e2");
         require(av.stakeAmount_1 > IProperty(DAO_PROPERTY).disputLimitAmount(), "rA: e3");
-        require(av.disputeVABAmount < 2 * IProperty(DAO_PROPERTY).disputLimitAmount(), "rA: e4");
         
         IOwnablee(OWNABLE).replaceAuditor(agent);
 
