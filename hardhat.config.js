@@ -6,8 +6,9 @@ require('hardhat-deploy-ethers');
 require('@nomiclabs/hardhat-etherscan');
 require('hardhat-contract-sizer');
 require('hardhat-gas-reporter');
+require('solidity-coverage');
+require('@nomicfoundation/hardhat-network-helpers');
 require('dotenv').config();
-require("solidity-coverage")
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();

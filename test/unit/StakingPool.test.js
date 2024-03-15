@@ -1,11 +1,13 @@
-const { getNamedAccounts, deployments, ethers, network } = require('hardhat');
-const { networkConfig, developmentChains } = require('../../helper-hardhat-config');
+const { ethers, network } = require('hardhat');
+const { developmentChains } = require('../../helper-hardhat-config');
 const { assert, expect } = require('chai');
 const { CONFIG, DISCOUNT } = require('../../scripts/utils');
 const ERC20 = require('../../data/ERC20.json');
 const FxERC20 = require('../../data/FxERC20.json');
+const helpers = require('@nomicfoundation/hardhat-network-helpers');
 const { parseEther } = require('ethers/lib/utils');
 
+//? Constants
 const VAB_TOKEN_ADDRESS = CONFIG.mumbai.vabToken;
 const EXM_TOKEN_ADDRESS = CONFIG.mumbai.exmAddress;
 const USDC_TOKEN_ADDRESS = CONFIG.mumbai.usdcAdress;
@@ -17,6 +19,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
 !developmentChains.includes(network.name)
   ? describe.skip
   : describe('StakingPool Unit Tests', function () {
+      //? Variable declaration
       let deployer,
         auditor,
         staker1,
@@ -34,12 +37,10 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         vabTokenContract,
         gnosisSafe;
 
-      const chainId = network.config.chainId;
-
-      const vabFaucetAmount = ethers.utils.parseEther('50000'); // 50k is the max amount that can be faucet
-      const stakingAmount = ethers.utils.parseEther('100');
-      const poolRewardAmount = ethers.utils.parseEther('10000'); // 10k
-      const zeroEtherAmount = ethers.utils.parseEther('0');
+      const vabFaucetAmount = parseEther('50000'); // 50k is the max amount that can be faucet
+      const stakingAmount = parseEther('100');
+      const poolRewardAmount = parseEther('10000'); // 10k
+      const zeroEtherAmount = parseEther('0');
 
       //! Question: Should this be it's own function in a separate file, because we might need this for every other test file ?
       beforeEach(async function () {
@@ -226,7 +227,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         });
 
         it('Should revert if staking with an amount less than the minimum', async function () {
-          const amount = ethers.utils.parseEther('0.009');
+          const amount = parseEther('0.009');
           await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith('sVAB: min 0.01');
         });
 
@@ -262,6 +263,21 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
             .to.emit(stakingPool, 'TokenStaked')
             .withArgs(staker1.address, stakingAmount);
         });
+
+        it('Should revert if migration has started', async function () {
+          //? Arrange
+          await helpers.impersonateAccount(property.address);
+          const signer = await ethers.getSigner(property.address);
+          await helpers.setBalance(signer.address, 100n ** 18n);
+          //? Act
+          await stakingPool.connect(signer).calcMigrationVAB();
+          await helpers.stopImpersonatingAccount(property.address);
+
+          //? Assert
+          await expect(stakingPool.connect(staker1).stakeVAB(stakingAmount)).to.be.revertedWith(
+            'Migration is on going'
+          );
+        });
       });
 
       describe('addRewardToPool', function () {
@@ -292,7 +308,17 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         });
 
         it('Should revert if migration has started', async function () {
-          //? How do we set the migration status to 1 ???
+          //? Arrange
+          await helpers.impersonateAccount(property.address);
+          const signer = await ethers.getSigner(property.address);
+          await helpers.setBalance(signer.address, 100n ** 18n);
+          //? Act
+          await stakingPool.connect(signer).calcMigrationVAB();
+          await helpers.stopImpersonatingAccount(property.address);
+          //? Assert
+          await expect(stakingPool.connect(deployer).addRewardToPool(poolRewardAmount)).to.be.revertedWith(
+            'Migration is on going'
+          );
         });
       });
     });
