@@ -442,8 +442,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   )
                   const lockPeriodInSeconds = Number(await property.lockPeriod())
                   await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await ethers.provider.send("evm_increaseTime", [lockPeriodInSeconds])
-                  await ethers.provider.send("evm_mine")
+                  await helpers.time.increase(lockPeriodInSeconds)
 
                   const exceededBalance = stakingAmount.add(1)
                   await expect(
@@ -457,8 +456,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   )
                   const lockPeriodInSeconds = Number(await property.lockPeriod()) - 1
                   await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await ethers.provider.send("evm_increaseTime", [lockPeriodInSeconds])
-                  await ethers.provider.send("evm_mine")
+                  await helpers.time.increase(lockPeriodInSeconds)
 
                   await expect(
                       stakingPool.connect(staker1).unstakeVAB(stakingAmount)
@@ -472,8 +470,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   //? We want to test if unstake works if a migration is in progress so we decrease the lock period
                   const lockPeriodInSeconds = Number(await property.lockPeriod()) - 100
                   await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await ethers.provider.send("evm_increaseTime", [lockPeriodInSeconds])
-                  await ethers.provider.send("evm_mine")
+                  await helpers.time.increase(lockPeriodInSeconds)
 
                   await helpers.impersonateAccount(property.address)
                   const signer = await ethers.getSigner(property.address)
@@ -498,8 +495,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   const stakerBalanceAfterStaking = await vabTokenContract.balanceOf(
                       staker1.address
                   )
-                  await ethers.provider.send("evm_increaseTime", [lockPeriodInSeconds])
-                  await ethers.provider.send("evm_mine")
+                  await helpers.time.increase(lockPeriodInSeconds)
 
                   //? Act
                   await stakingPool.connect(staker1).unstakeVAB(stakingAmount)
@@ -527,8 +523,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   const lockPeriodInSeconds = Number(await property.lockPeriod())
 
                   await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await ethers.provider.send("evm_increaseTime", [lockPeriodInSeconds])
-                  await ethers.provider.send("evm_mine")
+                  await helpers.time.increase(lockPeriodInSeconds)
 
                   //? Act
                   await stakingPool.connect(staker1).unstakeVAB(unstakeAmount)
