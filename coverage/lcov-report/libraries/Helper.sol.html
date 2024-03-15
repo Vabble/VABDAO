@@ -20,24 +20,24 @@
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
-        <span class="strong">23.53% </span>
+        <span class="strong">41.18% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>4/17</span>
+        <span class='fraction'>7/17</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">11.54% </span>
+        <span class="strong">23.08% </span>
         <span class="quiet">Branches</span>
-        <span class='fraction'>3/26</span>
+        <span class='fraction'>6/26</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">28.57% </span>
+        <span class="strong">42.86% </span>
         <span class="quiet">Functions</span>
-        <span class='fraction'>2/7</span>
+        <span class='fraction'>3/7</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">23.53% </span>
+        <span class="strong">41.18% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>4/17</span>
+        <span class='fraction'>7/17</span>
       </div>
     </div>
   </div>
@@ -199,9 +199,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -210,24 +210,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3×</span>
-<span class="cline-any cline-yes">3×</span>
-<span class="cline-any cline-yes">3×</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -252,7 +252,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">80×</span>
+<span class="cline-any cline-yes">8×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -311,14 +311,14 @@ library Helper {
 <span class="cstat-no" title="statement not covered" >        require(success &amp;&amp; (data.length == 0 || abi.decode(data, (bool))), "TransferHelper::safeApprove: approve failed")</span>;
     }
 &nbsp;
-<span class="fstat-no" title="function not covered" >    function safeTransfer(</span>
+    function safeTransfer(
         address token,
         address to,
         uint256 value
     ) internal {
-<span class="cstat-no" title="statement not covered" >        require(Address.isContract(token), "C")</span>;
-<span class="cstat-no" title="statement not covered" >        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));</span>
-<span class="cstat-no" title="statement not covered" >        require(success &amp;&amp; (data.length == 0 || abi.decode(data, (bool))), "VabbleDAO::safeTransfer: transfer failed")</span>;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(Address.isContract(token), "C");
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(success &amp;&amp; (<span class="branch-0 cbranch-no" title="branch not covered" >data.length == 0</span> || abi.decode(data, (bool))), "VabbleDAO::safeTransfer: transfer failed");
     }
 &nbsp;
     function safeTransferFrom(
@@ -400,7 +400,7 @@ library Helper {
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Wed Mar 13 2024 17:02:58 GMT+0100 (Central European Standard Time)
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Fri Mar 15 2024 13:07:44 GMT+0100 (Central European Standard Time)
 </div>
 </div>
 <script src="../prettify.js"></script>
