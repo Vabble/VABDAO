@@ -5,6 +5,7 @@ const { CONFIG, DISCOUNT } = require('../../scripts/utils');
 const ERC20 = require('../../data/ERC20.json');
 const FxERC20 = require('../../data/FxERC20.json');
 const helpers = require('@nomicfoundation/hardhat-network-helpers');
+const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
 const { parseEther } = require('ethers/lib/utils');
 
 //? Constants
@@ -20,30 +21,17 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
   ? describe.skip
   : describe('StakingPool Unit Tests', function () {
       //? Variable declaration
-      let deployer,
-        auditor,
-        staker1,
-        ownable,
-        uniHelper,
-        property,
-        stakingPool,
-        vote,
-        filmNFT,
-        subNFT,
-        vabbleFund,
-        vabbleDAO,
-        subscription,
-        stakingPoolFactory,
-        vabTokenContract,
-        gnosisSafe;
-
       const vabFaucetAmount = parseEther('50000'); // 50k is the max amount that can be faucet
       const stakingAmount = parseEther('100');
       const poolRewardAmount = parseEther('10000'); // 10k
       const zeroEtherAmount = parseEther('0');
 
-      //! Question: Should this be it's own function in a separate file, because we might need this for every other test file ?
-      beforeEach(async function () {
+      /**
+       *
+       * @dev Executes the given function and takes a snapshot of the blockchain.
+       * Upon subsequent calls to loadFixture with the same function, rather than executing the function again, the blockchain will be restored to that snapshot.
+       */
+      async function deployContractsFixture() {
         //? contract factories
         //! Question: Clarify if we need gnosisSafeFactory ???
         const gnosisSafeFactory = await ethers.getContractFactory('GnosisSafeL2');
@@ -57,26 +45,26 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         const factorySubNFTFactory = await ethers.getContractFactory('FactorySubNFT');
         const ownableFactory = await ethers.getContractFactory('Ownablee');
         const subscriptionFactory = await ethers.getContractFactory('Subscription');
-        stakingPoolFactory = await ethers.getContractFactory('StakingPool');
+        const stakingPoolFactory = await ethers.getContractFactory('StakingPool');
 
         //? get accounts
-        [deployer, dev, auditor, staker1] = await ethers.getSigners();
+        const [deployer, dev, auditor, staker1] = await ethers.getSigners();
 
         //? token contracts
         //! Question: Should we use FxERC20 or ERC20 ??
-        vabTokenContract = new ethers.Contract(VAB_TOKEN_ADDRESS, JSON.stringify(FxERC20), ethers.provider);
+        const vabTokenContract = new ethers.Contract(VAB_TOKEN_ADDRESS, JSON.stringify(FxERC20), ethers.provider);
         const exmTokenContract = new ethers.Contract(EXM_TOKEN_ADDRESS, JSON.stringify(ERC20), ethers.provider);
         const usdcTokenContract = new ethers.Contract(USDC_TOKEN_ADDRESS, JSON.stringify(ERC20), ethers.provider);
 
         //? Deploy contracts
-        ownable = await ownableFactory.deploy(
+        const ownable = await ownableFactory.deploy(
           CONFIG.daoWalletAddress, // vabbleWallet
           vabTokenContract.address, // payoutToken
           usdcTokenContract.address, // usdcToken
           auditor.address // multiSigWallet
         );
 
-        uniHelper = await uniHelperFactory.deploy(
+        const uniHelper = await uniHelperFactory.deploy(
           UNISWAP_FACTORY_ADDRESS,
           UNISWAP_ROUTER_ADDRESS,
           SUSHISWAP_FACTORY_ADDRESS,
@@ -84,17 +72,22 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
           ownable.address
         );
 
-        stakingPool = await stakingPoolFactory.deploy(ownable.address);
+        const stakingPool = await stakingPoolFactory.deploy(ownable.address);
 
-        vote = await voteFactory.deploy(ownable.address);
+        const vote = await voteFactory.deploy(ownable.address);
 
-        property = await propertyFactory.deploy(ownable.address, uniHelper.address, vote.address, stakingPool.address);
+        const property = await propertyFactory.deploy(
+          ownable.address,
+          uniHelper.address,
+          vote.address,
+          stakingPool.address
+        );
 
-        filmNFT = await factoryFilmNFTFactory.deploy(ownable.address);
+        const filmNFT = await factoryFilmNFTFactory.deploy(ownable.address);
 
-        subNFT = await factorySubNFTFactory.deploy(ownable.address, uniHelper.address);
+        const subNFT = await factorySubNFTFactory.deploy(ownable.address, uniHelper.address);
 
-        vabbleFund = await vabbleFundFactory.deploy(
+        const vabbleFund = await vabbleFundFactory.deploy(
           ownable.address,
           uniHelper.address,
           stakingPool.address,
@@ -102,7 +95,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
           filmNFT.address
         );
 
-        vabbleDAO = await vabbleDAOFactory.deploy(
+        const vabbleDAO = await vabbleDAOFactory.deploy(
           ownable.address,
           uniHelper.address,
           vote.address,
@@ -111,9 +104,9 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
           vabbleFund.address
         );
 
-        tierNFT = await factoryTierNFTFactory.deploy(ownable.address, vabbleDAO.address, vabbleFund.address);
+        const tierNFT = await factoryTierNFTFactory.deploy(ownable.address, vabbleDAO.address, vabbleFund.address);
 
-        subscription = await subscriptionFactory.deploy(ownable.address, uniHelper.address, property.address, [
+        const subscription = await subscriptionFactory.deploy(ownable.address, uniHelper.address, property.address, [
           DISCOUNT.month3,
           DISCOUNT.month6,
           DISCOUNT.month12
@@ -164,11 +157,31 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         const deployerConnectedContract = vabTokenContract.connect(deployer);
         await deployerConnectedContract.faucet(vabFaucetAmount);
         await deployerConnectedContract.approve(stakingPool.address, vabFaucetAmount);
-      });
+
+        return {
+          deployer,
+          dev,
+          auditor,
+          staker1,
+          stakingPool,
+          ownable,
+          vabTokenContract,
+          vote,
+          property,
+          filmNFT,
+          subNFT,
+          vabbleFund,
+          vabbleDAO,
+          tierNFT,
+          subscription,
+          stakingPoolFactory
+        };
+      }
 
       describe('Setup', function () {
         describe('Accounts', function () {
           it('should have the right balance, and allowance', async function () {
+            const { deployer, staker1, stakingPool, vabTokenContract } = await loadFixture(deployContractsFixture);
             const staker1Balance = await vabTokenContract.balanceOf(staker1.address);
             const staker1Allowance = await vabTokenContract.allowance(staker1.address, stakingPool.address);
 
@@ -186,18 +199,21 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
 
       describe('constructor', function () {
         it('sets the right ownable address', async function () {
+          const { stakingPool, ownable } = await loadFixture(deployContractsFixture);
           assert.equal(await stakingPool.getOwnableAddress(), ownable.address);
         });
       });
 
       describe('initialize', function () {
         it('initializes the StakingPool correctly', async function () {
+          const { vote, property, stakingPool, vabbleDAO } = await loadFixture(deployContractsFixture);
           assert.equal(await stakingPool.getVabbleDaoAddress(), vabbleDAO.address);
           assert.equal(await stakingPool.getPropertyAddress(), property.address);
           assert.equal(await stakingPool.getVoteAddress(), vote.address);
         });
 
         it('Should revert if already initialized', async function () {
+          const { stakingPool } = await loadFixture(deployContractsFixture);
           const [addr1, addr2, addr3] = await ethers.getSigners();
 
           await expect(stakingPool.initialize(addr1.address, addr2.address, addr3.address)).to.be.revertedWith(
@@ -206,8 +222,9 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         });
 
         it('Should revert if any address is zero', async function () {
+          const { stakingPoolFactory, ownable } = await loadFixture(deployContractsFixture);
           const [deployer, addr1, addr2] = await ethers.getSigners();
-          stakingPool = await stakingPoolFactory.deploy(ownable.address);
+          const stakingPool = await stakingPoolFactory.deploy(ownable.address);
 
           await expect(
             stakingPool.initialize(ethers.constants.AddressZero, addr2.address, deployer.address)
@@ -223,16 +240,19 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
 
       describe('StakeVAB', function () {
         it('Should revert if staking with an amount of zero', async function () {
+          const { stakingPool, staker1 } = await loadFixture(deployContractsFixture);
           await expect(stakingPool.connect(staker1).stakeVAB(zeroEtherAmount)).to.be.revertedWith('sVAB: zero amount');
         });
 
         it('Should revert if staking with an amount less than the minimum', async function () {
+          const { stakingPool, staker1 } = await loadFixture(deployContractsFixture);
           const amount = parseEther('0.009');
           await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith('sVAB: min 0.01');
         });
 
         it('Should allow staking with a valid amount and update the stakers balance', async function () {
           //? Arrange
+          const { stakingPool, staker1, vabTokenContract } = await loadFixture(deployContractsFixture);
           const startingStakerBalance = await vabTokenContract.balanceOf(staker1.address);
 
           //? Act
@@ -246,6 +266,8 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         });
 
         it('Should update the total staking amount after staking', async function () {
+          const { stakingPool, staker1 } = await loadFixture(deployContractsFixture);
+
           //? Arrange
           const startingTotalStakingAmount = await stakingPool.totalStakingAmount();
 
@@ -259,12 +281,14 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         });
 
         it('Should emit TokenStaked event', async function () {
+          const { stakingPool, staker1 } = await loadFixture(deployContractsFixture);
           await expect(stakingPool.connect(staker1).stakeVAB(stakingAmount))
             .to.emit(stakingPool, 'TokenStaked')
             .withArgs(staker1.address, stakingAmount);
         });
 
         it('Should revert if migration has started', async function () {
+          const { stakingPool, staker1, property } = await loadFixture(deployContractsFixture);
           //? Arrange
           await helpers.impersonateAccount(property.address);
           const signer = await ethers.getSigner(property.address);
@@ -282,6 +306,8 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
 
       describe('addRewardToPool', function () {
         it('Should add reward to the pool and update the balance of the caller', async function () {
+          const { stakingPool, vabTokenContract, deployer } = await loadFixture(deployContractsFixture);
+
           //? Arrange
           const startingDeployerBalance = await vabTokenContract.balanceOf(deployer.address);
           //? Act
@@ -294,20 +320,22 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router;
         });
 
         it('Should revert if amount is zero', async function () {
+          const { stakingPool, deployer } = await loadFixture(deployContractsFixture);
           await expect(stakingPool.connect(deployer).addRewardToPool(zeroEtherAmount)).to.be.revertedWith(
             'aRTP: zero amount'
           );
         });
 
         it('Should emit RewardAdded event', async function () {
+          const { stakingPool, deployer } = await loadFixture(deployContractsFixture);
           const totalRewardAmount = poolRewardAmount;
-
           await expect(stakingPool.connect(deployer).addRewardToPool(poolRewardAmount))
             .to.emit(stakingPool, 'RewardAdded')
             .withArgs(totalRewardAmount, poolRewardAmount, deployer.address);
         });
 
         it('Should revert if migration has started', async function () {
+          const { stakingPool, deployer, property } = await loadFixture(deployContractsFixture);
           //? Arrange
           await helpers.impersonateAccount(property.address);
           const signer = await ethers.getSigner(property.address);
