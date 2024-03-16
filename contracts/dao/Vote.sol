@@ -333,7 +333,7 @@ contract Vote is IVote, ReentrancyGuard {
         uint256 totalVoteCount = av.voteCount_1 + av.voteCount_2;
         require(totalVoteCount >= IStakingPool(STAKING_POOL).getLimitCount(), "rA: e1");
         require(av.stakeAmount_1 > av.stakeAmount_2, "rA: e2");
-        require(av.stakeAmount_1 > IProperty(DAO_PROPERTY).disputLimitAmount(), "rA: e3");
+        // require(av.stakeAmount_1 > IProperty(DAO_PROPERTY).disputLimitAmount(), "rA: e3");
         
         IOwnablee(OWNABLE).replaceAuditor(agent);
 

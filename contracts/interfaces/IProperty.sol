@@ -25,7 +25,7 @@ interface IProperty {
     function rewardVotePeriod() external view returns (uint256);      // 18    
     function subscriptionAmount() external view returns (uint256);    // 19
     function boardRewardRate() external view returns (uint256);       // 20      
-    function disputLimitAmount() external view returns (uint256);    
+    // function disputLimitAmount() external view returns (uint256);    
 
     function DAO_FUND_REWARD() external view returns (address);
 
