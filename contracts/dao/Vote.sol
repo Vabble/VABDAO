@@ -323,7 +323,7 @@ contract Vote is IVote, ReentrancyGuard {
     function replaceAuditor(uint256 _index) external onlyStaker nonReentrant {
         (, uint256 aTime, , address agent, , Helper.Status stats) = IProperty(DAO_PROPERTY).getGovProposalInfo(_index, 1);
             
-        require(stats == Helper.Status.UPDATED, "rA: reject or not pass vote");
+        require(stats == Helper.Status.UPDATED, "rA: reject or not pass vote");        
         require(
             !__isVotePeriod(IProperty(DAO_PROPERTY).disputeGracePeriod(), aTime), 
             "rA: grace period yet"
@@ -336,6 +336,8 @@ contract Vote is IVote, ReentrancyGuard {
         // require(av.stakeAmount_1 > IProperty(DAO_PROPERTY).disputLimitAmount(), "rA: e3");
         
         IOwnablee(OWNABLE).replaceAuditor(agent);
+
+        IProperty(DAO_PROPERTY).updateGovProposal(_index, 1, 5); // update proposal status
 
         emit AuditorReplaced(agent, msg.sender);
     }

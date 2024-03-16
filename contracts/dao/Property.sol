@@ -681,7 +681,10 @@ contract Property is ReentrancyGuard {
         govProposalInfo[_flag][_index].approveTime = block.timestamp;
 
         // update approve status
-        if(_approveStatus == 1) {
+        if (_approveStatus == 5) { // replaced
+            govProposalInfo[_flag][_index].status = Helper.Status.REPLACED;
+            isGovWhitelist[_flag][member] = 2;
+        } else if(_approveStatus == 1) {
             govProposalInfo[_flag][_index].status = Helper.Status.UPDATED;
             isGovWhitelist[_flag][member] = 2;
         } else {
