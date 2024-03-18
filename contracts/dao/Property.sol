@@ -73,7 +73,7 @@ contract Property is ReentrancyGuard {
     uint256 public rewardVotePeriod;     // 18 - withdraw address setup for moving to V2
     uint256 public subscriptionAmount;   // 19 - user need to have an active subscription(pay $1 per month) for rent films.    
     uint256 public boardRewardRate;      // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
-    uint256 public disputLimitAmount;
+    // uint256 public disputLimitAmount;
 
     uint256[] private maxPropertyList;
     uint256[] private minPropertyList;
@@ -171,7 +171,7 @@ contract Property is ReentrancyGuard {
         minDepositAmount = 50 * (10**IERC20Metadata(usdcToken).decimals());    // amount in cash(usd dollar - $50)
         maxDepositAmount = 5000 * (10**IERC20Metadata(usdcToken).decimals());  // amount in cash(usd dollar - $5000)
         availableVABAmount = 50 * 1e6 * (10**IERC20Metadata(vabToken).decimals()); // 50M 
-        disputLimitAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals());    // 75M 
+        // disputLimitAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals());    // 75M 
         subscriptionAmount = 299 * (10**IERC20Metadata(usdcToken).decimals()) / 100;   // amount in cash(usd dollar - $2.99)
         minVoteCount = 1;//5;
 
@@ -681,7 +681,10 @@ contract Property is ReentrancyGuard {
         govProposalInfo[_flag][_index].approveTime = block.timestamp;
 
         // update approve status
-        if(_approveStatus == 1) {
+        if (_approveStatus == 5) { // replaced
+            govProposalInfo[_flag][_index].status = Helper.Status.REPLACED;
+            isGovWhitelist[_flag][member] = 2;
+        } else if(_approveStatus == 1) {
             govProposalInfo[_flag][_index].status = Helper.Status.UPDATED;
             isGovWhitelist[_flag][member] = 2;
         } else {
@@ -740,7 +743,7 @@ contract Property is ReentrancyGuard {
         else if(_flag == 17) subscriptionAmount = _value;
         else if(_flag == 18) minVoteCount = _value;        
         else if(_flag == 19) minStakerCountPercent = _value;                
-        else if(_flag == 20) disputLimitAmount = _value;
+        // else if(_flag == 20) disputLimitAmount = _value;
     }
 
     /// @dev Update the rewardAddress for only testing in the testnet
@@ -752,6 +755,6 @@ contract Property is ReentrancyGuard {
     function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer { 
         require(Helper.isTestNet(), "apply on testnet");
         availableVABAmount = _amount;
-        disputLimitAmount = _amount * 3;
+        // disputLimitAmount = _amount * 3;
     }     
 }
