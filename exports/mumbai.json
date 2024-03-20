@@ -3,7 +3,7 @@
   "chainId": "80001",
   "contracts": {
     "FactoryFilmNFT": {
-      "address": "0x7A06E05CE0aee7c611a292C9D8Db7768A90766c1",
+      "address": "0x20C452611e4a98FBfCA5ed706fB8D7150B34f1bA",
       "abi": [
         {
           "inputs": [
@@ -516,7 +516,7 @@
       ]
     },
     "FactorySubNFT": {
-      "address": "0x95B4ceFab49108961F21Ab98beE3C3b653Ef15E0",
+      "address": "0xbB8486623f0ea5913fd07cEa0627C11DDFfDA6Cf",
       "abi": [
         {
           "inputs": [
@@ -1025,7 +1025,7 @@
       ]
     },
     "FactoryTierNFT": {
-      "address": "0xb9733a6755D2c851eBEA0647a33052254DE74Bc5",
+      "address": "0xAA593D6475584EA811d21509a3134205f43Ca9De",
       "abi": [
         {
           "inputs": [
@@ -2654,7 +2654,7 @@
       ]
     },
     "Ownablee": {
-      "address": "0xe0E5b8C315225d647501513862535569DAfd6816",
+      "address": "0xFac8f95f1Ec7515ef57BA87B7b5FbE97a120a471",
       "abi": [
         {
           "inputs": [
@@ -2941,7 +2941,7 @@
       ]
     },
     "Property": {
-      "address": "0x13b6f06Fa3929cF47F3A50E2FEd8736b4762f303",
+      "address": "0x09Dc9F2eD66f9479a39D2b2bc566017A2AaCA92c",
       "abi": [
         {
           "inputs": [
@@ -3246,19 +3246,6 @@
         },
         {
           "inputs": [],
-          "name": "disputLimitAmount",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
           "name": "disputeGracePeriod",
           "outputs": [
             {
@@ -3313,6 +3300,25 @@
           "inputs": [
             {
               "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
+            }
+          ],
+          "name": "getAgentProposerStakeAmount",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
               "name": "_flag",
               "type": "uint256"
             }
@@ -3331,33 +3337,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_member",
-              "type": "address"
-            },
-            {
               "internalType": "uint256",
-              "name": "_flag",
+              "name": "_index",
               "type": "uint256"
-            }
-          ],
-          "name": "getGovProposalID",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "_member",
-              "type": "address"
             },
             {
               "internalType": "uint256",
@@ -3368,16 +3350,6 @@
           "name": "getGovProposalInfo",
           "outputs": [
             {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-            },
-            {
               "internalType": "uint256",
               "name": "",
               "type": "uint256"
@@ -3386,6 +3358,16 @@
               "internalType": "uint256",
               "name": "",
               "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
             },
             {
               "internalType": "address",
@@ -3424,21 +3406,26 @@
           "inputs": [
             {
               "internalType": "uint256",
-              "name": "_flag",
+              "name": "_index",
               "type": "uint256"
             },
             {
-              "internalType": "address",
-              "name": "_candidate",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "_flag",
+              "type": "uint256"
             }
           ],
-          "name": "getGovProposer",
+          "name": "getGovProposalStr",
           "outputs": [
             {
-              "internalType": "address",
+              "internalType": "string",
               "name": "",
-              "type": "address"
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "",
+              "type": "string"
             }
           ],
           "stateMutability": "view",
@@ -3457,65 +3444,17 @@
               "type": "uint256"
             }
           ],
-          "name": "getProperty",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "property_",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "_property",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "_flag",
-              "type": "uint256"
-            }
-          ],
-          "name": "getPropertyProposalID",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "_property",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "_flag",
-              "type": "uint256"
-            }
-          ],
           "name": "getPropertyProposalInfo",
           "outputs": [
             {
-              "internalType": "string",
+              "internalType": "uint256",
               "name": "",
-              "type": "string"
+              "type": "uint256"
             },
             {
-              "internalType": "string",
+              "internalType": "uint256",
               "name": "",
-              "type": "string"
+              "type": "uint256"
             },
             {
               "internalType": "uint256",
@@ -3564,75 +3503,26 @@
           "inputs": [
             {
               "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
               "name": "_flag",
               "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "_property",
-              "type": "uint256"
             }
           ],
-          "name": "getPropertyProposer",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "name": "govProposalInfo",
+          "name": "getPropertyProposalStr",
           "outputs": [
             {
               "internalType": "string",
-              "name": "title",
+              "name": "",
               "type": "string"
             },
             {
               "internalType": "string",
-              "name": "description",
+              "name": "",
               "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "createTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "approveTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "creator",
-              "type": "address"
-            },
-            {
-              "internalType": "enum Helper.Status",
-              "name": "status",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint256",
-              "name": "proposalID",
-              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -3736,60 +3626,6 @@
             {
               "internalType": "uint256",
               "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "propertyProposalInfo",
-          "outputs": [
-            {
-              "internalType": "string",
-              "name": "title",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "description",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "createTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "approveTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "creator",
-              "type": "address"
-            },
-            {
-              "internalType": "enum Helper.Status",
-              "name": "status",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint256",
-              "name": "proposalID",
               "type": "uint256"
             }
           ],
@@ -3985,6 +3821,19 @@
           "type": "function"
         },
         {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_address",
+              "type": "address"
+            }
+          ],
+          "name": "updateDAOFundForTesting",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
           "inputs": [],
           "name": "updateForTesting",
           "outputs": [],
@@ -3994,9 +3843,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_member",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
             },
             {
               "internalType": "uint256",
@@ -4036,7 +3885,7 @@
           "inputs": [
             {
               "internalType": "uint256",
-              "name": "_property",
+              "name": "_index",
               "type": "uint256"
             },
             {
@@ -4063,7 +3912,7 @@
               "type": "address"
             }
           ],
-          "name": "userGovernProposalCount",
+          "name": "userGovProposalCount",
           "outputs": [
             {
               "internalType": "uint256",
@@ -4077,7 +3926,7 @@
       ]
     },
     "StakingPool": {
-      "address": "0xF49A7d84614D7d3586F4D70CDEdB22322ed9710B",
+      "address": "0x60782816DfFF889E4a515E553A6D8b2013A23c59",
       "abi": [
         {
           "inputs": [
@@ -4294,11 +4143,6 @@
               "internalType": "uint256[]",
               "name": "times_",
               "type": "uint256[]"
-            },
-            {
-              "internalType": "uint256",
-              "name": "count_",
-              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -4329,6 +4173,11 @@
           ],
           "name": "__getProposalVoteCount",
           "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            },
             {
               "internalType": "uint256",
               "name": "",
@@ -4664,6 +4513,19 @@
           "type": "function"
         },
         {
+          "inputs": [],
+          "name": "getStakerList",
+          "outputs": [
+            {
+              "internalType": "address[]",
+              "name": "",
+              "type": "address[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
           "inputs": [
             {
               "internalType": "address",
@@ -4880,25 +4742,6 @@
           "type": "function"
         },
         {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "stakerList",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
           "inputs": [],
           "name": "totalMigrationVAB",
           "outputs": [
@@ -5041,7 +4884,7 @@
       ]
     },
     "Subscription": {
-      "address": "0xc4FfAb1680990D9364CE478b0e3e43ec86e2A78d",
+      "address": "0xD5294164865D8649dFec36AdC69EF40F2A451B31",
       "abi": [
         {
           "inputs": [
@@ -5217,7 +5060,7 @@
       ]
     },
     "UniHelper": {
-      "address": "0x4eFDd3d3E45fccF14f46685950E783b827654C02",
+      "address": "0x5bA1A0259325EdC68643E1F4A24452c3A6C12973",
       "abi": [
         {
           "inputs": [
@@ -5451,7 +5294,7 @@
       ]
     },
     "VabbleDAO": {
-      "address": "0x5C2ea9E0b2CD70D9eD389aA9CE8Fc69EbB7ac9d0",
+      "address": "0xb3f9D595AcB23B663B74E334154cC28f2E362a83",
       "abi": [
         {
           "inputs": [
@@ -6576,7 +6419,7 @@
       ]
     },
     "VabbleFund": {
-      "address": "0x5ec47016a559bB20C621F948255efE31d423F1eC",
+      "address": "0x8Fdee526bE56a83A99c9FbE3020B65fE6b6112EB",
       "abi": [
         {
           "inputs": [
@@ -7019,7 +6862,7 @@
       ]
     },
     "Vote": {
-      "address": "0x8F84a5b73F9D041628365170Eb63bB768716d4f7",
+      "address": "0xCA3E7671CA26645c229Aff84622347657FBCb44c",
       "abi": [
         {
           "inputs": [
@@ -7046,15 +6889,34 @@
               "internalType": "address",
               "name": "caller",
               "type": "address"
+            }
+          ],
+          "name": "AuditorReplaced",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "caller",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "agent",
+              "type": "address"
             },
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "reason",
+              "name": "index",
               "type": "uint256"
             }
           ],
-          "name": "AuditorReplaced",
+          "name": "DisputedToAgent",
           "type": "event"
         },
         {
@@ -7102,6 +6964,12 @@
               "internalType": "uint256",
               "name": "reason",
               "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
             }
           ],
           "name": "FilmBoardAdded",
@@ -7126,6 +6994,12 @@
               "indexed": false,
               "internalType": "uint256",
               "name": "reason",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
               "type": "uint256"
             }
           ],
@@ -7158,9 +7032,46 @@
               "internalType": "uint256",
               "name": "reason",
               "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
             }
           ],
           "name": "PropertyUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "agent",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "caller",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "reason",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
+            }
+          ],
+          "name": "UpdatedAgentStats",
           "type": "event"
         },
         {
@@ -7182,6 +7093,12 @@
               "indexed": false,
               "internalType": "uint256",
               "name": "voteInfo",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
               "type": "uint256"
             }
           ],
@@ -7233,6 +7150,12 @@
               "internalType": "uint256",
               "name": "voteInfo",
               "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
             }
           ],
           "name": "VotedToFilmBoard",
@@ -7257,6 +7180,12 @@
               "indexed": false,
               "internalType": "uint256",
               "name": "voteInfo",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
               "type": "uint256"
             }
           ],
@@ -7289,6 +7218,12 @@
               "internalType": "uint256",
               "name": "voteInfo",
               "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
             }
           ],
           "name": "VotedToProperty",
@@ -7297,9 +7232,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_member",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
             }
           ],
           "name": "addFilmBoard",
@@ -7310,9 +7245,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
+              "internalType": "uint256",
               "name": "",
-              "type": "address"
+              "type": "uint256"
             }
           ],
           "name": "agentVoting",
@@ -7336,16 +7271,6 @@
               "internalType": "uint256",
               "name": "voteCount_2",
               "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "disputeStartTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "disputeVABAmount",
-              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -7367,9 +7292,27 @@
         {
           "inputs": [
             {
-              "internalType": "address",
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "_pay",
+              "type": "bool"
+            }
+          ],
+          "name": "disputeToAgent",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
               "name": "",
-              "type": "address"
+              "type": "uint256"
             }
           ],
           "name": "filmBoardVoting",
@@ -7486,6 +7429,11 @@
               "internalType": "address",
               "name": "_property",
               "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_uniHelper",
+              "type": "address"
             }
           ],
           "name": "initialize",
@@ -7501,9 +7449,9 @@
               "type": "address"
             },
             {
-              "internalType": "address",
+              "internalType": "uint256",
               "name": "",
-              "type": "address"
+              "type": "uint256"
             }
           ],
           "name": "isAttendToAgentVote",
@@ -7525,9 +7473,9 @@
               "type": "address"
             },
             {
-              "internalType": "address",
+              "internalType": "uint256",
               "name": "",
-              "type": "address"
+              "type": "uint256"
             }
           ],
           "name": "isAttendToBoardVote",
@@ -7602,12 +7550,36 @@
               "type": "address"
             },
             {
-              "internalType": "address",
+              "internalType": "uint256",
               "name": "",
-              "type": "address"
+              "type": "uint256"
             }
           ],
           "name": "isAttendToRewardAddressVote",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "_user",
+              "type": "address"
+            }
+          ],
+          "name": "isDoubleStaked",
           "outputs": [
             {
               "internalType": "bool",
@@ -7660,9 +7632,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_agent",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
             }
           ],
           "name": "replaceAuditor",
@@ -7673,9 +7645,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
+              "internalType": "uint256",
               "name": "",
-              "type": "address"
+              "type": "uint256"
             }
           ],
           "name": "rewardAddressVoting",
@@ -7725,9 +7697,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_rewardAddress",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
             }
           ],
           "name": "setDAORewardAddress",
@@ -7739,7 +7711,20 @@
           "inputs": [
             {
               "internalType": "uint256",
-              "name": "_propertyIndex",
+              "name": "_index",
+              "type": "uint256"
+            }
+          ],
+          "name": "updateAgentStats",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_index",
               "type": "uint256"
             },
             {
@@ -7794,18 +7779,13 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_agent",
-              "type": "address"
-            },
-            {
               "internalType": "uint256",
               "name": "_voteInfo",
               "type": "uint256"
             },
             {
               "internalType": "uint256",
-              "name": "_flag",
+              "name": "_index",
               "type": "uint256"
             }
           ],
@@ -7817,9 +7797,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_candidate",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
             },
             {
               "internalType": "uint256",
@@ -7859,7 +7839,7 @@
             },
             {
               "internalType": "uint256",
-              "name": "_propertyIndex",
+              "name": "_index",
               "type": "uint256"
             },
             {
@@ -7876,9 +7856,9 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_rewardAddress",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "_index",
+              "type": "uint256"
             },
             {
               "internalType": "uint256",

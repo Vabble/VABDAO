@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 import "../libraries/Helper.sol";
 
-interface IProperty {  
+interface IProperty {
     function filmVotePeriod() external view returns (uint256);        // 0
     function agentVotePeriod() external view returns (uint256);       // 1
     function disputeGracePeriod() external view returns (uint256);    // 2
@@ -25,29 +25,20 @@ interface IProperty {
     function rewardVotePeriod() external view returns (uint256);      // 18    
     function subscriptionAmount() external view returns (uint256);    // 19
     function boardRewardRate() external view returns (uint256);       // 20      
-    function disputLimitAmount() external view returns (uint256);    
-
-    function getProperty(uint256 _propertyIndex, uint256 _flag) external view returns (uint256 property_);
+    // function disputLimitAmount() external view returns (uint256);    
 
     function DAO_FUND_REWARD() external view returns (address);
 
     function updateLastVoteTime(address _member) external;
 
-    function getPropertyProposalInfo(uint256 _property, uint256 _flag) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status);
-    function getGovProposalInfo(address _member, uint256 _flag) external view returns (string memory, string memory, uint256, uint256, address, Helper.Status);
+    function getPropertyProposalInfo(uint256 _index, uint256 _flag) external view returns (uint256, uint256, uint256, uint256, address, Helper.Status);
+    function getGovProposalInfo(uint256 _index, uint256 _flag) external view returns (uint256, uint256, uint256, address, address, Helper.Status); 
 
-    function getPropertyProposalID(uint256 _property, uint256 _flag) external view returns (uint256);
-    function getGovProposalID(address _member, uint256 _flag) external view returns (uint256);
-
-    function updatePropertyProposal(uint256 _property, uint256 _flag, uint256 _approveStatus) external;
-    function updateGovProposal(address _member, uint256 _flag, uint256 _approveStatus) external;
-
-    function getGovProposer(uint256 _flag, address _candidate) external view returns (address);
-    function getPropertyProposer(uint256 _flag, uint256 _property) external view returns (address);
+    function updatePropertyProposal(uint256 _index, uint256 _flag, uint256 _approveStatus) external;
+    function updateGovProposal(uint256 _index, uint256 _flag, uint256 _approveStatus) external;
 
     function checkGovWhitelist(uint256 _flag, address _address) external view returns (uint256);
     function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view returns (uint256);
-
-    function getPropertyProposalList(uint256 _flag) external view returns (uint256[] memory _list);
-    function getGovProposalList(uint256 _flag) external view returns (address[] memory);
+    
+    function getAgentProposerStakeAmount(uint256 _index) external view returns (uint256);
 }
