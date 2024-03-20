@@ -768,10 +768,6 @@ contract StakingPool is ReentrancyGuard {
         time_ = stakeInfo[_user].stakeTime + IProperty(DAO_PROPERTY).lockPeriod();
     }
 
-    function getStakerList() external view returns (address[] memory) {
-        return stakerList;
-    }
-
     function withdrawToOwner(address to) external onlyDeployer nonReentrant {
         require(Helper.isTestNet(), "apply on testnet");
 
@@ -790,5 +786,26 @@ contract StakingPool is ReentrancyGuard {
 
         // Transfer VAB of Studio Pool(VabbleDAO)
         sumAmount += IVabbleDAO(VABBLE_DAO).withdrawVABFromStudioPool(to);
+    }
+
+    //? View / Pure functions
+    function getOwnableAddress() public view returns (address) {
+        return OWNABLE;
+    }
+
+    function getVoteAddress() public view returns (address) {
+        return VOTE;
+    }
+
+    function getVabbleDaoAddress() public view returns (address) {
+        return VABBLE_DAO;
+    }
+
+    function getPropertyAddress() public view returns (address) {
+        return DAO_PROPERTY;
+    }
+
+    function getStakerList() external view returns (address[] memory) {
+        return stakerList;
     }
 }
