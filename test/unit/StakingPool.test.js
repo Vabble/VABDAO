@@ -549,5 +549,49 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                       stakingPool.connect(staker1).unstakeVAB(stakingAmount.sub(unstakeAmount))
                   ).to.be.revertedWith("usVAB: lock")
               })
+
+              it("Should remove the address from the stakerList and stakeInfo after unstake all VAB", async function () {
+                  //? Arrange
+                  const { stakingPool, staker1, property } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const lockPeriodInSeconds = Number(await property.lockPeriod())
+                  const stakingPoolContract = stakingPool.connect(staker1)
+
+                  //? Act
+                  await stakingPoolContract.stakeVAB(stakingAmount)
+                  await helpers.time.increase(lockPeriodInSeconds)
+                  await stakingPoolContract.unstakeVAB(stakingAmount)
+
+                  //? Assert
+                  const stakeInfo = await stakingPool.stakeInfo(staker1.address)
+                  const stakerList = await stakingPool.getStakerList()
+
+                  expect(stakeInfo.stakeAmount).equal(
+                      0,
+                      "Stake amount should be 0 after unstake all VAB"
+                  )
+                  expect(stakeInfo.stakeTime).equal(
+                      0,
+                      "Stake time should be 0 after unstake all VAB"
+                  )
+                  expect(stakeInfo.outstandingReward).equal(
+                      0,
+                      "Outstanding Reward should be 0 after unstake all VAB"
+                  )
+                  expect(stakerList.includes(staker1.address)).to.be.equal(
+                      false,
+                      "Staker should be removed from the stakerList after unstake"
+                  )
+                  expect(await stakingPool.totalStakingAmount()).equal(
+                      0,
+                      "Total staking amount should be 0 after unstake"
+                  )
+                  expect(await stakingPool.stakerCount()).equal(
+                      0,
+                      "Staker count should be 0 after unstake"
+                  )
+              })
           })
       })
