@@ -151,7 +151,12 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
 
               await vote
                   .connect(deployer)
-                  .initialize(vabbleDAO.address, stakingPool.address, property.address)
+                  .initialize(
+                      vabbleDAO.address,
+                      stakingPool.address,
+                      property.address,
+                      uniHelper.address
+                  )
 
               await vabbleFund.connect(deployer).initialize(vabbleDAO.address)
 
@@ -329,10 +334,12 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   const stakerCount = await stakingPool.stakerCount()
                   const endingTotalStakingAmount = await stakingPool.totalStakingAmount()
                   const expectedEndValue = startingTotalStakingAmount.add(stakingAmount.mul(4))
+                  const stakerList = await stakingPool.getStakerList()
 
                   assert.equal(stakerCount, 2)
-                  assert.equal(await stakingPool.stakerList(0), staker1.address)
-                  assert.equal(await stakingPool.stakerList(1), staker2.address)
+                  assert.equal(stakerList.length, 2)
+                  assert.equal(await stakerList[0], staker1.address)
+                  assert.equal(await stakerList[1], staker2.address)
                   assert.equal(endingTotalStakingAmount.toString(), expectedEndValue.toString())
               })
 
