@@ -202,6 +202,8 @@ contract StakingPool is ReentrancyGuard {
         }
 
         uint256 rewardAmount = calcRewardAmount(msg.sender);
+        require(rewardAmount > 0, "wR: zero reward");
+
         if (_isCompound == 1) {
             Stake storage si = stakeInfo[msg.sender];
             si.stakeAmount = si.stakeAmount + rewardAmount;
@@ -214,7 +216,6 @@ contract StakingPool is ReentrancyGuard {
 
             emit RewardContinued(msg.sender, _isCompound);
         } else {
-            require(rewardAmount > 0, "wR: zero reward");
             require(totalRewardAmount >= rewardAmount, "wR: insufficient total");
 
             __withdrawReward(rewardAmount);
