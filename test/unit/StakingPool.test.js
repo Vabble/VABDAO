@@ -6,7 +6,7 @@ const ERC20 = require("../../data/ERC20.json")
 const FxERC20 = require("../../data/FxERC20.json")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
-const { parseEther, formatEther } = require("ethers/lib/utils")
+const { parseEther } = require("ethers/lib/utils")
 
 //? Constants
 const VAB_TOKEN_ADDRESS = CONFIG.mumbai.vabToken
@@ -199,6 +199,10 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
               const stakingPoolStaker2 = stakingPool.connect(staker2)
 
               //? Get the properties from the property contract
+              /**
+               *
+               * @dev lockPeriod = 2592000 seconds = 30 days
+               */
               const lockPeriodInSeconds = Number(await property.lockPeriod())
 
               return {
@@ -709,9 +713,9 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                       await loadFixture(deployContractsFixture)
                   const isCompound = 1 // compound reward
                   await stakingPoolStaker1.stakeVAB(stakingAmount)
-
                   await helpers.time.increase(lockPeriodInSeconds)
-
+                  const rewardAmount = await stakingPool.calcRewardAmount(staker1.address)
+                  console.log(" === rewardAmount === ", rewardAmount.toString())
                   const tx = await stakingPoolStaker1.withdrawReward(isCompound)
 
                   const stakeInfo = await stakingPool.stakeInfo(staker1.address)
@@ -723,6 +727,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
 
                   expect(stakeInfo.stakeAmount.toString()).to.be.equal(stakingAmount.toString())
                   expect(stakeInfo.stakeTime.toString()).to.be.equal(newStakeTimestamp.toString())
+                  expect(rewardAmount.toString()).to.be.equal("0")
               })
 
               it("Should compound rewards to existing stake and update the stakeInfo, totalStakingAmount and emit the RewardContinued event", async function () {
@@ -803,6 +808,104 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                       totalRewardAmountAfterAdd.sub(calculatedRewardAmount)
                   )
                   expect(totalRewardIssuedAmount).to.be.equal(calculatedRewardAmount)
+              })
+          })
+
+          describe("calcRewardAmount", function () {
+              it("Should return zero if the stake amount of the user is zero", async function () {
+                  const { stakingPool, staker1 } = await loadFixture(deployContractsFixture)
+                  const calculatedRewardAmount = await stakingPool.calcRewardAmount(staker1.address)
+                  expect(calculatedRewardAmount).to.be.equal(0)
+              })
+
+              it("Should return the outstanding reward of the user when a migration is in progress", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      property,
+                      staker1,
+                      stakingPoolStaker1,
+                      lockPeriodInSeconds,
+                  } = await loadFixture(deployContractsFixture)
+                  //? Arrange
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(lockPeriodInSeconds)
+                  const rewardAmountBeforeMigration = await stakingPool.calcRewardAmount(
+                      staker1.address
+                  )
+                  await helpers.impersonateAccount(property.address)
+                  const signer = await ethers.getSigner(property.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await stakingPool.connect(signer).calcMigrationVAB()
+                  await helpers.stopImpersonatingAccount(property.address)
+                  // increase the time again
+                  await helpers.time.increase(lockPeriodInSeconds)
+                  //? Act
+                  const rewardAmountAfterMigration = await stakingPool.calcRewardAmount(
+                      staker1.address
+                  )
+                  const stakeInfo = await stakingPool.stakeInfo(staker1.address)
+                  const migrationStatus = await stakingPool.migrationStatus()
+                  //? Assert
+                  expect(migrationStatus).to.be.equal(1)
+                  expect(rewardAmountBeforeMigration).to.be.equal(rewardAmountAfterMigration)
+                  expect(stakeInfo.outstandingReward).to.be.equal(rewardAmountBeforeMigration)
+                  expect(stakeInfo.outstandingReward).to.be.equal(rewardAmountAfterMigration)
+              })
+
+              it("Should return the correct reward of the user when no migration / proposal vote is in progress", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      property,
+                      staker1,
+                      stakingPoolStaker1,
+                      lockPeriodInSeconds,
+                      stakingPoolStaker2,
+                  } = await loadFixture(deployContractsFixture)
+                  //? Arrange
+                  const oneDayInSeconds = 86400
+                  const stakeAmountStaker1 = parseEther("70")
+                  const stakeAmountStaker2 = parseEther("30")
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+
+                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  await stakingPoolStaker2.stakeVAB(stakeAmountStaker2)
+
+                  await helpers.time.increase(lockPeriodInSeconds) // 30 days
+
+                  const stakeInfoStaker1 = await stakingPool.stakeInfo(staker1.address)
+
+                  const totalStakingAmount = await stakingPool.totalStakingAmount()
+                  const staker1PoolShare = stakeInfoStaker1.stakeAmount
+                      .mul(1e10)
+                      .div(totalStakingAmount)
+                  const rewardRate = await property.rewardRate()
+                  const rewardPercent = rewardRate.mul(staker1PoolShare).div(1e10)
+
+                  const totalRewardAmount = await stakingPool.totalRewardAmount()
+
+                  const estimatedRewardAmount = totalRewardAmount
+                      .mul(rewardPercent)
+                      .mul(lockPeriodInSeconds / oneDayInSeconds)
+                      .div(1e10)
+
+                  //? Act
+                  const calculatedRewardAmount = await stakingPool.calcRewardAmount(staker1.address)
+
+                  // console.log("totalRewardAmount: ", totalRewardAmount.toString())
+                  // console.log("totalStakingAmount: ", totalStakingAmount.toString())
+                  // console.log("estimatedRewardAmount: ", estimatedRewardAmount.toString())
+                  // console.log("rewardPercent: ", rewardPercent.toString())
+                  // console.log("staker1PoolShare: ", staker1PoolShare.toString())
+                  // console.log("calculatedRewardAmount: ", calculatedRewardAmount.toString())
+
+                  //? Assert
+                  expect(estimatedRewardAmount.toString()).to.be.equal(
+                      calculatedRewardAmount.toString()
+                  )
               })
           })
       })
