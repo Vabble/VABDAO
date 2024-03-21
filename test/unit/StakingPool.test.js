@@ -6,7 +6,7 @@ const ERC20 = require("../../data/ERC20.json")
 const FxERC20 = require("../../data/FxERC20.json")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
-const { parseEther } = require("ethers/lib/utils")
+const { parseEther, formatEther } = require("ethers/lib/utils")
 
 //? Constants
 const VAB_TOKEN_ADDRESS = CONFIG.mumbai.vabToken
@@ -193,6 +193,14 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                       .approve(stakingPool.address, vabFaucetAmount)
               }
 
+              //? Connect accounts to contracts
+              const stakingPoolDeployer = stakingPool.connect(deployer)
+              const stakingPoolStaker1 = stakingPool.connect(staker1)
+              const stakingPoolStaker2 = stakingPool.connect(staker2)
+
+              //? Get the properties from the property contract
+              const lockPeriodInSeconds = Number(await property.lockPeriod())
+
               return {
                   deployer,
                   dev,
@@ -211,6 +219,10 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   tierNFT,
                   subscription,
                   stakingPoolFactory,
+                  lockPeriodInSeconds,
+                  stakingPoolStaker1,
+                  stakingPoolStaker2,
+                  stakingPoolDeployer,
               }
           }
 
@@ -285,29 +297,28 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
 
           describe("stakeVAB", function () {
               it("Should revert if staking with an amount of zero", async function () {
-                  const { stakingPool, staker1 } = await loadFixture(deployContractsFixture)
-                  await expect(
-                      stakingPool.connect(staker1).stakeVAB(zeroEtherAmount)
-                  ).to.be.revertedWith("sVAB: zero amount")
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+                  await expect(stakingPoolStaker1.stakeVAB(zeroEtherAmount)).to.be.revertedWith(
+                      "sVAB: zero amount"
+                  )
               })
 
               it("Should revert if staking with an amount less than the minimum", async function () {
-                  const { stakingPool, staker1 } = await loadFixture(deployContractsFixture)
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
                   const amount = parseEther("0.009")
-                  await expect(stakingPool.connect(staker1).stakeVAB(amount)).to.be.revertedWith(
+                  await expect(stakingPoolStaker1.stakeVAB(amount)).to.be.revertedWith(
                       "sVAB: min 0.01"
                   )
               })
 
               it("Should allow staking with a valid amount and update the stakers balance", async function () {
                   //? Arrange
-                  const { stakingPool, staker1, vabTokenContract } = await loadFixture(
-                      deployContractsFixture
-                  )
+                  const { stakingPool, staker1, vabTokenContract, stakingPoolStaker1 } =
+                      await loadFixture(deployContractsFixture)
                   const startingStakerBalance = await vabTokenContract.balanceOf(staker1.address)
 
                   //? Act
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
                   const stakeInfo = await stakingPool.stakeInfo(staker1.address)
                   const endingStakerBalance = await vabTokenContract.balanceOf(staker1.address)
 
@@ -318,17 +329,16 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
 
               it("Should increment the staker count and update the staker list when first time staking with multiple stakers", async function () {
                   //? Arrange
-                  const { stakingPool, staker1, staker2 } = await loadFixture(
-                      deployContractsFixture
-                  )
+                  const { stakingPool, staker1, staker2, stakingPoolStaker1, stakingPoolStaker2 } =
+                      await loadFixture(deployContractsFixture)
                   const startingTotalStakingAmount = await stakingPool.totalStakingAmount()
 
                   //? Act
                   // Stake two times with each staker
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await stakingPool.connect(staker2).stakeVAB(stakingAmount)
-                  await stakingPool.connect(staker2).stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await stakingPoolStaker2.stakeVAB(stakingAmount)
+                  await stakingPoolStaker2.stakeVAB(stakingAmount)
 
                   //? Assert
                   const stakerCount = await stakingPool.stakerCount()
@@ -344,13 +354,15 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
               })
 
               it("Should update the total staking amount after staking", async function () {
-                  const { stakingPool, staker1 } = await loadFixture(deployContractsFixture)
+                  const { stakingPool, stakingPoolStaker1 } = await loadFixture(
+                      deployContractsFixture
+                  )
 
                   //? Arrange
                   const startingTotalStakingAmount = await stakingPool.totalStakingAmount()
 
                   //? Act
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
                   const endingTotalStakingAmount = await stakingPool.totalStakingAmount()
 
                   //? Assert
@@ -358,15 +370,17 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   expect(endingTotalStakingAmount.toString()).to.equal(expectedEndValue.toString())
               })
 
-              it("Should emit TokenStaked event", async function () {
-                  const { stakingPool, staker1 } = await loadFixture(deployContractsFixture)
-                  await expect(stakingPool.connect(staker1).stakeVAB(stakingAmount))
+              it("Should emit TokenStaked event with the correct arguments", async function () {
+                  const { stakingPool, staker1, stakingPoolStaker1 } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  await expect(stakingPoolStaker1.stakeVAB(stakingAmount))
                       .to.emit(stakingPool, "TokenStaked")
                       .withArgs(staker1.address, stakingAmount)
               })
 
               it("Should revert if migration has started", async function () {
-                  const { stakingPool, staker1, property } = await loadFixture(
+                  const { stakingPool, stakingPoolStaker1, property } = await loadFixture(
                       deployContractsFixture
                   )
                   //? Arrange
@@ -378,22 +392,21 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   await helpers.stopImpersonatingAccount(property.address)
 
                   //? Assert
-                  await expect(
-                      stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  ).to.be.revertedWith("Migration is on going")
+                  await expect(stakingPoolStaker1.stakeVAB(stakingAmount)).to.be.revertedWith(
+                      "Migration is on going"
+                  )
               })
           })
 
           describe("addRewardToPool", function () {
               it("Should add reward to the pool and update the balance of the caller", async function () {
-                  const { stakingPool, vabTokenContract, deployer } = await loadFixture(
-                      deployContractsFixture
-                  )
+                  const { stakingPool, vabTokenContract, deployer, stakingPoolDeployer } =
+                      await loadFixture(deployContractsFixture)
 
                   //? Arrange
                   const startingDeployerBalance = await vabTokenContract.balanceOf(deployer.address)
                   //? Act
-                  await stakingPool.connect(deployer).addRewardToPool(poolRewardAmount)
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
                   //? Assert
                   const endingDeployerBalance = await vabTokenContract.balanceOf(deployer.address)
                   const totalRewardAmount = await stakingPool.totalRewardAmount()
@@ -404,22 +417,24 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
               })
 
               it("Should revert if amount is zero", async function () {
-                  const { stakingPool, deployer } = await loadFixture(deployContractsFixture)
+                  const { stakingPoolDeployer } = await loadFixture(deployContractsFixture)
                   await expect(
-                      stakingPool.connect(deployer).addRewardToPool(zeroEtherAmount)
+                      stakingPoolDeployer.addRewardToPool(zeroEtherAmount)
                   ).to.be.revertedWith("aRTP: zero amount")
               })
 
               it("Should emit RewardAdded event", async function () {
-                  const { stakingPool, deployer } = await loadFixture(deployContractsFixture)
+                  const { stakingPool, deployer, stakingPoolDeployer } = await loadFixture(
+                      deployContractsFixture
+                  )
                   const totalRewardAmount = poolRewardAmount
-                  await expect(stakingPool.connect(deployer).addRewardToPool(poolRewardAmount))
+                  await expect(stakingPoolDeployer.addRewardToPool(poolRewardAmount))
                       .to.emit(stakingPool, "RewardAdded")
                       .withArgs(totalRewardAmount, poolRewardAmount, deployer.address)
               })
 
               it("Should revert if migration has started", async function () {
-                  const { stakingPool, deployer, property } = await loadFixture(
+                  const { stakingPool, stakingPoolDeployer, property } = await loadFixture(
                       deployContractsFixture
                   )
                   //? Arrange
@@ -431,7 +446,7 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   await helpers.stopImpersonatingAccount(property.address)
                   //? Assert
                   await expect(
-                      stakingPool.connect(deployer).addRewardToPool(poolRewardAmount)
+                      stakingPoolDeployer.addRewardToPool(poolRewardAmount)
                   ).to.be.revertedWith("Migration is on going")
               })
           })
@@ -444,40 +459,38 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
               })
 
               it("Should revert if the amount exceeds the stake balance of the user", async function () {
-                  const { stakingPool, staker1, property } = await loadFixture(
+                  const { lockPeriodInSeconds, stakingPoolStaker1 } = await loadFixture(
                       deployContractsFixture
                   )
-                  const lockPeriodInSeconds = Number(await property.lockPeriod())
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
                   await helpers.time.increase(lockPeriodInSeconds)
 
                   const exceededBalance = stakingAmount.add(1)
-                  await expect(
-                      stakingPool.connect(staker1).unstakeVAB(exceededBalance)
-                  ).to.be.revertedWith("usVAB: insufficient")
+                  await expect(stakingPoolStaker1.unstakeVAB(exceededBalance)).to.be.revertedWith(
+                      "usVAB: insufficient"
+                  )
               })
 
               it("Should revert if the user tries to unstake before the time period has elapsed", async function () {
-                  const { stakingPool, staker1, property } = await loadFixture(
+                  const { stakingPoolStaker1, lockPeriodInSeconds } = await loadFixture(
                       deployContractsFixture
                   )
-                  const lockPeriodInSeconds = Number(await property.lockPeriod()) - 1
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await helpers.time.increase(lockPeriodInSeconds)
+                  const adjustedLockPeriodInSeconds = lockPeriodInSeconds - 1
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(adjustedLockPeriodInSeconds)
 
-                  await expect(
-                      stakingPool.connect(staker1).unstakeVAB(stakingAmount)
-                  ).to.be.revertedWith("usVAB: lock")
+                  await expect(stakingPoolStaker1.unstakeVAB(stakingAmount)).to.be.revertedWith(
+                      "usVAB: lock"
+                  )
               })
 
               it("Should allow unstake if a migration is in progress", async function () {
-                  const { stakingPool, staker1, property } = await loadFixture(
-                      deployContractsFixture
-                  )
+                  const { stakingPool, stakingPoolStaker1, lockPeriodInSeconds, property } =
+                      await loadFixture(deployContractsFixture)
                   //? We want to test if unstake works if a migration is in progress so we decrease the lock period
-                  const lockPeriodInSeconds = Number(await property.lockPeriod()) - 100
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
-                  await helpers.time.increase(lockPeriodInSeconds)
+                  const adjustedLockPeriodInSeconds = lockPeriodInSeconds - 100
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(adjustedLockPeriodInSeconds)
 
                   await helpers.impersonateAccount(property.address)
                   const signer = await ethers.getSigner(property.address)
@@ -486,26 +499,30 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   await helpers.stopImpersonatingAccount(property.address)
 
                   //? Because we are in a migration, we can unstake
-                  await expect(
-                      stakingPool.connect(staker1).unstakeVAB(stakingAmount)
-                  ).not.be.revertedWith("usVAB: lock")
+                  await expect(stakingPoolStaker1.unstakeVAB(stakingAmount)).not.be.revertedWith(
+                      "usVAB: lock"
+                  )
               })
 
               it("Should allow user to unstake tokens after the correct time period has elapsed", async function () {
                   //? Arrange
-                  const { stakingPool, staker1, property, vabTokenContract } = await loadFixture(
-                      deployContractsFixture
-                  )
+                  const {
+                      stakingPool,
+                      staker1,
+                      vabTokenContract,
+                      lockPeriodInSeconds,
+                      stakingPoolStaker1,
+                  } = await loadFixture(deployContractsFixture)
+
                   const startingStakerBalance = await vabTokenContract.balanceOf(staker1.address)
-                  const lockPeriodInSeconds = Number(await property.lockPeriod())
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
                   const stakerBalanceAfterStaking = await vabTokenContract.balanceOf(
                       staker1.address
                   )
                   await helpers.time.increase(lockPeriodInSeconds)
 
                   //? Act
-                  await stakingPool.connect(staker1).unstakeVAB(stakingAmount)
+                  await stakingPoolStaker1.unstakeVAB(stakingAmount)
 
                   //? Assert
                   const stakeInfo = await stakingPool.stakeInfo(staker1.address)
@@ -522,18 +539,21 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
 
               it("Should lock the user's token again after unstake a fraction of their stake", async function () {
                   //? Arrange
-                  const { stakingPool, staker1, property, vabTokenContract } = await loadFixture(
-                      deployContractsFixture
-                  )
+                  const {
+                      stakingPool,
+                      staker1,
+                      lockPeriodInSeconds,
+                      vabTokenContract,
+                      stakingPoolStaker1,
+                  } = await loadFixture(deployContractsFixture)
                   const startingStakerBalance = await vabTokenContract.balanceOf(staker1.address)
                   const unstakeAmount = stakingAmount.sub(10) // 100 - 10 = 90
-                  const lockPeriodInSeconds = Number(await property.lockPeriod())
 
-                  await stakingPool.connect(staker1).stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
                   await helpers.time.increase(lockPeriodInSeconds)
 
                   //? Act
-                  await stakingPool.connect(staker1).unstakeVAB(unstakeAmount)
+                  await stakingPoolStaker1.unstakeVAB(unstakeAmount)
 
                   //? Assert
                   const newStakeTimeStamp = await helpers.time.latest()
@@ -546,23 +566,19 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   expect(stakeInfo.stakeAmount).to.be.equal(stakingAmount.sub(unstakeAmount))
                   expect(stakerBalanceAfterUnstake).to.be.equal(startingStakerBalance.sub(10))
                   await expect(
-                      stakingPool.connect(staker1).unstakeVAB(stakingAmount.sub(unstakeAmount))
+                      stakingPoolStaker1.unstakeVAB(stakingAmount.sub(unstakeAmount))
                   ).to.be.revertedWith("usVAB: lock")
               })
 
               it("Should remove the address from the stakerList and stakeInfo after unstake all VAB", async function () {
                   //? Arrange
-                  const { stakingPool, staker1, property } = await loadFixture(
-                      deployContractsFixture
-                  )
-
-                  const lockPeriodInSeconds = Number(await property.lockPeriod())
-                  const stakingPoolContract = stakingPool.connect(staker1)
+                  const { stakingPool, staker1, lockPeriodInSeconds, stakingPoolStaker1 } =
+                      await loadFixture(deployContractsFixture)
 
                   //? Act
-                  await stakingPoolContract.stakeVAB(stakingAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
                   await helpers.time.increase(lockPeriodInSeconds)
-                  await stakingPoolContract.unstakeVAB(stakingAmount)
+                  await stakingPoolStaker1.unstakeVAB(stakingAmount)
 
                   //? Assert
                   const stakeInfo = await stakingPool.stakeInfo(staker1.address)
@@ -592,6 +608,201 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                       0,
                       "Staker count should be 0 after unstake"
                   )
+              })
+
+              it("Should emit TokenUnstaked event with the correct arguments", async function () {
+                  const { stakingPool, staker1, lockPeriodInSeconds, stakingPoolStaker1 } =
+                      await loadFixture(deployContractsFixture)
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(lockPeriodInSeconds)
+
+                  await expect(stakingPoolStaker1.unstakeVAB(stakingAmount))
+                      .to.emit(stakingPool, "TokenUnstaked")
+                      .withArgs(staker1.address, stakingAmount)
+              })
+          })
+
+          describe("withdrawReward", function () {
+              it("Should revert if the input is not valid", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolStaker1.withdrawReward(2)).to.be.revertedWith(
+                      "wR: compound"
+                  )
+              })
+
+              it("Should revert if users stake amount is zero", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolStaker1.withdrawReward(0)).to.be.revertedWith(
+                      "wR: zero amount"
+                  )
+                  await expect(stakingPoolStaker1.withdrawReward(1)).to.be.revertedWith(
+                      "wR: zero amount"
+                  )
+              })
+
+              it("Should revert if no migration has been started or the lock period is not over", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+
+                  await expect(stakingPoolStaker1.withdrawReward(0)).to.be.revertedWith("wR: lock")
+              })
+
+              it("Should revert if a migration has been started and user wants to compound", async function () {
+                  const { stakingPool, stakingPoolStaker1, lockPeriodInSeconds, property } =
+                      await loadFixture(deployContractsFixture)
+                  //? We want to test if unstake works if a migration is in progress so we decrease the lock period
+                  const adjustedLockPeriodInSeconds = lockPeriodInSeconds - 100
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(adjustedLockPeriodInSeconds)
+
+                  await helpers.impersonateAccount(property.address)
+                  const signer = await ethers.getSigner(property.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await stakingPool.connect(signer).calcMigrationVAB()
+                  await helpers.stopImpersonatingAccount(property.address)
+
+                  await expect(stakingPoolStaker1.withdrawReward(1)).to.be.revertedWith(
+                      "migration is on going"
+                  )
+              })
+
+              it("Should revert if there are zero rewards and user wants to withdraw", async function () {
+                  const { stakingPoolStaker1, lockPeriodInSeconds } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(lockPeriodInSeconds)
+
+                  await expect(stakingPoolStaker1.withdrawReward(0)).to.be.revertedWith(
+                      "wR: zero reward"
+                  )
+              })
+
+              it("Should revert if the user wants to withdraw more rewards than the totalRewardAmount is", async function () {
+                  const { stakingPoolStaker1, lockPeriodInSeconds, stakingPoolDeployer, staker1 } =
+                      await loadFixture(deployContractsFixture)
+                  const newPoolRewardAmount = parseEther("1")
+                  await stakingPoolDeployer.addRewardToPool(newPoolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  //? Here we wait longer than the lock period so that the rewards will exceed the totalRewardAmount
+                  await helpers.time.increase(lockPeriodInSeconds * 1000)
+
+                  const totalRewardAmount = await stakingPoolDeployer.totalRewardAmount()
+                  const calculatedRewardAmount = await stakingPoolDeployer.calcRewardAmount(
+                      staker1.address
+                  )
+
+                  expect(calculatedRewardAmount).to.be.above(totalRewardAmount)
+                  await expect(stakingPoolStaker1.withdrawReward(0)).to.be.revertedWith(
+                      "wR: insufficient total"
+                  )
+              })
+
+              // TODO: Clarify with MUD / James if this is the right behavior
+              it("Should change stake info and fire the RewardContinued event when compounding with 0 rewards", async function () {
+                  const { stakingPoolStaker1, lockPeriodInSeconds, stakingPool, staker1 } =
+                      await loadFixture(deployContractsFixture)
+                  const isCompound = 1 // compound reward
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+
+                  await helpers.time.increase(lockPeriodInSeconds)
+
+                  const tx = await stakingPoolStaker1.withdrawReward(isCompound)
+
+                  const stakeInfo = await stakingPool.stakeInfo(staker1.address)
+                  const newStakeTimestamp = (await stakingPool.stakeInfo(staker1.address)).stakeTime
+
+                  await expect(tx)
+                      .to.emit(stakingPool, "RewardContinued")
+                      .withArgs(staker1.address, isCompound)
+
+                  expect(stakeInfo.stakeAmount.toString()).to.be.equal(stakingAmount.toString())
+                  expect(stakeInfo.stakeTime.toString()).to.be.equal(newStakeTimestamp.toString())
+              })
+
+              it("Should compound rewards to existing stake and update the stakeInfo, totalStakingAmount and emit the RewardContinued event", async function () {
+                  const {
+                      stakingPoolStaker1,
+                      lockPeriodInSeconds,
+                      stakingPool,
+                      staker1,
+                      stakingPoolDeployer,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const isCompound = 1 // compound reward
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(lockPeriodInSeconds)
+
+                  const calculatedRewardAmount = await stakingPool.calcRewardAmount(staker1.address)
+
+                  const tx = await stakingPoolStaker1.withdrawReward(isCompound)
+
+                  const stakeInfo = await stakingPool.stakeInfo(staker1.address)
+                  const totalStakingAmount = await stakingPool.totalStakingAmount()
+                  const expectedStakeAmount = stakingAmount.add(calculatedRewardAmount)
+                  const newStakeTimeStamp = await helpers.time.latest()
+
+                  await expect(tx)
+                      .to.emit(stakingPool, "RewardContinued")
+                      .withArgs(staker1.address, isCompound)
+                  expect(stakeInfo.stakeAmount).to.be.equal(expectedStakeAmount)
+                  expect(totalStakingAmount).to.be.equal(expectedStakeAmount)
+                  expect(stakeInfo.stakeTime.toString()).to.be.equal(newStakeTimeStamp.toString())
+              })
+
+              it("Should withdraw rewards and update the users balance, stakeInfo, totalRewardAmount, totalRewardIssuedAmount and emit the RewardWithdraw event", async function () {
+                  //? Arrange
+                  const {
+                      stakingPoolStaker1,
+                      lockPeriodInSeconds,
+                      stakingPool,
+                      staker1,
+                      stakingPoolDeployer,
+                      vabTokenContract,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const isCompound = 0 // withdraw reward
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  const totalRewardAmountAfterAdd = await stakingPool.totalRewardAmount()
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stakerBalanceAfterStaking = await vabTokenContract.balanceOf(
+                      staker1.address
+                  )
+                  await helpers.time.increase(lockPeriodInSeconds)
+
+                  const calculatedRewardAmount = await stakingPool.calcRewardAmount(staker1.address)
+
+                  //? Act
+                  const tx = await stakingPoolStaker1.withdrawReward(isCompound)
+
+                  //? Assert
+                  const stakeInfo = await stakingPool.stakeInfo(staker1.address)
+                  const stakerBalanceAfterWithdraw = await vabTokenContract.balanceOf(
+                      staker1.address
+                  )
+                  const totalRewardAmountAfterWithdraw = await stakingPool.totalRewardAmount()
+                  const totalRewardIssuedAmount = await stakingPool.totalRewardIssuedAmount()
+                  const newStakeTimeStamp = await helpers.time.latest()
+
+                  await expect(tx)
+                      .to.emit(stakingPool, "RewardWithdraw")
+                      .withArgs(staker1.address, calculatedRewardAmount)
+
+                  expect(stakeInfo.stakeAmount).to.be.equal(stakingAmount)
+                  expect(stakeInfo.stakeTime).to.be.equal(newStakeTimeStamp)
+                  expect(stakerBalanceAfterWithdraw).to.be.equal(
+                      stakerBalanceAfterStaking.add(calculatedRewardAmount)
+                  )
+                  expect(totalRewardAmountAfterWithdraw).to.be.equal(
+                      totalRewardAmountAfterAdd.sub(calculatedRewardAmount)
+                  )
+                  expect(totalRewardIssuedAmount).to.be.equal(calculatedRewardAmount)
               })
           })
       })
