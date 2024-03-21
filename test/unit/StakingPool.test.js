@@ -33,8 +33,6 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
            */
           async function deployContractsFixture() {
               //? contract factories
-              //! Question: Clarify if we need gnosisSafeFactory ???
-              const gnosisSafeFactory = await ethers.getContractFactory("GnosisSafeL2")
               const vabbleDAOFactory = await ethers.getContractFactory("VabbleDAO")
               const vabbleFundFactory = await ethers.getContractFactory("VabbleFund")
               const uniHelperFactory = await ethers.getContractFactory("UniHelper")
@@ -130,18 +128,6 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
               )
 
               //? Initialize the contracts with the correct arguments
-              // !: Do we need this ? Not sure
-              // await gnosisSafe.connect(deployer).setup(
-              //   [signer1.address, signer2.address],
-              //   2,
-              //   CONFIG.addressZero,
-              //   '0x',
-              //   CONFIG.addressZero,
-              //   CONFIG.addressZero,
-              //   0,
-              //   CONFIG.addressZero,
-              //   { from: deployer.address }
-              // );
 
               await filmNFT.connect(deployer).initialize(vabbleDAO.address, vabbleFund.address)
 
@@ -707,27 +693,17 @@ const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
                   )
               })
 
-              // TODO: Clarify with MUD / James if this is the right behavior
-              it("Should change stake info and fire the RewardContinued event when compounding with 0 rewards", async function () {
-                  const { stakingPoolStaker1, lockPeriodInSeconds, stakingPool, staker1 } =
-                      await loadFixture(deployContractsFixture)
+              it("Should revert if there are zero rewards and user wants to compound", async function () {
+                  const { stakingPoolStaker1, lockPeriodInSeconds } = await loadFixture(
+                      deployContractsFixture
+                  )
                   const isCompound = 1 // compound reward
                   await stakingPoolStaker1.stakeVAB(stakingAmount)
                   await helpers.time.increase(lockPeriodInSeconds)
-                  const rewardAmount = await stakingPool.calcRewardAmount(staker1.address)
-                  console.log(" === rewardAmount === ", rewardAmount.toString())
-                  const tx = await stakingPoolStaker1.withdrawReward(isCompound)
 
-                  const stakeInfo = await stakingPool.stakeInfo(staker1.address)
-                  const newStakeTimestamp = (await stakingPool.stakeInfo(staker1.address)).stakeTime
-
-                  await expect(tx)
-                      .to.emit(stakingPool, "RewardContinued")
-                      .withArgs(staker1.address, isCompound)
-
-                  expect(stakeInfo.stakeAmount.toString()).to.be.equal(stakingAmount.toString())
-                  expect(stakeInfo.stakeTime.toString()).to.be.equal(newStakeTimestamp.toString())
-                  expect(rewardAmount.toString()).to.be.equal("0")
+                  expect(stakingPoolStaker1.withdrawReward(isCompound)).to.be.revertedWith(
+                      "wR: zero amount"
+                  )
               })
 
               it("Should compound rewards to existing stake and update the stakeInfo, totalStakingAmount and emit the RewardContinued event", async function () {
