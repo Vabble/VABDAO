@@ -125,11 +125,6 @@ contract VabbleDAO is ReentrancyGuard {
         totalFilmIds[1].push(filmId);
         userFilmIds[msg.sender][1].push(filmId); // create
         
-        uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(
-            msg.sender, block.timestamp, IProperty(DAO_PROPERTY).filmVotePeriod()
-        );
-        IVote(VOTE).saveProposalWithFilm(filmId, proposalID); 
-
         emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender);
     }
     
@@ -145,10 +140,8 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _enableClaimer
     ) external nonReentrant {                
         require(_studioPayees.length != 0, 'pU: e1');
-        require(_studioPayees.length == _sharePercents.length, 'pU: e2');
-        
-        bytes memory titleByte = bytes(_title);
-        require(titleByte.length != 0, "pU: e3");
+        require(_studioPayees.length == _sharePercents.length, 'pU: e2');        
+        require(bytes(_title).length != 0, "pU: e3");
         
         IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
         if(fInfo.fundType != 0) {            
@@ -186,6 +179,11 @@ contract VabbleDAO is ReentrancyGuard {
         updatedFilmCount.increment();
         totalFilmIds[4].push(_filmId);
         userFilmIds[msg.sender][2].push(_filmId); // update
+
+        uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(
+            msg.sender, block.timestamp, IProperty(DAO_PROPERTY).filmVotePeriod()
+        );
+        IVote(VOTE).saveProposalWithFilm(_filmId, proposalID); 
 
         // If proposal is for fund, update "lastfundProposalCreateTime"
         if(fInfo.fundType != 0) {
