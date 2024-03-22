@@ -1,11 +1,11 @@
 // we can't have these functions in our `helper-hardhat-config`
 // since these use the hardhat library
 // and it would be a circular dependency
-const { parseEther } = require("ethers/lib/utils")
 const { run, ethers } = require("hardhat")
 const { DISCOUNT, CONFIG } = require("./scripts/utils")
 const ERC20 = require("./data/ERC20.json")
 const FxERC20 = require("./data/FxERC20.json")
+const { VAB_FAUCET_AMOUNT } = require("./helper-hardhat-config")
 
 //? Constants
 const VAB_TOKEN_ADDRESS = CONFIG.mumbai.vabToken
@@ -47,18 +47,13 @@ const verify = async (contractAddress, args) => {
  * @param {Array} contracts - An array of contracts to approve for each account.
  * @return {Promise<void>} A promise that resolves when all accounts have been funded and approved.
  */
-const fundAndApproveAccounts = async (
-    accounts,
-    vabTokenContract,
-    contracts,
-    vabFaucetAmount = parseEther("50000")
-) => {
+const fundAndApproveAccounts = async (accounts, vabTokenContract, contracts) => {
     try {
         console.log("Funding and Approving accounts...")
         for (const account of accounts) {
-            await vabTokenContract.connect(account).faucet(vabFaucetAmount)
+            await vabTokenContract.connect(account).faucet(VAB_FAUCET_AMOUNT)
             for (const contract of contracts) {
-                await vabTokenContract.connect(account).approve(contract.address, vabFaucetAmount)
+                await vabTokenContract.connect(account).approve(contract.address, VAB_FAUCET_AMOUNT)
             }
         }
     } catch (e) {

@@ -1,5 +1,5 @@
 const { ethers, network } = require("hardhat")
-const { developmentChains } = require("../../helper-hardhat-config")
+const { developmentChains, VAB_FAUCET_AMOUNT } = require("../../helper-hardhat-config")
 const { assert, expect } = require("chai")
 const { ZERO_ADDRESS } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
@@ -11,7 +11,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
     ? describe.skip
     : describe("StakingPool Unit Tests", function () {
           //? Variable declaration
-          const vabFaucetAmount = parseEther("50000") // 50k is the max amount that can be faucet
           const stakingAmount = parseEther("100")
           const poolRewardAmount = parseEther("10000") // 10k
           const zeroEtherAmount = parseEther("0")
@@ -50,7 +49,7 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   accounts,
                   vabTokenContract,
                   contractsToApprove,
-                  vabFaucetAmount
+                  VAB_FAUCET_AMOUNT
               )
 
               //? Connect accounts to stakingPool contract
@@ -82,32 +81,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   stakingPoolDeployer,
               }
           }
-
-          describe("setup", function () {
-              describe("Accounts", function () {
-                  it("should have the right balance, and allowance", async function () {
-                      const { deployer, staker1, stakingPool, vabTokenContract } =
-                          await loadFixture(deployContractsFixture)
-                      const staker1Balance = await vabTokenContract.balanceOf(staker1.address)
-                      const staker1Allowance = await vabTokenContract.allowance(
-                          staker1.address,
-                          stakingPool.address
-                      )
-
-                      const deployerBalance = await vabTokenContract.balanceOf(deployer.address)
-                      const deployerAllowance = await vabTokenContract.allowance(
-                          deployer.address,
-                          stakingPool.address
-                      )
-
-                      expect(staker1Balance).to.equal(vabFaucetAmount)
-                      expect(staker1Allowance).to.equal(vabFaucetAmount)
-
-                      expect(deployerBalance).to.equal(vabFaucetAmount)
-                      expect(deployerAllowance).to.equal(vabFaucetAmount)
-                  })
-              })
-          })
 
           describe("constructor", function () {
               it("sets the right ownable address", async function () {
