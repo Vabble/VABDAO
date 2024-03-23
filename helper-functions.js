@@ -197,11 +197,10 @@ const deployAndInitAllContracts = async () => {
             ])
 
         //? Get the properties from the property contract
-        /**
-         *
-         * @dev lockPeriod = 2592000 seconds = 30 days
-         */
         const lockPeriodInSeconds = Number(await property.lockPeriod())
+        const propertyVotePeriod = Number(await property.propertyVotePeriod())
+        const boardRewardRate = await property.boardRewardRate()
+        const rewardRate = await property.rewardRate()
 
         return {
             deployer,
@@ -222,6 +221,9 @@ const deployAndInitAllContracts = async () => {
             subscription,
             stakingPoolFactory,
             lockPeriodInSeconds,
+            propertyVotePeriod,
+            boardRewardRate,
+            rewardRate,
         }
     } catch (error) {
         console.log("===== deployAndInitAllContracts error =====", error)

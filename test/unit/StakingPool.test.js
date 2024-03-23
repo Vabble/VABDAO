@@ -1,5 +1,9 @@
 const { ethers, network } = require("hardhat")
-const { developmentChains, VAB_FAUCET_AMOUNT } = require("../../helper-hardhat-config")
+const {
+    developmentChains,
+    VAB_FAUCET_AMOUNT,
+    ONE_DAY_IN_SECONDS,
+} = require("../../helper-hardhat-config")
 const { assert, expect } = require("chai")
 const { ZERO_ADDRESS } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
@@ -40,11 +44,14 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   subscription,
                   stakingPoolFactory,
                   lockPeriodInSeconds,
+                  propertyVotePeriod,
+                  boardRewardRate,
+                  rewardRate,
               } = await deployAndInitAllContracts()
 
               //? Fund and approve accounts
               const accounts = [deployer, staker1, staker2]
-              const contractsToApprove = [stakingPool]
+              const contractsToApprove = [stakingPool, property]
               await fundAndApproveAccounts(
                   accounts,
                   vabTokenContract,
@@ -56,6 +63,40 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               const stakingPoolDeployer = stakingPool.connect(deployer)
               const stakingPoolStaker1 = stakingPool.connect(staker1)
               const stakingPoolStaker2 = stakingPool.connect(staker2)
+
+              //? Helper functions
+
+              /**
+               * Calculate the estimated reward amount for a given staker over a specified period.
+               *
+               * @param {Object} staker - The staker object containing address information.
+               * @param {number} period - The period for which the reward is calculated.
+               * @return {BigNumber} The estimated reward amount for the staker.
+               */
+              const getEstimatedReward = async (staker, period) => {
+                  const totalStakingAmount = await stakingPool.totalStakingAmount()
+                  const stakeInfo = await stakingPool.stakeInfo(staker.address)
+                  const stakerPoolShare = stakeInfo.stakeAmount.mul(1e10).div(totalStakingAmount)
+                  const rewardPercent = rewardRate.mul(stakerPoolShare).div(1e10)
+
+                  const totalRewardAmount = await stakingPool.totalRewardAmount()
+
+                  let estimatedRewardAmount = totalRewardAmount
+                      .mul(rewardPercent)
+                      .mul(period)
+                      .div(1e10)
+
+                  const isBoardMember =
+                      (await property.checkGovWhitelist(2, staker.address)).toString() == "2"
+
+                  if (isBoardMember) {
+                      estimatedRewardAmount = estimatedRewardAmount.add(
+                          estimatedRewardAmount.mul(boardRewardRate).div(1e10)
+                      )
+                  }
+
+                  return estimatedRewardAmount
+              }
 
               return {
                   deployer,
@@ -79,6 +120,10 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   stakingPoolStaker1,
                   stakingPoolStaker2,
                   stakingPoolDeployer,
+                  propertyVotePeriod,
+                  getEstimatedReward,
+                  boardRewardRate,
+                  rewardRate,
               }
           }
 
@@ -674,14 +719,13 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   const {
                       stakingPool,
                       stakingPoolDeployer,
-                      property,
                       staker1,
                       stakingPoolStaker1,
                       lockPeriodInSeconds,
                       stakingPoolStaker2,
+                      getEstimatedReward,
                   } = await loadFixture(deployContractsFixture)
                   //? Arrange
-                  const oneDayInSeconds = 86400
                   const stakeAmountStaker1 = parseEther("70")
                   const stakeAmountStaker2 = parseEther("30")
 
@@ -692,35 +736,191 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   await helpers.time.increase(lockPeriodInSeconds) // 30 days
 
-                  const stakeInfoStaker1 = await stakingPool.stakeInfo(staker1.address)
-
-                  const totalStakingAmount = await stakingPool.totalStakingAmount()
-                  const staker1PoolShare = stakeInfoStaker1.stakeAmount
-                      .mul(1e10)
-                      .div(totalStakingAmount)
-                  const rewardRate = await property.rewardRate()
-                  const rewardPercent = rewardRate.mul(staker1PoolShare).div(1e10)
-
-                  const totalRewardAmount = await stakingPool.totalRewardAmount()
-
-                  const estimatedRewardAmount = totalRewardAmount
-                      .mul(rewardPercent)
-                      .mul(lockPeriodInSeconds / oneDayInSeconds)
-                      .div(1e10)
+                  const estimatedRewardAmount = await getEstimatedReward(
+                      staker1,
+                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
+                  )
 
                   //? Act
                   const calculatedRewardAmount = await stakingPool.calcRewardAmount(staker1.address)
 
-                  // console.log("totalRewardAmount: ", totalRewardAmount.toString())
-                  // console.log("totalStakingAmount: ", totalStakingAmount.toString())
-                  // console.log("estimatedRewardAmount: ", estimatedRewardAmount.toString())
-                  // console.log("rewardPercent: ", rewardPercent.toString())
-                  // console.log("staker1PoolShare: ", staker1PoolShare.toString())
-                  // console.log("calculatedRewardAmount: ", calculatedRewardAmount.toString())
+                  //? Assert
+                  expect(estimatedRewardAmount.toString()).to.be.equal(
+                      calculatedRewardAmount.toString()
+                  )
+              })
+
+              it("Should return the correct reward amount for film board members", async function () {
+                  const {
+                      getEstimatedReward,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolFilmBoardMember,
+                      deployer,
+                      property,
+                      staker2: filmBoardMember,
+                      stakingPoolDeployer,
+                      lockPeriodInSeconds,
+                      staker1,
+                      stakingPool,
+                      boardRewardRate,
+                  } = await loadFixture(deployContractsFixture)
+
+                  await property
+                      .connect(deployer)
+                      .addAddressToFilmBoardForTesting(filmBoardMember.address)
+
+                  //? Stake the same amount to compare the rewards later
+                  const stakeAmountStaker1 = parseEther("50")
+                  const stakeAmountFilmBoardMember = parseEther("50")
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  await stakingPoolFilmBoardMember.stakeVAB(stakeAmountFilmBoardMember)
+
+                  await helpers.time.increase(lockPeriodInSeconds) // 30 days
+
+                  const estRewardStaker1 = await getEstimatedReward(
+                      staker1,
+                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
+                  )
+
+                  const estRewardFilmBoardMember = await getEstimatedReward(
+                      filmBoardMember,
+                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
+                  )
+
+                  const calcRewardAmountStaker1 = await stakingPool.calcRewardAmount(
+                      staker1.address
+                  )
+                  const calcRewardFilmBoardMember = await stakingPool.calcRewardAmount(
+                      filmBoardMember.address
+                  )
+
+                  const estRewardStaker1WithBonus = calcRewardAmountStaker1.add(
+                      calcRewardAmountStaker1.mul(boardRewardRate).div(1e10)
+                  )
+
+                  //? Assert
+                  expect(estRewardStaker1.toString()).to.be.equal(
+                      calcRewardAmountStaker1.toString()
+                  )
+
+                  expect(estRewardFilmBoardMember.toString()).to.be.equal(
+                      calcRewardFilmBoardMember.toString()
+                  )
+                  //? Staker1 with bonus reward should be equal to film board member reward
+                  expect(estRewardStaker1WithBonus.toString()).to.be.equal(
+                      calcRewardFilmBoardMember.toString()
+                  )
+              })
+          })
+
+          describe("calcRealizedRewards", function () {
+              it("Should return the correct reward of the user when no proposal vote is in progress", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      staker1,
+                      stakingPoolStaker1,
+                      lockPeriodInSeconds,
+                      getEstimatedReward,
+                  } = await loadFixture(deployContractsFixture)
+                  //? Arrange
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await helpers.time.increase(lockPeriodInSeconds) // 30 days
+
+                  const estimatedRewardAmount = await getEstimatedReward(
+                      staker1,
+                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
+                  )
+
+                  //? Act
+                  const calculatedRewardAmount = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
 
                   //? Assert
                   expect(estimatedRewardAmount.toString()).to.be.equal(
                       calculatedRewardAmount.toString()
+                  )
+              })
+
+              it("Should return the correct reward of the user and proposal creator when a governance proposal voting is open and user didn't vote", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      property,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      propertyVotePeriod,
+                      getEstimatedReward,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const stakeAmountStaker1 = parseEther("1000")
+                  const stakeAmountProposalCreator = parseEther("1000")
+                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
+                  const propertyChange = ONE_DAY_IN_SECONDS * 7 // 7 Days
+                  const flag = 7 // Film Board Removal Period
+                  const title = "Test Proposal"
+                  const description = "Test Proposal Description"
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  //? Wait for 1 day to earn some rewards
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  const tx = await property
+                      .connect(proposalCreator)
+                      .proposalProperty(propertyChange, flag, title, description)
+
+                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
+
+                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  await helpers.time.increase(propertyVotePeriod / 2) // wait half of the vote period
+
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
+                      proposalCreator,
+                      (ONE_DAY_IN_SECONDS + propertyVotePeriod / 2) / ONE_DAY_IN_SECONDS
+                  )
+
+                  const calcRewardStaker1DuringVote = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+                  const calcRewardProposalCreatorDuringVote = await stakingPool.calcRealizedRewards(
+                      proposalCreator.address
+                  )
+
+                  //? Assert
+                  await expect(tx)
+                      .to.emit(property, "PropertyProposalCreated")
+                      .withArgs(proposalCreator.address, propertyChange, flag, title, description)
+
+                  expect(estimatedRewardStaker1.toString()).to.be.equal(
+                      calcRewardStaker1DuringVote.toString(),
+                      "Est. Reward of staker should be equal calc reward during vote period"
+                  )
+                  expect(estimatedRewardStaker1.toString()).to.be.equal(
+                      calcRewardStaker1.toString(),
+                      "Est. Reward of staker should be equal calc reward after staking"
+                  )
+                  expect(estimatedRewardProposalCreator.toString()).to.be.equal(
+                      calcRewardProposalCreator.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward after staking"
+                  )
+                  expect(estimatedRewardProposalCreatorIncreasedPeriod.toString()).to.be.equal(
+                      calcRewardProposalCreatorDuringVote.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward during vote period"
                   )
               })
           })
