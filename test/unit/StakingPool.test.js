@@ -887,11 +887,12 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                       staker1.address
                   )
 
-                  await helpers.time.increase(propertyVotePeriod / 2) // wait half of the vote period
+                  //? Wait 1 day after proposal creation
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
                   const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
                       proposalCreator,
-                      (ONE_DAY_IN_SECONDS + propertyVotePeriod / 2) / ONE_DAY_IN_SECONDS
+                      period * 2
                   )
 
                   const calcRewardStaker1DuringVote = await stakingPool.calcRealizedRewards(
@@ -921,6 +922,106 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   expect(estimatedRewardProposalCreatorIncreasedPeriod.toString()).to.be.equal(
                       calcRewardProposalCreatorDuringVote.toString(),
                       "Est. Reward of proposal creator should be equal calc reward during vote period"
+                  )
+              })
+
+              it("Should return the correct reward of the user and proposal creator when a governance proposal voting is open and user did vote", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      property,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      getEstimatedReward,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const stakeAmountStaker1 = parseEther("1000")
+                  const stakeAmountProposalCreator = parseEther("1000")
+                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
+                  const propertyChange = ONE_DAY_IN_SECONDS * 7 // 7 Days
+                  const flag = 7 // Film Board Removal Period
+                  const title = "Test Proposal"
+                  const description = "Test Proposal Description"
+                  const yesVote = 1
+                  const proposalIndex = 0
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  //? Wait for 1 day to earn some rewards
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  const createProposalTx = await property
+                      .connect(proposalCreator)
+                      .proposalProperty(propertyChange, flag, title, description)
+
+                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
+
+                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  //? Wait 1 day after proposal was created
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  // vote for proposal
+                  const voteTx = await vote
+                      .connect(staker1)
+                      .voteToProperty(yesVote, proposalIndex, flag)
+
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
+                      proposalCreator,
+                      period * 2 // 2 days, because we increased the time two times
+                  )
+
+                  const estimatedRewardStakerIncreasedPeriod = await getEstimatedReward(
+                      proposalCreator,
+                      period * 2
+                  )
+
+                  const calcRewardStaker1AfterVote = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+                  const calcRewardProposalCreatorAfterVote = await stakingPool.calcRealizedRewards(
+                      proposalCreator.address
+                  )
+
+                  //? Assert
+                  await expect(createProposalTx)
+                      .to.emit(property, "PropertyProposalCreated")
+                      .withArgs(proposalCreator.address, propertyChange, flag, title, description)
+
+                  await expect(voteTx)
+                      .to.emit(vote, "VotedToProperty")
+                      .withArgs(staker1.address, flag, propertyChange, yesVote, proposalIndex)
+
+                  expect(estimatedRewardStaker1.toString()).to.be.equal(
+                      calcRewardStaker1.toString(),
+                      "Est. Reward of staker should be equal calc reward after staking"
+                  )
+                  expect(estimatedRewardProposalCreator.toString()).to.be.equal(
+                      calcRewardProposalCreator.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward after staking"
+                  )
+
+                  expect(estimatedRewardProposalCreatorIncreasedPeriod.toString()).to.be.equal(
+                      calcRewardProposalCreatorAfterVote.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward after vote"
+                  )
+                  expect(estimatedRewardStakerIncreasedPeriod.toString()).to.be.equal(
+                      calcRewardStaker1AfterVote.toString(),
+                      "Est. Reward of staker should be equal calc reward after vote"
+                  )
+
+                  expect(calcRewardStaker1AfterVote.toString()).to.be.equal(
+                      calcRewardProposalCreatorAfterVote.toString(),
+                      "Est. Reward of proposal creator should be equal staker reward after vote"
                   )
               })
           })
