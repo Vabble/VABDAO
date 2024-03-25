@@ -5,10 +5,10 @@ const {
     ONE_DAY_IN_SECONDS,
 } = require("../../helper-hardhat-config")
 const { assert, expect } = require("chai")
-const { ZERO_ADDRESS } = require("../../scripts/utils")
+const { ZERO_ADDRESS, CONFIG } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
-const { parseEther } = require("ethers/lib/utils")
+const { parseEther, parseUnits } = require("ethers/lib/utils")
 const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../helper-functions")
 
 !developmentChains.includes(network.name)
@@ -47,17 +47,18 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   propertyVotePeriod,
                   boardRewardRate,
                   rewardRate,
+                  usdcTokenContract,
               } = await deployAndInitAllContracts()
 
               //? Fund and approve accounts
               const accounts = [deployer, staker1, staker2]
-              const contractsToApprove = [stakingPool, property]
-              await fundAndApproveAccounts(
+              const contractsToApprove = [stakingPool, property, vabbleDAO]
+              await fundAndApproveAccounts({
                   accounts,
                   vabTokenContract,
-                  contractsToApprove,
-                  VAB_FAUCET_AMOUNT
-              )
+                  contracts: contractsToApprove,
+                  usdcTokenContract,
+              })
 
               //? Connect accounts to stakingPool contract
               const stakingPoolDeployer = stakingPool.connect(deployer)
@@ -856,7 +857,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                       staker2: proposalCreator,
                       stakingPoolStaker1,
                       stakingPoolStaker2: stakingPoolProposalCreator,
-                      propertyVotePeriod,
                       getEstimatedReward,
                   } = await loadFixture(deployContractsFixture)
 
@@ -1022,6 +1022,114 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   expect(calcRewardStaker1AfterVote.toString()).to.be.equal(
                       calcRewardProposalCreatorAfterVote.toString(),
                       "Est. Reward of proposal creator should be equal staker reward after vote"
+                  )
+              })
+
+              it("Should return the correct reward of the user and proposal creator when a film proposal voting is open and user didn't vote", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      getEstimatedReward,
+                      vabbleDAO,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const stakeAmountStaker1 = parseEther("1000")
+                  const stakeAmountProposalCreator = parseEther("1000")
+                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
+                  const fundType = 0 // Distribution proposal
+                  const noVote = 0 // if 0 => false
+                  const feeTokenAddress = CONFIG.mumbai.usdcAdress
+                  const proposalId = 1
+                  const studioRoyalty = "100"
+                  const sharePercents = [parseUnits(studioRoyalty, 8)]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  //? Wait for 1 day to earn some rewards
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  // Disable automine to ensure that both transactions are included in the same block
+                  await network.provider.send("evm_setAutomine", [false])
+
+                  const proposalFilmCreateTx = await vabbleDAO
+                      .connect(proposalCreator)
+                      .proposalFilmCreate(fundType, noVote, feeTokenAddress)
+
+                  const proposalFilmUpdateTx = await vabbleDAO
+                      .connect(proposalCreator)
+                      .proposalFilmUpdate(
+                          proposalId,
+                          "Test Title",
+                          "Test Description",
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+
+                  await network.provider.send("evm_mine")
+                  await network.provider.send("evm_setAutomine", [true])
+
+                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
+
+                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  // //? Wait 1 day after proposal creation
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
+                      proposalCreator,
+                      period * 2
+                  )
+
+                  const calcRewardStaker1DuringVote = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+                  const calcRewardProposalCreatorDuringVote = await stakingPool.calcRealizedRewards(
+                      proposalCreator.address
+                  )
+
+                  //? Assert
+                  await expect(proposalFilmCreateTx)
+                      .to.emit(vabbleDAO, "FilmProposalCreated")
+                      .withArgs(proposalId, noVote, fundType, proposalCreator.address)
+
+                  await expect(proposalFilmUpdateTx)
+                      .to.emit(vabbleDAO, "FilmProposalUpdated")
+                      .withArgs(proposalId, fundType, proposalCreator.address)
+
+                  expect(estimatedRewardStaker1.toString()).to.be.equal(
+                      calcRewardStaker1DuringVote.toString(),
+                      "Est. Reward of staker should be equal calc reward during vote period"
+                  )
+                  expect(estimatedRewardStaker1.toString()).to.be.equal(
+                      calcRewardStaker1.toString(),
+                      "Est. Reward of staker should be equal calc reward after staking"
+                  )
+                  expect(estimatedRewardProposalCreator.toString()).to.be.equal(
+                      calcRewardProposalCreator.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward after staking"
+                  )
+                  expect(estimatedRewardProposalCreatorIncreasedPeriod.toString()).to.be.equal(
+                      calcRewardProposalCreatorDuringVote.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward during vote period"
                   )
               })
           })

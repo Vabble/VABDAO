@@ -5,7 +5,7 @@ const { run, ethers } = require("hardhat")
 const { DISCOUNT, CONFIG } = require("./scripts/utils")
 const ERC20 = require("./data/ERC20.json")
 const FxERC20 = require("./data/FxERC20.json")
-const { VAB_FAUCET_AMOUNT } = require("./helper-hardhat-config")
+const { VAB_FAUCET_AMOUNT, USDC_FAUCET_AMOUNT } = require("./helper-hardhat-config")
 
 //? Constants
 const VAB_TOKEN_ADDRESS = CONFIG.mumbai.vabToken
@@ -47,13 +47,22 @@ const verify = async (contractAddress, args) => {
  * @param {Array} contracts - An array of contracts to approve for each account.
  * @return {Promise<void>} A promise that resolves when all accounts have been funded and approved.
  */
-const fundAndApproveAccounts = async (accounts, vabTokenContract, contracts) => {
+const fundAndApproveAccounts = async ({
+    accounts,
+    vabTokenContract,
+    contracts,
+    usdcTokenContract,
+}) => {
     try {
         console.log("Funding and Approving accounts...")
         for (const account of accounts) {
             await vabTokenContract.connect(account).faucet(VAB_FAUCET_AMOUNT)
+            await usdcTokenContract.connect(account).faucet(USDC_FAUCET_AMOUNT)
             for (const contract of contracts) {
                 await vabTokenContract.connect(account).approve(contract.address, VAB_FAUCET_AMOUNT)
+                await usdcTokenContract
+                    .connect(account)
+                    .approve(contract.address, USDC_FAUCET_AMOUNT)
             }
         }
     } catch (e) {
@@ -97,7 +106,7 @@ const deployAndInitAllContracts = async () => {
         )
         const usdcTokenContract = new ethers.Contract(
             USDC_TOKEN_ADDRESS,
-            JSON.stringify(ERC20),
+            JSON.stringify(FxERC20),
             ethers.provider
         )
 
@@ -224,6 +233,7 @@ const deployAndInitAllContracts = async () => {
             propertyVotePeriod,
             boardRewardRate,
             rewardRate,
+            usdcTokenContract,
         }
     } catch (error) {
         console.log("===== deployAndInitAllContracts error =====", error)
