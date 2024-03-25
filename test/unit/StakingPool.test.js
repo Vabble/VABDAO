@@ -1132,5 +1132,132 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                       "Est. Reward of proposal creator should be equal calc reward during vote period"
                   )
               })
+
+              it("Should return the correct reward of the user and proposal creator when a film proposal voting is open and user did vote", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      getEstimatedReward,
+                      vabbleDAO,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const stakeAmountStaker1 = parseEther("1000")
+                  const stakeAmountProposalCreator = parseEther("1000")
+                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
+                  const fundType = 0 // Distribution proposal
+                  const noVote = 0 // if 0 => false
+                  const feeTokenAddress = CONFIG.mumbai.usdcAdress
+                  const proposalId = 1
+                  const studioRoyalty = "100"
+                  const sharePercents = [parseUnits(studioRoyalty, 8)]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const voteVal = 1 // Yes vote
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  //? Wait for 1 day to earn some rewards
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  // Disable automine to ensure that both transactions are included in the same block
+                  await network.provider.send("evm_setAutomine", [false])
+
+                  const proposalFilmCreateTx = await vabbleDAO
+                      .connect(proposalCreator)
+                      .proposalFilmCreate(fundType, noVote, feeTokenAddress)
+
+                  const proposalFilmUpdateTx = await vabbleDAO
+                      .connect(proposalCreator)
+                      .proposalFilmUpdate(
+                          proposalId,
+                          "Test Title",
+                          "Test Description",
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+
+                  const voteTx = await vote.connect(staker1).voteToFilms([proposalId], [voteVal])
+
+                  await network.provider.send("evm_mine")
+                  await network.provider.send("evm_setAutomine", [true])
+
+                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
+
+                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
+                      proposalCreator,
+                      period * 2
+                  )
+
+                  const estimatedRewardStaker1IncreasedPeriod = await getEstimatedReward(
+                      staker1,
+                      period * 2
+                  )
+
+                  const calcRewardStaker1AfterVote = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+                  const calcRewardProposalCreatorAfterVote = await stakingPool.calcRealizedRewards(
+                      proposalCreator.address
+                  )
+
+                  //? Assert
+                  await expect(proposalFilmCreateTx)
+                      .to.emit(vabbleDAO, "FilmProposalCreated")
+                      .withArgs(proposalId, noVote, fundType, proposalCreator.address)
+
+                  await expect(proposalFilmUpdateTx)
+                      .to.emit(vabbleDAO, "FilmProposalUpdated")
+                      .withArgs(proposalId, fundType, proposalCreator.address)
+
+                  await expect(voteTx)
+                      .to.emit(vote, "VotedToFilm")
+                      .withArgs(staker1.address, proposalId, voteVal)
+
+                  expect(estimatedRewardStaker1.toString()).to.be.equal(
+                      calcRewardStaker1.toString(),
+                      "Est. Reward of staker should be equal calc reward after staking"
+                  )
+                  expect(estimatedRewardProposalCreator.toString()).to.be.equal(
+                      calcRewardProposalCreator.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward after staking"
+                  )
+
+                  expect(estimatedRewardProposalCreatorIncreasedPeriod.toString()).to.be.equal(
+                      calcRewardProposalCreatorAfterVote.toString(),
+                      "Est. Reward of proposal creator should be equal calc reward after vote period"
+                  )
+
+                  expect(estimatedRewardStaker1IncreasedPeriod.toString()).to.be.equal(
+                      calcRewardStaker1AfterVote.toString(),
+                      "Est. Reward of staker should be equal calc reward after vote period"
+                  )
+
+                  expect(calcRewardStaker1AfterVote.toString()).to.be.equal(
+                      calcRewardProposalCreatorAfterVote.toString(),
+                      "Reward of staker should be equal reward of proposal creator after vote"
+                  )
+              })
           })
       })
