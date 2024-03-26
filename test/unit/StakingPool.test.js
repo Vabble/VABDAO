@@ -1599,4 +1599,74 @@ const {
                       .withArgs(staker1.address, stakingAmount)
               })
           })
+
+          describe("pendingWithdraw", function () {
+              it("Should revert if the contract caller is a zero address", async function () {
+                  const { stakingPool } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPool.connect(ZERO_ADDRESS).pendingWithdraw(stakingAmount)).to
+                      .be.reverted
+              })
+
+              it("Should revert if the input amount is zero", async function () {
+                  const { stakingPool, staker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPool.connect(staker1).pendingWithdraw(0)).to.be.revertedWith(
+                      "pW: zero VAB"
+                  )
+              })
+
+              it("Should revert if the user has a pending withdraw already", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+                  const withdrawAmount = parseEther("10")
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  await stakingPoolStaker1.pendingWithdraw(withdrawAmount)
+                  //? Second attempt to withdraw should fail
+                  await expect(
+                      stakingPoolStaker1.pendingWithdraw(withdrawAmount)
+                  ).to.be.revertedWith("pW: pending")
+              })
+
+              it("Should revert if the user wants to withdraw more than the amount he has deposited", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+                  const withdrawAmount = stakingAmount.mul(2)
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+
+                  await expect(
+                      stakingPoolStaker1.pendingWithdraw(withdrawAmount)
+                  ).to.be.revertedWith("pW: insufficient VAB")
+              })
+
+              it("Should set the user rent info withdraw amount to the amount a user requests to withdraw and set pending to true", async function () {
+                  const { stakingPoolStaker1, stakingPool, staker1 } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const withdrawAmount = stakingAmount.div(2)
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  await stakingPoolStaker1.pendingWithdraw(withdrawAmount)
+                  const userRentInfo = await stakingPool.userRentInfo(staker1.address)
+
+                  expect(userRentInfo.pending).to.be.true
+                  expect(userRentInfo.withdrawAmount.toString()).to.be.equal(
+                      withdrawAmount.toString()
+                  )
+              })
+
+              it("Should emit the WithdrawPending event", async function () {
+                  const { stakingPoolStaker1, stakingPool, staker1 } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const withdrawAmount = stakingAmount.div(2)
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  const tx = await stakingPoolStaker1.pendingWithdraw(withdrawAmount)
+
+                  await expect(tx)
+                      .to.emit(stakingPool, "WithdrawPending")
+                      .withArgs(staker1.address, withdrawAmount)
+              })
+          })
       })
