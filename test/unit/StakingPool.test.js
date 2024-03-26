@@ -1861,4 +1861,51 @@ const {
                       .withArgs([staker1.address])
               })
           })
+
+          describe("sendVAB", function () {
+              it("Should revert if the contract caller is not the dao contract", async function () {
+                  const { stakingPoolStaker1, staker1 } = await loadFixture(deployContractsFixture)
+
+                  const users = [staker1.address]
+                  const addressTo = staker1.address
+                  const amounts = [1]
+
+                  await expect(
+                      stakingPoolStaker1.sendVAB(users, addressTo, amounts)
+                  ).to.be.revertedWith("not dao")
+              })
+
+              it("Should revert if user has insufficient vab amount", async function () {
+                  const { stakingPoolStaker1, staker1, vabbleDAO, auditor } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const users = [staker1.address]
+                  const amounts = [stakingAmount.mul(2)]
+                  const which = 2 // StudioPool
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  await expect(
+                      vabbleDAO.connect(auditor).allocateToPool(users, amounts, which)
+                  ).to.be.revertedWith("sendVAB: insufficient")
+              })
+
+              it("Should send vab from the users vab amount to the DAO studio pool", async function () {
+                  const { stakingPoolStaker1, stakingPool, staker1, vabbleDAO, auditor } =
+                      await loadFixture(deployContractsFixture)
+
+                  const users = [staker1.address]
+                  const amounts = [stakingAmount.div(2)]
+                  const which = 2 // StudioPool
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  await vabbleDAO.connect(auditor).allocateToPool(users, amounts, which)
+
+                  const userRentInfo = await stakingPool.userRentInfo(staker1.address)
+                  const studioPool = await vabbleDAO.StudioPool()
+
+                  expect(userRentInfo.vabAmount).to.be.equal(stakingAmount.sub(amounts[0]))
+                  expect(studioPool).to.be.eq(amounts[0])
+              })
+          })
       })

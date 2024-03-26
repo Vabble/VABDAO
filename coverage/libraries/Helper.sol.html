@@ -20,28 +20,28 @@
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
-        <span class="strong">41.18% </span>
+        <span class="strong">70.59% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>7/17</span>
+        <span class='fraction'>12/17</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">23.08% </span>
+        <span class="strong">42.31% </span>
         <span class="quiet">Branches</span>
-        <span class='fraction'>6/26</span>
+        <span class='fraction'>11/26</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">42.86% </span>
+        <span class="strong">71.43% </span>
         <span class="quiet">Functions</span>
-        <span class='fraction'>3/7</span>
+        <span class='fraction'>5/7</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">41.18% </span>
+        <span class="strong">70.59% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>7/17</span>
+        <span class='fraction'>12/17</span>
       </div>
     </div>
   </div>
-  <div class='status-line low'></div>
+  <div class='status-line medium'></div>
 <pre><table class="coverage">
 <tr><td class="line-count quiet">1
 2
@@ -160,7 +160,8 @@
 115
 116
 117
-118</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+118
+119</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -189,9 +190,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-yes">20×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -199,9 +201,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3×</span>
-<span class="cline-any cline-yes">3×</span>
-<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -210,9 +212,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">14×</span>
-<span class="cline-any cline-yes">14×</span>
-<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">94×</span>
+<span class="cline-any cline-yes">94×</span>
+<span class="cline-any cline-yes">94×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -273,8 +275,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: GPL-3.0-or-later
@@ -291,7 +293,8 @@ library Helper {
         UPDATED,             //1 proposal updated by studio
         APPROVED_LISTING,    //2 approved for listing by vote from VAB holders(staker)
         APPROVED_FUNDING,    //3 approved for funding by vote from VAB holders(staker)
-        REJECTED             //4 rejected by vote from VAB holders(staker)
+        REJECTED,            //4 rejected by vote from VAB holders(staker)
+        REPLACED             //5 replaced by vote from VAB holders(staker)
     }
 &nbsp;
     enum TokenType {
@@ -300,15 +303,15 @@ library Helper {
         ERC1155
     }
 &nbsp;
-<span class="fstat-no" title="function not covered" >    function safeApprove(</span>
+    function safeApprove(
         address token,
         address to,
         uint256 value
     ) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
-<span class="cstat-no" title="statement not covered" >        require(Address.isContract(token), "C")</span>;
-<span class="cstat-no" title="statement not covered" >        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));</span>
-<span class="cstat-no" title="statement not covered" >        require(success &amp;&amp; (data.length == 0 || abi.decode(data, (bool))), "TransferHelper::safeApprove: approve failed")</span>;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(Address.isContract(token), "C");
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(success &amp;&amp; (<span class="branch-0 cbranch-no" title="branch not covered" >data.length == 0</span> || abi.decode(data, (bool))), "TransferHelper::safeApprove: approve failed");
     }
 &nbsp;
     function safeTransfer(
@@ -389,9 +392,9 @@ library Helper {
     //     array1.pop();
     // }
 &nbsp;
-<span class="fstat-no" title="function not covered" >    function isTestNet() internal view returns (bool) {</span>
-<span class="cstat-no" title="statement not covered" >        uint256 id = block.chainid;</span>
-<span class="cstat-no" title="statement not covered" >        return id == 1337 || id == 80001 || id == 31337;</span>
+    function isTestNet() internal view returns (bool) {
+        uint256 id = block.chainid;
+        return <span class="branch-0 cbranch-no" title="branch not covered" >id == 1337</span> || id == 80001 || <span class="branch-1 cbranch-no" title="branch not covered" >id == 31337</span>;
     }
 }
 &nbsp;</pre></td></tr>
@@ -400,7 +403,7 @@ library Helper {
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Fri Mar 15 2024 13:58:34 GMT+0100 (Central European Standard Time)
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Mar 26 2024 13:43:19 GMT+0100 (Central European Standard Time)
 </div>
 </div>
 <script src="../prettify.js"></script>
