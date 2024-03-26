@@ -1799,4 +1799,66 @@ const {
                       .withArgs(customers, withdrawAmounts)
               })
           })
+
+          describe("denyPendingWithdraw", function () {
+              it("Should revert if the contract caller is not the auditor", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolStaker1.denyPendingWithdraw([])).to.be.revertedWith(
+                      "not auditor"
+                  )
+              })
+
+              it("Should revert if the input array of customers is empty", async function () {
+                  const { stakingPoolAuditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolAuditor.denyPendingWithdraw([])).to.be.revertedWith(
+                      "denyW: bad customers"
+                  )
+              })
+
+              it("Should revert if the customer didn't request any pending withdraw", async function () {
+                  const { stakingPoolStaker1, stakingPoolAuditor, staker1 } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const customers = [staker1.address]
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+
+                  await expect(
+                      stakingPoolAuditor.denyPendingWithdraw(customers)
+                  ).to.be.revertedWith("denyW: zero withdraw")
+              })
+
+              it("Should deny the pending withdraw and emit the PendingWithdrawDenied event and update the user rent info", async function () {
+                  const {
+                      stakingPoolStaker1,
+                      stakingPoolAuditor,
+                      staker1,
+                      vabTokenContract,
+                      stakingPool,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const customers = [staker1.address]
+                  const withdrawAmount = stakingAmount.div(2)
+
+                  const userBalanceBefore = await vabTokenContract.balanceOf(staker1.address)
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  await stakingPoolStaker1.pendingWithdraw(withdrawAmount)
+
+                  const tx = await stakingPoolAuditor.denyPendingWithdraw(customers)
+
+                  const userRentInfo = await stakingPoolStaker1.userRentInfo(staker1.address)
+                  const userBalanceAfter = await vabTokenContract.balanceOf(staker1.address)
+
+                  expect(userBalanceAfter).to.be.equal(userBalanceBefore.sub(stakingAmount))
+                  expect(userRentInfo.pending).to.be.false
+                  expect(userRentInfo.vabAmount).to.be.equal(stakingAmount)
+                  expect(userRentInfo.withdrawAmount.toString()).to.be.equal("0")
+                  await expect(tx)
+                      .to.emit(stakingPool, "PendingWithdrawDenied")
+                      .withArgs([staker1.address])
+              })
+          })
       })
