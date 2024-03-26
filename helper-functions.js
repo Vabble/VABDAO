@@ -1,11 +1,16 @@
 // we can't have these functions in our `helper-hardhat-config`
 // since these use the hardhat library
 // and it would be a circular dependency
-const { run, ethers } = require("hardhat")
+const { run, ethers, network } = require("hardhat")
 const { DISCOUNT, CONFIG } = require("./scripts/utils")
 const ERC20 = require("./data/ERC20.json")
 const FxERC20 = require("./data/FxERC20.json")
-const { VAB_FAUCET_AMOUNT, USDC_FAUCET_AMOUNT } = require("./helper-hardhat-config")
+const {
+    VAB_FAUCET_AMOUNT,
+    USDC_FAUCET_AMOUNT,
+    ONE_DAY_IN_SECONDS,
+} = require("./helper-hardhat-config")
+const { parseUnits } = require("ethers/lib/utils")
 
 //? Constants
 const VAB_TOKEN_ADDRESS = CONFIG.mumbai.vabToken
@@ -240,8 +245,107 @@ const deployAndInitAllContracts = async () => {
     }
 }
 
+/**
+ * Creates and updates a dummy film proposal.
+ *
+ * @param {Object} options - The options for creating and updating the dummy film proposal.
+ * @param {Contract} options.vabbleDAO - The instance of the vabbleDAO contract.
+ * @param {Signer} options.proposalCreator - The signer of the proposal creator.
+ * @return {Promise<Object>} - A promise that resolves to an object containing the transaction details and proposal information.
+ */
+const createAndUpdateDummyFilmProposal = async ({ vabbleDAO, proposalCreator }) => {
+    try {
+        const fundType = 0 // Distribution proposal
+        const noVote = 0 // if 0 => false
+        const feeTokenAddress = USDC_TOKEN_ADDRESS
+        const proposalId = 1
+        const studioRoyalty = "100"
+        const sharePercents = [parseUnits(studioRoyalty, 8)]
+        const studioPayees = [proposalCreator.address]
+        const raiseAmount = 0
+        const fundPeriod = 0
+        const rewardPercent = 0
+        const enableClaimer = 0
+        const title = "Test Title"
+        const description = "Test Description"
+
+        const vabbleDaoContract = vabbleDAO.connect(proposalCreator)
+
+        const proposalFilmCreateTx = await vabbleDaoContract.proposalFilmCreate(
+            fundType,
+            noVote,
+            feeTokenAddress
+        )
+
+        const proposalFilmUpdateTx = await vabbleDaoContract.proposalFilmUpdate(
+            proposalId,
+            title,
+            description,
+            sharePercents,
+            studioPayees,
+            raiseAmount,
+            fundPeriod,
+            rewardPercent,
+            enableClaimer
+        )
+
+        return { proposalFilmCreateTx, proposalFilmUpdateTx, proposalId, noVote, fundType }
+    } catch (error) {
+        console.log("===== createAndUpdateDummyFilmProposal error =====", error)
+    }
+}
+
+/**
+ * Generates a dummy governance property proposal.
+ *
+ * @param {Object} property - The property object.
+ * @param {Object} proposalCreator - The user creating the proposal.
+ * @return {Object} An object containing the created governance proposal transaction, property change, flag, title, description, and proposal index.
+ */
+const createDummyGovernancePropertyProposal = async ({ property, proposalCreator }) => {
+    const flag = 7 // Film Board Removal Period
+    const title = "Test Proposal"
+    const description = "Test Proposal Description"
+    const propertyChange = ONE_DAY_IN_SECONDS * 7
+    const proposalIndex = 0
+
+    try {
+        const createGovernanceProposalTx = await property
+            .connect(proposalCreator)
+            .proposalProperty(propertyChange, flag, title, description)
+
+        const governanceProposalTimestamp = await getTimestampFromTx(createGovernanceProposalTx)
+
+        return {
+            createGovernanceProposalTx,
+            propertyChange,
+            flag,
+            title,
+            description,
+            proposalIndex,
+            governanceProposalTimestamp,
+        }
+    } catch (error) {
+        console.log("===== createDummyGovernancePropertyProposal error =====", error)
+    }
+}
+
+/**
+ * Retrieves the timestamp from a transaction.
+ *
+ * @param {Object} tx - The transaction object.
+ * @return {Promise<number>} The timestamp of the transaction.
+ */
+const getTimestampFromTx = async (tx) => {
+    const block = await ethers.provider.getBlock(tx.blockNumber)
+    return block.timestamp
+}
+
 module.exports = {
     verify,
     fundAndApproveAccounts,
     deployAndInitAllContracts,
+    createAndUpdateDummyFilmProposal,
+    createDummyGovernancePropertyProposal,
+    getTimestampFromTx,
 }
