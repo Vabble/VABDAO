@@ -1322,7 +1322,7 @@ const {
                       staker1.address
                   )
 
-                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
                   const currentTimestamp = await helpers.time.latest()
 
@@ -1336,12 +1336,15 @@ const {
 
                   //? Assert
                   expect(estimatedRealizedReward.toString()).to.be.equal(
-                      calcRewardRealizedReward.toString()
+                      calcRewardRealizedReward.toString(),
+                      "Est. Reward of staker should be equal calc realized reward"
                   )
                   expect(estimatedPendingReward.toString()).to.be.equal(
-                      calcPendingReward.toString()
+                      calcPendingReward.toString(),
+                      "Est. Reward of staker should be equal calc pending reward"
                   )
-                  expect(calcPendingReward.toString()).to.be.not.equal("0")
+                  expect(calcPendingReward.toString()).to.be.not.equal("0"),
+                      "Calc pending reward should not be zero"
               })
 
               it("Should return the correct amount if a governance proposal is open for voting and user did vote", async function () {
@@ -1381,7 +1384,7 @@ const {
                       staker1.address
                   )
 
-                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
                   let currentTimestamp = await helpers.time.latest()
 
@@ -1461,7 +1464,7 @@ const {
                   const calcReward = await stakingPool.calcRealizedRewards(staker1.address)
 
                   // //? Wait 2 days after proposal creation
-                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
                   const currentTimestamp = await helpers.time.latest()
 
                   const estimatedPendingRewardAfterProposal = await getEstimatedReward({
@@ -1518,7 +1521,7 @@ const {
 
                   // //? Wait 2 days after proposal creation
 
-                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
                   let currentTimestamp = await helpers.time.latest()
 
                   const estimatedPendingRewardAfterProposal = await getEstimatedReward({
