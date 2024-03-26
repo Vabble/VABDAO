@@ -1554,4 +1554,49 @@ const {
                   )
               })
           })
+
+          describe("depositVAB", function () {
+              it("Should revert if the contract caller is a zero address", async function () {
+                  const { stakingPool } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPool.connect(ZERO_ADDRESS).depositVAB(stakingAmount)).to.be
+                      .reverted
+              })
+
+              it("Should revert if the input amount is zero", async function () {
+                  const { stakingPool, staker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPool.connect(staker1).depositVAB(0)).to.be.revertedWith(
+                      "dVAB: zero amount"
+                  )
+              })
+
+              it("Should transfer the correct amount to the staking pool and update the balance and userRentInfo of the caller", async function () {
+                  const { stakingPoolStaker1, vabTokenContract, staker1, stakingPool } =
+                      await loadFixture(deployContractsFixture)
+
+                  const balanceBefore = await vabTokenContract.balanceOf(staker1.address)
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+
+                  const balanceAfter = await vabTokenContract.balanceOf(staker1.address)
+
+                  const userRentInfo = await stakingPool.userRentInfo(staker1.address)
+
+                  expect(balanceBefore.sub(stakingAmount)).to.be.equal(balanceAfter)
+                  expect(userRentInfo.vabAmount.toString()).to.be.equal(stakingAmount.toString())
+              })
+
+              it("Should emit the VABDeposited event", async function () {
+                  const { stakingPoolStaker1, staker1, stakingPool } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const tx = await stakingPoolStaker1.depositVAB(stakingAmount)
+
+                  await expect(tx)
+                      .to.emit(stakingPool, "VABDeposited")
+                      .withArgs(staker1.address, stakingAmount)
+              })
+          })
       })
