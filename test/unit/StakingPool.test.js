@@ -1,15 +1,17 @@
 const { ethers, network } = require("hardhat")
-const {
-    developmentChains,
-    VAB_FAUCET_AMOUNT,
-    ONE_DAY_IN_SECONDS,
-} = require("../../helper-hardhat-config")
+const { developmentChains, ONE_DAY_IN_SECONDS } = require("../../helper-hardhat-config")
 const { assert, expect } = require("chai")
-const { ZERO_ADDRESS, CONFIG } = require("../../scripts/utils")
+const { ZERO_ADDRESS } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
-const { parseEther, parseUnits } = require("ethers/lib/utils")
-const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../helper-functions")
+const { parseEther } = require("ethers/lib/utils")
+const {
+    fundAndApproveAccounts,
+    deployAndInitAllContracts,
+    createAndUpdateDummyFilmProposal,
+    createDummyGovernancePropertyProposal,
+    getTimestampFromTx,
+} = require("../../helper-functions")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -18,6 +20,7 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
           const stakingAmount = parseEther("100")
           const poolRewardAmount = parseEther("10000") // 10k
           const zeroEtherAmount = parseEther("0")
+          const yesVoteValue = 1
 
           /**
            *
@@ -74,7 +77,7 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                * @param {number} period - The period for which the reward is calculated.
                * @return {BigNumber} The estimated reward amount for the staker.
                */
-              const getEstimatedReward = async (staker, period) => {
+              const getEstimatedReward = async ({ staker, endTime, startTime }) => {
                   const totalStakingAmount = await stakingPool.totalStakingAmount()
                   const stakeInfo = await stakingPool.stakeInfo(staker.address)
                   const stakerPoolShare = stakeInfo.stakeAmount.mul(1e10).div(totalStakingAmount)
@@ -82,10 +85,17 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   const totalRewardAmount = await stakingPool.totalRewardAmount()
 
+                  // Calculate period with same precision as contract
+                  const period = ethers.BigNumber.from(endTime)
+                      .sub(startTime)
+                      .mul(1e4)
+                      .div(ONE_DAY_IN_SECONDS)
+
                   let estimatedRewardAmount = totalRewardAmount
                       .mul(rewardPercent)
-                      .mul(period)
                       .div(1e10)
+                      .mul(period)
+                      .div(1e4)
 
                   const isBoardMember =
                       (await property.checkGovWhitelist(2, staker.address)).toString() == "2"
@@ -732,17 +742,19 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
 
-                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  const stakeTimeStamp = await getTimestampFromTx(stake1Tx)
+
                   await stakingPoolStaker2.stakeVAB(stakeAmountStaker2)
 
                   await helpers.time.increase(lockPeriodInSeconds) // 30 days
 
-                  const estimatedRewardAmount = await getEstimatedReward(
-                      staker1,
-                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
-                  )
-
                   //? Act
+                  const estimatedRewardAmount = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: stakeTimeStamp + lockPeriodInSeconds,
+                      startTime: stakeTimeStamp,
+                  })
                   const calculatedRewardAmount = await stakingPool.calcRewardAmount(staker1.address)
 
                   //? Assert
@@ -775,20 +787,29 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   const stakeAmountFilmBoardMember = parseEther("50")
 
                   await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
-                  await stakingPoolFilmBoardMember.stakeVAB(stakeAmountFilmBoardMember)
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  const stakeFilmBoardMemberTx = await stakingPoolFilmBoardMember.stakeVAB(
+                      stakeAmountFilmBoardMember
+                  )
+                  const stakeFilmBoardMemberTimeStamp = await getTimestampFromTx(
+                      stakeFilmBoardMemberTx
+                  )
 
                   await helpers.time.increase(lockPeriodInSeconds) // 30 days
 
-                  const estRewardStaker1 = await getEstimatedReward(
-                      staker1,
-                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
-                  )
+                  const estRewardStaker1 = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: stake1TimeStamp + lockPeriodInSeconds,
+                      startTime: stake1TimeStamp,
+                  })
 
-                  const estRewardFilmBoardMember = await getEstimatedReward(
-                      filmBoardMember,
-                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
-                  )
+                  const estRewardFilmBoardMember = await getEstimatedReward({
+                      staker: filmBoardMember,
+                      endTime: stakeFilmBoardMemberTimeStamp + lockPeriodInSeconds,
+                      startTime: stakeFilmBoardMemberTimeStamp,
+                  })
 
                   const calcRewardAmountStaker1 = await stakingPool.calcRewardAmount(
                       staker1.address
@@ -829,13 +850,16 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   //? Arrange
 
                   await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
                   await helpers.time.increase(lockPeriodInSeconds) // 30 days
 
-                  const estimatedRewardAmount = await getEstimatedReward(
-                      staker1,
-                      lockPeriodInSeconds / ONE_DAY_IN_SECONDS
-                  )
+                  const estimatedRewardAmount = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: stake1TimeStamp + lockPeriodInSeconds,
+                      startTime: stake1TimeStamp,
+                  })
 
                   //? Act
                   const calculatedRewardAmount = await stakingPool.calcRealizedRewards(
@@ -862,38 +886,54 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   const stakeAmountStaker1 = parseEther("1000")
                   const stakeAmountProposalCreator = parseEther("1000")
-                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
-                  const propertyChange = ONE_DAY_IN_SECONDS * 7 // 7 Days
-                  const flag = 7 // Film Board Removal Period
-                  const title = "Test Proposal"
-                  const description = "Test Proposal Description"
 
                   await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
-                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  const stakeProposalCreatorTx = await stakingPoolProposalCreator.stakeVAB(
+                      stakeAmountProposalCreator
+                  )
+                  const stakeProposalCreatorTimeStamp = await getTimestampFromTx(
+                      stakeProposalCreatorTx
+                  )
 
                   //? Wait for 1 day to earn some rewards
                   await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
-                  const tx = await property
-                      .connect(proposalCreator)
-                      .proposalProperty(propertyChange, flag, title, description)
+                  const { governanceProposalTimestamp } =
+                      await createDummyGovernancePropertyProposal({
+                          property,
+                          proposalCreator,
+                      })
 
-                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const estimatedRewardStaker1 = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: governanceProposalTimestamp,
+                      startTime: stake1TimeStamp,
+                  })
                   const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
 
-                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const estimatedRewardProposalCreator = await getEstimatedReward({
+                      staker: proposalCreator,
+                      endTime: governanceProposalTimestamp,
+                      startTime: stakeProposalCreatorTimeStamp,
+                  })
                   const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
-                      staker1.address
+                      proposalCreator.address
                   )
 
                   //? Wait 1 day after proposal creation
                   await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
-                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
-                      proposalCreator,
-                      period * 2
-                  )
+                  const currentTimestamp = await helpers.time.latest()
+
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward({
+                      staker: proposalCreator,
+                      endTime: currentTimestamp,
+                      startTime: stakeProposalCreatorTimeStamp,
+                  })
 
                   const calcRewardStaker1DuringVote = await stakingPool.calcRealizedRewards(
                       staker1.address
@@ -903,10 +943,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   )
 
                   //? Assert
-                  await expect(tx)
-                      .to.emit(property, "PropertyProposalCreated")
-                      .withArgs(proposalCreator.address, propertyChange, flag, title, description)
-
                   expect(estimatedRewardStaker1.toString()).to.be.equal(
                       calcRewardStaker1DuringVote.toString(),
                       "Est. Reward of staker should be equal calc reward during vote period"
@@ -940,31 +976,42 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   const stakeAmountStaker1 = parseEther("1000")
                   const stakeAmountProposalCreator = parseEther("1000")
-                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
-                  const propertyChange = ONE_DAY_IN_SECONDS * 7 // 7 Days
-                  const flag = 7 // Film Board Removal Period
-                  const title = "Test Proposal"
-                  const description = "Test Proposal Description"
-                  const yesVote = 1
-                  const proposalIndex = 0
 
                   await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
-                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  const stakeProposalCreatorTx = await stakingPoolProposalCreator.stakeVAB(
+                      stakeAmountProposalCreator
+                  )
+                  const stakeProposalCreatorTimeStamp = await getTimestampFromTx(
+                      stakeProposalCreatorTx
+                  )
 
                   //? Wait for 1 day to earn some rewards
                   await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
-                  const createProposalTx = await property
-                      .connect(proposalCreator)
-                      .proposalProperty(propertyChange, flag, title, description)
+                  const { propertyChange, flag, proposalIndex, governanceProposalTimestamp } =
+                      await createDummyGovernancePropertyProposal({
+                          property,
+                          proposalCreator,
+                      })
 
-                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const estimatedRewardStaker1 = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: governanceProposalTimestamp,
+                      startTime: stake1TimeStamp,
+                  })
                   const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
 
-                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const estimatedRewardProposalCreator = await getEstimatedReward({
+                      staker: proposalCreator,
+                      endTime: governanceProposalTimestamp,
+                      startTime: stakeProposalCreatorTimeStamp,
+                  })
                   const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
-                      staker1.address
+                      proposalCreator.address
                   )
 
                   //? Wait 1 day after proposal was created
@@ -973,17 +1020,21 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   // vote for proposal
                   const voteTx = await vote
                       .connect(staker1)
-                      .voteToProperty(yesVote, proposalIndex, flag)
+                      .voteToProperty(yesVoteValue, proposalIndex, flag)
 
-                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
-                      proposalCreator,
-                      period * 2 // 2 days, because we increased the time two times
-                  )
+                  const currentTimestamp = await helpers.time.latest()
 
-                  const estimatedRewardStakerIncreasedPeriod = await getEstimatedReward(
-                      proposalCreator,
-                      period * 2
-                  )
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward({
+                      staker: proposalCreator,
+                      endTime: currentTimestamp,
+                      startTime: stakeProposalCreatorTimeStamp,
+                  })
+
+                  const estimatedRewardStakerIncreasedPeriod = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: currentTimestamp,
+                      startTime: stake1TimeStamp,
+                  })
 
                   const calcRewardStaker1AfterVote = await stakingPool.calcRealizedRewards(
                       staker1.address
@@ -993,13 +1044,9 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   )
 
                   //? Assert
-                  await expect(createProposalTx)
-                      .to.emit(property, "PropertyProposalCreated")
-                      .withArgs(proposalCreator.address, propertyChange, flag, title, description)
-
                   await expect(voteTx)
                       .to.emit(vote, "VotedToProperty")
-                      .withArgs(staker1.address, flag, propertyChange, yesVote, proposalIndex)
+                      .withArgs(staker1.address, flag, propertyChange, yesVoteValue, proposalIndex)
 
                   expect(estimatedRewardStaker1.toString()).to.be.equal(
                       calcRewardStaker1.toString(),
@@ -1039,65 +1086,54 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   const stakeAmountStaker1 = parseEther("1000")
                   const stakeAmountProposalCreator = parseEther("1000")
-                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
-                  const fundType = 0 // Distribution proposal
-                  const noVote = 0 // if 0 => false
-                  const feeTokenAddress = CONFIG.mumbai.usdcAdress
-                  const proposalId = 1
-                  const studioRoyalty = "100"
-                  const sharePercents = [parseUnits(studioRoyalty, 8)]
-                  const studioPayees = [proposalCreator.address]
-                  const raiseAmount = 0
-                  const fundPeriod = 0
-                  const rewardPercent = 0
-                  const enableClaimer = 0
 
                   await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
-                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  const stakeProposalCreatorTx = await stakingPoolProposalCreator.stakeVAB(
+                      stakeAmountProposalCreator
+                  )
+                  const stakeProposalCreatorTimeStamp = await getTimestampFromTx(
+                      stakeProposalCreatorTx
+                  )
 
                   //? Wait for 1 day to earn some rewards
                   await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
-                  // Disable automine to ensure that both transactions are included in the same block
-                  await network.provider.send("evm_setAutomine", [false])
+                  await createAndUpdateDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                  })
 
-                  const proposalFilmCreateTx = await vabbleDAO
-                      .connect(proposalCreator)
-                      .proposalFilmCreate(fundType, noVote, feeTokenAddress)
+                  let currentTimestamp = await helpers.time.latest()
 
-                  const proposalFilmUpdateTx = await vabbleDAO
-                      .connect(proposalCreator)
-                      .proposalFilmUpdate(
-                          proposalId,
-                          "Test Title",
-                          "Test Description",
-                          sharePercents,
-                          studioPayees,
-                          raiseAmount,
-                          fundPeriod,
-                          rewardPercent,
-                          enableClaimer
-                      )
-
-                  await network.provider.send("evm_mine")
-                  await network.provider.send("evm_setAutomine", [true])
-
-                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const estimatedRewardStaker1 = await getEstimatedReward({
+                      staker: staker1,
+                      startTime: stake1TimeStamp,
+                      endTime: currentTimestamp,
+                  })
                   const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
 
-                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const estimatedRewardProposalCreator = await getEstimatedReward({
+                      staker: proposalCreator,
+                      startTime: stakeProposalCreatorTimeStamp,
+                      endTime: currentTimestamp,
+                  })
                   const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
-                      staker1.address
+                      proposalCreator.address
                   )
 
                   // //? Wait 1 day after proposal creation
                   await helpers.time.increase(ONE_DAY_IN_SECONDS)
+                  currentTimestamp = await helpers.time.latest()
 
-                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
-                      proposalCreator,
-                      period * 2
-                  )
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward({
+                      staker: proposalCreator,
+                      startTime: stakeProposalCreatorTimeStamp,
+                      endTime: currentTimestamp,
+                  })
 
                   const calcRewardStaker1DuringVote = await stakingPool.calcRealizedRewards(
                       staker1.address
@@ -1107,14 +1143,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   )
 
                   //? Assert
-                  await expect(proposalFilmCreateTx)
-                      .to.emit(vabbleDAO, "FilmProposalCreated")
-                      .withArgs(proposalId, noVote, fundType, proposalCreator.address)
-
-                  await expect(proposalFilmUpdateTx)
-                      .to.emit(vabbleDAO, "FilmProposalUpdated")
-                      .withArgs(proposalId, fundType, proposalCreator.address)
-
                   expect(estimatedRewardStaker1.toString()).to.be.equal(
                       calcRewardStaker1DuringVote.toString(),
                       "Est. Reward of staker should be equal calc reward during vote period"
@@ -1148,72 +1176,63 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   const stakeAmountStaker1 = parseEther("1000")
                   const stakeAmountProposalCreator = parseEther("1000")
-                  const period = ONE_DAY_IN_SECONDS / ONE_DAY_IN_SECONDS
-                  const fundType = 0 // Distribution proposal
-                  const noVote = 0 // if 0 => false
-                  const feeTokenAddress = CONFIG.mumbai.usdcAdress
-                  const proposalId = 1
-                  const studioRoyalty = "100"
-                  const sharePercents = [parseUnits(studioRoyalty, 8)]
-                  const studioPayees = [proposalCreator.address]
-                  const raiseAmount = 0
-                  const fundPeriod = 0
-                  const rewardPercent = 0
-                  const enableClaimer = 0
-                  const voteVal = 1 // Yes vote
 
                   await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
-                  await stakingPoolProposalCreator.stakeVAB(stakeAmountProposalCreator)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  const stakeProposalCreatorTx = await stakingPoolProposalCreator.stakeVAB(
+                      stakeAmountProposalCreator
+                  )
+                  const stakeProposalCreatorTimeStamp = await getTimestampFromTx(
+                      stakeProposalCreatorTx
+                  )
 
                   //? Wait for 1 day to earn some rewards
                   await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
-                  // Disable automine to ensure that both transactions are included in the same block
-                  await network.provider.send("evm_setAutomine", [false])
+                  const { proposalId } = await createAndUpdateDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                  })
 
-                  const proposalFilmCreateTx = await vabbleDAO
-                      .connect(proposalCreator)
-                      .proposalFilmCreate(fundType, noVote, feeTokenAddress)
+                  const voteTx = await vote
+                      .connect(staker1)
+                      .voteToFilms([proposalId], [yesVoteValue])
 
-                  const proposalFilmUpdateTx = await vabbleDAO
-                      .connect(proposalCreator)
-                      .proposalFilmUpdate(
-                          proposalId,
-                          "Test Title",
-                          "Test Description",
-                          sharePercents,
-                          studioPayees,
-                          raiseAmount,
-                          fundPeriod,
-                          rewardPercent,
-                          enableClaimer
-                      )
+                  let currentTimestamp = await helpers.time.latest()
 
-                  const voteTx = await vote.connect(staker1).voteToFilms([proposalId], [voteVal])
-
-                  await network.provider.send("evm_mine")
-                  await network.provider.send("evm_setAutomine", [true])
-
-                  const estimatedRewardStaker1 = await getEstimatedReward(staker1, period)
+                  const estimatedRewardStaker1 = await getEstimatedReward({
+                      staker: staker1,
+                      startTime: stake1TimeStamp,
+                      endTime: currentTimestamp,
+                  })
                   const calcRewardStaker1 = await stakingPool.calcRealizedRewards(staker1.address)
 
-                  const estimatedRewardProposalCreator = await getEstimatedReward(staker1, period)
+                  const estimatedRewardProposalCreator = await getEstimatedReward({
+                      staker: proposalCreator,
+                      startTime: stakeProposalCreatorTimeStamp,
+                      endTime: currentTimestamp,
+                  })
                   const calcRewardProposalCreator = await stakingPool.calcRealizedRewards(
-                      staker1.address
+                      proposalCreator.address
                   )
 
                   await helpers.time.increase(ONE_DAY_IN_SECONDS)
+                  currentTimestamp = await helpers.time.latest()
 
-                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward(
-                      proposalCreator,
-                      period * 2
-                  )
+                  const estimatedRewardProposalCreatorIncreasedPeriod = await getEstimatedReward({
+                      staker: proposalCreator,
+                      startTime: stakeProposalCreatorTimeStamp,
+                      endTime: currentTimestamp,
+                  })
 
-                  const estimatedRewardStaker1IncreasedPeriod = await getEstimatedReward(
-                      staker1,
-                      period * 2
-                  )
+                  const estimatedRewardStaker1IncreasedPeriod = await getEstimatedReward({
+                      staker: staker1,
+                      startTime: stake1TimeStamp,
+                      endTime: currentTimestamp,
+                  })
 
                   const calcRewardStaker1AfterVote = await stakingPool.calcRealizedRewards(
                       staker1.address
@@ -1223,17 +1242,10 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   )
 
                   //? Assert
-                  await expect(proposalFilmCreateTx)
-                      .to.emit(vabbleDAO, "FilmProposalCreated")
-                      .withArgs(proposalId, noVote, fundType, proposalCreator.address)
-
-                  await expect(proposalFilmUpdateTx)
-                      .to.emit(vabbleDAO, "FilmProposalUpdated")
-                      .withArgs(proposalId, fundType, proposalCreator.address)
 
                   await expect(voteTx)
                       .to.emit(vote, "VotedToFilm")
-                      .withArgs(staker1.address, proposalId, voteVal)
+                      .withArgs(staker1.address, proposalId, yesVoteValue)
 
                   expect(estimatedRewardStaker1.toString()).to.be.equal(
                       calcRewardStaker1.toString(),
