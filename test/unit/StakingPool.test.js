@@ -67,6 +67,7 @@ const {
               const stakingPoolDeployer = stakingPool.connect(deployer)
               const stakingPoolStaker1 = stakingPool.connect(staker1)
               const stakingPoolStaker2 = stakingPool.connect(staker2)
+              const stakingPoolAuditor = stakingPool.connect(auditor)
 
               //? Helper functions
 
@@ -135,6 +136,7 @@ const {
                   getEstimatedReward,
                   boardRewardRate,
                   rewardRate,
+                  stakingPoolAuditor,
               }
           }
 
@@ -1670,6 +1672,131 @@ const {
                   await expect(tx)
                       .to.emit(stakingPool, "WithdrawPending")
                       .withArgs(staker1.address, withdrawAmount)
+              })
+          })
+
+          describe("approvePendingWithdraw", function () {
+              it("Should revert if the contract caller is not the auditor", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolStaker1.approvePendingWithdraw([])).to.be.revertedWith(
+                      "not auditor"
+                  )
+              })
+
+              it("Should revert if the input array of customers is empty", async function () {
+                  const { stakingPoolAuditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolAuditor.approvePendingWithdraw([])).to.be.revertedWith(
+                      "aPW: No customer"
+                  )
+              })
+
+              it("Should revert if the customer didn't request any pending withdraw", async function () {
+                  const { stakingPoolStaker1, stakingPoolAuditor, staker1 } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const customers = [staker1.address]
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+
+                  await expect(
+                      stakingPoolAuditor.approvePendingWithdraw(customers)
+                  ).to.be.revertedWith("aW: zero withdraw")
+              })
+
+              it("Should transfer the correct pending withdraw amount to the customer and update the user rent info and emit the PendingWithdrawApproved event", async function () {
+                  const {
+                      stakingPoolStaker1,
+                      stakingPoolAuditor,
+                      staker1,
+                      vabTokenContract,
+                      stakingPool,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const customers = [staker1.address]
+                  const withdrawAmount = stakingAmount.div(2)
+
+                  const userBalanceBefore = await vabTokenContract.balanceOf(staker1.address)
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  await stakingPoolStaker1.pendingWithdraw(withdrawAmount)
+
+                  const tx = await stakingPoolAuditor.approvePendingWithdraw(customers)
+
+                  const userRentInfo = await stakingPoolStaker1.userRentInfo(staker1.address)
+                  const userBalanceAfter = await vabTokenContract.balanceOf(staker1.address)
+
+                  expect(userBalanceAfter).to.be.equal(
+                      userBalanceBefore.sub(stakingAmount).add(withdrawAmount)
+                  )
+                  expect(userRentInfo.pending).to.be.false
+                  expect(userRentInfo.vabAmount).to.be.equal(stakingAmount.sub(withdrawAmount))
+                  expect(userRentInfo.withdrawAmount.toString()).to.be.equal("0")
+                  await expect(tx)
+                      .to.emit(stakingPool, "PendingWithdrawApproved")
+                      .withArgs([staker1.address], [withdrawAmount])
+              })
+
+              it("Should transfer the correct pending withdraw amount to multiple customers", async function () {
+                  const {
+                      stakingPoolStaker1,
+                      stakingPoolAuditor,
+                      staker1,
+                      staker2,
+                      stakingPoolStaker2,
+                      vabTokenContract,
+                      stakingPool,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const depositAmountStaker1 = parseEther("100")
+                  const depositAmountStaker2 = parseEther("200")
+
+                  const withdrawAmountStaker1 = parseEther("50")
+                  const withdrawAmountStaker2 = parseEther("100")
+
+                  const customers = [staker1.address, staker2.address]
+                  const withdrawAmounts = [withdrawAmountStaker1, withdrawAmountStaker2]
+
+                  const staker1BalanceBefore = await vabTokenContract.balanceOf(staker1.address)
+                  const staker2BalanceBefore = await vabTokenContract.balanceOf(staker2.address)
+
+                  await stakingPoolStaker1.depositVAB(depositAmountStaker1)
+                  await stakingPoolStaker1.pendingWithdraw(withdrawAmountStaker1)
+
+                  await stakingPoolStaker2.depositVAB(depositAmountStaker2)
+                  await stakingPoolStaker2.pendingWithdraw(withdrawAmountStaker2)
+
+                  const tx = await stakingPoolAuditor.approvePendingWithdraw(customers)
+
+                  const userRentInfoStaker1 = await stakingPoolStaker1.userRentInfo(staker1.address)
+                  const staker1BalanceAfter = await vabTokenContract.balanceOf(staker1.address)
+
+                  const userRentInfoStaker2 = await stakingPoolStaker2.userRentInfo(staker2.address)
+                  const staker2BalanceAfter = await vabTokenContract.balanceOf(staker2.address)
+
+                  expect(staker1BalanceAfter).to.be.equal(
+                      staker1BalanceBefore.sub(depositAmountStaker1).add(withdrawAmountStaker1)
+                  )
+                  expect(staker2BalanceAfter).to.be.equal(
+                      staker2BalanceBefore.sub(depositAmountStaker2).add(withdrawAmountStaker2)
+                  )
+
+                  expect(userRentInfoStaker1.pending).to.be.false
+                  expect(userRentInfoStaker1.vabAmount).to.be.equal(
+                      depositAmountStaker1.sub(withdrawAmountStaker1)
+                  )
+                  expect(userRentInfoStaker1.withdrawAmount.toString()).to.be.equal("0")
+
+                  expect(userRentInfoStaker2.pending).to.be.false
+                  expect(userRentInfoStaker2.vabAmount).to.be.equal(
+                      depositAmountStaker2.sub(withdrawAmountStaker2)
+                  )
+                  expect(userRentInfoStaker2.withdrawAmount.toString()).to.be.equal("0")
+
+                  await expect(tx)
+                      .to.emit(stakingPool, "PendingWithdrawApproved")
+                      .withArgs(customers, withdrawAmounts)
               })
           })
       })
