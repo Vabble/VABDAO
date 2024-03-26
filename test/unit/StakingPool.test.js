@@ -1272,4 +1272,286 @@ const {
                   )
               })
           })
+
+          describe("calcPendingRewards", function () {
+              it("Should return zero if there are no proposals open for voting", async function () {
+                  const { stakingPoolStaker1, stakingPool, staker1, stakingPoolDeployer } =
+                      await loadFixture(deployContractsFixture)
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+
+                  const pendingRewards = await stakingPool.calcPendingRewards(staker1.address)
+
+                  expect(pendingRewards.toString()).to.be.equal("0")
+              })
+
+              it("Should return the correct amount if a governance proposal is open for voting and user didn't vote yet", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      property,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      getEstimatedReward,
+                  } = await loadFixture(deployContractsFixture)
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolProposalCreator.stakeVAB(stakingAmount)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  const { governanceProposalTimestamp } =
+                      await createDummyGovernancePropertyProposal({
+                          property,
+                          proposalCreator,
+                      })
+
+                  const estimatedRealizedReward = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: governanceProposalTimestamp,
+                      startTime: stake1TimeStamp,
+                  })
+
+                  const calcRewardRealizedReward = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+
+                  const currentTimestamp = await helpers.time.latest()
+
+                  const estimatedPendingReward = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: currentTimestamp,
+                      startTime: governanceProposalTimestamp,
+                  })
+
+                  const calcPendingReward = await stakingPool.calcPendingRewards(staker1.address)
+
+                  //? Assert
+                  expect(estimatedRealizedReward.toString()).to.be.equal(
+                      calcRewardRealizedReward.toString()
+                  )
+                  expect(estimatedPendingReward.toString()).to.be.equal(
+                      calcPendingReward.toString()
+                  )
+                  expect(calcPendingReward.toString()).to.be.not.equal("0")
+              })
+
+              it("Should return the correct amount if a governance proposal is open for voting and user did vote", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      property,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      getEstimatedReward,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolProposalCreator.stakeVAB(stakingAmount)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  const { flag, proposalIndex, governanceProposalTimestamp } =
+                      await createDummyGovernancePropertyProposal({
+                          property,
+                          proposalCreator,
+                      })
+
+                  const estimatedRealizedReward = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: governanceProposalTimestamp,
+                      startTime: stake1TimeStamp,
+                  })
+
+                  const calcRewardRealizedReward = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+
+                  let currentTimestamp = await helpers.time.latest()
+
+                  const estimatedPendingReward = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: currentTimestamp,
+                      startTime: governanceProposalTimestamp,
+                  })
+
+                  const calcPendingReward = await stakingPool.calcPendingRewards(staker1.address)
+
+                  await vote.connect(staker1).voteToProperty(yesVoteValue, proposalIndex, flag)
+
+                  const calcPendingRewardAfterVote = await stakingPool.calcPendingRewards(
+                      staker1.address
+                  )
+
+                  currentTimestamp = await helpers.time.latest()
+
+                  const estimatedRealizedRewardAfterVote = await getEstimatedReward({
+                      staker: staker1,
+                      endTime: currentTimestamp,
+                      startTime: stake1TimeStamp,
+                  })
+
+                  const calcRewardRealizedRewardAfterVote = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  //? Assert
+                  expect(estimatedRealizedReward.toString()).to.be.equal(
+                      calcRewardRealizedReward.toString()
+                  )
+                  expect(estimatedPendingReward.toString()).to.be.equal(
+                      calcPendingReward.toString()
+                  )
+                  expect(calcPendingReward.toString()).to.be.not.equal("0")
+                  expect(calcPendingRewardAfterVote.toString()).to.be.equal("0")
+                  expect(estimatedRealizedRewardAfterVote.toString()).to.be.equal(
+                      calcRewardRealizedRewardAfterVote.toString()
+                  )
+              })
+
+              it("Should return the correct reward of the user when a film proposal voting is open and user didn't vote", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      getEstimatedReward,
+                      vabbleDAO,
+                  } = await loadFixture(deployContractsFixture)
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolProposalCreator.stakeVAB(stakingAmount)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  //? Wait for 1 day to earn some rewards
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  await createAndUpdateDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                  })
+
+                  const proposalCreationTimestamp = await helpers.time.latest()
+
+                  const estimatedReward = await getEstimatedReward({
+                      staker: staker1,
+                      startTime: stake1TimeStamp,
+                      endTime: proposalCreationTimestamp,
+                  })
+                  const calcReward = await stakingPool.calcRealizedRewards(staker1.address)
+
+                  // //? Wait 2 days after proposal creation
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+                  const currentTimestamp = await helpers.time.latest()
+
+                  const estimatedPendingRewardAfterProposal = await getEstimatedReward({
+                      staker: staker1,
+                      startTime: proposalCreationTimestamp,
+                      endTime: currentTimestamp,
+                  })
+                  const calcPendingRewardAfterProposal = await stakingPool.calcPendingRewards(
+                      staker1.address
+                  )
+
+                  //? Assert
+                  expect(calcPendingRewardAfterProposal.toString()).to.be.not.equal("0")
+                  expect(estimatedReward.toString()).to.be.equal(calcReward.toString())
+                  expect(estimatedPendingRewardAfterProposal.toString()).to.be.equal(
+                      calcPendingRewardAfterProposal.toString()
+                  )
+              })
+
+              it("Should return the correct reward of the user and proposal creator when a film proposal voting is open and user did vote", async function () {
+                  const {
+                      stakingPool,
+                      stakingPoolDeployer,
+                      staker1,
+                      staker2: proposalCreator,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2: stakingPoolProposalCreator,
+                      getEstimatedReward,
+                      vabbleDAO,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await stakingPoolProposalCreator.stakeVAB(stakingAmount)
+
+                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+
+                  //? Wait for 1 day to earn some rewards
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  const { proposalId, proposalUpdateTimestamp } =
+                      await createAndUpdateDummyFilmProposal({
+                          vabbleDAO,
+                          proposalCreator,
+                      })
+
+                  const estimatedReward = await getEstimatedReward({
+                      staker: staker1,
+                      startTime: stake1TimeStamp,
+                      endTime: proposalUpdateTimestamp,
+                  })
+                  const calcReward = await stakingPool.calcRealizedRewards(staker1.address)
+
+                  // //? Wait 2 days after proposal creation
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS * 2)
+                  let currentTimestamp = await helpers.time.latest()
+
+                  const estimatedPendingRewardAfterProposal = await getEstimatedReward({
+                      staker: staker1,
+                      startTime: proposalUpdateTimestamp,
+                      endTime: currentTimestamp,
+                  })
+                  const calcPendingRewardAfterProposal = await stakingPool.calcPendingRewards(
+                      staker1.address
+                  )
+
+                  await vote.connect(staker1).voteToFilms([proposalId], [yesVoteValue])
+
+                  const calcPendingRewardAfterVote = await stakingPool.calcPendingRewards(
+                      staker1.address
+                  )
+
+                  currentTimestamp = await helpers.time.latest()
+
+                  const calcRewardRealizedRewardAfterVote = await stakingPool.calcRealizedRewards(
+                      staker1.address
+                  )
+
+                  //? Assert
+                  expect(calcPendingRewardAfterProposal.toString()).to.be.not.equal("0")
+                  expect(estimatedReward.toString()).to.be.equal(calcReward.toString())
+                  expect(estimatedPendingRewardAfterProposal.toString()).to.be.equal(
+                      calcPendingRewardAfterProposal.toString()
+                  )
+                  expect(calcPendingRewardAfterVote.toString()).to.be.equal("0")
+                  expect(calcRewardRealizedRewardAfterVote.toString()).to.be.equal(
+                      estimatedReward.add(estimatedPendingRewardAfterProposal)
+                  )
+              })
+          })
       })

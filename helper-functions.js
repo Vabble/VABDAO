@@ -289,7 +289,16 @@ const createAndUpdateDummyFilmProposal = async ({ vabbleDAO, proposalCreator }) 
             enableClaimer
         )
 
-        return { proposalFilmCreateTx, proposalFilmUpdateTx, proposalId, noVote, fundType }
+        const proposalUpdateTimestamp = await getTimestampFromTx(proposalFilmUpdateTx)
+
+        return {
+            proposalFilmCreateTx,
+            proposalFilmUpdateTx,
+            proposalId,
+            noVote,
+            fundType,
+            proposalUpdateTimestamp,
+        }
     } catch (error) {
         console.log("===== createAndUpdateDummyFilmProposal error =====", error)
     }
