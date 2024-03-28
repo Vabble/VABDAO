@@ -323,4 +323,87 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   ).to.be.revertedWith("setupVote: bad StakingPool contract address")
               })
           })
+
+          describe("transferAuditor", function () {
+              it("Should revert if the caller is not the auditor", async function () {
+                  const { ownable, dev } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      ownable.connect(dev).transferAuditor(dev.address)
+                  ).to.be.revertedWith("caller is not the auditor")
+              })
+
+              it("Should revert if the new auditor address is a zero address", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      ownable.connect(auditor).transferAuditor(ZERO_ADDRESS)
+                  ).to.be.revertedWith("Ownablee: Zero newAuditor address")
+              })
+
+              it("Should revert if the new auditor address is the same as the current", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      ownable.connect(auditor).transferAuditor(auditor.address)
+                  ).to.be.revertedWith("Ownablee: Zero newAuditor address")
+              })
+
+              it("Should update the auditor address to the new one", async function () {
+                  const { ownable, auditor, dev } = await loadFixture(deployContractsFixture)
+
+                  await ownable.connect(auditor).transferAuditor(dev.address)
+                  const newAuditorAddress = await ownable.auditor()
+
+                  expect(newAuditorAddress).to.be.equal(dev.address)
+              })
+          })
+
+          describe("replaceAuditor", function () {
+              it("Should revert if the caller is not the vote contract", async function () {
+                  const { ownable, dev } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownable.connect(dev).replaceAuditor(dev.address)).to.be.revertedWith(
+                      "caller is not the vote contract"
+                  )
+              })
+
+              it("Should revert if the new auditor address is a zero address", async function () {
+                  const { ownable, vote } = await loadFixture(deployContractsFixture)
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await expect(
+                      ownable.connect(signer).replaceAuditor(ZERO_ADDRESS)
+                  ).to.be.revertedWith("Ownablee: Zero newAuditor address")
+              })
+
+              it("Should revert if the new auditor address is the same as the current", async function () {
+                  const { ownable, auditor, vote } = await loadFixture(deployContractsFixture)
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  //? Act
+                  await expect(
+                      ownable.connect(signer).replaceAuditor(auditor.address)
+                  ).to.be.revertedWith("Ownablee: Zero newAuditor address")
+              })
+
+              it("Should update the auditor address to the new one", async function () {
+                  const { ownable, dev, vote } = await loadFixture(deployContractsFixture)
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await ownable.connect(signer).replaceAuditor(dev.address)
+
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const newAuditorAddress = await ownable.auditor()
+
+                  expect(newAuditorAddress).to.be.equal(dev.address)
+              })
+          })
       })
