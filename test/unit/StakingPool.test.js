@@ -2290,4 +2290,192 @@ const {
               //     // expect(migrationStatus.toString()).to.be.equal("1")
               // })
           })
+
+          describe("addVotedData", function () {
+              it("Should revert if the caller is not the vote contract", async function () {
+                  const { stakingPoolStaker1, staker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      stakingPoolStaker1.addVotedData(staker1.address, 123123, 1)
+                  ).to.be.revertedWith("not vote")
+              })
+          })
+
+          describe("updateLastfundProposalCreateTime", function () {
+              it("Should revert if the caller is not the DAO contract", async function () {
+                  const { stakingPoolStaker1, staker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      stakingPoolStaker1.updateLastfundProposalCreateTime(123123)
+                  ).to.be.revertedWith("not dao")
+              })
+
+              it("Should set the last fund proposal create time", async function () {
+                  const { stakingPool, vabbleDAO } = await loadFixture(deployContractsFixture)
+
+                  const currentTimestamp = await helpers.time.latest()
+
+                  await helpers.impersonateAccount(vabbleDAO.address)
+                  const signer = await ethers.getSigner(vabbleDAO.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await stakingPool
+                      .connect(signer)
+                      .updateLastfundProposalCreateTime(currentTimestamp)
+                  await helpers.stopImpersonatingAccount(vabbleDAO.address)
+
+                  const lastfundProposalCreateTime = await stakingPool.lastfundProposalCreateTime()
+
+                  expect(lastfundProposalCreateTime).to.be.equal(currentTimestamp)
+              })
+          })
+
+          describe("addProposalData", function () {
+              it("Should revert if the caller is not the property or DAO contract", async function () {
+                  const { stakingPoolStaker1, staker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      stakingPoolStaker1.addProposalData(staker1.address, 123123, 1)
+                  ).to.be.revertedWith("not dao/property")
+              })
+
+              it("Should increment the proposal count when the caller is the DAO contract", async function () {
+                  const { vabbleDAO, stakingPool, staker1, propertyVotePeriod } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const proposalCreator = staker1.address
+                  const createTime = await helpers.time.latest()
+
+                  await helpers.impersonateAccount(vabbleDAO.address)
+                  const signer = await ethers.getSigner(vabbleDAO.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await stakingPool
+                      .connect(signer)
+                      .addProposalData(proposalCreator, createTime, propertyVotePeriod)
+
+                  await stakingPool
+                      .connect(signer)
+                      .addProposalData(proposalCreator, createTime, propertyVotePeriod)
+                  await helpers.stopImpersonatingAccount(vabbleDAO.address)
+
+                  const proposalCount = await stakingPool.proposalCount()
+
+                  expect(proposalCount).to.be.equal(2)
+              })
+
+              it("Should return the proposal count when the caller is the property contract", async function () {
+                  const { property, stakingPool, staker1, propertyVotePeriod } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const proposalCreator = staker1.address
+                  const createTime = await helpers.time.latest()
+
+                  await helpers.impersonateAccount(property.address)
+                  const signer = await ethers.getSigner(property.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await stakingPool
+                      .connect(signer)
+                      .addProposalData(proposalCreator, createTime, propertyVotePeriod)
+
+                  await stakingPool
+                      .connect(signer)
+                      .addProposalData(proposalCreator, createTime, propertyVotePeriod)
+                  await helpers.stopImpersonatingAccount(property.address)
+
+                  const proposalCount = await stakingPool.proposalCount()
+                  expect(proposalCount.toString()).to.be.equal("2")
+              })
+          })
+
+          describe("getStakeAmount", function () {
+              it("Should return the stake amount of a staker", async function () {
+                  const { stakingPoolStaker1, staker1, stakingPool } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stakeAmount = await stakingPool.getStakeAmount(staker1.address)
+
+                  expect(stakeAmount).to.be.equal(stakingAmount)
+              })
+          })
+
+          describe("getRentVABAmount", function () {
+              it("Should return the vab amount from the user rent info", async function () {
+                  const { stakingPoolStaker1, staker1, stakingPool } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  const vabAmount = await stakingPool.getRentVABAmount(staker1.address)
+
+                  expect(vabAmount).to.be.equal(stakingAmount)
+              })
+          })
+
+          describe("getLimitCount", function () {
+              it("Should return minVoteCount when limitStakerCount is less than or equal to minVoteCount", async function () {
+                  const {
+                      deployer,
+                      property,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2,
+                      stakingPool,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const minStakerCountPercent = 5 * 1e8 // (1% = 1e8, 100%=1e10)
+                  const minStakerCountPercentFlag = 19
+
+                  const minVoteCount = 1
+                  const minVoteCountFlag = 18
+
+                  await property
+                      .connect(deployer)
+                      .updatePropertyForTesting(minStakerCountPercent, minStakerCountPercentFlag)
+
+                  await property
+                      .connect(deployer)
+                      .updatePropertyForTesting(minVoteCount, minVoteCountFlag)
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await stakingPoolStaker2.stakeVAB(stakingAmount)
+
+                  const limitCount = await stakingPool.getLimitCount()
+
+                  expect(limitCount).to.be.equal(minVoteCount)
+              })
+
+              it("Should return calculated limitStakerCount when it's greater than minVoteCount", async function () {
+                  const {
+                      deployer,
+                      property,
+                      stakingPoolStaker1,
+                      stakingPoolStaker2,
+                      stakingPool,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const minStakerCountPercent = 1e10 // (1% = 1e8, 100%=1e10)
+                  const minStakerCountPercentFlag = 19
+
+                  const minVoteCount = 1
+                  const minVoteCountFlag = 18
+
+                  await property
+                      .connect(deployer)
+                      .updatePropertyForTesting(minStakerCountPercent, minStakerCountPercentFlag)
+
+                  await property
+                      .connect(deployer)
+                      .updatePropertyForTesting(minVoteCount, minVoteCountFlag)
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await stakingPoolStaker2.stakeVAB(stakingAmount)
+
+                  const currentStakerCount = await stakingPool.stakerCount()
+
+                  const limitCount = await stakingPool.getLimitCount()
+
+                  expect(limitCount).to.be.equal(currentStakerCount)
+              })
+          })
       })
