@@ -2494,4 +2494,30 @@ const {
                   expect(withdrawableTime).to.be.equal(stakeInfo.stakeTime.add(lockPeriod))
               })
           })
+
+          describe("withdrawToOwner", function () {
+              it("Should revert if the caller is not the deployer", async function () {
+                  const { stakingPoolStaker1, staker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      stakingPoolStaker1.withdrawToOwner(staker1.address)
+                  ).to.be.revertedWith("not deployer")
+              })
+          })
+
+          describe("getStakerList", function () {
+              it("Should return the list of stakers", async function () {
+                  const { stakingPoolStaker1, stakingPoolStaker2, staker1, staker2 } =
+                      await loadFixture(deployContractsFixture)
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  await stakingPoolStaker2.stakeVAB(stakingAmount)
+
+                  const stakerList = await stakingPoolStaker1.getStakerList()
+
+                  expect(stakerList.length).to.be.equal(2)
+                  expect(stakerList[0]).to.be.equal(staker1.address)
+                  expect(stakerList[1]).to.be.equal(staker2.address)
+              })
+          })
       })
