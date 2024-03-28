@@ -215,6 +215,7 @@ const deployAndInitAllContracts = async () => {
         const propertyVotePeriod = Number(await property.propertyVotePeriod())
         const boardRewardRate = await property.boardRewardRate()
         const rewardRate = await property.rewardRate()
+        const lockPeriod = await property.lockPeriod()
 
         return {
             deployer,
@@ -239,6 +240,7 @@ const deployAndInitAllContracts = async () => {
             boardRewardRate,
             rewardRate,
             usdcTokenContract,
+            lockPeriod,
         }
     } catch (error) {
         console.log("===== deployAndInitAllContracts error =====", error)

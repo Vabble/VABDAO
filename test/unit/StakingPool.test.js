@@ -60,6 +60,7 @@ const {
                   boardRewardRate,
                   rewardRate,
                   usdcTokenContract,
+                  lockPeriod,
               } = await deployAndInitAllContracts()
 
               //? Fund and approve accounts
@@ -146,6 +147,7 @@ const {
                   boardRewardRate,
                   rewardRate,
                   stakingPoolAuditor,
+                  lockPeriod,
               }
           }
 
@@ -2476,6 +2478,20 @@ const {
                   const limitCount = await stakingPool.getLimitCount()
 
                   expect(limitCount).to.be.equal(currentStakerCount)
+              })
+          })
+
+          describe("getWithdrawableTime", function () {
+              it("Should return the withdrawable time of a staker", async function () {
+                  const { stakingPoolStaker1, staker1, stakingPool, lockPeriod } =
+                      await loadFixture(deployContractsFixture)
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmount)
+                  const stakeInfo = await stakingPool.stakeInfo(staker1.address)
+
+                  const withdrawableTime = await stakingPool.getWithdrawableTime(staker1.address)
+
+                  expect(withdrawableTime).to.be.equal(stakeInfo.stakeTime.add(lockPeriod))
               })
           })
       })
