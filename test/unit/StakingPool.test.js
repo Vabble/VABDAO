@@ -11,14 +11,23 @@ const {
     createAndUpdateDummyFilmProposal,
     createDummyGovernancePropertyProposal,
     getTimestampFromTx,
+    createDummyGovernanceProposalRewardFund,
 } = require("../../helper-functions")
 
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("StakingPool Unit Tests", function () {
           //? Variable declaration
+          /**
+           *
+           * @dev 100 VAB.
+           */
           const stakingAmount = parseEther("100")
-          const poolRewardAmount = parseEther("10000") // 10k
+          /**
+           *
+           * @dev 10k VAB.
+           */
+          const poolRewardAmount = parseEther("10000")
           const zeroEtherAmount = parseEther("0")
           const yesVoteValue = 1
 
@@ -54,8 +63,8 @@ const {
               } = await deployAndInitAllContracts()
 
               //? Fund and approve accounts
-              const accounts = [deployer, staker1, staker2]
-              const contractsToApprove = [stakingPool, property, vabbleDAO]
+              const accounts = [deployer, staker1, staker2, auditor]
+              const contractsToApprove = [stakingPool, property, vabbleDAO, ownable]
               await fundAndApproveAccounts({
                   accounts,
                   vabTokenContract,
@@ -1907,5 +1916,378 @@ const {
                   expect(userRentInfo.vabAmount).to.be.equal(stakingAmount.sub(amounts[0]))
                   expect(studioPool).to.be.eq(amounts[0])
               })
+          })
+
+          describe("withdrawAllFund", function () {
+              it("Should revert if the contract caller is not the auditor", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolStaker1.withdrawAllFund()).to.be.revertedWith(
+                      "not auditor"
+                  )
+              })
+
+              it("Should revert if the dao fund reward address is a zero address", async function () {
+                  const { stakingPoolAuditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolAuditor.withdrawAllFund()).to.be.revertedWith(
+                      "wAF: zero address"
+                  )
+              })
+
+              it("Should revert if no migration has been started", async function () {
+                  const { stakingPool, auditor, staker2, property, deployer } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const newStakingPoolAddress = staker2.address
+                  // We update the availableVABAmount to 1 VAB for testing
+                  await property.connect(deployer).updateAvailableVABForTesting(parseEther("1"))
+                  await property.connect(deployer).updateDAOFundForTesting(newStakingPoolAddress)
+
+                  const rewardAddress = await property.DAO_FUND_REWARD()
+
+                  expect(rewardAddress).to.be.equal(newStakingPoolAddress)
+
+                  await expect(stakingPool.connect(auditor).withdrawAllFund()).to.be.revertedWith(
+                      "Migration is not on going"
+                  )
+              })
+
+              it("Should transfer the total migration amount, Edge Pool and Studio Pool to the new DAO fund reward address and set the migrations status to two", async function () {
+                  const {
+                      stakingPoolStaker1,
+                      stakingPoolDeployer,
+                      property,
+                      stakingPool,
+                      ownable,
+                      deployer,
+                      auditor,
+                      vabbleDAO,
+                      vabTokenContract,
+                      stakingPoolAuditor,
+                      dev,
+                      staker1,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const stakingAmountStaker1 = parseEther("1000")
+                  const poolRewardAmount = parseEther("10000")
+                  const edgePoolAmount = parseEther("7500")
+                  const studioPoolAmount = parseEther("2500")
+                  const newStakingPoolAddress = dev.address
+                  const stakingPoolBalanceBefore = await vabTokenContract.balanceOf(dev.address)
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+                  await ownable.connect(auditor).depositVABToEdgePool(edgePoolAmount)
+                  await vabbleDAO.connect(auditor).allocateFromEdgePool(studioPoolAmount)
+
+                  const edgePoolVabBefore = await vabTokenContract.balanceOf(ownable.address)
+                  const studioPoolVabBefore = await vabTokenContract.balanceOf(vabbleDAO.address)
+                  const totalRewardAmountBefore = await stakingPool.totalRewardAmount()
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmountStaker1)
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  await property.connect(deployer).updateDAOFundForTesting(newStakingPoolAddress)
+
+                  await helpers.impersonateAccount(property.address)
+                  const signer = await ethers.getSigner(property.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await stakingPool.connect(signer).calcMigrationVAB()
+                  const stakeInfoStaker1 = await stakingPool.stakeInfo(staker1.address)
+                  const totalMigrationVabBefore = await stakingPool.totalMigrationVAB()
+                  await helpers.stopImpersonatingAccount(property.address)
+
+                  const withdrawAllFundTx = await stakingPoolAuditor.withdrawAllFund()
+                  const totalMigrationVabAfter = await stakingPool.totalMigrationVAB()
+                  const totalRewardAmountAfter = await stakingPool.totalRewardAmount()
+
+                  const migrationStatus = await stakingPool.migrationStatus()
+
+                  const expectedSum = totalMigrationVabBefore
+                      .add(edgePoolVabBefore)
+                      .add(studioPoolVabBefore)
+                      .add(stakingPoolBalanceBefore)
+
+                  const newPoolSum = await vabTokenContract.balanceOf(newStakingPoolAddress)
+
+                  //? Assert
+                  await expect(withdrawAllFundTx)
+                      .to.emit(stakingPool, "AllFundWithdraw")
+                      .withArgs(newStakingPoolAddress, expectedSum)
+
+                  expect(totalRewardAmountAfter).to.be.equal(
+                      totalRewardAmountBefore.sub(totalMigrationVabBefore)
+                  )
+                  expect(totalMigrationVabBefore).to.be.equal(
+                      totalRewardAmountBefore.sub(stakeInfoStaker1.outstandingReward)
+                  )
+                  expect(studioPoolVabBefore.toString()).to.be.equal(studioPoolAmount.toString())
+                  expect(edgePoolVabBefore.toString()).to.be.equal(
+                      edgePoolAmount.sub(studioPoolAmount).toString()
+                  )
+                  expect(totalRewardAmountBefore.toString()).to.be.equal(
+                      poolRewardAmount.toString()
+                  )
+                  expect(migrationStatus).to.be.equal(2)
+                  expect(totalMigrationVabAfter).to.be.equal(0)
+                  expect(newPoolSum.toString()).to.be.equal(expectedSum.toString())
+              })
+          })
+
+          describe("calcMigrationVAB", function () {
+              it("Should revert if the contract caller is not the property contract", async function () {
+                  const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
+
+                  await expect(stakingPoolStaker1.calcMigrationVAB()).to.be.revertedWith(
+                      "not Property"
+                  )
+              })
+
+              it("Should set the outstanding reward of each staker and calculate the total migration amount and set migrationStatus to one", async function () {
+                  const {
+                      stakingPoolStaker1,
+                      stakingPoolStaker2,
+                      stakingPoolDeployer,
+                      property,
+                      stakingPool,
+                      staker1,
+                      staker2,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const stakingAmountStaker1 = parseEther("1000")
+                  const stakingAmountStaker2 = parseEther("500")
+
+                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+
+                  await stakingPoolStaker1.stakeVAB(stakingAmountStaker1)
+                  await stakingPoolStaker2.stakeVAB(stakingAmountStaker2)
+
+                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+                  await network.provider.send("evm_setAutomine", [false])
+
+                  const stakeInfoStaker1Before = await stakingPool.stakeInfo(staker1.address)
+                  const stakeInfoStaker2Before = await stakingPool.stakeInfo(staker2.address)
+
+                  const staker1RewardsBefore = await stakingPool.calcRewardAmount(staker1.address)
+                  const staker2RewardsBefore = await stakingPool.calcRewardAmount(staker2.address)
+
+                  await helpers.impersonateAccount(property.address)
+                  const signer = await ethers.getSigner(property.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await stakingPool.connect(signer).calcMigrationVAB()
+                  await helpers.stopImpersonatingAccount(property.address)
+
+                  await network.provider.send("evm_mine")
+                  await network.provider.send("evm_setAutomine", [true])
+
+                  const stakeInfoStaker1After = await stakingPool.stakeInfo(staker1.address)
+                  const stakeInfoStaker2After = await stakingPool.stakeInfo(staker2.address)
+
+                  const totalMigrationVAB = await stakingPool.totalMigrationVAB()
+                  const totalRewardAmount = await stakingPool.totalRewardAmount()
+
+                  const expectedTotalMigrationVAB = totalRewardAmount.sub(
+                      stakeInfoStaker1After.outstandingReward.add(
+                          stakeInfoStaker2After.outstandingReward
+                      )
+                  )
+
+                  const migrationStatus = await stakingPool.migrationStatus()
+
+                  expect(stakeInfoStaker1Before.outstandingReward.toString()).to.be.equal("0")
+                  expect(stakeInfoStaker2Before.outstandingReward.toString()).to.be.equal("0")
+
+                  expect(stakeInfoStaker1After.outstandingReward).to.be.equal(staker1RewardsBefore)
+                  expect(stakeInfoStaker2After.outstandingReward).to.be.equal(staker2RewardsBefore)
+
+                  expect(totalMigrationVAB).to.be.equal(expectedTotalMigrationVAB)
+
+                  expect(migrationStatus.toString()).to.be.equal("1")
+              })
+
+              // //!!!!! THIS SHOULD NOT WORK !!!!!!
+              // it("Should not update the totalMigrationVAB if totalRewardAmount is less thant totalAmount of stakers, but update migrations status to one", async function () {
+              //     const {
+              //         stakingPoolStaker1,
+              //         stakingPoolDeployer,
+              //         property,
+              //         stakingPool,
+              //         staker1,
+              //     } = await loadFixture(deployContractsFixture)
+
+              //     const stakingAmountStaker1 = parseEther("50000")
+              //     const newPoolRewardAmount = parseEther("100")
+
+              //     await stakingPoolDeployer.addRewardToPool(newPoolRewardAmount)
+
+              //     await stakingPoolStaker1.stakeVAB(stakingAmountStaker1)
+
+              //     // Wait 4000 days
+              //     await helpers.time.increase(ONE_DAY_IN_SECONDS * 4000)
+
+              //     await network.provider.send("evm_setAutomine", [false])
+
+              //     const staker1RewardsBefore = await stakingPool.calcRewardAmount(staker1.address)
+
+              //     await helpers.impersonateAccount(property.address)
+              //     const signer = await ethers.getSigner(property.address)
+              //     await helpers.setBalance(signer.address, 100n ** 18n)
+              //     await stakingPool.connect(signer).calcMigrationVAB()
+              //     await helpers.stopImpersonatingAccount(property.address)
+
+              //     await network.provider.send("evm_mine")
+              //     await network.provider.send("evm_setAutomine", [true])
+
+              //     const stakeInfoStaker1After = await stakingPool.stakeInfo(staker1.address)
+
+              //     const totalMigrationVAB = await stakingPool.totalMigrationVAB()
+              //     const totalRewardAmount = await stakingPool.totalRewardAmount()
+
+              //     // const expectedTotalMigrationVAB = totalRewardAmount.sub(
+              //     //     stakeInfoStaker1After.outstandingReward.add(
+              //     //         stakeInfoStaker2After.outstandingReward
+              //     //     )
+              //     // )
+
+              //     console.log("staker1RewardsBefore", staker1RewardsBefore.toString())
+              //     console.log("======================================================")
+              //     console.log("totalMigrationVAB", totalMigrationVAB.toString())
+              //     console.log("totalRewardAmount", totalRewardAmount.toString())
+
+              //     const migrationStatus = await stakingPool.migrationStatus()
+
+              //     expect(stakeInfoStaker1After.outstandingReward).to.be.equal(staker1RewardsBefore)
+
+              //     expect(totalMigrationVAB.toString()).to.be.equal("0")
+              //     expect(migrationStatus.toString()).to.be.equal("1")
+              // })
+
+              // //!!!!! THIS IS NOT WORKING !!!!!!
+              // it("Should consider the pending rewards of stakers", async function () {
+              //     const {
+              //         stakingPoolStaker1,
+              //         stakingPoolStaker2: stakingPoolProposalCreator,
+              //         stakingPoolDeployer,
+              //         property,
+              //         stakingPool,
+              //         staker1,
+              //         staker2: proposalCreator,
+              //         propertyVotePeriod,
+              //         vote,
+              //     } = await loadFixture(deployContractsFixture)
+
+              //     const stakingAmountStaker1 = parseEther("1000")
+              //     const stakingAmountProposalCreator = parseEther("1000")
+
+              //     await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+
+              //     await stakingPoolStaker1.stakeVAB(stakingAmountStaker1)
+              //     await stakingPoolProposalCreator.stakeVAB(stakingAmountProposalCreator)
+
+              //     await helpers.time.increase(ONE_DAY_IN_SECONDS)
+
+              //     const { proposalIndex, flag } = await createDummyGovernancePropertyProposal({
+              //         property,
+              //         proposalCreator,
+              //     })
+
+              //     const staker1RewardsBefore = await stakingPool.calcRewardAmount(staker1.address)
+              //     const proposalCreatorRewardsBefore = await stakingPool.calcRewardAmount(
+              //         proposalCreator.address
+              //     )
+
+              //     //? Start the migration
+              //     await helpers.impersonateAccount(property.address)
+              //     const signer = await ethers.getSigner(property.address)
+              //     await helpers.setBalance(signer.address, 100n ** 18n)
+              //     await stakingPool.connect(signer).calcMigrationVAB()
+              //     await helpers.stopImpersonatingAccount(property.address)
+
+              //     //? Wait half of the vote period
+              //     await helpers.time.increase(propertyVotePeriod / 2)
+
+              //     const staker1PendingRewards = await stakingPool.calcPendingRewards(
+              //         staker1.address
+              //     )
+
+              //     await vote.connect(staker1).voteToProperty(yesVoteValue, proposalIndex, flag)
+
+              //     const staker1PendingRewardsAfterVote = await stakingPool.calcPendingRewards(
+              //         staker1.address
+              //     )
+
+              //     //? Now the pending rewards should be added to the rewards of the staker
+              //     const staker1RewardsAfter = await stakingPool.calcRewardAmount(staker1.address)
+              //     const proposalCreatorRewardsAfter = await stakingPool.calcRewardAmount(
+              //         proposalCreator.address
+              //     )
+
+              //     const stakeInfoStaker1After = await stakingPool.stakeInfo(staker1.address)
+              //     const stakeInfoProposalCreatorAfter = await stakingPool.stakeInfo(
+              //         proposalCreator.address
+              //     )
+
+              //     const totalMigrationVAB = await stakingPool.totalMigrationVAB()
+              //     const totalRewardAmount = await stakingPool.totalRewardAmount()
+
+              //     const expectedTotalMigrationVAB = totalRewardAmount
+              //         .sub(staker1RewardsAfter)
+              //         .sub(proposalCreatorRewardsAfter)
+              //         .sub(staker1PendingRewards)
+
+              //     const migrationStatus = await stakingPool.migrationStatus()
+
+              //     console.log("totalRewardAmount", totalRewardAmount.toString())
+              //     console.log("totalMigrationVAB", totalMigrationVAB.toString())
+              //     console.log("expectedTotalMigrationVAB", expectedTotalMigrationVAB.toString())
+              //     console.log(
+              //         "difference between totalMigrationVAB and expectedTotalMigrationVAB",
+              //         totalMigrationVAB.sub(expectedTotalMigrationVAB).toString()
+              //     )
+              //     console.log("migrationStatus", migrationStatus.toString())
+              //     console.log("------------------------------------------------")
+
+              //     console.log("staker1RewardsBefore", staker1RewardsBefore.toString())
+              //     console.log("staker1RewardsAfter", staker1RewardsAfter.toString())
+              //     console.log("staker1PendingRewards", staker1PendingRewards.toString())
+              //     console.log(
+              //         "staker1PendingRewardsAfterVote",
+              //         staker1PendingRewardsAfterVote.toString()
+              //     )
+              //     console.log(
+              //         "outstanding reward for staker 1",
+              //         stakeInfoStaker1After.outstandingReward.toString()
+              //     )
+              //     console.log("------------------------------------------------")
+
+              //     console.log(
+              //         "proposalCreatorRewardsBefore",
+              //         proposalCreatorRewardsBefore.toString()
+              //     )
+              //     console.log("proposalCreatorRewardsAfter", proposalCreatorRewardsAfter.toString())
+              //     console.log(
+              //         "outstanding reward for proposal creator",
+              //         stakeInfoProposalCreatorAfter.outstandingReward.toString()
+              //     )
+
+              //     expect(staker1RewardsAfter.toString()).to.be.equal(
+              //         staker1RewardsBefore.add(staker1PendingRewards).toString(),
+              //         "Staker rewards after vote should equal the pending rewards + the rewards of the staker before migration"
+              //     )
+
+              //     // expect(stakeInfoStaker1After.outstandingReward.toString()).to.be.equal(
+              //     //     staker1RewardsBefore.add(staker1PendingRewards).toString(),
+              //     //     "Outstanding rewards should equal the pending rewards + the rewards of the staker before migration"
+              //     // )
+
+              //     // expect(totalMigrationVAB.toString()).to.be.equal(
+              //     //     expectedTotalMigrationVAB.toString(),
+              //     //     "Total migration VAB should equal the expected total migration VAB"
+              //     // )
+
+              //     // expect(migrationStatus.toString()).to.be.equal("1")
+              // })
           })
       })
