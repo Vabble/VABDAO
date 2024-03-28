@@ -1920,6 +1920,50 @@ const {
               })
           })
 
+          describe("checkAllocateToPool", function () {
+              it("should return false if any user does not have enough VAB tokens", async function () {
+                  const { stakingPoolStaker1, staker1, stakingPool } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const users = [staker1.address]
+                  const amounts = [stakingAmount.mul(2)]
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+
+                  const bool = await stakingPool.checkAllocateToPool(users, amounts)
+
+                  expect(bool).to.be.equal(false)
+              })
+
+              it("Should return false if the total amount to be allocated exceeds the contract's balance", async function () {
+                  const { stakingPoolStaker1, staker1, stakingPool, stakingPoolDeployer } =
+                      await loadFixture(deployContractsFixture)
+                  const users = [staker1.address]
+                  const amounts = [stakingAmount]
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+                  await stakingPoolDeployer.withdrawToOwner(staker1.address)
+
+                  const bool = await stakingPool.checkAllocateToPool(users, amounts)
+
+                  expect(bool).to.be.equal(false)
+              })
+
+              it("Should return true if all conditions are met", async function () {
+                  const { stakingPoolStaker1, staker1, stakingPool } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const users = [staker1.address]
+                  const amounts = [stakingAmount]
+
+                  await stakingPoolStaker1.depositVAB(stakingAmount)
+
+                  const bool = await stakingPool.checkAllocateToPool(users, amounts)
+
+                  expect(bool).to.be.equal(true)
+              })
+          })
+
           describe("withdrawAllFund", function () {
               it("Should revert if the contract caller is not the auditor", async function () {
                   const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
