@@ -454,4 +454,72 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   expect(isDepositAsset).to.be.true
               })
           })
+
+          describe("removeDepositAsset", function () {
+              it("Should revert if the caller is not the auditor or deployer", async function () {
+                  const { ownable, dev } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownable.connect(dev).removeDepositAsset([])).to.be.revertedWith(
+                      "caller is not the auditor"
+                  )
+              })
+
+              it("Should revert if the asset list is empty", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownable.connect(auditor).removeDepositAsset([])).to.be.revertedWith(
+                      "removeDepositAsset: zero list"
+                  )
+              })
+
+              it("Should remove an asset from the asset list", async function () {
+                  const { ownable, auditor, vabTokenContract } = await loadFixture(
+                      deployContractsFixture
+                  )
+                  const assetList = [vabTokenContract.address]
+                  const depositAssetListBefore = await ownable.getDepositAssetList()
+
+                  await ownable.connect(auditor).removeDepositAsset(assetList)
+
+                  const depositAssetListAfter = await ownable.getDepositAssetList()
+                  const isDepositAsset = await ownable.isDepositAsset(assetList[0])
+
+                  expect(depositAssetListBefore.includes(assetList[0])).to.be.true
+                  expect(depositAssetListAfter.includes(assetList[0])).to.be.false
+                  expect(isDepositAsset).to.be.false
+              })
+
+              it("Should not remove an asset not in the list", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+                  const assetList = [auditor.address]
+                  const depositAssetListBefore = await ownable.getDepositAssetList()
+
+                  await ownable.connect(auditor).removeDepositAsset(assetList)
+
+                  const depositAssetListAfter = await ownable.getDepositAssetList()
+
+                  expect(depositAssetListBefore.length).to.be.equal(depositAssetListAfter.length)
+              })
+
+              it("Should remove multiple assets from the asset list", async function () {
+                  const { ownable, auditor, vabTokenContract, usdcTokenContract } =
+                      await loadFixture(deployContractsFixture)
+
+                  const assetList = [vabTokenContract.address, usdcTokenContract.address]
+                  const depositAssetListBefore = await ownable.getDepositAssetList()
+
+                  await ownable.connect(auditor).removeDepositAsset(assetList)
+
+                  const depositAssetListAfter = await ownable.getDepositAssetList()
+                  const isDepositAssetVabToken = await ownable.isDepositAsset(assetList[0])
+                  const isDepositAssetUSDCToken = await ownable.isDepositAsset(assetList[1])
+
+                  expect(depositAssetListBefore.includes(assetList[0])).to.be.true
+                  expect(depositAssetListBefore.includes(assetList[1])).to.be.true
+                  expect(depositAssetListAfter.includes(assetList[0])).to.be.false
+                  expect(depositAssetListAfter.includes(assetList[1])).to.be.false
+                  expect(isDepositAssetVabToken).to.be.false
+                  expect(isDepositAssetUSDCToken).to.be.false
+              })
+          })
       })
