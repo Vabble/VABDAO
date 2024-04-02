@@ -1,6 +1,6 @@
 const { ethers, network } = require("hardhat")
 const { developmentChains, ONE_DAY_IN_SECONDS } = require("../../helper-hardhat-config")
-const { assert, expect } = require("chai")
+const { expect } = require("chai")
 const { ZERO_ADDRESS, CONFIG } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
@@ -670,6 +670,34 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   expect(edgePoolBalanceAfter).to.be.equal(
                       edgePoolBalanceBefore.add(edgePoolAmount)
                   )
+              })
+          })
+
+          describe("withdrawVABFromEdgePool", function () {
+              it("Should revert if the caller is not the staking pool contract", async function () {
+                  const { ownable, dev } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      ownable.connect(dev).withdrawVABFromEdgePool(dev.address)
+                  ).to.be.revertedWith("caller is not the StakingPool contract")
+              })
+
+              it("Should transfer the total balance of the edge pool to the new address", async function () {
+                  const { ownable, stakingPool, dev, ownableAuditor, vabTokenContract } =
+                      await loadFixture(deployContractsFixture)
+
+                  const newAddress = dev.address
+
+                  await ownableAuditor.depositVABToEdgePool(edgePoolAmount)
+                  await helpers.impersonateAccount(stakingPool.address)
+                  const signer = await ethers.getSigner(stakingPool.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await ownable.connect(signer).withdrawVABFromEdgePool(newAddress)
+                  await helpers.stopImpersonatingAccount(stakingPool.address)
+
+                  const balanceOfNewAddress = await vabTokenContract.balanceOf(newAddress)
+
+                  expect(balanceOfNewAddress).to.be.equal(edgePoolAmount)
               })
           })
       })
