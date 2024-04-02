@@ -406,4 +406,52 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   expect(newAuditorAddress).to.be.equal(dev.address)
               })
           })
+
+          describe("addDepositAsset", function () {
+              it("Should revert if the caller is not the auditor or deployer", async function () {
+                  const { ownable, dev } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownable.connect(dev).addDepositAsset([])).to.be.revertedWith(
+                      "caller is not the auditor or deployer"
+                  )
+              })
+
+              it("Should revert if the asset list is empty", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownable.connect(auditor).addDepositAsset([])).to.be.revertedWith(
+                      "addDepositAsset: zero list"
+                  )
+              })
+
+              it("Should update the existing asset list when the caller is the auditor", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+                  const assetList = [auditor.address]
+
+                  await ownable.connect(auditor).addDepositAsset(assetList)
+
+                  const depositAssetListAfter = await ownable.getDepositAssetList()
+                  const isDepositAsset = await ownable.isDepositAsset(assetList[0])
+
+                  expect(depositAssetListAfter[depositAssetListAfter.length - 1]).to.be.equal(
+                      assetList[0]
+                  )
+                  expect(isDepositAsset).to.be.true
+              })
+
+              it("Should update the existing asset list when the caller is the deployer", async function () {
+                  const { ownable, deployer } = await loadFixture(deployContractsFixture)
+                  const assetList = [deployer.address]
+
+                  await ownable.connect(deployer).addDepositAsset(assetList)
+
+                  const depositAssetListAfter = await ownable.getDepositAssetList()
+                  const isDepositAsset = await ownable.isDepositAsset(assetList[0])
+
+                  expect(depositAssetListAfter[depositAssetListAfter.length - 1]).to.be.equal(
+                      assetList[0]
+                  )
+                  expect(isDepositAsset).to.be.true
+              })
+          })
       })
