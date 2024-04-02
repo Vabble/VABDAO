@@ -41,6 +41,7 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   usdcTokenContract,
                   lockPeriod,
                   ownableFactory,
+                  exmTokenContract,
               } = await deployAndInitAllContracts()
 
               //? Fund and approve accounts
@@ -55,7 +56,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
               //? Connect accounts to ownable contract
               const ownableDeployer = ownable.connect(deployer)
-
               const ownableAuditor = ownable.connect(auditor)
 
               return {
@@ -83,6 +83,7 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   ownableDeployer,
                   ownableAuditor,
                   ownableFactory,
+                  exmTokenContract,
               }
           }
 
@@ -520,6 +521,64 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   expect(depositAssetListAfter.includes(assetList[1])).to.be.false
                   expect(isDepositAssetVabToken).to.be.false
                   expect(isDepositAssetUSDCToken).to.be.false
+              })
+          })
+
+          describe("isDepositAsset", function () {
+              it("Should return true if the asset is in the list", async function () {
+                  const { ownable, usdcTokenContract } = await loadFixture(deployContractsFixture)
+                  const isDepositAsset = await ownable.isDepositAsset(usdcTokenContract.address)
+                  expect(isDepositAsset).to.be.equal(true)
+              })
+
+              it("Should return false if the asset is not in the list", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+                  const isDepositAsset = await ownable.isDepositAsset(auditor.address)
+                  expect(isDepositAsset).to.be.equal(false)
+              })
+          })
+
+          describe("getDepositAssetList", function () {
+              it("Should return true a list of all deposit assets", async function () {
+                  const { ownable, vabTokenContract, usdcTokenContract, exmTokenContract } =
+                      await loadFixture(deployContractsFixture)
+
+                  const expectedDepositAssetList = [
+                      vabTokenContract.address,
+                      usdcTokenContract.address,
+                      exmTokenContract.address,
+                      CONFIG.addressZero,
+                  ]
+                  const depositAssetList = await ownable.getDepositAssetList()
+
+                  expect(expectedDepositAssetList.length).to.be.equal(depositAssetList.length)
+              })
+          })
+
+          // TODO: Ask about Zero Address test case
+          describe("changeVABWallet", function () {
+              it("Should revert if the caller is not the auditor", async function () {
+                  const { ownableDeployer } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownableDeployer.changeVABWallet(ZERO_ADDRESS)).to.be.revertedWith(
+                      "caller is not the auditor"
+                  )
+              })
+
+              it("Should revert if the new address is a zero address", async function () {
+                  const { ownableAuditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownableAuditor.changeVABWallet(ZERO_ADDRESS)).to.be.revertedWith(
+                      "changeVABWallet: Zero Address"
+                  )
+              })
+
+              it("Should emit the VABWalletChanged event", async function () {
+                  const { ownableAuditor, ownable } = await loadFixture(deployContractsFixture)
+
+                  const tx = await ownableAuditor.changeVABWallet(ZERO_ADDRESS)
+
+                  await expect(tx).to.emit(ownable, "VABWalletChanged").withArgs(ZERO_ADDRESS)
               })
           })
       })

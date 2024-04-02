@@ -242,6 +242,7 @@ const deployAndInitAllContracts = async () => {
             usdcTokenContract,
             lockPeriod,
             ownableFactory,
+            exmTokenContract,
         }
     } catch (error) {
         console.log("===== deployAndInitAllContracts error =====", error)
