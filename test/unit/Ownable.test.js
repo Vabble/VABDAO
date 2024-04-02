@@ -638,4 +638,38 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   )
               })
           })
+
+          describe("depositVABToEdgePool", function () {
+              it("Should revert if the caller is not the auditor", async function () {
+                  const { ownable, dev } = await loadFixture(deployContractsFixture)
+
+                  await expect(
+                      ownable.connect(dev).depositVABToEdgePool(edgePoolAmount)
+                  ).to.be.revertedWith("caller is not the auditor")
+              })
+
+              it("Should revert if the amount to deposit is zero", async function () {
+                  const { ownable, auditor } = await loadFixture(deployContractsFixture)
+                  const zeroValue = parseEther("0")
+                  await expect(
+                      ownable.connect(auditor).depositVABToEdgePool(zeroValue)
+                  ).to.be.revertedWith("depositVABToEdgePool: Zero amount")
+              })
+
+              it("Should add the correct amount to the edge pool", async function () {
+                  const { ownable, auditor, vabTokenContract } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const edgePoolBalanceBefore = await vabTokenContract.balanceOf(ownable.address)
+                  await ownable.connect(auditor).depositVABToEdgePool(edgePoolAmount)
+
+                  const edgePoolBalanceAfter = await vabTokenContract.balanceOf(ownable.address)
+
+                  expect(edgePoolBalanceBefore).to.be.equal("0")
+                  expect(edgePoolBalanceAfter).to.be.equal(
+                      edgePoolBalanceBefore.add(edgePoolAmount)
+                  )
+              })
+          })
       })
