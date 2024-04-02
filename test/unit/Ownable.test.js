@@ -700,4 +700,31 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   expect(balanceOfNewAddress).to.be.equal(edgePoolAmount)
               })
           })
+
+          describe("getVoteAddress", function () {
+              it("Should return the correct address", async function () {
+                  const { ownable, vote } = await loadFixture(deployContractsFixture)
+                  const voteAddress = await ownable.getVoteAddress()
+
+                  expect(voteAddress).to.be.equal(vote.address)
+              })
+          })
+
+          describe("getVabbleDAO", function () {
+              it("Should return the correct address", async function () {
+                  const { ownable, vabbleDAO } = await loadFixture(deployContractsFixture)
+                  const vabDaoAddress = await ownable.getVabbleDAO()
+
+                  expect(vabDaoAddress).to.be.equal(vabbleDAO.address)
+              })
+          })
+
+          describe("getStakingPoolAddress", function () {
+              it("Should return the correct address", async function () {
+                  const { ownable, stakingPool } = await loadFixture(deployContractsFixture)
+                  const stakingPoolAddress = await ownable.getStakingPoolAddress()
+
+                  expect(stakingPoolAddress).to.be.equal(stakingPool.address)
+              })
+          })
       })
