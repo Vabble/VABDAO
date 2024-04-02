@@ -11,6 +11,7 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
     ? describe.skip
     : describe("Ownable Unit Tests", function () {
           //? Variable declaration
+          const edgePoolAmount = parseEther("100")
 
           /**
            *
@@ -579,6 +580,62 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   const tx = await ownableAuditor.changeVABWallet(ZERO_ADDRESS)
 
                   await expect(tx).to.emit(ownable, "VABWalletChanged").withArgs(ZERO_ADDRESS)
+              })
+          })
+
+          describe("addToStudioPool", function () {
+              it("Should revert if the caller is not the dao contract", async function () {
+                  const { ownableDeployer } = await loadFixture(deployContractsFixture)
+
+                  await expect(ownableDeployer.addToStudioPool(edgePoolAmount)).to.be.revertedWith(
+                      "caller is not the DAO contract"
+                  )
+              })
+
+              it("Should revert if the amount to transfer exceeds the edge pool balance", async function () {
+                  const { ownable, vabbleDAO, auditor } = await loadFixture(deployContractsFixture)
+
+                  const transferAmount = edgePoolAmount.mul(2)
+
+                  await ownable.connect(auditor).depositVABToEdgePool(edgePoolAmount)
+
+                  await helpers.impersonateAccount(vabbleDAO.address)
+                  const signer = await ethers.getSigner(vabbleDAO.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await expect(
+                      ownable.connect(signer).addToStudioPool(transferAmount)
+                  ).to.be.revertedWith("addToStudioPool: insufficient edge pool")
+              })
+
+              it("Should transfer the correct amount to the studio pool", async function () {
+                  const { ownable, vabbleDAO, auditor, vabTokenContract } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const transferAmount = edgePoolAmount.div(2)
+
+                  await ownable.connect(auditor).depositVABToEdgePool(edgePoolAmount)
+                  const edgePoolBalanceBefore = await vabTokenContract.balanceOf(ownable.address)
+                  const studioPoolBalanceBefore = await vabTokenContract.balanceOf(
+                      vabbleDAO.address
+                  )
+
+                  await helpers.impersonateAccount(vabbleDAO.address)
+                  const signer = await ethers.getSigner(vabbleDAO.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await ownable.connect(signer).addToStudioPool(transferAmount)
+                  await helpers.stopImpersonatingAccount(vabbleDAO.address)
+
+                  const edgePoolBalanceAfter = await vabTokenContract.balanceOf(ownable.address)
+                  const studioPoolBalanceAfter = await vabTokenContract.balanceOf(vabbleDAO.address)
+
+                  expect(studioPoolBalanceBefore).to.be.equal(0)
+                  expect(edgePoolBalanceAfter).to.be.equal(
+                      edgePoolBalanceBefore.sub(transferAmount)
+                  )
+                  expect(studioPoolBalanceAfter).to.be.equal(
+                      studioPoolBalanceBefore.add(transferAmount)
+                  )
               })
           })
       })
