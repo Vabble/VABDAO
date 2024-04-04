@@ -5,7 +5,11 @@ const { ZERO_ADDRESS, CONFIG } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
 const { parseEther } = require("ethers/lib/utils")
-const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../helper-functions")
+const {
+    fundAndApproveAccounts,
+    deployAndInitAllContracts,
+    createDummyFilmProposal,
+} = require("../../helper-functions")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -160,14 +164,11 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               })
 
               it("Should increment the film count when a new proposal is created", async function () {
-                  const { vabbleDAOProposalCreator, usdcTokenContract, vabbleDAO } =
-                      await loadFixture(deployContractsFixture)
+                  const { proposalCreator, usdcTokenContract, vabbleDAO } = await loadFixture(
+                      deployContractsFixture
+                  )
 
-                  const fundType = 0
-                  const noVote = 0
-                  const feeToken = usdcTokenContract.address
-
-                  await vabbleDAOProposalCreator.proposalFilmCreate(fundType, noVote, feeToken)
+                  await createDummyFilmProposal({ vabbleDAO, proposalCreator, usdcTokenContract })
 
                   const filmCount = await vabbleDAO.filmCount()
 
@@ -175,22 +176,15 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               })
 
               it("Should create a new film proposal with the correct film info", async function () {
-                  const {
-                      vabbleDAOProposalCreator,
-                      usdcTokenContract,
+                  const { usdcTokenContract, vabbleDAO, proposalCreator } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const { noVote, fundType, filmInfo } = await createDummyFilmProposal({
                       vabbleDAO,
                       proposalCreator,
-                  } = await loadFixture(deployContractsFixture)
-
-                  const fundType = 0
-                  const noVote = 0
-                  const feeToken = usdcTokenContract.address
-
-                  await vabbleDAOProposalCreator.proposalFilmCreate(fundType, noVote, feeToken)
-
-                  const filmCount = await vabbleDAO.filmCount()
-
-                  const filmInfo = await vabbleDAO.filmInfo(filmCount)
+                      usdcTokenContract,
+                  })
 
                   expect(filmInfo.fundType).to.be.equal(fundType)
                   expect(filmInfo.noVote).to.be.equal(noVote)
@@ -199,15 +193,13 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               })
 
               it("Should update the total film ids", async function () {
-                  const { vabbleDAOProposalCreator, usdcTokenContract, vabbleDAO } =
-                      await loadFixture(deployContractsFixture)
+                  const { proposalCreator, vabbleDAO, usdcTokenContract } = await loadFixture(
+                      deployContractsFixture
+                  )
 
-                  const fundType = 0
-                  const noVote = 0
-                  const feeToken = usdcTokenContract.address
                   const flag = 1 //= proposal
 
-                  await vabbleDAOProposalCreator.proposalFilmCreate(fundType, noVote, feeToken)
+                  await createDummyFilmProposal({ vabbleDAO, proposalCreator, usdcTokenContract })
 
                   const filmCount = await vabbleDAO.filmCount()
                   const filmIds = await vabbleDAO.getFilmIds(flag)
@@ -216,19 +208,13 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               })
 
               it("Should update the user film ids", async function () {
-                  const {
-                      vabbleDAOProposalCreator,
-                      usdcTokenContract,
-                      vabbleDAO,
-                      proposalCreator,
-                  } = await loadFixture(deployContractsFixture)
+                  const { usdcTokenContract, vabbleDAO, proposalCreator } = await loadFixture(
+                      deployContractsFixture
+                  )
 
-                  const fundType = 0
-                  const noVote = 0
-                  const feeToken = usdcTokenContract.address
                   const flag = 1 //= proposal
 
-                  await vabbleDAOProposalCreator.proposalFilmCreate(fundType, noVote, feeToken)
+                  await createDummyFilmProposal({ vabbleDAO, proposalCreator, usdcTokenContract })
 
                   const filmCount = await vabbleDAO.filmCount()
                   const userFilmIds = await vabbleDAO.getUserFilmIds(proposalCreator.address, flag)
@@ -237,28 +223,22 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               })
 
               it("Should emit the FilmProposalCreated event", async function () {
-                  const {
-                      vabbleDAOProposalCreator,
-                      usdcTokenContract,
-                      vabbleDAO,
-                      proposalCreator,
-                  } = await loadFixture(deployContractsFixture)
-
-                  const fundType = 0
-                  const noVote = 0
-                  const feeToken = usdcTokenContract.address
-
-                  const tx = await vabbleDAOProposalCreator.proposalFilmCreate(
-                      fundType,
-                      noVote,
-                      feeToken
+                  const { usdcTokenContract, vabbleDAO, proposalCreator } = await loadFixture(
+                      deployContractsFixture
                   )
 
-                  const filmCount = await vabbleDAO.filmCount()
+                  const { createFilmProposalTx, noVote, fundType, filmId } =
+                      await createDummyFilmProposal({
+                          vabbleDAO,
+                          proposalCreator,
+                          usdcTokenContract,
+                      })
 
-                  await expect(tx)
+                  await expect(createFilmProposalTx)
                       .to.emit(vabbleDAO, "FilmProposalCreated")
-                      .withArgs(filmCount, noVote, fundType, proposalCreator.address)
+                      .withArgs(filmId, noVote, fundType, proposalCreator.address)
               })
           })
+
+          describe("proposalFilmUpdate", function () {})
       })
