@@ -9,6 +9,7 @@ const {
     fundAndApproveAccounts,
     deployAndInitAllContracts,
     createDummyFilmProposal,
+    getTimestampFromTx,
 } = require("../../helper-functions")
 
 !developmentChains.includes(network.name)
@@ -240,5 +241,683 @@ const {
               })
           })
 
-          describe("proposalFilmUpdate", function () {})
+          describe("proposalFilmUpdate", function () {
+              const proposalTitle = "Test Title"
+              const proposalDescription = "Test Description"
+
+              it("Should revert if the studio payees length is 0", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = []
+                  const studioPayees = []
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e1")
+              })
+
+              it("Should revert if the studio payees length is not equal to share percents length", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = []
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e2")
+              })
+
+              it("Should revert if the title length is zero", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1 * 1e8]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const zeroLengthTitle = ""
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          zeroLengthTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e3")
+              })
+
+              it("Should revert if the fund type is not zero but the fund period is zero", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1 * 1e8]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                      noVote: 0,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e4")
+              })
+
+              it("Should revert if the fund type is not zero but the raise amount is less than the min deposit amount", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1 * 1e8]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.sub(1)
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                      noVote: 0,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e5")
+              })
+
+              it("Should revert if the fund type is not zero but the reward percent is larger than 100%", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1 * 1e8]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 2 * 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                      noVote: 0,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e6")
+              })
+
+              it("Should revert if the fund type is zero but the reward percent is not zero", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1 * 1e8]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e7")
+              })
+
+              it("Should revert if the total percent of the share percents is not equal to 100%", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1 * 1e8, 1e10]
+                  const studioPayees = [proposalCreator.address, dev.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: e8")
+              })
+
+              it("Should revert if the proposal was already updated", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await expect(
+                      vabbleDAOProposalCreator.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: NL")
+              })
+
+              it("Should revert if the function caller is not the studio", async function () {
+                  const { usdcTokenContract, vabbleDAO, proposalCreator, vabbleDAOProposalVoter } =
+                      await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await expect(
+                      vabbleDAOProposalVoter.proposalFilmUpdate(
+                          filmId,
+                          proposalTitle,
+                          proposalDescription,
+                          sharePercents,
+                          studioPayees,
+                          raiseAmount,
+                          fundPeriod,
+                          rewardPercent,
+                          enableClaimer
+                      )
+                  ).to.be.revertedWith("pU: NFO")
+              })
+
+              it("Should update the film info", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const proposalFilmUpdateTx = await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const filmProposalUpdateTimestamp = await getTimestampFromTx(proposalFilmUpdateTx)
+                  const filmInfo = await vabbleDAO.filmInfo(filmId)
+
+                  const [sharePercents_, studioPayees_] = await vabbleDAO.getFilmShare(filmId)
+
+                  expect(filmInfo.title).to.be.equal(proposalTitle)
+                  expect(filmInfo.description).to.be.equal(proposalDescription)
+                  expect(sharePercents_[0]).to.be.equal(sharePercents[0])
+                  expect(studioPayees_[0]).to.be.equal(studioPayees[0])
+                  expect(filmInfo.raiseAmount).to.be.equal(raiseAmount)
+                  expect(filmInfo.fundPeriod).to.be.equal(fundPeriod)
+                  expect(filmInfo.rewardPercent).to.be.equal(rewardPercent)
+                  expect(filmInfo.enableClaimer).to.be.equal(enableClaimer)
+                  expect(filmInfo.pCreateTime).to.be.equal(filmProposalUpdateTimestamp)
+                  expect(filmInfo.studio).to.be.equal(proposalCreator.address)
+                  expect(filmInfo.status).to.be.equal(1) // UPDATED
+              })
+
+              it("Should increment the updated film count", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const updatedFilmCount = await vabbleDAO.updatedFilmCount()
+                  expect(updatedFilmCount).to.be.equal(1)
+              })
+
+              it("Should update the total film ids", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const flag = 4 // Updated
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const filmIds = await vabbleDAO.getFilmIds(flag)
+
+                  expect(filmIds[0]).to.be.equal(filmId)
+              })
+
+              it("Should update the user film ids", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const flag = 2 // Updated
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const userFilmIds = await vabbleDAO.getUserFilmIds(proposalCreator.address, flag)
+                  expect(userFilmIds[0]).to.be.equal(filmId)
+              })
+
+              it("Should update the last fund Proposal CreateTime of the StakingPool contract if the fund type is not 0 and no vote is equal one", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                      stakingPool,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                      noVote: 1,
+                  })
+
+                  const filmProposalUpdateTx = await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+                  const filmProposalUpdateTimestamp = await getTimestampFromTx(filmProposalUpdateTx)
+
+                  const lastfundProposalCreateTime = await stakingPool.lastfundProposalCreateTime()
+                  expect(lastfundProposalCreateTime).to.be.equal(filmProposalUpdateTimestamp)
+              })
+
+              it("Should update the film info status to approved, set the correct approve timestamp and update totalFilmIds and user FilmIds if fund type is not 0 and no vote is one", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+                  const flag = 3 // approve
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                      noVote: 1,
+                  })
+
+                  const filmProposalUpdateTx = await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+                  const filmProposalUpdateTimestamp = await getTimestampFromTx(filmProposalUpdateTx)
+
+                  const filmInfo = await vabbleDAO.filmInfo(filmId)
+                  const userFilmIds = await vabbleDAO.getUserFilmIds(proposalCreator.address, flag)
+                  const filmIds = await vabbleDAO.getFilmIds(flag)
+
+                  expect(userFilmIds[0]).to.be.equal(filmId)
+                  expect(filmIds[0]).to.be.equal(filmId)
+                  expect(filmInfo.status).to.be.equal(3) // approved for funding by vote from VAB holders(staker)
+                  expect(filmInfo.pApproveTime).to.be.equal(filmProposalUpdateTimestamp)
+              })
+
+              it("Should emit the FilmProposalUpdated event", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+
+                  const { filmId, fundType } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmProposalUpdateTx = await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await expect(filmProposalUpdateTx)
+                      .to.emit(vabbleDAO, "FilmProposalUpdated")
+                      .withArgs(filmId, fundType, proposalCreator.address)
+              })
+          })
       })

@@ -352,10 +352,14 @@ const createDummyGovernancePropertyProposal = async ({ property, proposalCreator
  * @param {Object} proposalCreator - The account creating the film proposal.
  * @return {Object} An object containing the transaction for creating the film proposal, the timestamp of the proposal, the fund type, the number of votes, and the fee token.
  */
-const createDummyFilmProposal = async ({ vabbleDAO, proposalCreator, usdcTokenContract }) => {
+const createDummyFilmProposal = async ({
+    vabbleDAO,
+    proposalCreator,
+    usdcTokenContract,
+    fundType = 0,
+    noVote = 0,
+}) => {
     try {
-        const fundType = 0
-        const noVote = 0
         const feeToken = usdcTokenContract.address
 
         const createFilmProposalTx = await vabbleDAO
