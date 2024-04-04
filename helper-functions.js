@@ -345,6 +345,42 @@ const createDummyGovernancePropertyProposal = async ({ property, proposalCreator
 }
 
 /**
+ * Creates a dummy film proposal by interacting with the Vabble DAO contract.
+ *
+ * @param {string} vabbleDAO - The Vabble DAO contract.
+ * @param {string} usdcTokenContract - The USDC token contract.
+ * @param {Object} proposalCreator - The account creating the film proposal.
+ * @return {Object} An object containing the transaction for creating the film proposal, the timestamp of the proposal, the fund type, the number of votes, and the fee token.
+ */
+const createDummyFilmProposal = async ({ vabbleDAO, proposalCreator, usdcTokenContract }) => {
+    try {
+        const fundType = 0
+        const noVote = 0
+        const feeToken = usdcTokenContract.address
+
+        const createFilmProposalTx = await vabbleDAO
+            .connect(proposalCreator)
+            .proposalFilmCreate(fundType, noVote, feeToken)
+
+        const filmProposalTimestamp = await getTimestampFromTx(createFilmProposalTx)
+        const filmCount = await vabbleDAO.filmCount()
+        const filmInfo = await vabbleDAO.filmInfo(filmCount)
+
+        return {
+            createFilmProposalTx,
+            filmProposalTimestamp,
+            fundType,
+            noVote,
+            feeToken,
+            filmInfo,
+            filmId: filmCount,
+        }
+    } catch (error) {
+        console.log("===== createDummyFilmProposal error =====", error)
+    }
+}
+
+/**
  * Retrieves the timestamp from a transaction.
  *
  * @param {Object} tx - The transaction object.
@@ -362,4 +398,5 @@ module.exports = {
     createAndUpdateDummyFilmProposal,
     createDummyGovernancePropertyProposal,
     getTimestampFromTx,
+    createDummyFilmProposal,
 }
