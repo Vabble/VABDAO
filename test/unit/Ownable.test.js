@@ -556,7 +556,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               })
           })
 
-          // TODO: Ask about Zero Address test case
           describe("changeVABWallet", function () {
               it("Should revert if the caller is not the auditor", async function () {
                   const { ownableDeployer } = await loadFixture(deployContractsFixture)
@@ -566,10 +565,10 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   )
               })
 
-              it("Should revert if the new address is a zero address", async function () {
-                  const { ownableAuditor } = await loadFixture(deployContractsFixture)
+              it("Should revert if the new address is not a zero address", async function () {
+                  const { ownableAuditor, deployer } = await loadFixture(deployContractsFixture)
 
-                  await expect(ownableAuditor.changeVABWallet(ZERO_ADDRESS)).to.be.revertedWith(
+                  await expect(ownableAuditor.changeVABWallet(deployer.address)).to.be.revertedWith(
                       "changeVABWallet: Zero Address"
                   )
               })
