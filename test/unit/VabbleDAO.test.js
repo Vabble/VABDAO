@@ -16,7 +16,8 @@ const {
     ? describe.skip
     : describe("VabbleDAO Unit Tests", function () {
           //? Variable declaration
-
+          const proposalTitle = "Test Title"
+          const proposalDescription = "Test Description"
           /**
            *
            * @dev Executes the given function and takes a snapshot of the blockchain.
@@ -242,9 +243,6 @@ const {
           })
 
           describe("proposalFilmUpdate", function () {
-              const proposalTitle = "Test Title"
-              const proposalDescription = "Test Description"
-
               it("Should revert if the studio payees length is 0", async function () {
                   const {
                       usdcTokenContract,
@@ -918,6 +916,350 @@ const {
                   await expect(filmProposalUpdateTx)
                       .to.emit(vabbleDAO, "FilmProposalUpdated")
                       .withArgs(filmId, fundType, proposalCreator.address)
+              })
+          })
+
+          describe("changeOwner", function () {
+              it("Should revert if the caller is not the film owner", async function () {
+                  const { usdcTokenContract, vabbleDAO, proposalCreator } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await expect(
+                      vabbleDAO.changeOwner(filmId, proposalCreator.address)
+                  ).to.be.revertedWith("cO, E1")
+              })
+
+              it("Should overwrite the studio payee old owner address to the new owner address", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const newOwnerAddress = dev.address
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await vabbleDAOProposalCreator.changeOwner(filmId, newOwnerAddress)
+
+                  const [, studioPayees_] = await vabbleDAO.getFilmShare(filmId)
+
+                  expect(studioPayees_[0]).to.be.equal(newOwnerAddress)
+              })
+
+              it("Should set the film info studio address to the new owner address", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const newOwnerAddress = dev.address
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await vabbleDAOProposalCreator.changeOwner(filmId, newOwnerAddress)
+
+                  const filmInfo = await vabbleDAO.filmInfo(filmId)
+
+                  expect(filmInfo.studio).to.be.equal(newOwnerAddress)
+              })
+
+              it("Should set update the created user film ids if the status of the proposal is LISTED", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const newOwnerAddress = dev.address
+                  const flag = 1 // LISTED
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.changeOwner(filmId, newOwnerAddress)
+
+                  const userFilmIdsProposalCreator = await vabbleDAO.getUserFilmIds(
+                      proposalCreator.address,
+                      flag
+                  )
+                  const userFilmIdsNewOwner = await vabbleDAO.getUserFilmIds(newOwnerAddress, flag)
+
+                  expect(userFilmIdsProposalCreator[0]).to.be.equal(undefined)
+                  expect(userFilmIdsProposalCreator.length).to.be.equal(0)
+                  expect(userFilmIdsNewOwner[0]).to.be.equal(filmId)
+                  expect(userFilmIdsNewOwner.length).to.be.equal(1)
+              })
+
+              it("Should set update the created user film ids if the status of the proposal is UPDATED", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const newOwnerAddress = dev.address
+                  const flag = 2 // UPDATED
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await vabbleDAOProposalCreator.changeOwner(filmId, newOwnerAddress)
+
+                  const userFilmIdsProposalCreator = await vabbleDAO.getUserFilmIds(
+                      proposalCreator.address,
+                      flag
+                  )
+                  const userFilmIdsNewOwner = await vabbleDAO.getUserFilmIds(newOwnerAddress, flag)
+
+                  expect(userFilmIdsProposalCreator[0]).to.be.equal(undefined)
+                  expect(userFilmIdsProposalCreator.length).to.be.equal(0)
+                  expect(userFilmIdsNewOwner[0]).to.be.equal(filmId)
+                  expect(userFilmIdsNewOwner.length).to.be.equal(1)
+              })
+
+              it("Should set update the created user film ids if the status of the proposal is APPROVED_LISTING", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const newOwnerAddress = dev.address
+                  const flag = 3 // APPROVED_LISTING
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  await vabbleDAOProposalCreator.changeOwner(filmId, newOwnerAddress)
+
+                  const userFilmIdsProposalCreator = await vabbleDAO.getUserFilmIds(
+                      proposalCreator.address,
+                      flag
+                  )
+                  const userFilmIdsNewOwner = await vabbleDAO.getUserFilmIds(newOwnerAddress, flag)
+
+                  expect(userFilmIdsProposalCreator[0]).to.be.equal(undefined)
+                  expect(userFilmIdsProposalCreator.length).to.be.equal(0)
+                  expect(userFilmIdsNewOwner[0]).to.be.equal(filmId)
+                  expect(userFilmIdsNewOwner.length).to.be.equal(1)
+              })
+
+              it("Should set update the created user film ids if the status of the proposal is APPROVED_FUNDING", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const newOwnerAddress = dev.address
+                  const flag = 3 // APPROVED_FUNDING
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                      noVote: 1,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await vabbleDAOProposalCreator.changeOwner(filmId, newOwnerAddress)
+
+                  const userFilmIdsProposalCreator = await vabbleDAO.getUserFilmIds(
+                      proposalCreator.address,
+                      flag
+                  )
+                  const userFilmIdsNewOwner = await vabbleDAO.getUserFilmIds(newOwnerAddress, flag)
+
+                  expect(userFilmIdsProposalCreator[0]).to.be.equal(undefined)
+                  expect(userFilmIdsProposalCreator.length).to.be.equal(0)
+                  expect(userFilmIdsNewOwner[0]).to.be.equal(filmId)
+                  expect(userFilmIdsNewOwner.length).to.be.equal(1)
+              })
+
+              it("Should emit the ChangeFilmOwner event", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const newOwnerAddress = dev.address
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                      noVote: 1,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const changeOwnerTx = await vabbleDAOProposalCreator.changeOwner(
+                      filmId,
+                      newOwnerAddress
+                  )
+
+                  await expect(changeOwnerTx)
+                      .to.emit(vabbleDAO, "ChangeFilmOwner")
+                      .withArgs(filmId, proposalCreator.address, dev.address)
               })
           })
       })
