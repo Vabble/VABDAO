@@ -1478,4 +1478,172 @@ const {
                   expect(totalFilmIds[0]).to.be.equal(filmId)
               })
           })
+
+          describe("updateFilmFundPeriod", function () {
+              it("Should revert if the caller is not the studio", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+                  const newFundPeriod = ONE_DAY_IN_SECONDS
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await expect(
+                      vabbleDAO.connect(dev).updateFilmFundPeriod(filmId, newFundPeriod)
+                  ).to.be.revertedWith("uFP: 1")
+              })
+
+              it("Should revert if the fund type of the proposal is zero", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+                  const newFundPeriod = ONE_DAY_IN_SECONDS
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await expect(
+                      vabbleDAOProposalCreator.updateFilmFundPeriod(filmId, newFundPeriod)
+                  ).to.be.revertedWith("uFP: 2")
+              })
+
+              it("Should update the fund period of the proposal to the new fund period", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+
+                  const newFundPeriod = ONE_DAY_IN_SECONDS * 2
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await vabbleDAOProposalCreator.updateFilmFundPeriod(filmId, newFundPeriod)
+                  const filmInfo = await vabbleDAO.filmInfo(filmId)
+                  expect(filmInfo.fundPeriod).to.be.equal(newFundPeriod)
+              })
+
+              it("Should emit the FilmFundPeriodUpdated event", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+
+                  const newFundPeriod = ONE_DAY_IN_SECONDS * 2
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await expect(vabbleDAOProposalCreator.updateFilmFundPeriod(filmId, newFundPeriod))
+                      .to.emit(vabbleDAO, "FilmFundPeriodUpdated")
+                      .withArgs(filmId, proposalCreator.address, newFundPeriod)
+              })
+          })
       })
