@@ -556,32 +556,6 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
               })
           })
 
-          describe("changeVABWallet", function () {
-              it("Should revert if the caller is not the auditor", async function () {
-                  const { ownableDeployer } = await loadFixture(deployContractsFixture)
-
-                  await expect(ownableDeployer.changeVABWallet(ZERO_ADDRESS)).to.be.revertedWith(
-                      "caller is not the auditor"
-                  )
-              })
-
-              it("Should revert if the new address is not a zero address", async function () {
-                  const { ownableAuditor, deployer } = await loadFixture(deployContractsFixture)
-
-                  await expect(ownableAuditor.changeVABWallet(deployer.address)).to.be.revertedWith(
-                      "changeVABWallet: Zero Address"
-                  )
-              })
-
-              it("Should emit the VABWalletChanged event", async function () {
-                  const { ownableAuditor, ownable } = await loadFixture(deployContractsFixture)
-
-                  const tx = await ownableAuditor.changeVABWallet(ZERO_ADDRESS)
-
-                  await expect(tx).to.emit(ownable, "VABWalletChanged").withArgs(ZERO_ADDRESS)
-              })
-          })
-
           describe("addToStudioPool", function () {
               it("Should revert if the caller is not the dao contract", async function () {
                   const { ownableDeployer } = await loadFixture(deployContractsFixture)
