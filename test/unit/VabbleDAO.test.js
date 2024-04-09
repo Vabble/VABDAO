@@ -1935,4 +1935,63 @@ const {
                   expect(studioPoolUsers.length).to.be.equal(2)
               })
           })
+          
+          describe("withdrawVABFromStudioPool", function () {
+              it("Should revert if the caller is not the staking pool contract", async function () {
+                  const { vabbleDAOProposalCreator, dev } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const newAddress = dev.address
+
+                  await expect(
+                      vabbleDAOProposalCreator.withdrawVABFromStudioPool(newAddress)
+                  ).to.be.revertedWith("only stakingPool")
+              })
+
+              it("Should transfer the correct amount from the studio pool to the new address and set the studio pool balance to zero and delete all studioPoolUsers", async function () {
+                  const {
+                      stakingPool,
+                      proposalCreator,
+                      vabbleDAOAuditor,
+                      vabTokenContract,
+                      vabbleDAO,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+                  const amountToTransfer = depositAmount.div(2)
+
+                  const users = [proposalCreator.address]
+                  const amounts = [amountToTransfer]
+                  const which = 2 // StudioPool
+
+                  const newAddress = dev.address
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const studioPoolBalanceBefore = await vabTokenContract.balanceOf(
+                      vabbleDAO.address
+                  )
+                  const newAddressBalanceBefore = await vabTokenContract.balanceOf(newAddress)
+
+                  await helpers.impersonateAccount(stakingPool.address)
+                  const signer = await ethers.getSigner(stakingPool.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).withdrawVABFromStudioPool(newAddress)
+                  await helpers.stopImpersonatingAccount(stakingPool.address)
+
+                  const studioPoolBalanceAfter = await vabTokenContract.balanceOf(vabbleDAO.address)
+                  const newAddressBalanceAfter = await vabTokenContract.balanceOf(newAddress)
+
+                  const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(1)
+
+                  expect(studioPoolBalanceBefore).to.be.equal(amountToTransfer)
+                  expect(newAddressBalanceBefore).to.be.equal(0)
+                  expect(studioPoolBalanceAfter).to.be.equal(0)
+                  expect(newAddressBalanceAfter).to.be.equal(amountToTransfer)
+                  expect(studioPoolUsers.length).to.be.equal(0)
+              })
+          })
       })
