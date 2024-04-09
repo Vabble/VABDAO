@@ -54,7 +54,7 @@ const {
 
               //? Fund and approve accounts
               const accounts = [deployer, auditor, proposalCreator, proposalVoter]
-              const contractsToApprove = [vabbleDAO]
+              const contractsToApprove = [vabbleDAO, stakingPool]
               await fundAndApproveAccounts({
                   accounts,
                   vabTokenContract,
@@ -1644,6 +1644,196 @@ const {
                   await expect(vabbleDAOProposalCreator.updateFilmFundPeriod(filmId, newFundPeriod))
                       .to.emit(vabbleDAO, "FilmFundPeriodUpdated")
                       .withArgs(filmId, proposalCreator.address, newFundPeriod)
+              })
+          })
+
+          describe("allocateToPool", function () {
+              it("Should revert if the caller is not the Auditor", async function () {
+                  const { vabbleDAOProposalCreator } = await loadFixture(deployContractsFixture)
+
+                  const users = []
+                  const amounts = []
+                  const which = 1
+
+                  await expect(
+                      vabbleDAOProposalCreator.allocateToPool(users, amounts, which)
+                  ).to.be.revertedWith("only auditor")
+              })
+
+              it("Should revert if the users length is not equal to the amounts length", async function () {
+                  const { vabbleDAOAuditor, dev } = await loadFixture(deployContractsFixture)
+
+                  const users = [dev.address]
+                  const amounts = []
+                  const which = 1
+
+                  await expect(
+                      vabbleDAOAuditor.allocateToPool(users, amounts, which)
+                  ).to.be.revertedWith("aTP: e1")
+              })
+
+              it("Should revert if the function argument which is not one or two", async function () {
+                  const { vabbleDAOAuditor, dev } = await loadFixture(deployContractsFixture)
+
+                  const users = []
+                  const amounts = []
+                  const which = 0
+
+                  await expect(
+                      vabbleDAOAuditor.allocateToPool(users, amounts, which)
+                  ).to.be.revertedWith("aTP: e2")
+              })
+
+              it("Should transfer the correct amount from the users deposited balance to the edge pool if which is equal one", async function () {
+                  const {
+                      stakingPool,
+                      proposalCreator,
+                      vabTokenContract,
+                      ownable,
+                      vabbleDAOAuditor,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 1 // EdgePool
+
+                  const edgePoolBalanceBefore = await vabTokenContract.balanceOf(ownable.address)
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const edgePoolBalanceAfter = await vabTokenContract.balanceOf(ownable.address)
+
+                  expect(edgePoolBalanceBefore).to.be.equal(0)
+                  expect(edgePoolBalanceAfter).to.be.equal(depositAmount.div(2))
+              })
+
+              it("Should add the users address to the edgePoolUsers array if which is equal one", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const edgePoolUsers = await vabbleDAOAuditor.getPoolUsers(2)
+
+                  expect(edgePoolUsers[0]).to.be.equal(proposalCreator.address)
+              })
+
+              it("Should not add the users address to the edgePoolUsers array if which is equal one and the address is already in the array", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const edgePoolUsers = await vabbleDAOAuditor.getPoolUsers(2)
+
+                  expect(edgePoolUsers[0]).to.be.equal(proposalCreator.address)
+                  expect(edgePoolUsers.length).to.be.equal(1)
+              })
+
+              it("Should transfer the correct amount from the users deposited balance to the studio pool if which is equal 2", async function () {
+                  const {
+                      stakingPool,
+                      proposalCreator,
+                      vabTokenContract,
+                      vabbleDAO,
+                      vabbleDAOAuditor,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 2 // StudioPool
+
+                  const studioPoolBalanceBefore = await vabTokenContract.balanceOf(
+                      vabbleDAO.address
+                  )
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const studioPoolBalanceAfter = await vabTokenContract.balanceOf(vabbleDAO.address)
+
+                  expect(studioPoolBalanceBefore).to.be.equal(0)
+                  expect(studioPoolBalanceAfter).to.be.equal(depositAmount.div(2))
+              })
+
+              it("Should add the users address to the studioPoolUsers array if which is equal two", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 2 // StudioPool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(1)
+
+                  expect(studioPoolUsers[0]).to.be.equal(proposalCreator.address)
+              })
+
+              it("Should not add the users address to the studioPoolUsers array if which is equal two and the address is already in the array", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 2 // StudioPool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(1)
+
+                  expect(studioPoolUsers[0]).to.be.equal(proposalCreator.address)
+                  expect(studioPoolUsers.length).to.be.equal(1)
+              })
+
+              it("Should emit the AllocatedToPool event", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor, vabbleDAO } =
+                      await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 2 // StudioPool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  const tx = await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  await expect(tx)
+                      .to.emit(vabbleDAO, "AllocatedToPool")
+                      .withArgs(users, amounts, which)
               })
           })
       })
