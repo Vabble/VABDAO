@@ -1935,7 +1935,7 @@ const {
                   expect(studioPoolUsers.length).to.be.equal(2)
               })
           })
-          
+
           describe("withdrawVABFromStudioPool", function () {
               it("Should revert if the caller is not the staking pool contract", async function () {
                   const { vabbleDAOProposalCreator, dev } = await loadFixture(
@@ -1992,6 +1992,128 @@ const {
                   expect(studioPoolBalanceAfter).to.be.equal(0)
                   expect(newAddressBalanceAfter).to.be.equal(amountToTransfer)
                   expect(studioPoolUsers.length).to.be.equal(0)
+              })
+          })
+
+          describe("checkSetFinalFilms", function () {
+              it("Should return true for all film ids in the array if the finalFilmCalledTime has not been updated yet", async function () {
+                  const { vabbleDAO } = await loadFixture(deployContractsFixture)
+
+                  const filmIds = [1, 2, 3]
+
+                  const result = await vabbleDAO.checkSetFinalFilms(filmIds)
+
+                  expect(result.length).to.equal(filmIds.length)
+                  for (let i = 0; i < filmIds.length; i++) {
+                      expect(result[i]).to.equal(true)
+                  }
+              })
+
+              it("Should return false if the finalFilmCalledTime is less than the film reward claim period", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmIds = [filmId]
+                  const payouts = [parseEther("100")]
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const result = await vabbleDAO.checkSetFinalFilms(filmIds)
+
+                  expect(result[0]).to.be.false
+              })
+
+              it("Should return true if the finalFilmCalledTime is larger than the film reward claim period", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmIds = [filmId]
+                  const payouts = [parseEther("100")]
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const filmRewardClaimPeriod = await property.filmRewardClaimPeriod()
+
+                  await helpers.time.increase(filmRewardClaimPeriod)
+
+                  const result = await vabbleDAO.checkSetFinalFilms(filmIds)
+
+                  expect(result[0]).to.be.true
               })
           })
       })
