@@ -1836,4 +1836,103 @@ const {
                       .withArgs(users, amounts, which)
               })
           })
+
+          describe("allocateFromEdgePool", function () {
+              it("Should revert if the caller is not the Auditor", async function () {
+                  const { vabbleDAOProposalCreator } = await loadFixture(deployContractsFixture)
+
+                  const amount = parseEther("100")
+
+                  await expect(
+                      vabbleDAOProposalCreator.allocateFromEdgePool(amount)
+                  ).to.be.revertedWith("only auditor")
+              })
+
+              it("Should transfer the correct amount from the edge pool to the studio pool", async function () {
+                  const {
+                      stakingPool,
+                      proposalCreator,
+                      vabbleDAOAuditor,
+                      vabTokenContract,
+                      vabbleDAO,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+                  const amountToTransfer = depositAmount.div(2)
+
+                  const users = [proposalCreator.address]
+                  const amounts = [amountToTransfer]
+                  const which = 1 // EdgePool
+
+                  const studioPoolBalanceBefore = await vabTokenContract.balanceOf(
+                      vabbleDAO.address
+                  )
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  //? First we allocate VAB to the EdgePool
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  //? Now we allocate VAB from the EdgePool to the Studio Pool
+                  await vabbleDAOAuditor.allocateFromEdgePool(amountToTransfer)
+
+                  const studioPoolBalanceAfter = await vabTokenContract.balanceOf(vabbleDAO.address)
+
+                  expect(studioPoolBalanceBefore).to.be.equal(0)
+                  expect(studioPoolBalanceAfter).to.be.equal(amountToTransfer)
+              })
+
+              it("Should add the users address to the studioPoolUsers array and delete the edgePoolUsers", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor, proposalVoter } =
+                      await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+                  const amountToTransfer = depositAmount.div(2)
+
+                  const users = [proposalCreator.address, proposalVoter.address]
+                  const amounts = [amountToTransfer, amountToTransfer]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await stakingPool.connect(proposalVoter).depositVAB(depositAmount)
+                  //? First we allocate VAB to the EdgePool
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  //? Now we allocate VAB from the EdgePool to the Studio Pool
+                  await vabbleDAOAuditor.allocateFromEdgePool(amountToTransfer)
+
+                  const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(1)
+                  const edgePoolUsers = await vabbleDAOAuditor.getPoolUsers(2)
+
+                  expect(studioPoolUsers[0]).to.be.equal(proposalCreator.address)
+                  expect(studioPoolUsers[1]).to.be.equal(proposalVoter.address)
+                  expect(edgePoolUsers.length).to.be.equal(0)
+              })
+
+              it("Should skip the users address if they are already in the studioPool array", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor, proposalVoter } =
+                      await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+                  const amountToTransfer = depositAmount.div(2)
+
+                  const users = [proposalCreator.address, proposalVoter.address]
+                  const amounts = [amountToTransfer, amountToTransfer]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await stakingPool.connect(proposalVoter).depositVAB(depositAmount)
+                  //? First we allocate VAB to the EdgePool
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  //? Now we allocate VAB from the EdgePool to the Studio Pool
+                  await vabbleDAOAuditor.allocateFromEdgePool(amountToTransfer)
+                  await vabbleDAOAuditor.allocateFromEdgePool(amountToTransfer)
+
+                  const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(1)
+
+                  expect(studioPoolUsers[0]).to.be.equal(proposalCreator.address)
+                  expect(studioPoolUsers[1]).to.be.equal(proposalVoter.address)
+                  expect(studioPoolUsers.length).to.be.equal(2)
+              })
+          })
       })
