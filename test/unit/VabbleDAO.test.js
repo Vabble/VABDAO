@@ -4,7 +4,7 @@ const { expect } = require("chai")
 const { ZERO_ADDRESS, CONFIG } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
-const { parseEther } = require("ethers/lib/utils")
+const { parseEther, formatEther } = require("ethers/lib/utils")
 const {
     fundAndApproveAccounts,
     deployAndInitAllContracts,
@@ -2114,6 +2114,352 @@ const {
                   const result = await vabbleDAO.checkSetFinalFilms(filmIds)
 
                   expect(result[0]).to.be.true
+              })
+          })
+
+          describe("setFinalFilms", function () {
+              it("Should revert if the caller is not the auditor", async function () {
+                  const { vabbleDAOProposalCreator } = await loadFixture(deployContractsFixture)
+
+                  const filmIds = []
+                  const payouts = [parseEther("100")]
+
+                  await expect(
+                      vabbleDAOProposalCreator.setFinalFilms(filmIds, payouts)
+                  ).to.be.revertedWith("only auditor")
+              })
+
+              it("Should revert if the filmId length is 0", async function () {
+                  const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
+
+                  const filmIds = []
+                  const payouts = [parseEther("100")]
+
+                  await expect(vabbleDAOAuditor.setFinalFilms(filmIds, payouts)).to.be.revertedWith(
+                      "sFF: bad length"
+                  )
+              })
+
+              it("Should revert if the filmIds array length is not equal to the payouts array", async function () {
+                  const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
+
+                  const filmIds = [1, 2]
+                  const payouts = [parseEther("100")]
+
+                  await expect(vabbleDAOAuditor.setFinalFilms(filmIds, payouts)).to.be.revertedWith(
+                      "sFF: bad length"
+                  )
+              })
+
+              it("Should update the finalFilmCalledTime to the current block timestamp", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmIds = [filmId]
+                  const payouts = [parseEther("100")]
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const tx = await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+                  const timestamp = await getTimestampFromTx(tx)
+
+                  const finalFilmCalledTime = await vabbleDAO.finalFilmCalledTime(filmId)
+
+                  expect(finalFilmCalledTime).to.be.equal(timestamp)
+              })
+
+              it("Should emit the SetFinalFilms event", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                      auditor,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmIds = [filmId]
+                  const payouts = [parseEther("100")]
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const tx = await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  await expect(tx)
+                      .to.emit(vabbleDAOAuditor, "SetFinalFilms")
+                      .withArgs(auditor.address, filmIds, payouts)
+              })
+          })
+
+          describe("startNewMonth", function () {
+              it("Should revert if the caller is not the auditor", async function () {
+                  const { vabbleDAOProposalCreator } = await loadFixture(deployContractsFixture)
+                  await expect(vabbleDAOProposalCreator.startNewMonth()).to.be.revertedWith(
+                      "only auditor"
+                  )
+              })
+
+              it("Should increment the current monthId", async function () {
+                  const { vabbleDAOAuditor, vabbleDAO } = await loadFixture(deployContractsFixture)
+
+                  const currentMonthBefore = await vabbleDAO.monthId()
+                  await vabbleDAOAuditor.startNewMonth()
+                  const currentMonthAfter = await vabbleDAO.monthId()
+
+                  expect(currentMonthAfter).to.be.equal(currentMonthBefore.add(1))
+              })
+          })
+
+          describe("__setFinalFilm", function () {
+              it("Should revert if the film status is not approved listing or approved funding", async function () {
+                  const { usdcTokenContract, vabbleDAO, proposalCreator, vabbleDAOAuditor } =
+                      await loadFixture(deployContractsFixture)
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmIds = [filmId]
+                  const payouts = [parseEther("100")]
+
+                  await expect(vabbleDAOAuditor.setFinalFilms(filmIds, payouts)).to.be.revertedWith(
+                      "sFF: Not approved"
+                  )
+              })
+
+              it("Should call __setFinalAmountToPayees if film status is approved listing and update the finalizedAmount to the correct value", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                      vabbleDAOAuditor,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const payoutAmount = parseEther("100")
+                  const filmIds = [filmId]
+                  const payouts = [payoutAmount]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const currentMonth = await vabbleDAO.monthId()
+                  const finalizedAmount = await vabbleDAO.getUserRewardAmountBetweenMonths(
+                      filmId,
+                      0,
+                      currentMonth,
+                      proposalCreator.address
+                  )
+
+                  expect(finalizedAmount).to.be.equal(payoutAmount)
+              })
+
+              it("Should call __setFinalAmountToPayees and __addFinalFilmId and push the film id to the userFilmIds array if film status is approved listing", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                      vabbleDAOAuditor,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [dev.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const payoutAmount = parseEther("100")
+                  const filmIds = [filmId]
+                  const payouts = [payoutAmount]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const userFilmIds = await vabbleDAO.getUserFilmIds(dev.address, 4)
+
+                  expect(userFilmIds[0]).to.be.equal(filmId)
+              })
+
+              it("Should update the finalizedFilmIds array", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                      vabbleDAOAuditor,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const payoutAmount = parseEther("100")
+                  const filmIds = [filmId]
+                  const payouts = [payoutAmount]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const currentMonth = await vabbleDAO.monthId()
+
+                  const getFinalizedFilmIds = await vabbleDAO.getFinalizedFilmIds(currentMonth)
+
+                  expect(getFinalizedFilmIds[0]).to.be.equal(filmId)
               })
           })
       })

@@ -16,7 +16,7 @@ const { parseEther } = require("ethers/lib/utils")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Setup Unit Tests", function () {
+    : describe("Setup Tests", function () {
           async function deployContractsFixture() {
               const {
                   deployer,
