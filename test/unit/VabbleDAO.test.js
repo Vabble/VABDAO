@@ -2462,4 +2462,239 @@ const {
                   expect(getFinalizedFilmIds[0]).to.be.equal(filmId)
               })
           })
+
+          describe("claimReward", function () {
+              it("Should revert if the film Id array length is zero", async function () {
+                  const { vabbleDAO } = await loadFixture(deployContractsFixture)
+
+                  const filmIds = []
+
+                  await expect(vabbleDAO.claimReward(filmIds)).to.be.revertedWith("cR: bad filmIds")
+              })
+
+              it("Should revert if the film Id array length above 1000", async function () {
+                  const { vabbleDAO } = await loadFixture(deployContractsFixture)
+
+                  const filmIds = []
+
+                  for (let i = 0; i < 1001; i++) {
+                      filmIds.push(i)
+                  }
+                  await expect(vabbleDAO.claimReward(filmIds)).to.be.revertedWith("cR: bad filmIds")
+              })
+
+              it("Should revert if there are no rewards to claim", async function () {
+                  const { vabbleDAO } = await loadFixture(deployContractsFixture)
+
+                  const filmIds = [1]
+
+                  await expect(vabbleDAO.claimReward(filmIds)).to.be.revertedWith(
+                      "cAR: zero amount"
+                  )
+              })
+
+              it("Should revert if the Studio Pool liquidity is insufficient", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const filmIds = [filmId]
+                  const payouts = [parseEther("100")]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  await expect(vabbleDAOProposalCreator.claimReward(filmIds)).to.be.revertedWith(
+                      "cAR: insufficient 1"
+                  )
+              })
+
+              it("Should transfer the correct reward amount to the users balance and subtract it from the Studio Pool", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                      stakingPool,
+                      dev,
+                      vabTokenContract,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [dev.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const payoutAmount = parseEther("100")
+                  const filmIds = [filmId]
+                  const payouts = [payoutAmount]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const depositAmount = parseEther("200")
+                  const amountToTransfer = depositAmount.div(2)
+
+                  const users = [proposalCreator.address]
+                  const amounts = [amountToTransfer]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  //? First we allocate VAB to the EdgePool
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  //? Now we allocate VAB from the EdgePool to the Studio Pool
+                  await vabbleDAOAuditor.allocateFromEdgePool(amountToTransfer)
+                  const studioPoolBalanceBefore = await vabTokenContract.balanceOf(
+                      vabbleDAO.address
+                  )
+                  const userBalanceBefore = await vabTokenContract.balanceOf(dev.address)
+
+                  await vabbleDAO.connect(dev).claimReward(filmIds)
+                  const studioPoolBalanceAfter = await vabTokenContract.balanceOf(vabbleDAO.address)
+                  const userBalanceAfter = await vabTokenContract.balanceOf(dev.address)
+
+                  expect(studioPoolBalanceBefore).to.be.equal(amountToTransfer)
+                  expect(studioPoolBalanceAfter).to.be.equal(
+                      studioPoolBalanceBefore.sub(payoutAmount)
+                  )
+                  expect(userBalanceAfter).to.be.equal(userBalanceBefore.add(payoutAmount))
+              })
+
+              it("Should emit the RewardAllClaimed event", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                      stakingPool,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [dev.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const payoutAmount = parseEther("100")
+                  const filmIds = [filmId]
+                  const payouts = [payoutAmount]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const depositAmount = parseEther("200")
+                  const amountToTransfer = depositAmount.div(2)
+
+                  const users = [proposalCreator.address]
+                  const amounts = [amountToTransfer]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  //? First we allocate VAB to the EdgePool
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  //? Now we allocate VAB from the EdgePool to the Studio Pool
+                  await vabbleDAOAuditor.allocateFromEdgePool(amountToTransfer)
+                  const currentMonth = await vabbleDAO.monthId()
+
+                  const tx = await vabbleDAO.connect(dev).claimReward(filmIds)
+
+                  await expect(tx)
+                      .to.emit(vabbleDAO, "RewardAllClaimed")
+                      .withArgs(dev.address, currentMonth, filmIds, payoutAmount)
+              })
+          })
       })
