@@ -3481,4 +3481,53 @@ const {
                   expect(rewardPercent_.toString()).to.be.equal(rewardPercent.toString())
               })
           })
+
+          describe("getFilmShare", function () {
+              it("Should return the correct sharePercents and studioPayees", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [5e9, 5e9]
+                  const studioPayees = [proposalCreator.address, dev.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e5
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+                  const fundType = 1
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const [sharePercents_, studioPayees_] = await vabbleDAO.getFilmShare(filmId)
+
+                  expect(sharePercents_[0].toString()).to.be.equal(sharePercents[0].toString())
+                  expect(sharePercents_[1].toString()).to.be.equal(sharePercents[1].toString())
+
+                  expect(studioPayees_[0]).to.be.equal(studioPayees[0])
+                  expect(studioPayees_[1]).to.be.equal(studioPayees[1])
+              })
+          })
       })
