@@ -3730,4 +3730,106 @@ const {
                   expect(isEnabled).to.be.false
               })
           })
+
+          describe("updateEnabledClaimer", function () {
+              it("Should revert if the caller is not the owner", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+                  const flag = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, flag)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  await expect(
+                      vabbleDAO.updateEnabledClaimer(filmId, enableClaimer)
+                  ).to.be.revertedWith("uEC: not film owner")
+              })
+
+              it("Should update the enableClaimer key of the film proposal", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+                  const flag = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, flag)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  await vabbleDAOProposalCreator.updateEnabledClaimer(filmId, enableClaimer + 1)
+
+                  const isEnabled = await vabbleDAO.isEnabledClaimer(filmId)
+
+                  expect(isEnabled).to.be.true
+              })
+          })
       })
