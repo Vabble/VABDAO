@@ -3530,4 +3530,104 @@ const {
                   expect(studioPayees_[1]).to.be.equal(studioPayees[1])
               })
           })
+
+          describe("getFilmProposalTime", function () {
+              it("Should return the correct creation time", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [5e9, 5e9]
+                  const studioPayees = [proposalCreator.address, dev.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e5
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+                  const fundType = 1
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType,
+                  })
+
+                  //? Creation time gets updated when we call proposalFilmUpdated
+                  const tx = await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const timestamp = await getTimestampFromTx(tx)
+
+                  const [cTime_, aTime_] = await vabbleDAO.getFilmProposalTime(filmId)
+
+                  expect(cTime_.toString()).to.be.equal(timestamp.toString())
+                  expect(aTime_.toString()).to.be.equal("0")
+              })
+
+              it("Should return the correct approve time", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                      property,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e10
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+                  const flag = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType: 1,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  const tx = await vabbleDAO.connect(signer).approveFilmByVote(filmId, flag)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const timestamp = await getTimestampFromTx(tx)
+
+                  const [, aTime_] = await vabbleDAO.getFilmProposalTime(filmId)
+
+                  expect(aTime_.toString()).to.be.equal(timestamp.toString())
+              })
+          })
       })
