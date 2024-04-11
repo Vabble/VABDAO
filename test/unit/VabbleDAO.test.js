@@ -3432,4 +3432,53 @@ const {
                   expect(studioAddress).to.be.equal(proposalCreator.address)
               })
           })
+
+          describe("getFilmFund", function () {
+              it("Should return the correct raise amount, fund period, fund type, reward percent", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      property,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [5e9, 5e9]
+                  const studioPayees = [proposalCreator.address, dev.address]
+                  const fundPeriod = ONE_DAY_IN_SECONDS
+                  const rewardPercent = 1e5
+                  const enableClaimer = 0
+                  const minDepositAmount = await property.minDepositAmount()
+                  const raiseAmount = minDepositAmount.add(1)
+                  const fundType = 1
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                      fundType,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const [raiseAmount_, fundPeriod_, fundType_, rewardPercent_] =
+                      await vabbleDAO.getFilmFund(filmId)
+
+                  expect(raiseAmount_.toString()).to.be.equal(raiseAmount.toString())
+                  expect(fundPeriod_.toString()).to.be.equal(fundPeriod.toString())
+                  expect(fundType_).to.be.equal(fundType)
+                  expect(rewardPercent_.toString()).to.be.equal(rewardPercent.toString())
+              })
+          })
       })
