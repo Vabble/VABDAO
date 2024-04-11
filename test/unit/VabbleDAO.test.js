@@ -3832,4 +3832,24 @@ const {
                   expect(isEnabled).to.be.true
               })
           })
+
+          describe("getFilmIds", function () {
+              it("Should return a list of film ids", async function () {
+                  const { proposalCreator, vabbleDAO, usdcTokenContract } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const flag = 1 //= proposal created
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmIds = await vabbleDAO.getFilmIds(flag)
+
+                  expect(filmIds[0]).to.be.equal(filmId)
+              })
+          })
       })
