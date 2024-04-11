@@ -3852,4 +3852,69 @@ const {
                   expect(filmIds[0]).to.be.equal(filmId)
               })
           })
+
+          describe("getPoolUsers", function () {
+              const studioPoolFlag = 1
+              const edgePoolFlag = 2
+
+              it("Should revert if the caller is not the auditor", async function () {
+                  const {
+                      stakingPool,
+                      proposalCreator,
+                      vabbleDAOAuditor,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  await expect(
+                      vabbleDAOProposalCreator.getPoolUsers(edgePoolFlag)
+                  ).to.be.revertedWith("only auditor")
+              })
+
+              it("Should return the edge pool users", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const edgePoolUsers = await vabbleDAOAuditor.getPoolUsers(edgePoolFlag)
+
+                  expect(edgePoolUsers[0]).to.be.equal(proposalCreator.address)
+              })
+
+              it("Should return the studio pool users", async function () {
+                  const { stakingPool, proposalCreator, vabbleDAOAuditor } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const depositAmount = parseEther("100")
+
+                  const users = [proposalCreator.address]
+                  const amounts = [depositAmount.div(2)]
+                  const which = 2 // StudioPool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(studioPoolFlag)
+
+                  expect(studioPoolUsers[0]).to.be.equal(proposalCreator.address)
+              })
+          })
       })
