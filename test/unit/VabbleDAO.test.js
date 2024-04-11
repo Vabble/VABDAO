@@ -3050,4 +3050,165 @@ const {
                   expect(reward).to.be.equal(payoutAmount)
               })
           })
+
+          describe("getUserFilmIds", function () {
+              it("Should return the film ids with status created", async function () {
+                  const { usdcTokenContract, vabbleDAO, proposalCreator } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const flag = 1 //= create
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const userFilmIds = await vabbleDAO.getUserFilmIds(proposalCreator.address, flag)
+
+                  expect(userFilmIds[0]).to.be.equal(filmId)
+              })
+
+              it("Should return the film ids with status updated", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const raiseAmount = 0
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const flag = 2 // Updated
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  const userFilmIds = await vabbleDAO.getUserFilmIds(proposalCreator.address, flag)
+                  expect(userFilmIds[0]).to.be.equal(filmId)
+              })
+
+              it("Should return the film ids with status approved", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+                  const flag = 0
+                  const approvedFlag = 3
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, flag)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const userFilmIds = await vabbleDAO.getUserFilmIds(
+                      proposalCreator.address,
+                      approvedFlag
+                  )
+                  expect(userFilmIds[0]).to.be.equal(filmId)
+              })
+
+              it("Should return the film ids with status finalized", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+                  const finalizedFlag = 4
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const filmIds = [filmId]
+                  const payouts = [parseEther("100")]
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const userFilmIds = await vabbleDAO.getUserFilmIds(
+                      proposalCreator.address,
+                      finalizedFlag
+                  )
+                  expect(userFilmIds[0]).to.be.equal(filmId)
+              })
+          })
       })
