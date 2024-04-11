@@ -1,10 +1,9 @@
 const { ethers, network } = require("hardhat")
 const { developmentChains, ONE_DAY_IN_SECONDS } = require("../../helper-hardhat-config")
 const { expect } = require("chai")
-const { ZERO_ADDRESS, CONFIG } = require("../../scripts/utils")
 const helpers = require("@nomicfoundation/hardhat-network-helpers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
-const { parseEther, formatEther } = require("ethers/lib/utils")
+const { parseEther } = require("ethers/lib/utils")
 const {
     fundAndApproveAccounts,
     deployAndInitAllContracts,
@@ -2970,6 +2969,83 @@ const {
                   const reward = await vabbleDAO
                       .connect(dev)
                       .getAllAvailableRewards(currentMonth, dev.address)
+
+                  expect(reward).to.be.equal(payoutAmount)
+              })
+          })
+
+          describe("getUserRewardAmountForUser", function () {
+              it("Should return the correct amount", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vabbleDAOAuditor,
+                      vote,
+                      stakingPool,
+                      dev,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [dev.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const payoutAmount = parseEther("50")
+                  const filmIds = [filmId]
+                  const payouts = [payoutAmount]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const depositAmount = parseEther("200")
+                  const amountToTransfer = depositAmount.div(2)
+
+                  const users = [proposalCreator.address]
+                  const amounts = [amountToTransfer]
+                  const which = 1 // EdgePool
+
+                  await stakingPool.connect(proposalCreator).depositVAB(depositAmount)
+                  //? First we allocate VAB to the EdgePool
+                  await vabbleDAOAuditor.allocateToPool(users, amounts, which)
+
+                  //? Now we allocate VAB from the EdgePool to the Studio Pool
+                  await vabbleDAOAuditor.allocateFromEdgePool(amountToTransfer)
+
+                  const currentMonth = await vabbleDAO.monthId()
+
+                  const reward = await vabbleDAO.getUserRewardAmountForUser(
+                      filmId,
+                      currentMonth,
+                      dev.address
+                  )
 
                   expect(reward).to.be.equal(payoutAmount)
               })
