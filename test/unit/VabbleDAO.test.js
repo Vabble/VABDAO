@@ -3917,4 +3917,61 @@ const {
                   expect(studioPoolUsers[0]).to.be.equal(proposalCreator.address)
               })
           })
+
+          describe("getFinalizedFilmIds", function () {
+              it("Should return a list of finalized film ids", async function () {
+                  const {
+                      usdcTokenContract,
+                      vabbleDAO,
+                      proposalCreator,
+                      vabbleDAOProposalCreator,
+                      vote,
+                      vabbleDAOAuditor,
+                  } = await loadFixture(deployContractsFixture)
+
+                  const sharePercents = [1e10]
+                  const studioPayees = [proposalCreator.address]
+                  const fundPeriod = 0
+                  const rewardPercent = 0
+                  const enableClaimer = 0
+                  const raiseAmount = 0
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  await vabbleDAOProposalCreator.proposalFilmUpdate(
+                      filmId,
+                      proposalTitle,
+                      proposalDescription,
+                      sharePercents,
+                      studioPayees,
+                      raiseAmount,
+                      fundPeriod,
+                      rewardPercent,
+                      enableClaimer
+                  )
+
+                  await helpers.impersonateAccount(vote.address)
+                  const signer = await ethers.getSigner(vote.address)
+                  await helpers.setBalance(signer.address, 100n ** 18n)
+                  await vabbleDAO.connect(signer).approveFilmByVote(filmId, 0)
+                  await helpers.stopImpersonatingAccount(vote.address)
+
+                  const payoutAmount = parseEther("100")
+                  const filmIds = [filmId]
+                  const payouts = [payoutAmount]
+
+                  await vabbleDAOAuditor.startNewMonth()
+                  await vabbleDAOAuditor.setFinalFilms(filmIds, payouts)
+
+                  const currentMonth = await vabbleDAO.monthId()
+
+                  const getFinalizedFilmIds = await vabbleDAO.getFinalizedFilmIds(currentMonth)
+
+                  expect(getFinalizedFilmIds[0]).to.be.equal(filmId)
+              })
+          })
       })
