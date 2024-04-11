@@ -21,6 +21,15 @@ const UNISWAP_ROUTER_ADDRESS = CONFIG.mumbai.uniswap.router
 const SUSHISWAP_FACTORY_ADDRESS = CONFIG.mumbai.sushiswap.factory
 const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
 
+const proposalStatusMap = {
+    0: "LISTED", //0 proposal created by studio
+    1: "UPDATED", //1 proposal updated by studio
+    2: "APPROVED_LISTING", //2 approved for listing by vote from VAB holders(staker)
+    3: "APPROVED_FUNDING", //3 approved for funding by vote from VAB holders(staker)
+    4: "REJECTED", //4 rejected by vote from VAB holders(staker)
+    5: "REPLACED", //5 replaced by vote from VAB holders(staker)
+}
+
 /**
  * Verify a contract by running verification with provided address and constructor arguments.
  *
@@ -403,4 +412,5 @@ module.exports = {
     createDummyGovernancePropertyProposal,
     getTimestampFromTx,
     createDummyFilmProposal,
+    proposalStatusMap,
 }
