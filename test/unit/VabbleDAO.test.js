@@ -3414,4 +3414,22 @@ const {
                   expect(status).to.be.equal("REJECTED")
               })
           })
+
+          describe("getFilmOwner", function () {
+              it("Should return the address of proposal owner (studio)", async function () {
+                  const { usdcTokenContract, vabbleDAO, proposalCreator } = await loadFixture(
+                      deployContractsFixture
+                  )
+
+                  const { filmId } = await createDummyFilmProposal({
+                      vabbleDAO,
+                      proposalCreator,
+                      usdcTokenContract,
+                  })
+
+                  const studioAddress = await vabbleDAO.getFilmOwner(filmId)
+
+                  expect(studioAddress).to.be.equal(proposalCreator.address)
+              })
+          })
       })
