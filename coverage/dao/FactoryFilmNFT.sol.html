@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for dao/FactoryFilmNFT.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">dao/</a> FactoryFilmNFT.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">10.64% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>5/47</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">11.54% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>6/52</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">17.65% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>3/17</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">12.86% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>9/70</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity ^0.8.4;
+&nbsp;
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../libraries/Helper.sol";
+import "../interfaces/IOwnablee.sol";
+import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IVabbleFund.sol";
+import "../interfaces/IFactoryFilmNFT.sol";
+import "./VabbleNFT.sol";
+&nbsp;
+contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
+&nbsp;
+    event FilmERC721Created(address nftCreator, address nftContract, uint indexed filmId);
+    event FilmERC721Minted(address nftContract, uint256 indexed filmId, uint256 indexed tokenId, address receiver);
+    event MintInfoSetted(address filmOwner, uint indexed filmId, uint tier, uint mintAmount, uint mintPrice);
+    event ChangeERC721FilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);  
+&nbsp;
+    struct Mint {
+        uint256 tier;             // Tier 1 (1000 NFT’s for 1 ETH), Tier 2 (5000 NFT’s for 0.5 ETH), Tier 3 (10000 NFT’s for 0.1 ETH)
+        uint256 maxMintAmount;    // mint amount(ex: 10000 nft)
+        uint256 price;            // mint price in usdc(ex: 5 usdc = 5*1e6)
+        address nft;
+        address studio;
+    }
+&nbsp;
+    struct FilmNFT {
+        string name;
+        string symbol;
+    }
+    
+    string public baseUri;                     // Base URI    
+    string public collectionUri;               // Collection URI   
+&nbsp;
+    mapping(uint256 =&gt; Mint) private mintInfo;                 // (filmId =&gt; Mint)
+    mapping(address =&gt; FilmNFT) public nftInfo;                // (nft address =&gt; FilmNFT)
+    mapping(uint256 =&gt; uint256[]) private filmNFTTokenList;    // (filmId =&gt; minted tokenId list)    
+    mapping(address =&gt; address[]) public studioNFTAddressList;     
+    mapping(uint256 =&gt; VabbleNFT) public filmNFTContract;      // (filmId =&gt; nft contract)     
+    
+    address private immutable OWNABLE;         // Ownablee contract address
+    address private VABBLE_DAO;      // VabbleDAO contract address
+    address private VABBLE_FUND;     // VabbleFund contract address
+&nbsp;
+<span class="fstat-no" title="function not covered" >    modifier onlyAuditor() {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor")</span>;
+        _;
+    }
+    modifier onlyDeployer() {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
+        _;
+    }
+&nbsp;
+    // receive() external payable {}
+&nbsp;
+    constructor(address _ownable) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_ownable != address(0), "ownableContract: Zero address");
+        OWNABLE = _ownable; 
+    }
+&nbsp;
+    function initialize(
+        address _vabbleDAO,
+        address _vabbleFund
+    ) external <span class="missing-if-branch" title="else path not taken" >E</span>onlyDeployer {     
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(VABBLE_DAO == address(0), "initialize: already initialized");
+&nbsp;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_vabbleDAO != address(0), "daoContract: Zero address");
+        VABBLE_DAO = _vabbleDAO; 
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_vabbleFund != address(0), "fundContract: Zero address");
+        VABBLE_FUND = _vabbleFund; 
+    } 
+&nbsp;
+    /// @notice Set baseURI by Auditor.
+<span class="fstat-no" title="function not covered" >    function setBaseURI(</span>
+        string memory _baseUri,
+        string memory _collectionUri
+    ) external onlyAuditor {
+<span class="cstat-no" title="statement not covered" >        bytes memory baseUriByte = bytes(_baseUri);</span>
+<span class="cstat-no" title="statement not covered" >        require(baseUriByte.length != 0, "empty baseUri")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        bytes memory collectionUriByte = bytes(_collectionUri);</span>
+<span class="cstat-no" title="statement not covered" >        require(collectionUriByte.length != 0, "empty collectionUri")</span>;
+&nbsp;
+        baseUri = _baseUri;
+        collectionUri = _collectionUri;
+    }
+&nbsp;
+    /// @notice onlyStudio set mint info for his films
+<span class="fstat-no" title="function not covered" >    function setMintInfo(</span>
+        uint256 _filmId,
+        uint256 _tier,
+        uint256 _amount, 
+        uint256 _price 
+    ) external nonReentrant {            
+<span class="cstat-no" title="statement not covered" >        require(_amount != 0 &amp;&amp; _price != 0 &amp;&amp; _tier != 0, "setMint: Zero value")</span>;     
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        address owner = IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >        require(owner == msg.sender, "setMint: not film owner")</span>;
+&nbsp;
+        // TODO - PVE005-1 updated(add below line)
+<span class="cstat-no" title="statement not covered" >        require(mintInfo[_filmId].price == 0, "setMint: already setup for film")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        Mint storage mInfo = mintInfo[_filmId];</span>
+        mInfo.tier = _tier;                     // 1, 2, 3, , ,
+        mInfo.maxMintAmount = _amount;          // 100
+        mInfo.price = _price;                   // 5 usdc = 5 * 1e6
+        mInfo.studio = msg.sender;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit MintInfoSetted(msg.sender, _filmId, _tier, _amount, _price);</span>
+    }    
+&nbsp;
+    /// @notice Studio deploy a nft contract per filmId
+<span class="fstat-no" title="function not covered" >    function deployFilmNFTContract(</span>
+        uint256 _filmId,
+        string memory _name,
+        string memory _symbol
+    ) external nonReentrant {        
+<span class="cstat-no" title="statement not covered" >        require(IVabbleDAO(VABBLE_DAO).getFilmOwner(_filmId) == msg.sender, "deployNFT: not film owner")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        (, , uint256 fundType, ) = IVabbleDAO(VABBLE_DAO).getFilmFund(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >        require(fundType == 2 || fundType == 3, "deployNFT: not fund type by NFT")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        Helper.Status status = IVabbleDAO(VABBLE_DAO).getFilmStatus(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >        require(status == Helper.Status.APPROVED_FUNDING, "deployNFT: filmId not approved for funding")</span>;
+        
+        // TODO - PVE005-2 updated(add below line)
+<span class="cstat-no" title="statement not covered" >        require(mintInfo[_filmId].nft == address(0), "deployNFT: already deployed for film")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));</span>
+        filmNFTContract[_filmId] = t;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        Mint storage mInfo = mintInfo[_filmId];</span>
+        mInfo.nft = address(t);
+        mInfo.studio = msg.sender;        
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        studioNFTAddressList[msg.sender].push(address(t))</span>;             
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        FilmNFT storage nInfo = nftInfo[address(t)];</span>
+        nInfo.name = _name;
+        nInfo.symbol = _symbol;
+        
+<span class="cstat-no" title="statement not covered" >        emit FilmERC721Created(msg.sender, address(t), _filmId);</span>
+    }  
+        
+<span class="fstat-no" title="function not covered" >    function claimNft(uint256 _filmId) external nonReentrant {</span>
+<span class="cstat-no" title="statement not covered" >        require(mintInfo[_filmId].nft != address(0), "claimNft: not deployed for film")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 count = IVabbleFund(VABBLE_FUND).getAllowUserNftCount(_filmId, msg.sender);</span>
+<span class="cstat-no" title="statement not covered" >        require(count != 0, "claimNft: zero count")</span>;
+<span class="cstat-no" title="statement not covered" >        require(IVabbleFund(VABBLE_FUND).isRaisedFullAmount(_filmId), "claimNft: not full raised")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        for(uint256 i = 0; i &lt; count; ++i) {</span>
+<span class="cstat-no" title="statement not covered" >            __mint(_filmId)</span>;
+        }
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __mint(uint256 _filmId) private {            </span>
+<span class="cstat-no" title="statement not covered" >        VabbleNFT t = filmNFTContract[_filmId];</span>
+<span class="cstat-no" title="statement not covered" >        uint256 tokenId = t.mintTo(msg.sender);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        filmNFTTokenList[_filmId].push(tokenId)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit FilmERC721Minted(address(t), _filmId, tokenId, msg.sender);</span>
+    }       
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function changeOwner(uint256 _filmId, address newOwner) external nonReentrant returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        Mint storage mInfo = mintInfo[_filmId];</span>
+        
+<span class="cstat-no" title="statement not covered" >        require(mInfo.studio == msg.sender, 'changeOwner: not film owner')</span>;
+&nbsp;
+        mInfo.studio = newOwner;
+        
+<span class="cstat-no" title="statement not covered" >        emit ChangeERC721FilmOwner(_filmId, msg.sender, newOwner);</span>
+       
+<span class="cstat-no" title="statement not covered" >        return true;</span>
+    } 
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getNFTOwner(uint256 _filmId, uint256 _tokenId) external view returns (address) {</span>
+<span class="cstat-no" title="statement not covered" >        return filmNFTContract[_filmId].ownerOf(_tokenId);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getTotalSupply(uint256 _filmId) public view override returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return filmNFTContract[_filmId].totalSupply();</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getUserTokenIdList(uint256 _filmId, address _owner) public view returns (uint256[] memory) {</span>
+<span class="cstat-no" title="statement not covered" >        return filmNFTContract[_filmId].userTokenIdList(_owner);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getTokenUri(uint256 _filmId, uint256 _tokenId) external view returns (string memory) {</span>
+<span class="cstat-no" title="statement not covered" >        return filmNFTContract[_filmId].tokenURI(_tokenId);</span>
+    }
+    
+    /// @notice Get mint information per filmId
+<span class="fstat-no" title="function not covered" >    function getMintInfo(uint256 _filmId) external view override</span>
+    returns (
+        uint256 tier_,
+        uint256 maxMintAmount_,
+        uint256 mintPrice_,
+        address nft_,
+        address studio_
+    ) {
+<span class="cstat-no" title="statement not covered" >        Mint memory info = mintInfo[_filmId];</span>
+        tier_ = info.tier;
+        maxMintAmount_ = info.maxMintAmount;
+        mintPrice_ = info.price;
+        nft_ = info.nft;
+        studio_ = info.studio;
+    } 
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getFilmNFTTokenList(uint256 _filmId) external view returns (uint256[] memory) {</span>
+<span class="cstat-no" title="statement not covered" >        return filmNFTTokenList[_filmId];</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function getVabbleDAO() public view returns (address dao_) {        </span>
+        dao_ = VABBLE_DAO;
+    } 
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu Apr 11 2024 11:15:50 GMT+0200 (Central European Summer Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

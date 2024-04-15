@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for dao/Subscription.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">dao/</a> Subscription.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">8.51% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>4/47</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">7.69% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>4/52</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">14.29% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>1/7</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">12.5% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>8/64</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity ^0.8.4;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../libraries/Helper.sol";
+import "../interfaces/IUniHelper.sol";
+import "../interfaces/IProperty.sol";
+import "../interfaces/IOwnablee.sol";
+&nbsp;
+contract Subscription is ReentrancyGuard {
+    
+    event SubscriptionActivated(address indexed customer, address token, uint256 period);
+&nbsp;
+    address private immutable OWNABLE;      // Ownablee contract address  
+    address private immutable UNI_HELPER;   // UniHelper contract
+    address private immutable DAO_PROPERTY; // Property contract
+&nbsp;
+    uint256 private constant PERIOD_UNIT = 30 days; // 30 days
+    uint256 private constant PERCENT60 = 60 * 1e8;
+    uint256 private constant PERCENT40 = 40 * 1e8;
+    
+    uint256[] private discountList;    
+&nbsp;
+    struct UserSubscription {
+        uint256 activeTime;       // active time
+        uint256 period;           // period of subscription(ex: 1 =&gt; 1 month, 3 =&gt; 3 month)
+        uint256 expireTime;       // expire time
+    }
+&nbsp;
+    mapping(address =&gt; UserSubscription) public subscriptionInfo;             // (user =&gt; UserSubscription)
+&nbsp;
+<span class="fstat-no" title="function not covered" >    modifier onlyAuditor() {</span>
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor")</span>;
+        _;
+    }
+    
+    receive() external payable {}
+&nbsp;
+    constructor(
+        address _ownable,
+        address _uniHelper,
+        address _property,
+        uint256[] memory _discountPercents
+    ) {        
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_ownable != address(0), "ownableContract: zero address");
+        OWNABLE = _ownable;  
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_uniHelper != address(0), "uniHelperContract: zero address");
+        UNI_HELPER = _uniHelper;      
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_property != address(0), "daoProperty: zero address");
+        DAO_PROPERTY = _property; 
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_discountPercents.length == 3, "discountList: bad length");
+        discountList = _discountPercents;
+    }
+&nbsp;
+    // ============= 0. Subscription by token and NFT. ===========    
+    /// @notice active subscription(pay $1 monthly as ETH/USDC/USDT/VAB...) for renting the films
+<span class="fstat-no" title="function not covered" >    function activeSubscription(address _token, uint256 _period) external payable nonReentrant {</span>
+<span class="cstat-no" title="statement not covered" >        if(_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() &amp;&amp; _token != address(0)) {</span>
+<span class="cstat-no" title="statement not covered" >            require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset")</span>; 
+        }
+        
+<span class="cstat-no" title="statement not covered" >        uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);</span>
+<span class="cstat-no" title="statement not covered" >        if(_token == address(0)) {</span>
+<span class="cstat-no" title="statement not covered" >            require(msg.value &gt;= expectAmount, "activeSubscription: Insufficient paid")</span>;
+<span class="cstat-no" title="statement not covered" >            if (msg.value &gt; expectAmount) {</span>
+<span class="cstat-no" title="statement not covered" >                Helper.safeTransferETH(msg.sender, msg.value - expectAmount)</span>;
+            }
+        } else {
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransferFrom(_token, msg.sender, address(this), expectAmount)</span>; 
+&nbsp;
+            // Approve token to send from this contract to UNI_HELPER contract
+<span class="cstat-no" title="statement not covered" >            if(IERC20(_token).allowance(address(this), UNI_HELPER) == 0) {</span>
+<span class="cstat-no" title="statement not covered" >                Helper.safeApprove(_token, UNI_HELPER, IERC20(_token).totalSupply())</span>;
+            }
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        uint256 usdcAmount;</span>
+<span class="cstat-no" title="statement not covered" >        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();</span>
+<span class="cstat-no" title="statement not covered" >        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();</span>
+        // if token is VAB, send USDC(convert from VAB to USDC) to wallet
+<span class="cstat-no" title="statement not covered" >        if(_token == vabToken) {</span>
+<span class="cstat-no" title="statement not covered" >            bytes memory swapArgs = abi.encode(expectAmount, _token, usdcToken);</span>
+            usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount)</span>;
+        } 
+        // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC) to wallet
+        else {            
+<span class="cstat-no" title="statement not covered" >            uint256 amount60 = expectAmount * PERCENT60 / 1e10;  </span>
+            // Send ETH from this contract to UNI_HELPER contract
+<span class="cstat-no" title="statement not covered" >            if(_token == address(0)) <span class="cstat-no" title="statement not covered" >Helper.safeTransferETH(UNI_HELPER, amount60)</span>;</span> // 60%
+            
+<span class="cstat-no" title="statement not covered" >            bytes memory swapArgs = abi.encode(amount60, _token, vabToken);</span>
+<span class="cstat-no" title="statement not covered" >            uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);            </span>
+            // Transfer VAB to wallet
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransfer(vabToken, IOwnablee(OWNABLE).VAB_WALLET(), vabAmount)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            if(_token == usdcToken) {</span>
+                usdcAmount = expectAmount - amount60;
+            } else {
+                // Send ETH from this contract to UNI_HELPER contract
+<span class="cstat-no" title="statement not covered" >                if(_token == address(0)) <span class="cstat-no" title="statement not covered" >Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60)</span>;</span> // 40%
+                
+<span class="cstat-no" title="statement not covered" >                bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdcToken);</span>
+                usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
+            }
+            // Transfer USDC to wallet
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount)</span>;
+        }        
+        
+<span class="cstat-no" title="statement not covered" >        UserSubscription storage subscription = subscriptionInfo[msg.sender];</span>
+<span class="cstat-no" title="statement not covered" >        if(isActivedSubscription(msg.sender)) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 oldPeriod = subscription.period;</span>
+            subscription.period = oldPeriod + _period;
+            subscription.expireTime = subscription.activeTime + PERIOD_UNIT * (oldPeriod + _period);
+        } else {
+            subscription.activeTime = block.timestamp;
+            subscription.period = _period;
+            subscription.expireTime = block.timestamp + PERIOD_UNIT * _period;
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit SubscriptionActivated(msg.sender, _token, _period);          </span>
+    }
+&nbsp;
+    /// @notice Expected token amount that user should pay for activing the subscription
+<span class="fstat-no" title="function not covered" >    function getExpectedSubscriptionAmount(address _token, uint256 _period) public view returns(uint256 expectAmount_) {</span>
+<span class="cstat-no" title="statement not covered" >        require(_period != 0, "getExpectedSubscriptionAmount: Zero period")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();</span>
+<span class="cstat-no" title="statement not covered" >        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();</span>
+<span class="cstat-no" title="statement not covered" >        uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();</span>
+        
+<span class="cstat-no" title="statement not covered" >        if(_period &lt; 3) {</span>
+            scriptAmount = scriptAmount;
+        } else <span class="cstat-no" title="statement not covered" >if(_period &gt;= 3 &amp;&amp; _period &lt; 6) {</span>
+            scriptAmount = scriptAmount * (100 - discountList[0]) * 1e8 / 1e10;
+        } else <span class="cstat-no" title="statement not covered" >if(_period &gt;= 6 &amp;&amp; _period &lt; 12) {</span>
+            scriptAmount = scriptAmount * (100 - discountList[1]) * 1e8 / 1e10;
+        } else {
+            scriptAmount = scriptAmount * (100 - discountList[2]) * 1e8 / 1e10;
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if(_token == vabToken) {</span>
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * PERCENT40 / 1e10, usdcToken, _token);
+        } else <span class="cstat-no" title="statement not covered" >if(_token == usdcToken) {</span>
+            expectAmount_ = scriptAmount;
+        } else {            
+            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, usdcToken, _token);
+        }
+    }
+&nbsp;
+    /// @notice Check if subscription period 
+<span class="fstat-no" title="function not covered" >    function isActivedSubscription(address _customer) public view returns(bool active_) {</span>
+<span class="cstat-no" title="statement not covered" >        if(subscriptionInfo[_customer].expireTime &gt; block.timestamp) active_ = true;</span>
+        else active_ = false;
+    }  
+&nbsp;
+    /// @notice Add discount percents(3 months, 6 months, 12 months) from Auditor
+<span class="fstat-no" title="function not covered" >    function addDiscountPercent(uint256[] calldata _discountPercents) external onlyAuditor {</span>
+<span class="cstat-no" title="statement not covered" >        require(_discountPercents.length == 3, "discountList: bad length")</span>;
+        discountList = _discountPercents;
+    }
+&nbsp;
+    /// @notice get discount percent list
+<span class="fstat-no" title="function not covered" >    function getDiscountPercentList() external view returns(uint256[] memory list_) {</span>
+        list_ = discountList;
+    } 
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu Apr 11 2024 11:15:50 GMT+0200 (Central European Summer Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

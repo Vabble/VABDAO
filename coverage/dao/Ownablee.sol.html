@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for dao/Ownablee.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">dao/</a> Ownablee.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">95.12% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>39/41</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">94.12% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>64/68</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">95% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>19/20</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">95.24% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>60/63</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">43×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">43×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">42×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">42×</span>
+<span class="cline-any cline-yes">41×</span>
+<span class="cline-any cline-yes">41×</span>
+<span class="cline-any cline-yes">40×</span>
+<span class="cline-any cline-yes">40×</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-yes">39×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">89×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity ^0.8.4;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../libraries/Helper.sol";
+import "../interfaces/IOwnablee.sol";
+&nbsp;
+contract Ownablee is IOwnablee {
+    event VABWalletChanged(address indexed wallet);
+&nbsp;
+    address public override auditor;
+    address public immutable override deployer;
+    address public override VAB_WALLET; // Vabble wallet
+    address public immutable override PAYOUT_TOKEN; // VAB token
+    address public immutable override USDC_TOKEN; // USDC token
+    address private VOTE; // Vote contract address
+    address private VABBLE_DAO; // VabbleDAO contract address
+    address private STAKING_POOL; // StakingPool contract address
+&nbsp;
+    address[] private depositAssetList;
+&nbsp;
+    mapping(address =&gt; bool) private allowAssetToDeposit;
+&nbsp;
+    modifier onlyAuditor() {
+        require(msg.sender == auditor, "caller is not the auditor");
+        _;
+    }
+&nbsp;
+    modifier onlyDeployer() {
+        require(msg.sender == deployer, "caller is not the deployer");
+        _;
+    }
+&nbsp;
+    modifier onlyVote() {
+        require(msg.sender == VOTE, "caller is not the vote contract");
+        _;
+    }
+&nbsp;
+    modifier onlyDAO() {
+        require(msg.sender == VABBLE_DAO, "caller is not the DAO contract");
+        _;
+    }
+&nbsp;
+    modifier onlyStakingPool() {
+        require(msg.sender == STAKING_POOL, "caller is not the StakingPool contract");
+        _;
+    }
+&nbsp;
+    constructor(address _vabbleWallet, address _payoutToken, address _usdcToken, address _multiSigWallet) {
+        deployer = msg.sender;
+&nbsp;
+        // TODO - PVE007 updated(add multiSigWallet)
+        require(_multiSigWallet != address(0), "multiSigWallet: Zero address");
+        // auditor = msg.sender; // _multiSigWallet;
+        auditor = _multiSigWallet;
+&nbsp;
+        require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
+        VAB_WALLET = _vabbleWallet;
+        require(_payoutToken != address(0), "payoutToken: Zero address");
+        PAYOUT_TOKEN = _payoutToken;
+        require(_usdcToken != address(0), "usdcToken: Zero address");
+        USDC_TOKEN = _usdcToken;
+&nbsp;
+        depositAssetList.push(_usdcToken);
+        allowAssetToDeposit[_usdcToken] = true;
+    }
+&nbsp;
+    function setup(address _vote, address _dao, address _stakingPool) external onlyDeployer {
+        // TODO - N3-3 updated(add below line)
+        require(VABBLE_DAO == address(0), "setupVote: already setup");
+&nbsp;
+        require(_vote != address(0), "setupVote: bad Vote Contract address");
+        VOTE = _vote;
+        require(_dao != address(0), "setupVote: bad VabbleDAO contract address");
+        VABBLE_DAO = _dao;
+        require(_stakingPool != address(0), "setupVote: bad StakingPool contract address");
+        STAKING_POOL = _stakingPool;
+    }
+&nbsp;
+    function transferAuditor(address _newAuditor) external override onlyAuditor {
+        require(_newAuditor != address(0) &amp;&amp; _newAuditor != auditor, "Ownablee: Zero newAuditor address");
+&nbsp;
+        auditor = _newAuditor;
+    }
+&nbsp;
+    function replaceAuditor(address _newAuditor) external override onlyVote {
+        require(_newAuditor != address(0) &amp;&amp; _newAuditor != auditor, "Ownablee: Zero newAuditor address");
+        auditor = _newAuditor;
+    }
+&nbsp;
+    function addDepositAsset(address[] calldata _assetList) external {
+        require(msg.sender == auditor || msg.sender == deployer, "caller is not the auditor or deployer");
+        require(_assetList.length != 0, "addDepositAsset: zero list");
+&nbsp;
+        for (uint256 i = 0; i &lt; _assetList.length; ++i) {
+            if (allowAssetToDeposit[_assetList[i]]) continue;
+&nbsp;
+            depositAssetList.push(_assetList[i]);
+            allowAssetToDeposit[_assetList[i]] = true;
+        }
+    }
+&nbsp;
+    function removeDepositAsset(address[] calldata _assetList) external onlyAuditor {
+        require(_assetList.length != 0, "removeDepositAsset: zero list");
+&nbsp;
+        for (uint256 i = 0; i &lt; _assetList.length; ++i) {
+            if (!allowAssetToDeposit[_assetList[i]]) continue;
+&nbsp;
+            for (uint256 k = 0; k &lt; depositAssetList.length; k++) {
+                if (_assetList[i] == depositAssetList[k]) {
+                    depositAssetList[k] = depositAssetList[depositAssetList.length - 1];
+                    depositAssetList.pop();
+&nbsp;
+                    allowAssetToDeposit[_assetList[i]] = false;
+                    // TODO - N1 updated(add break)
+                    break;
+                }
+            }
+        }
+    }
+&nbsp;
+    function isDepositAsset(address _asset) external view override returns (bool) {
+        return allowAssetToDeposit[_asset];
+    }
+&nbsp;
+    function getDepositAssetList() external view override returns (address[] memory) {
+        return depositAssetList;
+    }
+&nbsp;
+    /// @notice Change VAB wallet address
+<span class="fstat-no" title="function not covered" >    function changeVABWallet(address _wallet) external onlyAuditor {</span>
+<span class="cstat-no" title="statement not covered" >        require(_wallet == address(0), "changeVABWallet: Zero Address")</span>;
+        VAB_WALLET = _wallet;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit VABWalletChanged(_wallet);</span>
+    }
+&nbsp;
+    function addToStudioPool(uint256 _amount) external override onlyDAO {
+        require(IERC20(PAYOUT_TOKEN).balanceOf(address(this)) &gt;= _amount, "addToStudioPool: insufficient edge pool");
+&nbsp;
+        Helper.safeTransfer(PAYOUT_TOKEN, VABBLE_DAO, _amount);
+    }
+&nbsp;
+    /// @notice Deposit VAB token from Auditor to EdgePool
+    function depositVABToEdgePool(uint256 _amount) external onlyAuditor {
+        require(_amount != 0, "depositVABToEdgePool: Zero amount");
+&nbsp;
+        Helper.safeTransferFrom(PAYOUT_TOKEN, msg.sender, address(this), _amount);
+    }
+&nbsp;
+    /// @notice Withdraw VAB token from EdgePool to V2
+    function withdrawVABFromEdgePool(address _to) external override onlyStakingPool returns (uint256) {
+        uint256 poolBalance = IERC20(PAYOUT_TOKEN).balanceOf(address(this));
+        if (poolBalance != 0) {
+            Helper.safeTransfer(PAYOUT_TOKEN, _to, poolBalance);
+        }
+        return poolBalance;
+    }
+&nbsp;
+    //? View / Pure functions
+    function getVoteAddress() public view returns (address) {
+        return VOTE;
+    }
+&nbsp;
+    function getVabbleDAO() public view returns (address dao_) {
+        dao_ = VABBLE_DAO;
+    }
+&nbsp;
+    function getStakingPoolAddress() public view returns (address) {
+        return STAKING_POOL;
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu Apr 11 2024 11:15:50 GMT+0200 (Central European Summer Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
