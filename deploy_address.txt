@@ -598,6 +598,12 @@ Vote (0xec1C6A30A75F3367A69E1713C144c7cfAfFA85c0)
 
 - Should pull VAB
 
+// 2024-04-15 Polygon(Amoy testnet - )
+
+
+npx hardhat verify --network polygonAmoy --constructor-args deploy/arguments.js  0x6766B4aDE7Ebd1870e49815422b7addB9464F812 --show-stack-traces
+VAB: 0x6766B4aDE7Ebd1870e49815422b7addB9464F812
+
 ** 
 Auditor wallet address: 0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1
 USDC: 0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c    -6   totalSupply: 1000000000000

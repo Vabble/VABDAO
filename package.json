@@ -21,11 +21,9 @@
     "mumbai:deploy": "hardhat --network mumbai deploy",
     "mumbai:verify": "hardhat --network mumbai etherscan-verify --solc-input",
     "mumbai:export": "hardhat --network mumbai export --export exports/mumbai.json",
-    
-    "amoy:deploy": "hardhat --network amoy deploy",
-    "amoy:verify": "hardhat --network amoy etherscan-verify --solc-input",
-    "amoy:export": "hardhat --network amoy export --export exports/amoy.json",
-    
+    "polygonAmoy:deploy": "hardhat --network polygonAmoy deploy",
+    "polygonAmoy:verify": "hardhat --network polygonAmoy verify",
+    "polygonAmoy:export": "hardhat --network polygonAmoy export --export exports/polygonAmoy.json",
     "matic:deploy": "hardhat --network matic deploy",
     "matic:verify": "hardhat --network matic etherscan-verify --solc-input",
     "matic:export": "hardhat --network matic export --export exports/matic.json",
@@ -35,6 +33,7 @@
   "author": "Vabble",
   "license": "MIT",
   "devDependencies": {
+    "@nomicfoundation/hardhat-verify": "^2.0.5",
     "@nomiclabs/hardhat-ethers": "^2.0.0",
     "@nomiclabs/hardhat-etherscan": "^2.1.4",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
@@ -44,12 +43,11 @@
     "ethereum-waffle": "^4.0.10",
     "ethers": "^5.4.1",
     "hardhat": "^2.19.4",
-    "hardhat-deploy": "^0.11.45",
     "hardhat-contract-sizer": "^2.0.3",
+    "hardhat-deploy": "^0.11.45",
     "hardhat-deploy-ethers": "^0.3.0-beta.10",
     "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^2.3.2",
     "prettier-plugin-solidity": "^1.0.0-beta.16"
-  },
-  "dependencies": {}
+  }
 }

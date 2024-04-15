@@ -1,0 +1,3 @@
+ module.exports = [
+    'Vabble', 'VAB'
+  ];

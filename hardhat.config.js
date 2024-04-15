@@ -3,10 +3,13 @@ const { utils } = require("ethers");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
-require("@nomiclabs/hardhat-etherscan");
+// require("@nomiclabs/hardhat-etherscan");
+require("@nomicfoundation/hardhat-verify");
 require("hardhat-contract-sizer");
 require("hardhat-gas-reporter")
 require('dotenv').config();
+
+
 
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -21,6 +24,7 @@ const etherScan_api_key = process.env.ETHER_SCAN_API_KEY;
 const bscScan_api_key = process.env.BSC_SCAN_API_KEY;
 const polyScan_api_key = process.env.POLYGON_SCAN_API_KEY;
 const avaxScan_api_key = process.env.AVAX_SCAN_API_KEY;
+const amoyScan_api_key = process.env.AMOY_SCAN_API_KEY;
 
 const mnemonic = process.env.MNEMONIC;
 const privateKey = process.env.DEPLOY_PRIVATE_KEY;
@@ -144,7 +148,7 @@ module.exports = {
       gasMultiplier: 2,
     },
     // Amoy testnet
-    amoy: { 
+    polygonAmoy: { 
       // url: "https://rpc-mumbai.maticvigil.com",
       url: "https://rpc-amoy.polygon.technology/",
       chainId: chainIds.amoy,
@@ -190,8 +194,40 @@ module.exports = {
   etherscan: {
     // apiKey: etherScan_api_key
     // apiKey: bscScan_api_key    
-    apiKey: polyScan_api_key
-    // apiKey: avaxScan_api_key 
+    // apiKey: polyScan_api_key,
+    // apiKey: avaxScan_api_key    
+    apiKey: {
+      polygonAmoy: amoyScan_api_key,
+    },
+    customChains: [
+      {
+        network: "polygonAmoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET",
+          // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
+          browserURL: "https://www.oklink.com/amoy",
+        },
+      },
+    ], 
+  },
+  oklink: {
+    // Your API key for OKLink
+    // Obtain one at https://www.oklink.com/en/
+    apiKey: {
+      polygonAmoy: amoyScan_api_key,
+    },
+    customChains: [
+      {
+        network: "polygonAmoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET",
+          // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
+          browserURL: "https://www.oklink.com/amoy",
+        },
+      },
+    ],
   },
   paths: {
     deploy: "deploy",
