@@ -5,7 +5,7 @@ const { BigNumber } = ethers;
 require('dotenv').config();
 
 const ZERO_ADDRESS = ethers.constants.AddressZero;
-const TEST_CHAIN_IDS = [1337, 80001, 31337];
+const TEST_CHAIN_IDS = [1337, 80001, 31337, 80002];
 const CONFIG = {
   daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
@@ -92,6 +92,44 @@ const CONFIG = {
     sushiswap: { // Mainnet, Mumbai
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
       router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+    },     
+    sig: {
+      user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
+      user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
+    }
+  },
+  amoy: {
+    // START: Vabble Contracts - Deployed on Amoy
+    FactoryFilmNFT: "",
+    FactorySubNFT: "",
+    FactoryTierNFT: "",
+    GnosisSafeL2: "",
+    Ownablee: "",
+    Property: "",
+    StakingPool: "",
+    Subscription: "",
+    UniHelper: "",
+    VabbleDAO: "",
+    VabbleFunding: "",
+    Vote: "",
+
+    // END: Vabble Contracts - Deployed on Amoy
+    
+    usdcAdress: "",
+    usdtAdress: "",
+    daiAddress: "",
+    vabToken: "", // Testcase VAB
+    wMatic: "",
+    exmAddress: "",
+    wmatic: "",
+    walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
+    uniswap: { // Mainnet, Amoy
+      factory: '',
+      router: '',
+    },
+    sushiswap: { // Mainnet, Amoy
+      factory: '',
+      router: '',
     },     
     sig: {
       user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1

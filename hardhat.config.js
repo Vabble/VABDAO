@@ -37,6 +37,7 @@ const chainIds = {
   bscTest: 97,   // BSC testnet
   bscMain: 56,   // BSC mainnet
   mumbai: 80001, // Polygon testnet
+  amoy: 80002, // Amoy testnet
   matic: 137,    // Polygon mainnet
   fuji: 43113,   // Avalance testnet
   avax: 43114,   // Avalance mainnet
@@ -134,6 +135,19 @@ module.exports = {
       // url: "https://rpc-mumbai.maticvigil.com",
       url: "https://polygon-mumbai.g.alchemy.com/v2/MS1xXvCUQzKUdIBnUrKZpdx26AHMixO4",
       chainId: chainIds.mumbai,
+      accounts: [
+        privateKey
+      ],
+      live: false,
+      saveDeployments: true,
+      gasPrice: 22500000000,
+      gasMultiplier: 2,
+    },
+    // Amoy testnet
+    amoy: { 
+      // url: "https://rpc-mumbai.maticvigil.com",
+      url: "https://rpc-amoy.polygon.technology/",
+      chainId: chainIds.amoy,
       accounts: [
         privateKey
       ],

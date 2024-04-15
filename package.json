@@ -21,6 +21,11 @@
     "mumbai:deploy": "hardhat --network mumbai deploy",
     "mumbai:verify": "hardhat --network mumbai etherscan-verify --solc-input",
     "mumbai:export": "hardhat --network mumbai export --export exports/mumbai.json",
+    
+    "amoy:deploy": "hardhat --network amoy deploy",
+    "amoy:verify": "hardhat --network amoy etherscan-verify --solc-input",
+    "amoy:export": "hardhat --network amoy export --export exports/amoy.json",
+    
     "matic:deploy": "hardhat --network matic deploy",
     "matic:verify": "hardhat --network matic etherscan-verify --solc-input",
     "matic:export": "hardhat --network matic export --export exports/matic.json",
