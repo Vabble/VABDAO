@@ -211,23 +211,15 @@ module.exports = {
       },
     ], 
   },
-  oklink: {
-    // Your API key for OKLink
-    // Obtain one at https://www.oklink.com/en/
-    apiKey: {
-      polygonAmoy: amoyScan_api_key,
-    },
-    customChains: [
-      {
-        network: "polygonAmoy",
-        chainId: 80002,
-        urls: {
-          apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET",
-          // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
-          browserURL: "https://www.oklink.com/amoy",
-        },
-      },
-    ],
+  sourcify: {
+    enabled: true,
+    // // Optional: specify a different Sourcify server
+    // apiUrl: "https://sourcify.dev/server",
+    // // Optional: specify a different Sourcify repository
+    // browserUrl: "https://repo.sourcify.dev",
+    apiUrl: "https://server-verify.hashscan.io",
+    browserUrl: "https://repository-verify.hashscan.io",
+
   },
   paths: {
     deploy: "deploy",
