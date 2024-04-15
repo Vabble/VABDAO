@@ -1,0 +1,2123 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for dao/VabbleDAO.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">dao/</a> VabbleDAO.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">89% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>178/200</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">74.75% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>151/202</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">97.44% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>38/39</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">90.04% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>244/271</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482
+483
+484
+485
+486
+487
+488
+489
+490
+491
+492
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503
+504
+505
+506
+507
+508
+509
+510
+511
+512
+513
+514
+515
+516
+517
+518
+519
+520
+521
+522
+523
+524
+525
+526
+527
+528
+529
+530
+531
+532
+533
+534
+535
+536
+537
+538
+539
+540
+541
+542
+543
+544
+545
+546
+547
+548
+549
+550
+551
+552
+553
+554
+555
+556
+557
+558
+559
+560
+561
+562
+563
+564
+565
+566
+567
+568
+569
+570
+571
+572
+573
+574
+575
+576
+577
+578
+579
+580
+581
+582
+583
+584
+585
+586
+587
+588
+589
+590
+591
+592
+593
+594
+595
+596
+597
+598
+599
+600
+601
+602
+603
+604
+605
+606
+607
+608
+609
+610
+611
+612
+613
+614
+615
+616
+617
+618
+619
+620
+621
+622
+623
+624
+625
+626
+627
+628
+629
+630
+631
+632
+633
+634
+635
+636
+637
+638
+639
+640
+641
+642
+643
+644
+645
+646
+647
+648
+649
+650
+651
+652
+653
+654
+655
+656
+657
+658
+659
+660
+661
+662
+663
+664
+665
+666
+667
+668
+669
+670
+671
+672
+673
+674
+675
+676
+677
+678
+679
+680
+681
+682
+683
+684
+685
+686
+687</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">83×</span>
+<span class="cline-any cline-yes">78×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">82×</span>
+<span class="cline-any cline-yes">81×</span>
+<span class="cline-any cline-yes">81×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">80×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">68×</span>
+<span class="cline-any cline-yes">67×</span>
+<span class="cline-any cline-yes">66×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">65×</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">46×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">61×</span>
+<span class="cline-any cline-yes">61×</span>
+<span class="cline-any cline-yes">57×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">61×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">60×</span>
+<span class="cline-any cline-yes">59×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">58×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">79×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26×</span>
+<span class="cline-any cline-yes">25×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-yes">25×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-yes">22×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">20×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+// 88             88            B8         B8         B8
+//  88           88             88         88         88
+//   88         88              88         88         88
+//    88       88   .d88888b.   88b8888b.  88b8888b.  88  .d88888b.
+//     88     88    88'   `88   88'   `88  88'   `88  88  88'   `8b
+//      88   88     88     88   88     88  88     88  88  88b8888P`
+//       88 88      88.   .88   88.   .88  88.   .88  88  88.
+//        88        `88888P`88  BBP88888'  BBP88888`  88  `888888P
+// ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+&nbsp;
+// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity ^0.8.4;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "../libraries/Helper.sol";
+import "../interfaces/IUniHelper.sol";
+import "../interfaces/IStakingPool.sol";
+import "../interfaces/IProperty.sol";
+import "../interfaces/IOwnablee.sol";
+import "../interfaces/IVabbleFund.sol";
+import "../interfaces/IVabbleDAO.sol";
+import "../interfaces/IVote.sol";
+&nbsp;
+contract VabbleDAO is ReentrancyGuard {
+    using Counters for Counters.Counter;
+&nbsp;
+    event FilmProposalCreated(uint256 indexed filmId, uint256 noVote, uint256 fundType, address studio);
+    event FilmProposalUpdated(uint256 indexed filmId, uint256 fundType, address studio);
+    event FinalFilmSetted(
+        address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime
+    );
+    event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod);
+    event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
+    event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);
+    event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);
+    event ChangeFilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);
+&nbsp;
+    address public immutable OWNABLE; // Ownablee contract address
+    address public immutable VOTE; // Vote contract address
+    address public immutable STAKING_POOL; // StakingPool contract address
+    address public immutable UNI_HELPER; // UniHelper contract address
+    address public immutable DAO_PROPERTY;
+    address public immutable VABBLE_FUND;
+&nbsp;
+    // (flag =&gt; filmId list) flag: 1=proposal, 2=approveListing, 3=approveFunding, 4=updated
+    mapping(uint256 =&gt; uint256[]) private totalFilmIds;
+&nbsp;
+    address[] private studioPoolUsers; // (which =&gt; user list)
+    address[] private edgePoolUsers; // (which =&gt; user list)
+&nbsp;
+    mapping(uint256 =&gt; IVabbleDAO.Film) public filmInfo; // Each film information(filmId =&gt; Film)
+    // (user =&gt; (flag =&gt; filmId list)) flag: 1=create, 2=update, 3=approve, 4=final
+    mapping(address =&gt; mapping(uint256 =&gt; uint256[])) private userFilmIds;
+&nbsp;
+    mapping(uint256 =&gt; uint256[]) private finalizedFilmIds; // (monthId =&gt; filmId list)
+    mapping(uint256 =&gt; mapping(uint256 =&gt; mapping(address =&gt; uint256))) public finalizedAmount;
+    mapping(uint256 =&gt; mapping(address =&gt; uint256)) public latestClaimMonthId; // (filmId =&gt; (user =&gt; monthId))
+    mapping(address =&gt; mapping(uint256 =&gt; bool)) private isInvested; // (investor =&gt; (filmId =&gt; true/false))
+&nbsp;
+    mapping(address =&gt; bool) private isStudioPoolUser;
+    mapping(address =&gt; bool) private isEdgePoolUser;
+&nbsp;
+    uint256 public StudioPool;
+    mapping(uint256 =&gt; uint256) public finalFilmCalledTime; // (filmId =&gt; finalized time)
+&nbsp;
+    Counters.Counter public filmCount; // created filmId is from No.1
+    Counters.Counter public updatedFilmCount; // updated filmId is from No.1
+    Counters.Counter public monthId; // monthId
+&nbsp;
+    modifier onlyAuditor() {
+        require(msg.sender == IOwnablee(OWNABLE).auditor(), "only auditor");
+        _;
+    }
+&nbsp;
+    modifier onlyVote() {
+        require(msg.sender == VOTE, "only vote");
+        _;
+    }
+&nbsp;
+    modifier onlyStakingPool() {
+        require(msg.sender == STAKING_POOL, "only stakingPool");
+        _;
+    }
+&nbsp;
+    receive() external payable {}
+&nbsp;
+    constructor(
+        address _ownable,
+        address _uniHelper,
+        address _vote,
+        address _staking,
+        address _property,
+        address _vabbleFund
+    ) {
+        OWNABLE = _ownable;
+        UNI_HELPER = _uniHelper;
+        VOTE = _vote;
+        STAKING_POOL = _staking;
+        DAO_PROPERTY = _property;
+        VABBLE_FUND = _vabbleFund;
+    }
+&nbsp;
+    /**
+     * Film proposal
+     *
+     * @param _fundType Distribution =&gt; 0, Token =&gt; 1, NFT =&gt; 2, NFT &amp; Token =&gt; 3
+     * @param _noVote if 0 =&gt; false, 1 =&gt; true
+     * @param _feeToken Matic/USDC/USDT, not VAB
+     */
+    function proposalFilmCreate(uint256 _fundType, uint256 _noVote, address _feeToken) external payable <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        require(_feeToken != IOwnablee(OWNABLE).PAYOUT_TOKEN(), "pF: not allowed VAB");
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (_feeToken != address(0)) {
+            require(IOwnablee(OWNABLE).isDepositAsset(_feeToken), "pF: not allowed asset");
+        }
+        if (_fundType == 0) require(_noVote == 0, "pF: pass vote");
+&nbsp;
+        __paidFee(_feeToken, _noVote);
+&nbsp;
+        filmCount.increment();
+        uint256 filmId = filmCount.current();
+&nbsp;
+        IVabbleDAO.Film storage fInfo = filmInfo[filmId];
+        fInfo.fundType = _fundType;
+        fInfo.noVote = _noVote;
+        fInfo.studio = msg.sender;
+        fInfo.status = Helper.Status.LISTED;
+&nbsp;
+        totalFilmIds[1].push(filmId);
+        userFilmIds[msg.sender][1].push(filmId); // create
+&nbsp;
+        emit FilmProposalCreated(filmId, _noVote, _fundType, msg.sender);
+    }
+&nbsp;
+    function proposalFilmUpdate(
+        uint256 _filmId,
+        string memory _title,
+        string memory _description,
+        uint256[] calldata _sharePercents,
+        address[] calldata _studioPayees,
+        uint256 _raiseAmount,
+        uint256 _fundPeriod,
+        uint256 _rewardPercent,
+        uint256 _enableClaimer
+    ) external <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        require(_studioPayees.length != 0, "pU: e1");
+        require(_studioPayees.length == _sharePercents.length, "pU: e2");
+        require(bytes(_title).length != 0, "pU: e3");
+&nbsp;
+        IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
+        if (fInfo.fundType != 0) {
+            require(_fundPeriod != 0, "pU: e4");
+            require(_raiseAmount &gt; IProperty(DAO_PROPERTY).minDepositAmount(), "pU: e5");
+            require(_rewardPercent &lt;= 1e10, "pU: e6");
+        } else {
+            require(_rewardPercent == 0, "pU: e7");
+        }
+&nbsp;
+        uint256 totalPercent = 0;
+        if (_studioPayees.length == 1) {
+            totalPercent = _sharePercents[0];
+        } else {
+            for (uint256 i = 0; i &lt; _studioPayees.length; ++i) {
+                totalPercent += _sharePercents[i];
+            }
+        }
+        require(totalPercent == 1e10, "pU: e8");
+&nbsp;
+        require(fInfo.status == Helper.Status.LISTED, "pU: NL"); // proposalUpdate: Not listed
+        require(fInfo.studio == msg.sender, "pU: NFO"); // proposalUpdate: not film owner
+&nbsp;
+        fInfo.title = _title;
+        fInfo.description = _description;
+        fInfo.sharePercents = _sharePercents;
+        fInfo.studioPayees = _studioPayees;
+        fInfo.raiseAmount = _raiseAmount;
+        fInfo.fundPeriod = _fundPeriod;
+        fInfo.rewardPercent = _rewardPercent;
+        fInfo.enableClaimer = _enableClaimer;
+        fInfo.pCreateTime = block.timestamp;
+        fInfo.studio = msg.sender;
+        fInfo.status = Helper.Status.UPDATED;
+&nbsp;
+        updatedFilmCount.increment();
+        totalFilmIds[4].push(_filmId);
+        userFilmIds[msg.sender][2].push(_filmId); // update
+&nbsp;
+        uint256 proposalID = IStakingPool(STAKING_POOL).addProposalData(
+            msg.sender, block.timestamp, IProperty(DAO_PROPERTY).filmVotePeriod()
+        );
+        IVote(VOTE).saveProposalWithFilm(_filmId, proposalID);
+&nbsp;
+        // If proposal is for fund, update "lastfundProposalCreateTime"
+        if (fInfo.fundType != 0) {
+            IStakingPool(STAKING_POOL).updateLastfundProposalCreateTime(block.timestamp);
+&nbsp;
+            if (fInfo.noVote == 1) {
+                fInfo.status = Helper.Status.APPROVED_FUNDING;
+                fInfo.pApproveTime = block.timestamp;
+                totalFilmIds[3].push(_filmId);
+                userFilmIds[msg.sender][3].push(_filmId); // approve
+            }
+        }
+&nbsp;
+        emit FilmProposalUpdated(_filmId, fInfo.fundType, msg.sender);
+    }
+&nbsp;
+    function changeOwner(uint256 _filmId, address newOwner) external <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant returns (bool) {
+        IVabbleDAO.Film storage fInfo = filmInfo[_filmId];
+&nbsp;
+        require(fInfo.studio == msg.sender, "cO, E1"); //changeOwner: not film owner
+&nbsp;
+        uint256 payeeLength = fInfo.studioPayees.length;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(payeeLength &lt; 1000, "cO, E2");
+        for (uint256 k = 0; k &lt; payeeLength; k++) {
+            <span class="missing-if-branch" title="else path not taken" >E</span>if (fInfo.studioPayees[k] == msg.sender) {
+                fInfo.studioPayees[k] = newOwner;
+            }
+        }
+&nbsp;
+        fInfo.studio = newOwner;
+&nbsp;
+        if (fInfo.status == Helper.Status.LISTED) {
+            __moveToAnotherArray(userFilmIds[msg.sender][1], userFilmIds[newOwner][1], _filmId);
+        }
+&nbsp;
+        if (fInfo.status == Helper.Status.UPDATED) {
+            __moveToAnotherArray(userFilmIds[msg.sender][2], userFilmIds[newOwner][2], _filmId);
+        }
+&nbsp;
+        if (fInfo.status == Helper.Status.APPROVED_FUNDING || fInfo.status == Helper.Status.APPROVED_LISTING) {
+            __moveToAnotherArray(userFilmIds[msg.sender][3], userFilmIds[newOwner][3], _filmId);
+            __moveToAnotherArray(userFilmIds[msg.sender][4], userFilmIds[newOwner][4], _filmId);
+&nbsp;
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (isInvested[msg.sender][_filmId]) {
+                isInvested[msg.sender][_filmId] = false;
+                isInvested[newOwner][_filmId] = true;
+            }
+&nbsp;
+            uint256 curMonth = monthId.current();
+            __updateFinalizeAmountAndLastClaimMonth(_filmId, curMonth, msg.sender, newOwner);
+        }
+&nbsp;
+        emit ChangeFilmOwner(_filmId, msg.sender, newOwner);
+&nbsp;
+        return true;
+    }
+&nbsp;
+    function __moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) private {
+        uint256 arrayLength = array1.length;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(arrayLength &lt; 1e6, "mTAA: too many length");
+        uint256 index = arrayLength;
+&nbsp;
+        for (uint256 i = 0; i &lt; arrayLength; ++i) {
+            <span class="missing-if-branch" title="else path not taken" >E</span>if (array1[i] == value) {
+                index = i;
+            }
+        }
+&nbsp;
+        if (index &gt;= arrayLength) return;
+&nbsp;
+        array2.push(value);
+&nbsp;
+        array1[index] = array1[arrayLength - 1];
+        array1.pop();
+    }
+&nbsp;
+    /// @notice Check if proposal fee transferred from studio to stakingPool
+    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -&gt; stakingPool.
+    function __paidFee(address _dToken, uint256 _noVote) private {
+        uint256 feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount(); // in cash(usdc)
+        if (_noVote == 1) feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount() * 2;
+&nbsp;
+        uint256 expectTokenAmount = feeAmount;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (_dToken != IOwnablee(OWNABLE).USDC_TOKEN()) {
+            expectTokenAmount =
+                IUniHelper(UNI_HELPER).expectedAmount(feeAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _dToken);
+        }
+&nbsp;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (_dToken == address(0)) {
+<span class="cstat-no" title="statement not covered" >            require(msg.value &gt;= expectTokenAmount, "paidFee: Insufficient paid")</span>;
+<span class="cstat-no" title="statement not covered" >            if (msg.value &gt; expectTokenAmount) {</span>
+<span class="cstat-no" title="statement not covered" >                Helper.safeTransferETH(msg.sender, msg.value - expectTokenAmount)</span>;
+            }
+            // Send ETH from this contract to UNI_HELPER contract
+<span class="cstat-no" title="statement not covered" >            Helper.safeTransferETH(UNI_HELPER, expectTokenAmount)</span>;
+        } else {
+            Helper.safeTransferFrom(_dToken, msg.sender, address(this), expectTokenAmount);
+            <span class="missing-if-branch" title="else path not taken" >E</span>if (IERC20(_dToken).allowance(address(this), UNI_HELPER) == 0) {
+                Helper.safeApprove(_dToken, UNI_HELPER, IERC20(_dToken).totalSupply());
+            }
+        }
+&nbsp;
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        bytes memory swapArgs = abi.encode(expectTokenAmount, _dToken, vabToken);
+        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
+&nbsp;
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
+            Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
+        }
+        IStakingPool(STAKING_POOL).addRewardToPool(vabAmount);
+    }
+&nbsp;
+    /// @notice Approve a film for funding/listing from vote contract
+    function approveFilmByVote(uint256 _filmId, uint256 _flag) external onlyVote {
+        require(_filmId != 0, "aFV: e1");
+&nbsp;
+        filmInfo[_filmId].pApproveTime = block.timestamp;
+&nbsp;
+        uint256 fundType = filmInfo[_filmId].fundType;
+        if (_flag == 0) {
+            if (fundType != 0) {
+                // in case of fund film
+                filmInfo[_filmId].status = Helper.Status.APPROVED_FUNDING;
+                totalFilmIds[3].push(_filmId);
+            } else {
+                filmInfo[_filmId].status = Helper.Status.APPROVED_LISTING;
+                totalFilmIds[2].push(_filmId);
+            }
+&nbsp;
+            address studioA = filmInfo[_filmId].studio;
+            userFilmIds[studioA][3].push(_filmId); // approve
+        } else {
+            filmInfo[_filmId].status = Helper.Status.REJECTED;
+        }
+    }
+&nbsp;
+    /// @notice onlyStudio update film fund period
+    function updateFilmFundPeriod(uint256 _filmId, uint256 _fundPeriod) external <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        require(msg.sender == filmInfo[_filmId].studio, "uFP: 1"); // updateFundPeriod: not film owner
+        require(filmInfo[_filmId].fundType != 0, "uFP: 2"); // updateFundPeriod: not fund film
+&nbsp;
+        filmInfo[_filmId].fundPeriod = _fundPeriod;
+&nbsp;
+        emit FilmFundPeriodUpdated(_filmId, msg.sender, _fundPeriod);
+    }
+&nbsp;
+    /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO) by Auditor
+    // _which = 1 =&gt; to EdgePool, _which = 2 =&gt; to StudioPool
+    function allocateToPool(address[] calldata _users, uint256[] calldata _amounts, uint256 _which)
+        external
+        onlyAuditor
+        <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant
+    {
+        uint256 userLength = _users.length;
+&nbsp;
+        require(userLength == _amounts.length &amp;&amp; userLength &lt; 1000, "aTP: e1");
+        require(_which == 1 || _which == 2, "aTP: e2");
+&nbsp;
+        if (_which == 1) {
+            IStakingPool(STAKING_POOL).sendVAB(_users, OWNABLE, _amounts);
+        } else {
+            StudioPool += IStakingPool(STAKING_POOL).sendVAB(_users, address(this), _amounts);
+        }
+&nbsp;
+        for (uint256 i = 0; i &lt; userLength; ++i) {
+            if (_which == 1) {
+                if (isEdgePoolUser[_users[i]]) continue;
+&nbsp;
+                isEdgePoolUser[_users[i]] = true;
+                edgePoolUsers.push(_users[i]);
+            } else {
+                if (isStudioPoolUser[_users[i]]) continue;
+&nbsp;
+                isStudioPoolUser[_users[i]] = true;
+                studioPoolUsers.push(_users[i]);
+            }
+        }
+&nbsp;
+        emit AllocatedToPool(_users, _amounts, _which);
+    }
+&nbsp;
+    /// @notice Allocate VAB from EdgePool(Ownable) to StudioPool(VabbleDAO) by Auditor
+    function allocateFromEdgePool(uint256 _amount) external onlyAuditor <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        uint256 userLength = edgePoolUsers.length;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(userLength &lt; 1e5, "aFEP: bad length");
+&nbsp;
+        IOwnablee(OWNABLE).addToStudioPool(_amount); // Transfer VAB from EdgePool to StudioPool
+        StudioPool += _amount;
+&nbsp;
+        for (uint256 i = 0; i &lt; userLength; ++i) {
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (isStudioPoolUser[edgePoolUsers[i]]) continue;
+&nbsp;
+            studioPoolUsers.push(edgePoolUsers[i]);
+        }
+&nbsp;
+        delete edgePoolUsers;
+    }
+&nbsp;
+    /// @notice Withdraw VAB token from StudioPool(VabbleDAO) to V2 by StakingPool contract
+    function withdrawVABFromStudioPool(address _to) external onlyStakingPool <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant returns (uint256) {
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        uint256 poolBalance = IERC20(vabToken).balanceOf(address(this));
+        if (poolBalance != 0) {
+            Helper.safeTransfer(vabToken, _to, poolBalance);
+&nbsp;
+            StudioPool = 0;
+            delete studioPoolUsers;
+        }
+&nbsp;
+        return poolBalance;
+    }
+&nbsp;
+    /// Pre-Checking for set Final Film
+    function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
+        uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
+&nbsp;
+        _valids = new bool[](_filmIds.length);
+&nbsp;
+        uint256 filmLength = _filmIds.length;
+        for (uint256 i = 0; i &lt; filmLength; ++i) {
+            if (finalFilmCalledTime[_filmIds[i]] != 0) {
+                _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] &gt;= fPeriod;
+            } else {
+                _valids[i] = true;
+            }
+        }
+    }
+&nbsp;
+    /// @notice Set final films for a customer with watched
+    // Auditor call this function per month
+    function setFinalFilms(
+        uint256[] calldata _filmIds,
+        uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
+    ) external onlyAuditor <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        uint256 filmLength = _filmIds.length;
+&nbsp;
+        require(filmLength != 0 &amp;&amp; filmLength &lt; 1000 &amp;&amp; filmLength == _payouts.length, "sFF: bad length");
+&nbsp;
+        bool[] memory _valids = checkSetFinalFilms(_filmIds);
+&nbsp;
+        for (uint256 i = 0; i &lt; filmLength; ++i) {
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (_filmIds[i] == 0 || _payouts[i] == 0) continue;
+            <span class="missing-if-branch" title="if path not taken" >I</span>if (!_valids[i]) continue;
+&nbsp;
+            __setFinalFilm(_filmIds[i], _payouts[i]);
+            finalFilmCalledTime[_filmIds[i]] = block.timestamp;
+        }
+&nbsp;
+        emit SetFinalFilms(msg.sender, _filmIds, _payouts);
+    }
+&nbsp;
+    function startNewMonth() external onlyAuditor <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        monthId.increment();
+    }
+&nbsp;
+    function __setFinalFilm(uint256 _filmId, uint256 _payout) private {
+        IVabbleDAO.Film memory fInfo = filmInfo[_filmId];
+        require(
+            fInfo.status == Helper.Status.APPROVED_LISTING || <span class="branch-1 cbranch-no" title="branch not covered" >fInfo.status == Helper.Status.APPROVED_FUNDING</span>,
+            "sFF: Not approved"
+        );
+&nbsp;
+        uint256 curMonth = monthId.current();
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (fInfo.status == Helper.Status.APPROVED_LISTING) {
+            __setFinalAmountToPayees(_filmId, _payout, curMonth);
+        } else <span class="cstat-no" title="statement not covered" >if (fInfo.status == Helper.Status.APPROVED_FUNDING) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 rewardAmount = _payout * fInfo.rewardPercent / 1e10;</span>
+<span class="cstat-no" title="statement not covered" >            uint256 payAmount = _payout - rewardAmount;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            if (!IVabbleFund(VABBLE_FUND).isRaisedFullAmount(_filmId)) {</span>
+                rewardAmount = 0;
+                payAmount = _payout;
+            }
+&nbsp;
+            // set to funders
+<span class="cstat-no" title="statement not covered" >            if (rewardAmount != 0) <span class="cstat-no" title="statement not covered" >__setFinalAmountToHelpers(_filmId, rewardAmount, curMonth)</span>;</span>
+&nbsp;
+            // set to studioPayees
+<span class="cstat-no" title="statement not covered" >            if (payAmount != 0) <span class="cstat-no" title="statement not covered" >__setFinalAmountToPayees(_filmId, payAmount, curMonth)</span>;</span>
+        }
+&nbsp;
+        finalizedFilmIds[curMonth].push(_filmId);
+    }
+&nbsp;
+    /// @dev Avoid deep error
+    function __setFinalAmountToPayees(uint256 _filmId, uint256 _payout, uint256 _curMonth) private {
+        IVabbleDAO.Film memory fInfo = filmInfo[_filmId];
+        uint256 payeeLength = fInfo.studioPayees.length;
+        for (uint256 k = 0; k &lt; payeeLength; k++) {
+            uint256 shareAmount = _payout * fInfo.sharePercents[k] / 1e10;
+            finalizedAmount[_curMonth][_filmId][fInfo.studioPayees[k]] += shareAmount;
+&nbsp;
+            __addFinalFilmId(fInfo.studioPayees[k], _filmId);
+        }
+    }
+    /// @dev Avoid deep error
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __setFinalAmountToHelpers(uint256 _filmId, uint256 _rewardAmount, uint256 _curMonth) private {</span>
+<span class="cstat-no" title="statement not covered" >        uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >        if (raisedAmount != 0) {</span>
+<span class="cstat-no" title="statement not covered" >            address[] memory investors = IVabbleFund(VABBLE_FUND).getFilmInvestorList(_filmId);</span>
+<span class="cstat-no" title="statement not covered" >            for (uint256 i = 0; i &lt; investors.length; ++i) {</span>
+<span class="cstat-no" title="statement not covered" >                uint256 userAmount = IVabbleFund(VABBLE_FUND).getUserFundAmountPerFilm(investors[i], _filmId);</span>
+<span class="cstat-no" title="statement not covered" >                if (userAmount == 0) continue;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                uint256 percent = (userAmount * 1e10) / raisedAmount;</span>
+<span class="cstat-no" title="statement not covered" >                uint256 amount = (_rewardAmount * percent) / 1e10;</span>
+                finalizedAmount[_curMonth][_filmId][investors[i]] += amount;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                __addFinalFilmId(investors[i], _filmId)</span>;
+            }
+        }
+    }
+&nbsp;
+    function __addFinalFilmId(address _user, uint256 _filmId) private {
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (!isInvested[_user][_filmId]) {
+            userFilmIds[_user][4].push(_filmId); // final
+            isInvested[_user][_filmId] = true;
+        }
+    }
+&nbsp;
+    // Claim reward for multi-filmIds till current from when auditor call setFinalFilms()
+    function claimReward(uint256[] memory _filmIds) external <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        require(_filmIds.length != 0 &amp;&amp; _filmIds.length &lt; 1000, "cR: bad filmIds");
+&nbsp;
+        __claimAllReward(_filmIds);
+    }
+&nbsp;
+    function __claimAllReward(uint256[] memory _filmIds) private {
+        uint256 filmLength = _filmIds.length;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(filmLength &lt; 1e5, "cAR: bad array");
+&nbsp;
+        uint256 curMonth = monthId.current();
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        uint256 rewardSum;
+        for (uint256 i = 0; i &lt; filmLength; ++i) {
+            if (
+                finalFilmCalledTime[_filmIds[i]] == 0 // not still call final film
+            ) {
+                continue;
+            }
+&nbsp;
+            rewardSum += getUserRewardAmountForUser(_filmIds[i], curMonth, msg.sender);
+            latestClaimMonthId[_filmIds[i]][msg.sender] = curMonth;
+        }
+&nbsp;
+        require(rewardSum != 0, "cAR: zero amount");
+        require(StudioPool &gt;= rewardSum, "cAR: insufficient 1");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(IERC20(vabToken).balanceOf(address(this)) &gt;= StudioPool, "cAR: insufficient 2");
+&nbsp;
+        Helper.safeTransfer(vabToken, msg.sender, rewardSum);
+        StudioPool -= rewardSum;
+&nbsp;
+        emit RewardAllClaimed(msg.sender, curMonth, _filmIds, rewardSum);
+    }
+&nbsp;
+    // Claim reward of all filmIds for each user
+    function claimAllReward() external <span class="missing-if-branch" title="else path not taken" >E</span>nonReentrant {
+        uint256[] memory filmIds = userFilmIds[msg.sender][4]; // final
+        require(filmIds.length != 0 &amp;&amp; filmIds.length &lt; 1000, "cAR: zero filmIds");
+&nbsp;
+        __claimAllReward(filmIds);
+    }
+&nbsp;
+    function getUserRewardAmountBetweenMonths(uint256 _filmId, uint256 _preMonth, uint256 _curMonth, address _user)
+        public
+        view
+        returns (uint256 amount_)
+    {
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (_preMonth &lt; _curMonth) {
+            for (uint256 mon = _preMonth + 1; mon &lt;= _curMonth; ++mon) {
+                amount_ += finalizedAmount[mon][_filmId][_user];
+            }
+        }
+    }
+&nbsp;
+    function getAllAvailableRewards(uint256 _curMonth, address _user) public view returns (uint256) {
+        uint256[] memory filmIds = userFilmIds[_user][4]; // final
+&nbsp;
+        uint256 rewardSum = 0;
+        uint256 preMonth = 0;
+        uint256 filmLength = filmIds.length;
+        for (uint256 i = 0; i &lt; filmLength; ++i) {
+            preMonth = latestClaimMonthId[filmIds[i]][_user];
+            rewardSum += getUserRewardAmountBetweenMonths(filmIds[i], preMonth, _curMonth, _user);
+        }
+&nbsp;
+        return rewardSum;
+    }
+&nbsp;
+    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 preMonth = latestClaimMonthId[_filmId][_user];
+        return getUserRewardAmountBetweenMonths(_filmId, preMonth, _curMonth, _user);
+    }
+&nbsp;
+    /// @notice flag: create=1, update=2, approve=3, final=4
+    function getUserFilmIds(address _user, uint256 _flag) external view returns (uint256[] memory) {
+        return userFilmIds[_user][_flag];
+    }
+&nbsp;
+    /// @notice Get film status based on Id
+    function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_) {
+        status_ = filmInfo[_filmId].status;
+    }
+&nbsp;
+    /// @notice Get film owner(studio) based on Id
+    function getFilmOwner(uint256 _filmId) external view returns (address owner_) {
+        owner_ = filmInfo[_filmId].studio;
+    }
+&nbsp;
+    /// @notice Get film fund info based on Id
+    function getFilmFund(uint256 _filmId)
+        external
+        view
+        returns (uint256 raiseAmount_, uint256 fundPeriod_, uint256 fundType_, uint256 rewardPercent_)
+    {
+        raiseAmount_ = filmInfo[_filmId].raiseAmount;
+        fundPeriod_ = filmInfo[_filmId].fundPeriod;
+        fundType_ = filmInfo[_filmId].fundType;
+        rewardPercent_ = filmInfo[_filmId].rewardPercent;
+    }
+&nbsp;
+    /// @notice Get film fund info based on Id
+    function getFilmShare(uint256 _filmId)
+        external
+        view
+        returns (uint256[] memory sharePercents_, address[] memory studioPayees_)
+    {
+        sharePercents_ = filmInfo[_filmId].sharePercents;
+        studioPayees_ = filmInfo[_filmId].studioPayees;
+    }
+&nbsp;
+    /// @notice Get film proposal created time based on Id
+    function getFilmProposalTime(uint256 _filmId) public view returns (uint256 cTime_, uint256 aTime_) {
+        cTime_ = filmInfo[_filmId].pCreateTime;
+        aTime_ = filmInfo[_filmId].pApproveTime;
+    }
+&nbsp;
+    /// @notice Get enableClaimer based on Id
+    function isEnabledClaimer(uint256 _filmId) external view returns (bool enable_) {
+        if (filmInfo[_filmId].enableClaimer == 1) enable_ = true;
+        else enable_ = false;
+    }
+&nbsp;
+    /// @notice Set enableClaimer based on Id by studio
+    function updateEnabledClaimer(uint256 _filmId, uint256 _enable) external {
+        require(filmInfo[_filmId].studio == msg.sender, "uEC: not film owner");
+&nbsp;
+        filmInfo[_filmId].enableClaimer = _enable;
+    }
+&nbsp;
+    /// @notice Get film Ids
+    function getFilmIds(uint256 _flag) external view returns (uint256[] memory list_) {
+        return totalFilmIds[_flag];
+    }
+&nbsp;
+    /// @notice flag=1 =&gt; studioPoolUsers, flag=2 =&gt; edgePoolUsers
+    function getPoolUsers(uint256 _flag) external view onlyAuditor returns (address[] memory list_) {
+        if (_flag == 1) list_ = studioPoolUsers;
+        else <span class="missing-if-branch" title="else path not taken" >E</span>if (_flag == 2) list_ = edgePoolUsers;
+    }
+&nbsp;
+    function getFinalizedFilmIds(uint256 _monthId) external view returns (uint256[] memory) {
+        return finalizedFilmIds[_monthId];
+    }
+&nbsp;
+    function __updateFinalizeAmountAndLastClaimMonth(
+        uint256 _filmId,
+        uint256 _curMonth,
+        address _oldOwner,
+        address _newOwner
+    ) private {
+        uint256 _preMonth = latestClaimMonthId[_filmId][_oldOwner];
+&nbsp;
+        // update last claim month for newOwner
+        latestClaimMonthId[_filmId][_newOwner] = _preMonth;
+&nbsp;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (_preMonth &lt; _curMonth) {
+<span class="cstat-no" title="statement not covered" >            for (uint256 mon = _preMonth + 1; mon &lt;= _curMonth; ++mon) {</span>
+                // set finalizedAmount for new owner
+                finalizedAmount[mon][_filmId][_newOwner] = finalizedAmount[mon][_filmId][_oldOwner];
+&nbsp;
+                // set 0 for old owner
+                finalizedAmount[mon][_filmId][_oldOwner] = 0;
+            }
+        }
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu Apr 11 2024 11:15:50 GMT+0200 (Central European Summer Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

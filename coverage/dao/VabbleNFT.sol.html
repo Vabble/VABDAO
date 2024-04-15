@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for dao/VabbleNFT.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">dao/</a> VabbleNFT.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/14</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/6</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/10</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/20</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity ^0.8.4;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+&nbsp;
+// TODO - N5 we need royalty(like in Opensea) in the future
+contract VabbleNFT is ERC2981, ERC721Enumerable, ReentrancyGuard {    
+    
+    using Counters for Counters.Counter;
+    using Strings for uint256;
+&nbsp;
+    Counters.Counter private nftCount;
+    string public baseUri;                     // Base URI      
+    string public collectionUri;               // Collection URI   
+&nbsp;
+    address public immutable FACTORY;
+&nbsp;
+    // receive() external payable {}
+<span class="fstat-no" title="function not covered" >    constructor(</span>
+        string memory _baseUri,
+        string memory _collectionUri,
+        string memory _name,
+        string memory _symbol,
+        address _factory
+    ) ERC721(_name, _symbol) {
+        baseUri = _baseUri;
+        collectionUri = _collectionUri;
+        FACTORY = _factory;
+    }
+    
+<span class="fstat-no" title="function not covered" >    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable, ERC2981) returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        return super.supportsInterface(interfaceId);</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function _beforeTokenTransfer(</span>
+        address from,
+        address to,
+        uint256 firstTokenId,
+        uint256 batchSize
+    ) internal virtual override(ERC721Enumerable) {
+<span class="cstat-no" title="statement not covered" >        super._beforeTokenTransfer(from, to, firstTokenId, batchSize)</span>;
+    }  
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function contractURI() public view returns (string memory) {</span>
+<span class="cstat-no" title="statement not covered" >        return collectionUri;</span>
+    }
+&nbsp;
+    // function contractURI() public pure returns (string memory) {
+    //     string memory json = '{"name":"Command+AAA","description":"This is test command+aaa collection","external_url":"https://openseacreatures.io/3","image":"https://i.seadn.io/gcs/files/fd08b4a340be10b6af307d7f68542976.png","banner":"https://storage.googleapis.com/opensea-prod.appspot.com/puffs/3.png","seller_fee_basis_points":100,"fee_recipient":"0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1"}';
+    //     return string.concat("data:application/json;utf8,", json);
+    // }
+<span class="fstat-no" title="function not covered" >    function mintTo(address _to) public nonReentrant returns (uint256) {</span>
+        // TODO - N2 updated(remove msg.sender != address(0))
+<span class="cstat-no" title="statement not covered" >        require(msg.sender == FACTORY, "mintTo: caller is not factory contract")</span>;
+        
+<span class="cstat-no" title="statement not covered" >        uint256 newTokenId = __getNextTokenId();</span>
+<span class="cstat-no" title="statement not covered" >        _safeMint(_to, newTokenId)</span>;
+        
+<span class="cstat-no" title="statement not covered" >        return newTokenId;</span>
+    }
+&nbsp;
+    /// @dev Generate tokenId(film nft=&gt;odd, subscription nft=&gt;even)
+<span class="fstat-no" title="function not covered" >    function __getNextTokenId() private returns (uint256 newTokenId_) {        </span>
+<span class="cstat-no" title="statement not covered" >        nftCount.increment()</span>;
+        newTokenId_ = nftCount.current();
+    }
+&nbsp;
+    /// @notice Set tokenURI in all available cases
+<span class="fstat-no" title="function not covered" >    function tokenURI(uint256 _tokenId) public view virtual override returns (string memory) {</span>
+<span class="cstat-no" title="statement not covered" >        require(_exists(_tokenId), "ERC721Metadata: URI query for nonexistent token")</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        return string(abi.encodePacked(baseUri, _tokenId.toString(), ".json"));</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function transferNFT(uint256 _tokenId, address _to) external {        </span>
+<span class="cstat-no" title="statement not covered" >        address seller = ownerOf(_tokenId);</span>
+<span class="cstat-no" title="statement not covered" >        transferFrom(seller, _to, _tokenId)</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function userTokenIdList(address _owner) external view returns (uint256[] memory _tokensOfOwner) {</span>
+        _tokensOfOwner = new uint256[](balanceOf(_owner));
+<span class="cstat-no" title="statement not covered" >        for (uint256 i; i &lt; balanceOf(_owner); ++i) {</span>
+            _tokensOfOwner[i] = tokenOfOwnerByIndex(_owner, i);
+        }
+    }
+&nbsp;
+    // function transferOwnership(address _oldOwner, address _newOwner) public {
+    //     require(msg.sender == FACTORY, "transferOwnership: caller is not factory contract");
+        
+    //     uint256 countOfTokens = balanceOf(_oldOwner);
+&nbsp;
+    //     uint256[] memory _tokensOfOwner = new uint256[](countOfTokens);
+&nbsp;
+    //     for (uint256 i; i &lt; countOfTokens; ++i) {
+    //         _tokensOfOwner[i] = tokenOfOwnerByIndex(_oldOwner, i);
+    //     }
+&nbsp;
+    //     for (uint256 i; i &lt; countOfTokens; ++i) {
+    //         transferFrom(_oldOwner, _newOwner, _tokensOfOwner[i]);
+    //     }
+    // }
+    
+    /// @notice Return total minited NFT count
+<span class="fstat-no" title="function not covered" >    function totalSupply() public view override returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return nftCount.current();</span>
+    }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Thu Apr 11 2024 11:15:50 GMT+0200 (Central European Summer Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
