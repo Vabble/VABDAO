@@ -212,7 +212,7 @@ module.exports = {
     ], 
   },
   sourcify: {
-    enabled: true,
+    enabled: false,
     // // Optional: specify a different Sourcify server
     // apiUrl: "https://sourcify.dev/server",
     // // Optional: specify a different Sourcify repository
