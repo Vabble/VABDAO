@@ -9,9 +9,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     deterministicDeployment: false,
     skipIfAlreadyDeployed: true,
   });
-
-  
 };
 
 module.exports.id = 'deploy_vab'
-module.exports.tags = ['MockERC20', 'Deploy', 'Deploy'];
+module.exports.tags = ['MockERC20', 'Deploy'];
