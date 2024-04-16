@@ -115,8 +115,8 @@ const CONFIG = {
 
     // END: Vabble Contracts - Deployed on Amoy
     
-    usdcAdress: "",
-    usdtAdress: "",
+    usdcAdress: "0xDEFc6ee1A08d2277EAfCa61a92FDbF7FA2cD32f1",
+    usdtAdress: "0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1",
     daiAddress: "",
     vabToken: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F", // Testcase VAB
     wMatic: "",

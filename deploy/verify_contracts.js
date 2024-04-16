@@ -11,18 +11,18 @@ module.exports = async function ({ deployments, run }) {
   console.log('=========== Start to verify VAB Contract start ==========')
   const VABContract = await ethers.getContractAt('MockERC20', this.MockERC20.address);
   
-  try {
-    await run("verify:verify", {
-        address: VABContract.address,
-        constructorArguments: ['Vabble', 'VAB'],
-    })
-  } catch (e) {
-      if (e.message.toLowerCase().includes("already verified")) {
-          console.log("Already verified!")
-      } else {
-          console.log(e)
-      }
-  }
+//   try {
+//     await run("verify:verify", {
+//         address: VABContract.address,
+//         constructorArguments: ['Vabble', 'VAB'],
+//     })
+//   } catch (e) {
+//       if (e.message.toLowerCase().includes("already verified")) {
+//           console.log("Already verified!")
+//       } else {
+//           console.log(e)
+//       }
+//   }
 };
 
 module.exports.id = 'init'

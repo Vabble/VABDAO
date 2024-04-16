@@ -2,9 +2,9 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const contract = await deploy('MockERC20', {
+  const contract = await deploy('MockUSDT', {
     from: deployer,
-    args: ['Vabble', 'VAB'],
+    args: ['USDT', 'USDT'],
     log: true,
     deterministicDeployment: false,
     skipIfAlreadyDeployed: true,
@@ -13,6 +13,7 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   try {
     await run("verify:verify", {
         address: contract.address,
+        contract: "contracts/mocks/MockUSDT.sol:MockUSDT",
         constructorArguments: ['USDT', 'USDT'],
     })
   } catch (e) {
@@ -24,5 +25,5 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   }
 };
 
-module.exports.id = 'deploy_vab'
-module.exports.tags = ['MockERC20', 'Deploy'];
+module.exports.id = 'deploy_usdt'
+module.exports.tags = ['MockUSDT', 'Deploy'];
