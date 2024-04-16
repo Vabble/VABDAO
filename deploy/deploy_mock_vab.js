@@ -10,23 +10,8 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     skipIfAlreadyDeployed: true,
   });
 
-  console.log(`MockERC20 deployed to: ${contract.address}`);
-
-  try {
-      await run("verify:verify", {
-          address: contract.address,
-          constructorArguments: ['Vabble', 'VAB'],
-      })
-  } catch (e) {
-      if (e.message.toLowerCase().includes("already verified")) {
-          console.log("Already verified!")
-      } else {
-          console.log(e)
-      }
-  }
-
   
 };
 
 module.exports.id = 'deploy_vab'
-module.exports.tags = ['MockERC20'];
+module.exports.tags = ['MockERC20', 'Deploy'];
