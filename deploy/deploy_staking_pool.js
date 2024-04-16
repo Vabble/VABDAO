@@ -16,5 +16,5 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
 };
 
 module.exports.id = 'deploy_staking_pool'
-module.exports.tags = ['StakingPool'];
+module.exports.tags = ['StakingPool', 'Deploy'];
 module.exports.dependencies = ['Ownablee'];

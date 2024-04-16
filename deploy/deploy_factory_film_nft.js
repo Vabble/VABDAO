@@ -16,5 +16,5 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 };
 
 module.exports.id = 'deploy_factory_film_nft'
-module.exports.tags = ['FactoryFilmNFT'];
+module.exports.tags = ['FactoryFilmNFT', 'Deploy'];
 module.exports.dependencies = ['Ownablee'];

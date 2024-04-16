@@ -27,6 +27,7 @@ module.exports = async function ({ deployments, run }) {
 
 module.exports.id = 'init'
 module.exports.dependencies = [
+  'MockERC20',
   'FactoryFilmNFT',
   'FactorySubNFT',
   'FactoryTierNFT',

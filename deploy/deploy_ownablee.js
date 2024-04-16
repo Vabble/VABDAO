@@ -33,6 +33,6 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 };
 
 module.exports.id = 'deploy_ownablee'
-module.exports.tags = ['Ownablee'];
+module.exports.tags = ['Ownablee', 'Deploy'];
 // module.exports.dependencies = ['MultiSigWallet'];
 module.exports.dependencies = ['GnosisSafeL2'];

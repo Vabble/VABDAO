@@ -22,5 +22,5 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
 };
 
 module.exports.id = 'deploy_subscription'
-module.exports.tags = ['Subscription'];
+module.exports.tags = ['Subscription', 'Deploy'];
 module.exports.dependencies = ['Ownablee', 'UniHelper', 'Property'];

@@ -28,5 +28,5 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 };
 
 module.exports.id = 'deploy_uni_helper'
-module.exports.tags = ['UniHelper'];
+module.exports.tags = ['UniHelper', 'Deploy'];
 module.exports.dependencies = ['Ownablee'];

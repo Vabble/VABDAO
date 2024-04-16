@@ -26,5 +26,5 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 };
 
 module.exports.id = 'deploy_vabble_dao'
-module.exports.tags = ['VabbleDAO'];
+module.exports.tags = ['VabbleDAO', 'Deploy'];
 module.exports.dependencies = ['Ownablee', 'UniHelper', 'Vote', 'StakingPool', 'Property', 'VabbleFund'];

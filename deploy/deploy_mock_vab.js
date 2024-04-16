@@ -14,4 +14,4 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
 };
 
 module.exports.id = 'deploy_vab'
-module.exports.tags = ['MockERC20', 'Deploy'];
+module.exports.tags = ['MockERC20', 'Deploy', 'Deploy'];

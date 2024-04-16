@@ -24,5 +24,5 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 };
 
 module.exports.id = 'deploy_vabble_fund'
-module.exports.tags = ['VabbleFund'];
+module.exports.tags = ['VabbleFund', 'Deploy'];
 module.exports.dependencies = ['Ownablee', 'UniHelper', 'StakingPool', 'Property', 'FactoryFilmNFT'];
