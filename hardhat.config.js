@@ -90,6 +90,7 @@ module.exports = {
       gasMultiplier: 2,
       // throwOnTransactionFailures: true,
       // blockGasLimit: 1245000000 
+      blockGasLimit: 3245000000 
     },
     // Ethereum mainnet
     mainnet: { 

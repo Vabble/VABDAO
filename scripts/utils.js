@@ -123,14 +123,14 @@ const CONFIG = {
     exmAddress: "",
     wmatic: "",
     walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
-    uniswap: { // Mainnet, Amoy
-      factory: '',
-      router: '',
+    uniswap: { // Mainnet, Mumbai
+      factory: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
+      router: '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff',
     },
-    sushiswap: { // Mainnet, Amoy
-      factory: '',
-      router: '',
-    },     
+    sushiswap: { // Mainnet, Mumbai
+      factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+      router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+    },
     sig: {
       user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
       user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
@@ -369,9 +369,9 @@ const buildSignatureBytes = (signatures) => {
 };
 
 const getConfig = (chainId) => {
-  if (chainId == 1337 || chainId == 80001) { // localhost or mumbai
+  if (chainId == 80001) { // localhost or mumbai
     return CONFIG.mumbai
-  } else if (chainId == 80002) {
+  } else if (chainId == 1337 || chainId == 80002) {
     return CONFIG.polygonAmoy;
   } else if (chainId == 137) { // Polygon network
     return CONFIG.polygon
