@@ -118,7 +118,7 @@ const CONFIG = {
     usdcAdress: "",
     usdtAdress: "",
     daiAddress: "",
-    vabToken: "", // Testcase VAB
+    vabToken: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F", // Testcase VAB
     wMatic: "",
     exmAddress: "",
     wmatic: "",
