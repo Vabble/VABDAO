@@ -73,7 +73,8 @@ module.exports = {
       forking: {
         // url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
         // blockNumber: 11328709,
-        url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`
+        // url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`
+        url: `https://rpc-amoy.polygon.technology/`
       },
       accounts: {
         mnemonic,
@@ -85,7 +86,7 @@ module.exports = {
       //   }
       // ],
 
-      // gasPrice: 22500000000,
+      gasPrice: 22500000000,
       gasMultiplier: 2,
       // throwOnTransactionFailures: true,
       // blockGasLimit: 1245000000 
@@ -148,8 +149,7 @@ module.exports = {
       gasMultiplier: 2,
     },
     // Amoy testnet
-    polygonAmoy: { 
-      // url: "https://rpc-mumbai.maticvigil.com",
+    polygonAmoy: {       
       url: "https://rpc-amoy.polygon.technology/",
       chainId: chainIds.amoy,
       accounts: [

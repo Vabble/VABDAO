@@ -98,7 +98,7 @@ const CONFIG = {
       user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
     }
   },
-  amoy: {
+  polygonAmoy: {
     // START: Vabble Contracts - Deployed on Amoy
     FactoryFilmNFT: "",
     FactorySubNFT: "",
@@ -371,6 +371,8 @@ const buildSignatureBytes = (signatures) => {
 const getConfig = (chainId) => {
   if (chainId == 1337 || chainId == 80001) { // localhost or mumbai
     return CONFIG.mumbai
+  } else if (chainId == 80002) {
+    return CONFIG.polygonAmoy;
   } else if (chainId == 137) { // Polygon network
     return CONFIG.polygon
   } else if (chainId == 1) { // Ethereum mainnet
