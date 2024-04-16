@@ -127,19 +127,7 @@ contract Ownablee is IOwnablee {
     function getDepositAssetList() external view override returns (address[] memory) {
         return depositAssetList;
     }
-<<<<<<< HEAD
     
-=======
-
-    /// @notice Change VAB wallet address
-    function changeVABWallet(address _wallet) external onlyAuditor {
-        require(_wallet == address(0), "changeVABWallet: Zero Address");
-        VAB_WALLET = _wallet;
-
-        emit VABWalletChanged(_wallet);
-    }
-
->>>>>>> main
     function addToStudioPool(uint256 _amount) external override onlyDAO {
         require(IERC20(PAYOUT_TOKEN).balanceOf(address(this)) >= _amount, "addToStudioPool: insufficient edge pool");
 

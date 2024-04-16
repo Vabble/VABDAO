@@ -158,7 +158,7 @@ module.exports = {
       live: false,
       saveDeployments: true,
       gasPrice: 22500000000,
-      gasMultiplier: 2,
+      gasMultiplier: 2
     },
     // Polygon mainnet
     matic: { 
