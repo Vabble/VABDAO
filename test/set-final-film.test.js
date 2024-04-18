@@ -10,7 +10,7 @@ const FERC20 = require('../data/FxERC20.json');
 
 require('dotenv').config();
 
-const GNOSIS_FLAG = false;
+const GNOSIS_FLAG = true;
 
 describe('SetFinalFilm', function () {
     before(async function () {
