@@ -676,4 +676,5 @@ npx hardhat run .\scripts\add_liquidity.js --network mumbai
 npx hardhat run .\scripts\add_vab_to_edgepool.js --network mumbai
 npx hardhat run .\scripts\add_vab_to_staking.js --network mumbai
 
-// 
+// Unit test
+npx hardhat test --grep "Unit Tests"

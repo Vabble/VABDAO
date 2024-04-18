@@ -73,12 +73,12 @@ const fundAndApproveAccounts = async ({
 }) => {
     try {
         console.log("Funding and Approving accounts...")
-        if (accounts.length > 0) {
-            for (const account of accounts) {
-                await vabTokenContract.connect(accounts[0]).faucet(VAB_FAUCET_AMOUNT);
-                await usdcTokenContract.connect(accounts[0]).faucet(USDC_FAUCET_AMOUNT);
-            }
-        }
+        // if (accounts.length > 0) {
+        //     for (const account of accounts) {
+        //         await vabTokenContract.connect(accounts[0]).faucet(VAB_FAUCET_AMOUNT);
+        //         await usdcTokenContract.connect(accounts[0]).faucet(USDC_FAUCET_AMOUNT);
+        //     }
+        // }
         for (var i = 1; i < accounts.length; i++) {
             await vabTokenContract.connect(accounts[0]).transfer(accounts[i].address, VAB_FAUCET_AMOUNT, {from: accounts[0].address});
             await usdcTokenContract.connect(accounts[0]).transfer(accounts[i].address, USDC_FAUCET_AMOUNT, {from: accounts[0].address});
