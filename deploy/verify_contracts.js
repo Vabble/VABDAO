@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const { Etherscan } = require("@nomicfoundation/hardhat-verify/etherscan");
 const {CONFIG, DISCOUNT, getConfig } = require('../scripts/utils');
   
 module.exports = async function ({ deployments, run }) {  
@@ -8,6 +9,12 @@ module.exports = async function ({ deployments, run }) {
   console.log("chainId", chainId);
   if (chainId != 80002) 
     return;
+
+  const instance = new Etherscan(
+    process.env.AMOY_SCAN_API_KEY, // Etherscan API key
+    "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET", // Etherscan API URL
+    "https://www.oklink.com/amoy" // Etherscan browser URL
+  );
 
   const {vabToken, usdcAdress, walletAddress, uniswap, sushiswap} = getConfig(chainId);
   
@@ -102,24 +109,8 @@ module.exports = async function ({ deployments, run }) {
     [
       this.Ownablee.address
     ], // Vote
-  ]
+  ];
 
-  for (var i = 0; i < contractAddressList.length; i++) {
-    try {
-      await run("verify:verify", {
-          address: contractAddressList[i],
-          constructorArguments: argList[i],
-      })
-    } catch (e) {
-        if (e.message.toLowerCase().includes("already verified")) {
-            console.log("Already verified!")
-        } else {
-            console.log(e)
-        }
-    }
-  }
-
-  console.log('=========== End to verify VAB Contract end ==========')
   const contractNames = [
     'FactoryFilmNFT',
     'FactorySubNFT',
@@ -134,6 +125,30 @@ module.exports = async function ({ deployments, run }) {
     'VabbleFund',
     'Vote'
   ]
+
+  
+
+  for (var i = 0; i < contractAddressList.length; i++) {
+    try {
+      if (instance.isVerified(contractAddressList[i])) {
+        console.log(`${contractNames[i]} is already verified!`)
+        continue;
+      }
+      await run("verify:verify", {
+          address: contractAddressList[i],
+          constructorArguments: argList[i],
+      })
+    } catch (e) {
+        if (e.message.toLowerCase().includes("already verified")) {
+          console.log(`${contractNames[i]} is already verified!`);
+        } else {
+            console.log(e)
+        }
+    }
+  }
+
+  console.log('=========== End to verify VAB Contract end ==========')
+  
   for (var i = 0; i < contractAddressList.length; i++) {
     console.log(`${contractNames[i]} (${contractAddressList[i]})`)
   }
