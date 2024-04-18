@@ -7,6 +7,8 @@ require("hardhat-deploy-ethers");
 require("@nomicfoundation/hardhat-verify");
 require("hardhat-contract-sizer");
 require("hardhat-gas-reporter")
+require("solidity-coverage")
+require("@nomicfoundation/hardhat-network-helpers")
 require('dotenv').config();
 
 

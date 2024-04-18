@@ -541,13 +541,12 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
           describe("getDepositAssetList", function () {
               it("Should return true a list of all deposit assets", async function () {
-                  const { ownable, vabTokenContract, usdcTokenContract, exmTokenContract } =
+                  const { ownable, vabTokenContract, usdcTokenContract } =
                       await loadFixture(deployContractsFixture)
 
                   const expectedDepositAssetList = [
                       vabTokenContract.address,
                       usdcTokenContract.address,
-                      exmTokenContract.address,
                       CONFIG.addressZero,
                   ]
                   const depositAssetList = await ownable.getDepositAssetList()

@@ -121,7 +121,7 @@ const CONFIG = {
     daiAddress: "",
     vabToken: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F", // Testcase VAB
     wMatic: "0x9473012d4fc9e7182b7e45ee1c425e97a443420b",
-    exmAddress: "",
+    exmAddress: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F",
     wmatic: "0x9473012d4fc9e7182b7e45ee1c425e97a443420b",
     walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
     uniswap: { // Amoy
