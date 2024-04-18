@@ -60,7 +60,7 @@ module.exports = async function ({ deployments, run }) {
       walletAddress,
       vabToken, 
       usdcAdress,
-      this.GnosisSafe.address      
+      this.GnosisSafeL2.address      
     ], // Ownablee
     [
       this.Ownablee.address,
@@ -97,7 +97,7 @@ module.exports = async function ({ deployments, run }) {
       this.UniHelper.address,     // UniHelper contract
       this.StakingPool.address,   // StakingPool contract
       this.Property.address,      // Property contract
-      this.FilmNFTFactory.address // film NFT Factory contract
+      this.FactoryFilmNFT.address // film NFT Factory contract
     ], // VabbleFund
     [
       this.Ownablee.address
@@ -107,7 +107,7 @@ module.exports = async function ({ deployments, run }) {
   for (var i = 0; i < contractAddressList.length; i++) {
     try {
       await run("verify:verify", {
-          address: contractAddressList[i].address,
+          address: contractAddressList[i],
           constructorArguments: argList[i],
       })
     } catch (e) {
@@ -135,7 +135,7 @@ module.exports = async function ({ deployments, run }) {
     'Vote'
   ]
   for (var i = 0; i < contractAddressList.length; i++) {
-    console.log(`${contractNames[i]} (${contractAddressList[i].address})`)
+    console.log(`${contractNames[i]} (${contractAddressList[i]})`)
   }
 };
 
