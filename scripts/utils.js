@@ -120,17 +120,17 @@ const CONFIG = {
     usdtAdress: "0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1",
     daiAddress: "",
     vabToken: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F", // Testcase VAB
-    wMatic: "",
+    wMatic: "0x9473012d4fc9e7182b7e45ee1c425e97a443420b",
     exmAddress: "",
-    wmatic: "",
+    wmatic: "0x9473012d4fc9e7182b7e45ee1c425e97a443420b",
     walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
     uniswap: { // Amoy
-      factory: '0x811401d4b7d8eaa0333ada5c955cba1fd8b09eda',
-      router: '0xB3f8EB0f726b67BEb61B28ECF0B0Cc2f0c419902',
+      factory: '0x41f539f5a284c9c8a0ee830e8249f5105e929331',
+      router: '0x9A9C0AD5cD2b6A923a699CFB30d5267772428941',
     },
     sushiswap: { // Amoy
-      factory: '0x811401d4b7d8eaa0333ada5c955cba1fd8b09eda',
-      router: '0xB3f8EB0f726b67BEb61B28ECF0B0Cc2f0c419902',
+      factory: '0x41f539f5a284c9c8a0ee830e8249f5105e929331',
+      router: '0x9A9C0AD5cD2b6A923a699CFB30d5267772428941',
     },
     sig: {
       user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
