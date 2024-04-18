@@ -10,7 +10,8 @@ const CONFIG = {
   daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
   ethereum: {
-    usdcAdress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",    
+    usdcAdress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",  
+    usdtAdress: "",    
     vabToken: "", 
     walletAddress: "",
     uniswap: { //Mainnet, kovan, rinkeby ...
@@ -116,21 +117,16 @@ const CONFIG = {
     // END: Vabble Contracts - Deployed on Amoy
     
     usdcAdress: "0xDEFc6ee1A08d2277EAfCa61a92FDbF7FA2cD32f1",
-    // usdcAdress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582", // Amoy USDC
     usdtAdress: "0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1",
-    daiAddress: "",
     vabToken: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F", // Testcase VAB
-    wMatic: "",
-    exmAddress: "",
-    wmatic: "",
     walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
-    uniswap: { // Amoy
-      factory: '0x811401d4b7d8eaa0333ada5c955cba1fd8b09eda',
-      router: '0xB3f8EB0f726b67BEb61B28ECF0B0Cc2f0c419902',
+    uniswap: { // Amoy      
+      factory: '0x41f539f5a284c9c8a0ee830e8249f5105e929331',      
+      router: '0x9A9C0AD5cD2b6A923a699CFB30d5267772428941',
     },
-    sushiswap: { // Amoy
-      factory: '0x811401d4b7d8eaa0333ada5c955cba1fd8b09eda',
-      router: '0xB3f8EB0f726b67BEb61B28ECF0B0Cc2f0c419902',
+    sushiswap: { // Amoy      
+      factory: '0x41f539f5a284c9c8a0ee830e8249f5105e929331',      
+      router: '0x9A9C0AD5cD2b6A923a699CFB30d5267772428941',
     },
     sig: {
       user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
@@ -395,6 +391,8 @@ async function setupProvider(chainId) {
     RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`    
   } else if(chainId == 137) {
     RPC_URL = `https://polygon-rpc.com`    
+  } else if(chainId == 80002) {
+    RPC_URL = `https://rpc-amoy.polygon.technology/`    
   }
 
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
