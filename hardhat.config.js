@@ -1,199 +1,249 @@
-const { utils } = require("ethers")
+const { utils } = require("ethers");
 
-require("@nomiclabs/hardhat-waffle")
-require("hardhat-deploy")
-require("hardhat-deploy-ethers")
-require("@nomiclabs/hardhat-etherscan")
-require("hardhat-contract-sizer")
+require("@nomiclabs/hardhat-waffle");
+require("hardhat-deploy");
+require("hardhat-deploy-ethers");
+// require("@nomiclabs/hardhat-etherscan");
+require("@nomicfoundation/hardhat-verify");
+require("hardhat-contract-sizer");
 require("hardhat-gas-reporter")
 require("solidity-coverage")
 require("@nomicfoundation/hardhat-network-helpers")
-require("dotenv").config()
+require('dotenv').config();
+
+
 
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners()
+  const accounts = await hre.ethers.getSigners();
 
-    for (const account of accounts) {
-        console.log(account.address)
-    }
-})
+  for(const account of accounts) {
+    console.log(account.address);
+  }
+});
 
-const alchemy_key = process.env.ALCHEMY_KEY
-const etherScan_api_key = process.env.ETHER_SCAN_API_KEY
-const bscScan_api_key = process.env.BSC_SCAN_API_KEY
-const polyScan_api_key = process.env.POLYGON_SCAN_API_KEY
-const avaxScan_api_key = process.env.AVAX_SCAN_API_KEY
+const alchemy_key = process.env.ALCHEMY_KEY;
+const etherScan_api_key = process.env.ETHER_SCAN_API_KEY;
+const bscScan_api_key = process.env.BSC_SCAN_API_KEY;
+const polyScan_api_key = process.env.POLYGON_SCAN_API_KEY;
+const avaxScan_api_key = process.env.AVAX_SCAN_API_KEY;
+const amoyScan_api_key = process.env.AMOY_SCAN_API_KEY;
 
-const mnemonic = process.env.MNEMONIC
-const privateKey = process.env.DEPLOY_PRIVATE_KEY
-const coinmarketcap_api_key = process.env.COINMARKETCAP_API_KEY
+const mnemonic = process.env.MNEMONIC;
+const privateKey = process.env.DEPLOY_PRIVATE_KEY;
+const coinmarketcap_api_key = process.env.COINMARKETCAP_API_KEY;
 
 const chainIds = {
-    ganache: 1337,
-    goerli: 5,
-    hardhat: 31337,
-    kovan: 42,
-    mainnet: 1,
-    rinkeby: 4,
-    ropsten: 3,
-    bscTest: 97, // BSC testnet
-    bscMain: 56, // BSC mainnet
-    mumbai: 80001, // Polygon testnet
-    matic: 137, // Polygon mainnet
-    fuji: 43113, // Avalance testnet
-    avax: 43114, // Avalance mainnet
-}
+  ganache: 1337,
+  goerli: 5,
+  hardhat: 31337,
+  kovan: 42,
+  mainnet: 1,
+  rinkeby: 4,
+  ropsten: 3,
+  bscTest: 97,   // BSC testnet
+  bscMain: 56,   // BSC mainnet
+  mumbai: 80001, // Polygon testnet
+  amoy: 80002, // Amoy testnet
+  matic: 137,    // Polygon mainnet
+  fuji: 43113,   // Avalance testnet
+  avax: 43114,   // Avalance mainnet
+};
 if (!mnemonic || !alchemy_key) {
-    throw new Error("Please set your data in a .env file")
+  throw new Error("Please set your data in a .env file");
 }
 
 module.exports = {
-    defaultNetwork: "hardhat",
-    gasReporter: {
-        coinmarketcap: coinmarketcap_api_key,
-        currency: "USD",
-        enabled: false,
+  defaultNetwork: 'hardhat',
+  gasReporter: {
+    coinmarketcap: coinmarketcap_api_key,
+    currency: "USD",
+    enabled: false
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0,
     },
-    namedAccounts: {
-        deployer: {
-            default: 0,
-            1: 0,
-        },
-        dev: {
-            default: 1,
-        },
-        auditor: {
-            default: 2,
-        },
-        staker: {
-            default: 3,
-        },
+    dev: {
+      default: 1,
     },
-    networks: {
-        hardhat: {
-            allowUnlimitedContractSize: true,
-            chainId: chainIds.mumbai,
-            saveDeployments: true,
-            forking: {
-                // url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
-                // blockNumber: 11328709,
-                url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`,
-            },
-            // accounts: {
-            //   mnemonic,
-            // },
-            // accounts: [
-            //   {
-            //     privateKey: privateKey,
-            //     balance: "1000000000000000000000000000"
-            //   }
-            // ],
+  },
+  networks: {
+    hardhat: {
+      allowUnlimitedContractSize: true,
+      chainId: chainIds.ganache,
+      saveDeployments: true,
+      forking: {
+        // url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
+        // blockNumber: 11328709,
+        // url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`
+        url: `https://rpc-amoy.polygon.technology/`
+      },
+      accounts: {
+        mnemonic,
+      },  
+      // accounts: [
+      //   {
+      //     privateKey: privateKey,
+      //     balance: "1000000000000000000000000000"
+      //   }
+      // ],
 
-            // gasPrice: 22500000000,
-            gasMultiplier: 2,
-            // throwOnTransactionFailures: true,
-            // blockGasLimit: 1245000000
-        },
-        // Ethereum mainnet
-        mainnet: {
-            url: `https://eth-mainnet.alchemyapi.io/v2/${alchemy_key}`,
-            accounts: [privateKey],
-            chainId: chainIds.mainnet,
-            live: false,
-            saveDeployments: true,
-        },
-        // Ethereum testnet(Goerli)
-        goerli: {
-            url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
-            accounts: [privateKey],
-            chainId: chainIds.goerli,
-            live: false,
-            saveDeployments: true,
-            tags: ["staging"],
-            gasPrice: 5000000000,
-            gasMultiplier: 2,
-        },
-        // BSC testnet
-        bscTest: {
-            url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-            chainId: chainIds.bscTest,
-            accounts: [privateKey],
-            live: true,
-            saveDeployments: true,
-            gasMultiplier: 2,
-        },
-        // BSC mainnet
-        bscMain: {
-            url: "https://bsc-dataseed.binance.org/",
-            chainId: chainIds.bscMain,
-            accounts: [privateKey],
-            live: true,
-            saveDeployments: true,
-        },
-        // Polygon testnet
-        mumbai: {
-            // url: "https://rpc-mumbai.maticvigil.com",
-            url: "https://polygon-mumbai.g.alchemy.com/v2/MS1xXvCUQzKUdIBnUrKZpdx26AHMixO4",
-            chainId: chainIds.mumbai,
-            accounts: [privateKey],
-            live: false,
-            saveDeployments: true,
-            gasPrice: 22500000000,
-            gasMultiplier: 2,
-        },
-        // Polygon mainnet
-        matic: {
-            url: "https://polygon-rpc.com",
-            chainId: chainIds.matic,
-            accounts: [privateKey],
-            live: true,
-            saveDeployments: true,
-        },
-        // Avalance testnet(Fuji: C-Chain)
-        fuji: {
-            url: "https://api.avax-test.network/ext/C/rpc",
-            gasPrice: 225000000000,
-            chainId: chainIds.fuji,
-            accounts: [privateKey],
-        },
-        // Avalance mainnet
-        avax: {
-            url: "https://api.avax.network/ext/bc/C/rpc",
-            gasPrice: 225000000000,
-            chainId: chainIds.avax,
-            accounts: {
-                mnemonic,
-            },
-            live: true,
-            saveDeployments: true,
-        },
+      gasPrice: 22500000000,
+      gasMultiplier: 2,
+      // throwOnTransactionFailures: true,
+      // blockGasLimit: 1245000000 
+      blockGasLimit: 3245000000 
     },
-    etherscan: {
-        // apiKey: etherScan_api_key
-        // apiKey: bscScan_api_key
-        apiKey: polyScan_api_key,
-        // apiKey: avaxScan_api_key
+    // Ethereum mainnet
+    mainnet: { 
+      url: `https://eth-mainnet.alchemyapi.io/v2/${alchemy_key}`,
+      accounts: [
+        privateKey
+      ],
+      chainId: chainIds.mainnet,
+      live: false,
+      saveDeployments: true
     },
-    paths: {
-        deploy: "deploy",
-        deployments: "deployments",
-        sources: "contracts",
-        tests: "test",
+    // Ethereum testnet(Goerli)
+    goerli: { 
+      url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
+      accounts: [
+        privateKey
+      ],
+      chainId: chainIds.goerli,
+      live: false,
+      saveDeployments: true,
+      tags: ["staging"],
+      gasPrice: 5000000000,
+      gasMultiplier: 2,
     },
-    mocha: {
-        timeout: 500000,
+    // BSC testnet
+    bscTest: { 
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: chainIds.bscTest,
+      accounts: [
+        privateKey
+      ],
+      live: true,
+      saveDeployments: true,
+      gasMultiplier: 2,
     },
-    solidity: {
-        compilers: [
-            {
-                version: "0.8.4",
-                settings: {
-                    optimizer: {
-                        enabled: true,
-                        runs: 200,
-                    },
-                },
-            },
-        ],
+    // BSC mainnet
+    bscMain: { 
+      url: "https://bsc-dataseed.binance.org/",
+      chainId: chainIds.bscMain,
+      accounts: [
+        privateKey
+      ],
+      live: true,
+      saveDeployments: true
     },
-}
+    // Polygon testnet
+    mumbai: { 
+      // url: "https://rpc-mumbai.maticvigil.com",
+      url: "https://polygon-mumbai.g.alchemy.com/v2/MS1xXvCUQzKUdIBnUrKZpdx26AHMixO4",
+      chainId: chainIds.mumbai,
+      accounts: [
+        privateKey
+      ],
+      live: false,
+      saveDeployments: true,
+      gasPrice: 22500000000,
+      gasMultiplier: 2,
+    },
+    // Amoy testnet
+    polygonAmoy: {       
+      url: "https://rpc-amoy.polygon.technology/",
+      chainId: chainIds.amoy,
+      accounts: [
+        privateKey
+      ],
+      live: false,
+      saveDeployments: true,
+      gasPrice: 22500000000,
+      gasMultiplier: 2
+    },
+    // Polygon mainnet
+    matic: { 
+      url: "https://polygon-rpc.com",
+      chainId: chainIds.matic,
+      accounts: [
+        privateKey
+      ],
+      live: true,
+      saveDeployments: true
+    },
+    // Avalance testnet(Fuji: C-Chain)
+    fuji: { 
+      url: "https://api.avax-test.network/ext/C/rpc",
+      gasPrice: 225000000000,
+      chainId: chainIds.fuji,
+      accounts: [
+        privateKey
+      ],
+    },
+    // Avalance mainnet
+    avax: { 
+      url: "https://api.avax.network/ext/bc/C/rpc",
+      gasPrice: 225000000000,
+      chainId: chainIds.avax,
+      accounts: {
+        mnemonic,
+      },
+      live: true,
+      saveDeployments: true
+    },
+  },
+  etherscan: {
+    // apiKey: etherScan_api_key
+    // apiKey: bscScan_api_key    
+    // apiKey: polyScan_api_key,
+    // apiKey: avaxScan_api_key    
+    apiKey: {
+      polygonAmoy: amoyScan_api_key,
+    },
+    customChains: [
+      {
+        network: "polygonAmoy",
+        chainId: 80002,
+        urls: {
+          apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET",
+          // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
+          browserURL: "https://www.oklink.com/amoy",
+        },
+      },
+    ], 
+  },
+  sourcify: {
+    enabled: false,
+    // // Optional: specify a different Sourcify server
+    // apiUrl: "https://sourcify.dev/server",
+    // // Optional: specify a different Sourcify repository
+    // browserUrl: "https://repo.sourcify.dev",
+    apiUrl: "https://server-verify.hashscan.io",
+    browserUrl: "https://repository-verify.hashscan.io",
+
+  },
+  paths: {
+    deploy: "deploy",
+    deployments: "deployments",
+    sources: "contracts",
+    tests: "test"
+  },
+  mocha: {
+    timeout: 200e3
+  },
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.4',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },        
+      },
+    ],
+  }
+};

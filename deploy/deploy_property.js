@@ -22,5 +22,5 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 };
 
 module.exports.id = 'deploy_property'
-module.exports.tags = ['Property'];
+module.exports.tags = ['Property', 'Deploy'];
 module.exports.dependencies = ['Ownablee', 'UniHelper', 'Vote', 'StakingPool'];

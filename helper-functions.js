@@ -2,7 +2,7 @@
 // since these use the hardhat library
 // and it would be a circular dependency
 const { run, ethers, network } = require("hardhat")
-const { DISCOUNT, CONFIG } = require("./scripts/utils")
+const { DISCOUNT, CONFIG, getConfig } = require("./scripts/utils")
 const ERC20 = require("./data/ERC20.json")
 const FxERC20 = require("./data/FxERC20.json")
 const {
@@ -13,13 +13,17 @@ const {
 const { parseUnits } = require("ethers/lib/utils")
 
 //? Constants
-const VAB_TOKEN_ADDRESS = CONFIG.mumbai.vabToken
-const EXM_TOKEN_ADDRESS = CONFIG.mumbai.exmAddress
-const USDC_TOKEN_ADDRESS = CONFIG.mumbai.usdcAdress
-const UNISWAP_FACTORY_ADDRESS = CONFIG.mumbai.uniswap.factory
-const UNISWAP_ROUTER_ADDRESS = CONFIG.mumbai.uniswap.router
-const SUSHISWAP_FACTORY_ADDRESS = CONFIG.mumbai.sushiswap.factory
-const SUSHISWAP_ROUTER_ADDRESS = CONFIG.mumbai.sushiswap.router
+const chainId = 80002;  
+console.log("chainId", chainId);
+
+const config = getConfig(chainId);
+const VAB_TOKEN_ADDRESS = config.vabToken;
+const EXM_TOKEN_ADDRESS = config.exmAddress;
+const USDC_TOKEN_ADDRESS = config.usdcAdress;
+const UNISWAP_FACTORY_ADDRESS = config.uniswap.factory;
+const UNISWAP_ROUTER_ADDRESS = config.uniswap.router;
+const SUSHISWAP_FACTORY_ADDRESS = config.sushiswap.factory;
+const SUSHISWAP_ROUTER_ADDRESS = config.sushiswap.router;
 
 const proposalStatusMap = {
     0: "LISTED", //0 proposal created by studio
@@ -69,11 +73,23 @@ const fundAndApproveAccounts = async ({
 }) => {
     try {
         console.log("Funding and Approving accounts...")
+        // if (accounts.length > 0) {
+        //     for (const account of accounts) {
+        //         await vabTokenContract.connect(accounts[0]).faucet(VAB_FAUCET_AMOUNT);
+        //         await usdcTokenContract.connect(accounts[0]).faucet(USDC_FAUCET_AMOUNT);
+        //     }
+        // }
+        for (var i = 1; i < accounts.length; i++) {
+            await vabTokenContract.connect(accounts[0]).transfer(accounts[i].address, VAB_FAUCET_AMOUNT, {from: accounts[0].address});
+            await usdcTokenContract.connect(accounts[0]).transfer(accounts[i].address, USDC_FAUCET_AMOUNT, {from: accounts[0].address});
+        }
+            
         for (const account of accounts) {
-            await vabTokenContract.connect(account).faucet(VAB_FAUCET_AMOUNT)
-            await usdcTokenContract.connect(account).faucet(USDC_FAUCET_AMOUNT)
             for (const contract of contracts) {
-                await vabTokenContract.connect(account).approve(contract.address, VAB_FAUCET_AMOUNT)
+                await vabTokenContract
+                    .connect(account)
+                    .approve(contract.address, VAB_FAUCET_AMOUNT)
+
                 await usdcTokenContract
                     .connect(account)
                     .approve(contract.address, USDC_FAUCET_AMOUNT)
@@ -105,12 +121,13 @@ const deployAndInitAllContracts = async () => {
         const stakingPoolFactory = await ethers.getContractFactory("StakingPool")
 
         //? get accounts
-        const [deployer, dev, auditor, staker1, staker2] = await ethers.getSigners()
+        const [deployer, dev, auditor1, staker1, staker2] = await ethers.getSigners()
+        const auditor = deployer;
 
         //? token contracts
         const vabTokenContract = new ethers.Contract(
             VAB_TOKEN_ADDRESS,
-            JSON.stringify(FxERC20), // we use FxER20 to call the faucet in local network
+            JSON.stringify(ERC20), // we use FxER20 to call the faucet in local network
             ethers.provider
         )
         const exmTokenContract = new ethers.Contract(
@@ -120,7 +137,7 @@ const deployAndInitAllContracts = async () => {
         )
         const usdcTokenContract = new ethers.Contract(
             USDC_TOKEN_ADDRESS,
-            JSON.stringify(FxERC20),
+            JSON.stringify(ERC20),
             ethers.provider
         )
 
@@ -211,7 +228,7 @@ const deployAndInitAllContracts = async () => {
         await ownable.connect(deployer).setup(vote.address, vabbleDAO.address, stakingPool.address)
 
         await ownable
-            .connect(deployer)
+            .connect(auditor)
             .addDepositAsset([
                 vabTokenContract.address,
                 usdcTokenContract.address,
@@ -225,6 +242,8 @@ const deployAndInitAllContracts = async () => {
         const boardRewardRate = await property.boardRewardRate()
         const rewardRate = await property.rewardRate()
         const lockPeriod = await property.lockPeriod()
+
+
 
         return {
             deployer,

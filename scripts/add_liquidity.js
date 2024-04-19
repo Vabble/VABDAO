@@ -9,6 +9,17 @@ const UNISWAP2FACTORY_ABI = require('../data/Uniswap2Factory.json');
 const SUSHISWAP2ROUTER_ABI = require('../data/Sushiswap2Router.json');
 const SUSHISWAP2FACTORY_ABI = require('../data/Sushiswap2Factory.json');
 
+
+// MATIC/USDC = 1 : 500
+// MATIC/USDT = 1 : 500
+// MATIC/VAB = 1 : 50000
+// USDC:VAB = 1 : 100
+// USDT:VAB = 1 : 100
+// USDC:USDT = 1 : 1
+
+let isMatic = false
+let isToken = true
+
 async function addLiquidity() {
     try {
         // Connect to the existing contracts
@@ -25,14 +36,11 @@ async function addLiquidity() {
         const sushiswapFactoryAddress = networkConfig.sushiswap.factory;
         const usdcAddress = networkConfig.usdcAdress;
         const usdtAddress = networkConfig.usdtAdress;
-        const exmAddress = networkConfig.exmAddress;
-        
 
         const provider = await setupProvider(chainId);
         const vabToken = new ethers.Contract(vabTokenAddress, JSON.stringify(ERC20), provider);
         const usdcToken = new ethers.Contract(usdcAddress, JSON.stringify(ERC20), provider);
         const usdtToken = new ethers.Contract(usdtAddress, JSON.stringify(ERC20), provider);
-        const exmToken = new ethers.Contract(exmAddress, JSON.stringify(ERC20), provider);
 
         const uniswapRouter = new ethers.Contract(uniswapRouterAddress, UNISWAP2ROUTER_ABI, provider);
         const sushiswapRouter = new ethers.Contract(sushiswapRouterAddress, SUSHISWAP2ROUTER_ABI, provider);
@@ -45,152 +53,198 @@ async function addLiquidity() {
         const signers = await ethers.getSigners();
         const deployer = signers[0];
 
-        let totalSupply;
-        // Approve Uniswap on 
+        //===== Approve Uniswap on 
         let totalVABSupply = await vabToken.totalSupply();
-        const targetSupply = getBigNumber(500000000);
-        console.log("VAB totalSupply", totalVABSupply.toString());
+        let B_VAB = await vabToken.balanceOf(deployer.address)
+        console.log("VAB totalSupply", totalVABSupply.toString(), B_VAB.toString());
+        let totalUSDT = await usdtToken.totalSupply();
+        let B_USDT = await usdtToken.balanceOf(deployer.address)
+        console.log("USDT totalSupply", totalUSDT.toString(), B_USDT.toString());
+        let totalUSDC = await usdcToken.totalSupply();
+        let B_USDC = await usdcToken.balanceOf(deployer.address)
+        console.log("USDC totalSupply", totalUSDC.toString(), B_USDC.toString());
+
+        const b1 = await ethers.provider.getBalance(deployer.address) //
+        console.log("MATIC total", b1.toString()); // 1.466390757273000000
 
         let res;
+        let ethVal = ethers.utils.parseEther('1');
+                
+        if(isToken) {
+            // ======== USDC:VAB        
+            let pair = await uniswapFactory.getPair(usdcAddress, vabTokenAddress);   
+            console.log("USDC:VAB getPair", pair); 
+            if (pair != CONFIG.addressZero) {
+                await usdcToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_USDC,
+                    {from: deployer.address}
+                );
+                console.log("===== approve USDC");
+                await vabToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_VAB,
+                    {from: deployer.address}
+                );
+                console.log("===== approve VAB");
 
-        console.log("------------------- Approve USDC:VAB, USDT:VAB, EMX:VAB Pair Tokens -------------------");
-        // var token_list = [usdcToken, usdtToken, exmToken];
-        var token_list = [usdcToken, usdtToken];
-        for (var i = 0; i < token_list.length; i++) {
-            const token = token_list[i];
-            let pair = await uniswapFactory.getPair(token.address, vabTokenAddress);   
-            console.log((i + 1) + "'s getPair", pair);
+                const deadline = Date.now() + 60 * 60 * 24 * 7;
+                res = await uniswapRouter.connect(deployer).addLiquidity(
+                    usdcAddress,
+                    vabTokenAddress,
+                    getBigNumber(10, 6),
+                    getBigNumber(1000),
+                    1,
+                    1, 
+                    deployer.address,
+                    deadline,             
+                    {from: deployer.address}            
+                );
+                console.log("===== added USDC:VAB");
+            }
 
-            totalSupply = await token.totalSupply();
-            console.log((i + 1) + "'s totalSupply", totalSupply.toString()); 
+            // ======== USDT:VAB        
+            pair = await uniswapFactory.getPair(usdtAddress, vabTokenAddress);   
+            console.log("USDT:VAB getPair", pair); 
+            if (pair != CONFIG.addressZero) {
+                await usdtToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_USDT,
+                    {from: deployer.address}
+                );
+                console.log("===== approve USDT");
+                await vabToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_VAB,
+                    {from: deployer.address}
+                );
+                console.log("===== approve VAB");
 
+                const deadline = Date.now() + 60 * 60 * 24 * 7;
+                res = await uniswapRouter.connect(deployer).addLiquidity(
+                    usdtAddress,
+                    vabTokenAddress,
+                    getBigNumber(10, 6),
+                    getBigNumber(1000),
+                    1,
+                    1, 
+                    deployer.address,
+                    deadline,             
+                    {from: deployer.address}            
+                );
+                console.log("===== added USDT:VAB");
+            }
+
+            // ======== USDT:USDC        
+            pair = await uniswapFactory.getPair(usdtAddress, usdcAddress);   
+            console.log("USDT:USDC getPair", pair); 
+            if (pair != CONFIG.addressZero) {
+                await usdtToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_USDT,
+                    {from: deployer.address}
+                );
+                console.log("===== approve USDT");
+                await usdcToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_USDC,
+                    {from: deployer.address}
+                );
+                console.log("===== approve USDC");
+
+                const deadline = Date.now() + 60 * 60 * 24 * 7;
+                res = await uniswapRouter.connect(deployer).addLiquidity(
+                    usdtAddress,
+                    usdcAddress,
+                    getBigNumber(10000, 6),
+                    getBigNumber(10000, 6),
+                    1,
+                    1, 
+                    deployer.address,
+                    deadline,             
+                    {from: deployer.address}            
+                );
+                console.log("===== added USDT:USDC");
+            }
+        }
+        
+        if(isMatic) {
+            //======== MATIC:USDC   
+            pair = await uniswapFactory.getPair(usdcAddress, WETH1);   
+            console.log("USDC:MATIC getPair", pair); 
+            if (pair != CONFIG.addressZero) {
+                const deadline = Date.now() + 60 * 60 * 24 * 7;
+                await usdcToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_USDC,
+                    {from: deployer.address}
+                );
+                console.log("===== approve USDC");
+
+                res = await uniswapRouter.connect(deployer).addLiquidityETH(
+                    usdcAddress,            
+                    getBigNumber(500, 6),          
+                    1,
+                    1, 
+                    deployer.address,
+                    deadline,
+                    {from: deployer.address, value: ethVal}            
+                );
+                console.log("===== added USDC");
+            }
+
+
+            //======== MATIC:USDT
+            pair = await uniswapFactory.getPair(usdtAddress, WETH1);   
+            console.log("USDT:MATIC getPair", pair); 
+            if (pair != CONFIG.addressZero) {
+                await usdtToken.connect(deployer).approve(
+                    uniswapRouter.address,
+                    B_USDT,
+                    {from: deployer.address}
+                );
+                
+                const deadline = Date.now() + 60 * 60 * 24 * 7;
+                console.log("===== approve USDT: ", usdtAddress, deadline);
+
+                res = await uniswapRouter.connect(deployer).addLiquidityETH(
+                    usdtAddress,            
+                    getBigNumber(500, 6),          
+                    1,
+                    1, 
+                    deployer.address,
+                    deadline,             
+                    {from: deployer.address, value: ethVal}            
+                );
+                console.log("===== added USDT");
+            }
+        
+
+            //======== MATIC:VAB  
+            pair = await uniswapFactory.getPair(vabTokenAddress, WETH1);   
+            console.log("VAB:MATIC getPair", pair); 
             if (pair != CONFIG.addressZero) {
                 await vabToken.connect(deployer).approve(
-                    pair,
-                    totalVABSupply,
+                    uniswapRouter.address,
+                    B_VAB,
                     {from: deployer.address}
                 );
+                console.log("===== approve VAB: ", vabTokenAddress);
 
-                await token.connect(deployer).approve(
-                    pair,
-                    totalSupply,
-                    {from: deployer.address}
+                const deadline = Date.now() + 60 * 60 * 24 * 7;
+                res = await uniswapRouter.connect(deployer).addLiquidityETH(
+                    vabTokenAddress,            
+                    getBigNumber(50000),          
+                    1,
+                    1, 
+                    deployer.address,
+                    deadline,             
+                    {from: deployer.address, value: ethVal}            
                 );
-            }
-        }
+                console.log("===== added VAB");
+            }  
+        }      
 
-        console.log("------------------- Approve MATIC:VAB on uniswap/sushiswap -------------------");
-        token_list = [WETH1, WETH2];
-        for (var i = 0; i < token_list.length; i++) {
-            const token = token_list[i];
-            console.log("token address", token);
-            let pair;
-            if (token == WETH1) {
-                pair = await uniswapFactory.getPair(token, vabTokenAddress);      
-            }
-            if (token == WETH2)
-                pair = await sushiswapFactory.getPair(token, vabTokenAddress);      
-             
-            console.log((i + 1) + "'s getPair", pair);
-
-            if (pair != CONFIG.addressZero) {
-                await vabToken.connect(deployer).approve(
-                    pair,
-                    totalVABSupply,
-                    {from: deployer.address}
-                );
-            }
-        }
-
-        console.log("------------------- Approve VAB/USDC/USDT on uniswap -------------------");
-        token_list = [vabToken, usdcToken, usdtToken];
-
-        for (var i = 0; i < token_list.length; i++) {
-            const token = token_list[i];
-            totalSupply = await token.totalSupply();
-            console.log((i + 1) + "'s totalSupply", totalSupply.toString());       
-
-            await token.connect(deployer).approve(
-                uniswapRouterAddress,
-                totalSupply,
-                {from: deployer.address}
-            );
-
-            await token.connect(deployer).approve(
-                sushiswapRouterAddress,
-                totalSupply,
-                {from: deployer.address}
-            );
-        }
-
-        const deadline = Date.now() + 60 * 60 * 24 * 7;
-        console.log("deadline", deadline);
-
-        
-        // USDC:VAB   = 10000:1000000(1:100) => uniswap     
-        
-        res = await uniswapRouter.connect(deployer).addLiquidity(
-            usdcAddress,
-            vabTokenAddress,
-            getBigNumber(10, 6),
-            getBigNumber(1000),
-            1,
-            1, 
-            deployer.address,
-            deadline,             
-            {from: deployer.address}            
-        );
-        console.log("USDC:VAB", res);
-
-        // USDT:VAB   = 10000:1000000(1:100) => uniswap    
-        console.log("USDT address", usdtAddress);
-        
-        res = await uniswapRouter.connect(deployer).addLiquidity(
-            usdtAddress,
-            vabTokenAddress,
-            getBigNumber(10, 6),
-            getBigNumber(1000),
-            1,
-            1, 
-            deployer.address,
-            deadline,             
-            {from: deployer.address}            
-        );
-        console.log("USDT:VAB", res);
-
-        
-        // VAB:MATIC   
-        console.log("WETH1 address", WETH1);
-        console.log("WETH2 address", WETH2);
-        let ethVal = ethers.utils.parseEther('0.00001');
-        console.log("ethVal", ethVal.toString());
-
-        res = await sushiswapRouter.connect(deployer).addLiquidityETH(
-            vabTokenAddress,            
-            getBigNumber(1),          
-            1,
-            1, 
-            deployer.address,
-            deadline,             
-            {from: deployer.address, value: ethVal}            
-        );
-        console.log("MATIC:VAB", res);
-
-        // // EMX:VAB   = 1000:1000(1:1) => uniswap    
-        // console.log("EMX address", exmAddress);
-        
-        // res = await uniswapRouter.connect(deployer).addLiquidity(
-        //     exmAddress,
-        //     vabTokenAddress,
-        //     getBigNumber(1000),
-        //     getBigNumber(1000),
-        //     1,
-        //     1, 
-        //     deployer.address,
-        //     deadline,             
-        //     {from: deployer.address}            
-        // );
-        // console.log("EMX:VAB", res);
     } catch (error) {
         console.error('Error in addLiquidity:', error);
     }

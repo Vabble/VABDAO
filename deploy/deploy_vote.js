@@ -18,6 +18,6 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   
 
   module.exports.id = 'deploy_vote'
-  module.exports.tags = ['Vote'];
+  module.exports.tags = ['Vote', 'Deploy'];
   module.exports.dependencies = ['Ownablee'];
   

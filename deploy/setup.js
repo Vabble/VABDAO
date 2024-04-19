@@ -261,4 +261,6 @@ module.exports.dependencies = [
   'VabbleFund',
   'Vote'
 ];
+module.exports.tags = ['Deploy'];
+
   

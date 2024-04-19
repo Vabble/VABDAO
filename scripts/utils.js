@@ -5,7 +5,7 @@ const { BigNumber } = ethers;
 require('dotenv').config();
 
 const ZERO_ADDRESS = ethers.constants.AddressZero;
-const TEST_CHAIN_IDS = [1337, 80001, 31337];
+const TEST_CHAIN_IDS = [1337, 80001, 31337, 80002];
 const CONFIG = {
   daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
@@ -61,18 +61,19 @@ const CONFIG = {
   },
   mumbai: {
     // START: Vabble Contracts - Deployed onm Mumbai
-    FactoryFilmNFT: "0x6d0a9d3da7Bb5EE707FA3542813883ca066a48BE",
-    FactorySubNFT: "0x2Fe9b8C01651c67b752184DBD5D340D3F749B0Cc",
-    FactoryTierNFT: "0xb04460889E0aFCCc869d48d85ed078b8c436Fbd6",
+    FactoryFilmNFT: "0xdBf3cF14Ec235f943F54102EAcFDA64091638833",
+    FactorySubNFT: "0x5bbf6651CDDf4AB958845d9270df6a87a6EA8bD1",
+    FactoryTierNFT: "0x25b7CA60b3497BD4387c10BE1F20feE351F66eAd",
     GnosisSafeL2: "0xfE3057CA0Fb80eD2E7718D0cf0B2055A60135F4B",
-    Ownablee: "0x070bDEA8cEf9B544669dcAf2Ea6A46121D623Ae1",
-    Property: "0x61a63a9B46e77D40D1efa63256b497f52E8560A4",
-    StakingPool: "0x00496B75029ab3a278fb2bAB7198975390f122D8",
-    Subscription: "0x5a8D36b6B44021592fB89BA0E584341913572E6B",
-    UniHelper: "0x5A35C4E966282676E81E9ae8331A6588425f91F2",
-    VabbleDAO: "0x756594a5EAbE5bE436b89057378803894344a4aF",
-    VabbleFunding: "0xb39B962ED941e46Ec78f126718B1c16aa20323a1",
-    Vote: "0x129D867EA53B22227825C606924b7a32186D1325",
+    Ownablee: "0xfC00BF8C9e8d311463B1ba67cC84376Ff458ea08",
+    Property: "0x407ad7F193B95591408ef352a3a74cf7dd517e4F",
+    StakingPool: "0xCA265f385C71a912d513E58A684521F31E142B8B",
+    Subscription: "0x03d55671d5A86CC755F17b86dF892b51CA7bdf98",
+    UniHelper: "0x1aa8a2a438fE37881DF56EAE4D861532A8736383",
+    VabbleDAO: "0x37B8Bba01337ce5631D1daC97178cb1087340A78",
+    VabbleFunding: "0x7bA2C91449B10373FdB3886C953F3deFb7F99653",
+    Vote: "0xec1C6A30A75F3367A69E1713C144c7cfAfFA85c0",
+
     // END: Vabble Contracts - Deployed onm Mumbai
     
     usdcAdress: "0x7493d25DAfE9dA7B73Ffd52F009D978E2415bE0c",
@@ -92,6 +93,45 @@ const CONFIG = {
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
       router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
     },     
+    sig: {
+      user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
+      user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
+    }
+  },
+  polygonAmoy: {
+    // START: Vabble Contracts - Deployed on Amoy
+    FactoryFilmNFT: "",
+    FactorySubNFT: "",
+    FactoryTierNFT: "",
+    GnosisSafeL2: "",
+    Ownablee: "",
+    Property: "",
+    StakingPool: "",
+    Subscription: "",
+    UniHelper: "",
+    VabbleDAO: "",
+    VabbleFunding: "",
+    Vote: "",
+
+    // END: Vabble Contracts - Deployed on Amoy
+    
+    usdcAdress: "0xDEFc6ee1A08d2277EAfCa61a92FDbF7FA2cD32f1",
+    // usdcAdress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582", // Amoy USDC
+    usdtAdress: "0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1",
+    daiAddress: "",
+    vabToken: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F", // Testcase VAB
+    wMatic: "0x9473012d4fc9e7182b7e45ee1c425e97a443420b",
+    exmAddress: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F",
+    wmatic: "0x9473012d4fc9e7182b7e45ee1c425e97a443420b",
+    walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
+    uniswap: { // Amoy
+      factory: '0x41f539f5a284c9c8a0ee830e8249f5105e929331',
+      router: '0x9A9C0AD5cD2b6A923a699CFB30d5267772428941',
+    },
+    sushiswap: { // Amoy
+      factory: '0x41f539f5a284c9c8a0ee830e8249f5105e929331',
+      router: '0x9A9C0AD5cD2b6A923a699CFB30d5267772428941',
+    },
     sig: {
       user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
       user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
@@ -330,8 +370,10 @@ const buildSignatureBytes = (signatures) => {
 };
 
 const getConfig = (chainId) => {
-  if (chainId == 1337 || chainId == 80001) { // localhost or mumbai
+  if (chainId == 80001) { // localhost or mumbai
     return CONFIG.mumbai
+  } else if (chainId == 1337 || chainId == 80002) {
+    return CONFIG.polygonAmoy;
   } else if (chainId == 137) { // Polygon network
     return CONFIG.polygon
   } else if (chainId == 1) { // Ethereum mainnet

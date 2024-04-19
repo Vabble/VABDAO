@@ -16,4 +16,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 };
 
 module.exports.id = 'deploy_gnosis_safe'
-module.exports.tags = ['GnosisSafeL2'];
+module.exports.tags = ['GnosisSafeL2', 'Deploy'];

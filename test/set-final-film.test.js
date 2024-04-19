@@ -1,7 +1,8 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-const { CONFIG, getBigNumber, DISCOUNT } = require('../scripts/utils');
+const { CONFIG, getBigNumber, DISCOUNT, getConfig } = require('../scripts/utils');
+
 const { generateSignature, executeGnosisSafeTransaction } = require('../scripts/gnosis-safe');
 // const {approveWithdrawFromStakePool} = require('../scripts/gnosis-approvePendingWithdraw');
 const ERC20 = require('../data/ERC20.json');
@@ -46,15 +47,17 @@ describe('SetFinalFilm', function () {
         this.signer2 = new ethers.Wallet(process.env.PK2, ethers.provider);        
     });
     beforeEach(async function () {
+        const network = await ethers.provider.getNetwork();
+        const chainId = network.chainId;
+        console.log("Chain ID: ", chainId);
+        const config = getConfig(chainId);
+        
         // load ERC20 tokens
-        if (CONFIG.mumbai.vabToken == "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32")
-            this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(ERC20), ethers.provider);
-        else
-            this.vabToken = new ethers.Contract(CONFIG.mumbai.vabToken, JSON.stringify(FERC20), ethers.provider);
+        this.vabToken = new ethers.Contract(config.vabToken, JSON.stringify(ERC20), ethers.provider);
         
-        this.USDC = new ethers.Contract(CONFIG.mumbai.usdcAdress, JSON.stringify(ERC20), ethers.provider);
-        this.EXM = new ethers.Contract(CONFIG.mumbai.exmAddress, JSON.stringify(ERC20), ethers.provider);
-        
+        this.USDC = new ethers.Contract(config.usdcAdress, JSON.stringify(ERC20), ethers.provider);
+        this.USDT = new ethers.Contract(config.usdtAdress, JSON.stringify(ERC20), ethers.provider);
+
         // --------------- Deploy Contracts -------------------------------------------------------------------
         this.GnosisSafe = await (await this.GnosisSafeFactory.deploy()).deployed();
         this.auditor = GNOSIS_FLAG ? this.GnosisSafe : this.deployer;
@@ -68,8 +71,8 @@ describe('SetFinalFilm', function () {
         expect(await this.Ownablee.deployer()).to.be.equal(this.deployer.address);
 
         this.UniHelper = await (await this.UniHelperFactory.deploy(
-            CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, 
-            CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router, this.Ownablee.address
+            config.uniswap.factory, config.uniswap.router, 
+            config.sushiswap.factory, config.sushiswap.router, this.Ownablee.address
         )).deployed();
 
         this.StakingPool = await (await this.StakingPoolFactory.deploy(this.Ownablee.address)).deployed();                 
@@ -130,7 +133,6 @@ describe('SetFinalFilm', function () {
             )
         ).deployed();    
 
-
         // ---------------- Setup/Initialize the contracts with the deployer ----------------------------------
         await this.GnosisSafe.connect(this.deployer).setup(
             [this.signer1.address, this.signer2.address], 
@@ -149,14 +151,14 @@ describe('SetFinalFilm', function () {
             this.VabbleFund.address,
             {from: this.deployer.address}
         ); 
-      
+
         await this.StakingPool.connect(this.deployer).initialize(
             this.VabbleDAO.address,
             this.Property.address,
             this.Vote.address,
             {from: this.deployer.address}
         )  
-          
+
         await this.Vote.connect(this.deployer).initialize(
             this.VabbleDAO.address,
             this.StakingPool.address,
@@ -178,7 +180,7 @@ describe('SetFinalFilm', function () {
             this.SubNFT.address,
             {from: this.deployer.address}
         )
-      
+
         await this.Ownablee.connect(this.deployer).setup(
             this.Vote.address, this.VabbleDAO.address, this.StakingPool.address, 
             {from: this.deployer.address}
@@ -186,7 +188,7 @@ describe('SetFinalFilm', function () {
 
         if (GNOSIS_FLAG) {
             let encodedCallData = this.Ownablee.interface.encodeFunctionData("addDepositAsset", 
-                [[this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero]]);
+                [[this.vabToken.address, this.USDC.address, this.USDT.address, CONFIG.addressZero]]);
 
             // Generate Signature and Transaction information
             const {signatureBytes, tx} = await generateSignature(this.GnosisSafe, encodedCallData, this.Ownablee.address, [this.signer1, this.signer2]);
@@ -194,21 +196,13 @@ describe('SetFinalFilm', function () {
             await executeGnosisSafeTransaction(this.GnosisSafe, this.signer2, signatureBytes, tx);
         } else {
             await this.Ownablee.connect(this.auditor).addDepositAsset(
-                [this.vabToken.address, this.USDC.address, this.EXM.address, CONFIG.addressZero], {from: this.auditor.address}
+                [this.vabToken.address, this.USDC.address, this.USDT.address, CONFIG.addressZero], {from: this.auditor.address}
             )
         }
 
-        // Initialize the VAB/USDC/EXM token for customers, studio, contracts         
+        // Initialize the VAB/USDC/USDT token for customers, studio, contracts         
         const source = this.deployer; // set token source
-
-        if (CONFIG.mumbai.vabToken != "0x5cBbA5484594598a660636eFb0A1AD953aFa4e32") {
-            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-            await this.vabToken.connect(source).faucet(getBigNumber(50000000), {from: source.address});
-        }
-
+        
         // Transfering VAB token to user1, 2, 3        
         await this.vabToken.connect(source).transfer(this.customer1.address, getBigNumber(50000000), {from: source.address});
         await this.vabToken.connect(source).transfer(this.customer2.address, getBigNumber(50000000), {from: source.address});
@@ -249,29 +243,29 @@ describe('SetFinalFilm', function () {
         await this.vabToken.connect(this.studio2).approve(this.StakingPool.address, getBigNumber(100000000));
         await this.vabToken.connect(this.studio3).approve(this.StakingPool.address, getBigNumber(100000000));
 
-        // ====== EXM
-        // Transfering EXM token to customer1, 2, 3
-        await this.EXM.connect(source).transfer(this.customer1.address, getBigNumber(5000), {from: source.address});
-        await this.EXM.connect(source).transfer(this.customer2.address, getBigNumber(5000), {from: source.address});
-        await this.EXM.connect(source).transfer(this.customer3.address, getBigNumber(5000), {from: source.address});
+        // ====== USDT
+        // Transfering USDT token to customer1, 2, 3
+        await this.USDT.connect(source).transfer(this.customer1.address, getBigNumber(5000, 6), {from: source.address});
+        await this.USDT.connect(source).transfer(this.customer2.address, getBigNumber(5000, 6), {from: source.address});
+        await this.USDT.connect(source).transfer(this.customer3.address, getBigNumber(5000, 6), {from: source.address});
 
-        // Transfering EXM token to studio1, 2, 3
-        await this.EXM.connect(source).transfer(this.studio1.address, getBigNumber(5000), {from: source.address});
-        await this.EXM.connect(source).transfer(this.studio2.address, getBigNumber(5000), {from: source.address});
-        await this.EXM.connect(source).transfer(this.studio3.address, getBigNumber(5000), {from: source.address});
+        // Transfering USDT token to studio1, 2, 3
+        await this.USDT.connect(source).transfer(this.studio1.address, getBigNumber(5000, 6), {from: source.address});
+        await this.USDT.connect(source).transfer(this.studio2.address, getBigNumber(5000, 6), {from: source.address});
+        await this.USDT.connect(source).transfer(this.studio3.address, getBigNumber(5000, 6), {from: source.address});
 
-        // Approve to transfer EXM token for each customer, studio to StudioPool, StakingPool
-        await this.EXM.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(100000));
-        await this.EXM.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(100000));
-        await this.EXM.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000));   
+        // Approve to transfer USDT token for each customer, studio to StudioPool, StakingPool
+        await this.USDT.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(50000, 6));
+        await this.USDT.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(50000, 6));
+        await this.USDT.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000, 6));   
 
-        await this.EXM.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(100000));
-        await this.EXM.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(100000));
-        await this.EXM.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(100000));
+        await this.USDT.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(50000, 6));
+        await this.USDT.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(50000, 6));
+        await this.USDT.connect(this.customer3).approve(this.StakingPool.address, getBigNumber(50000, 6));
 
-        await this.EXM.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(100000));
-        await this.EXM.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000));
-        await this.EXM.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000));
+        await this.USDT.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(100000, 6));
+        await this.USDT.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000, 6));
+        await this.USDT.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000, 6));
 
         // ====== USDC
         // Transfering USDC token to user1, 2, 3                                            897497 291258
@@ -390,8 +384,8 @@ describe('SetFinalFilm', function () {
                 this.VabbleDAO.connect(this.studio2).changeOwner(fId1, this.studio3.address, {from: this.studio2.address})                
             ).to.be.revertedWith('cO, E1'); // changeOwner: not film owner
 
-            // Create proposal for a film by studio with EXM token
-            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.USDC.address, 
+            // Create proposal for a film by studio with USDT token
+            await this.VabbleDAO.connect(this.studio1).proposalFilmCreate(0, 0, this.USDT.address, 
                 {from: this.studio1.address})
             await this.VabbleDAO.connect(this.studio1).proposalFilmUpdate(
                 fId2, 

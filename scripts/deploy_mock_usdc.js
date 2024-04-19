@@ -2,9 +2,9 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const contract = await deploy('MockERC20', {
+  const contract = await deploy('MockUSDC', {
     from: deployer,
-    args: ['Vabble', 'VAB'],
+    args: ['USDC', 'USDC'],
     log: true,
     deterministicDeployment: false,
     skipIfAlreadyDeployed: true,
@@ -13,7 +13,8 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   try {
     await run("verify:verify", {
         address: contract.address,
-        constructorArguments: ['USDT', 'USDT'],
+        contract: "contracts/mocks/MockUSDC.sol:MockUSDC",
+        constructorArguments: ['USDC', 'USDC'],
     })
   } catch (e) {
       if (e.message.toLowerCase().includes("already verified")) {
@@ -24,5 +25,5 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
   }
 };
 
-module.exports.id = 'deploy_vab'
-module.exports.tags = ['MockERC20', 'Deploy'];
+module.exports.id = 'deploy_usdc'
+module.exports.tags = ['MockUSDC', 'Deploy'];
