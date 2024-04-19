@@ -7,6 +7,7 @@
     "clean": "hardhat clean",
     "compile": "npx hardhat compile",
     "test": "hardhat test test/main.test.js --network hardhat",
+    "unit:test": "hardhat test --grep \"Unit Tests\"",
     "local:test": "hardhat test test/main.test.js --network localhost",
     "local:deploy": "hardhat --network localhost deploy",
     "test:mumbai": "hardhat test test/main.test.js --network mumbai",
