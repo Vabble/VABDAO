@@ -157,17 +157,17 @@ const CONFIG = {
     usdtAdress: "0x58f777963F5c805D82E9Ff50c137fd3D58bD525C",
     daiAddress: "",
     vabToken: "0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda", // Testcase VAB
-    wMatic: "",
+    wMatic: "0x4200000000000000000000000000000000000006",
     exmAddress: "0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda",
-    wmatic: "",
+    wmatic: "0x4200000000000000000000000000000000000006",
     walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
     uniswap: {
-      factory: '',
-      router: '',
+      factory: '0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e',
+      router: '0x1689E7B1F10000AE47eBfE339a4f69dECd19F602',
     },
     sushiswap: {
-      factory: '',
-      router: '',
+      factory: '0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e',
+      router: '0x1689E7B1F10000AE47eBfE339a4f69dECd19F602',
     },
     sig: {
       user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
