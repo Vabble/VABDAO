@@ -409,7 +409,7 @@ const buildSignatureBytes = (signatures) => {
 const getConfig = (chainId) => {
   if (chainId == 80001) { // localhost or mumbai
     return CONFIG.mumbai
-  } else if (chainId == 1337 || chainId == 80002) {
+  } else if (chainId == 80002) {
     return CONFIG.polygonAmoy;
   } else if (chainId == 84532) { // Base Sepolia network
     return CONFIG.baseSepolia;
@@ -417,6 +417,8 @@ const getConfig = (chainId) => {
     return CONFIG.polygon;
   } else if (chainId == 1) { // Ethereum mainnet
     return CONFIG.ethereum;
+  } else if (chainId == 1337) { // local
+    return CONFIG[process.env.NETWORK];
   }
 
   return CONFIG.mumbai;
@@ -430,9 +432,9 @@ async function setupProvider(chainId) {
   const alchemy_key = process.env.ALCHEMY_KEY;
   
   let RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`;
-  if(chainId == 1337 || chainId == 80001) {
+  if(chainId == 80001) {
     RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`    
-  } else if (chainId == 80002) {
+  } else if (chainId == 1337 || chainId == 80002) {
     RPC_URL = `https://rpc-amoy.polygon.technology/`;
   } else if (chainId == 84532) {
     RPC_URL = `	https://sepolia.base.org/`;
