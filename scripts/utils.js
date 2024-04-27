@@ -434,6 +434,10 @@ async function setupProvider(chainId) {
   let RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`;
   if(chainId == 1337 || chainId == 80001) {
     RPC_URL = `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`    
+  } else if (chainId == 80002) {
+    RPC_URL = `https://rpc-amoy.polygon.technology/`;
+  } else if (chainId == 84532) {
+    RPC_URL = `	https://sepolia.base.org/`;
   } else if(chainId == 137) {
     RPC_URL = `https://polygon-rpc.com`    
   }
@@ -442,6 +446,7 @@ async function setupProvider(chainId) {
 
   return provider;
 }
+
 
 async function getNetworkConfig() {
   let network = process.env.NETWORK;
