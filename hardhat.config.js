@@ -170,7 +170,7 @@ module.exports = {
       gasPrice: 22500000000,
       gasMultiplier: 2
     },
-    // Amoy testnet
+    // Base Sepolia testnet
     baseSepolia: {       
       url: "https://sepolia.base.org/",
       chainId: chainIds.baseSepolia,

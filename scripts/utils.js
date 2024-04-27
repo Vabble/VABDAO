@@ -115,8 +115,7 @@ const CONFIG = {
 
     // END: Vabble Contracts - Deployed on Amoy
     
-    usdcAdress: "0xDEFc6ee1A08d2277EAfCa61a92FDbF7FA2cD32f1",
-    // usdcAdress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582", // Amoy USDC
+    usdcAdress: "0xDEFc6ee1A08d2277EAfCa61a92FDbF7FA2cD32f1",    
     usdtAdress: "0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1",
     daiAddress: "",
     vabToken: "0x14d699f12704B861A6c7bFcb41bE65ceE261669F", // Testcase VAB
@@ -154,13 +153,12 @@ const CONFIG = {
 
     // END: Vabble Contracts - Deployed on Amoy
     
-    usdcAdress: "",
-    // usdcAdress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582", // Amoy USDC
-    usdtAdress: "",
+    usdcAdress: "0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1",    
+    usdtAdress: "0x58f777963F5c805D82E9Ff50c137fd3D58bD525C",
     daiAddress: "",
-    vabToken: "", // Testcase VAB
+    vabToken: "0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda", // Testcase VAB
     wMatic: "",
-    exmAddress: "",
+    exmAddress: "0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda",
     wmatic: "",
     walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
     uniswap: {
