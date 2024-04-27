@@ -113,6 +113,6 @@ library Helper {
 
     function isTestNet() internal view returns (bool) {
         uint256 id = block.chainid;
-        return id == 1337 || id == 80001 || id == 80002 || id == 31337;
+        return id == 1337 || id == 80001 || id == 80002 || id == 31337 || id == 84532;
     }
 }

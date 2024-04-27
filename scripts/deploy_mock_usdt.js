@@ -10,6 +10,11 @@ module.exports = async function ({ ethers, getNamedAccounts, deployments, getCha
     skipIfAlreadyDeployed: true,
   });
 
+  const network = await ethers.provider.getNetwork();
+  const chainId = network.chainId;
+  if (chainId != 80002) 
+    return;
+
   try {
     await run("verify:verify", {
         address: contract.address,

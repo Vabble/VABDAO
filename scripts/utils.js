@@ -5,7 +5,7 @@ const { BigNumber } = ethers;
 require('dotenv').config();
 
 const ZERO_ADDRESS = ethers.constants.AddressZero;
-const TEST_CHAIN_IDS = [1337, 80001, 31337, 80002];
+const TEST_CHAIN_IDS = [1337, 80001, 31337, 80002, 84532];
 const CONFIG = {
   daoWalletAddress: "0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1",
   addressZero: '0x0000000000000000000000000000000000000000',
@@ -131,6 +131,45 @@ const CONFIG = {
     sushiswap: { // Amoy
       factory: '0x41f539f5a284c9c8a0ee830e8249f5105e929331',
       router: '0x9A9C0AD5cD2b6A923a699CFB30d5267772428941',
+    },
+    sig: {
+      user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
+      user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
+    }
+  },
+  baseSepolia: {
+    // START: Vabble Contracts - Deployed on Amoy
+    FactoryFilmNFT: "",
+    FactorySubNFT: "",
+    FactoryTierNFT: "",
+    GnosisSafeL2: "",
+    Ownablee: "",
+    Property: "",
+    StakingPool: "",
+    Subscription: "",
+    UniHelper: "",
+    VabbleDAO: "",
+    VabbleFunding: "",
+    Vote: "",
+
+    // END: Vabble Contracts - Deployed on Amoy
+    
+    usdcAdress: "",
+    // usdcAdress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582", // Amoy USDC
+    usdtAdress: "",
+    daiAddress: "",
+    vabToken: "", // Testcase VAB
+    wMatic: "",
+    exmAddress: "",
+    wmatic: "",
+    walletAddress: "0xC8e39373B96a90AFf4b07DA0e431F670f73f8941",
+    uniswap: {
+      factory: '',
+      router: '',
+    },
+    sushiswap: {
+      factory: '',
+      router: '',
     },
     sig: {
       user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
@@ -374,8 +413,10 @@ const getConfig = (chainId) => {
     return CONFIG.mumbai
   } else if (chainId == 1337 || chainId == 80002) {
     return CONFIG.polygonAmoy;
+  } else if (chainId == 84532) { // Base Sepolia network
+    return CONFIG.baseSepolia;
   } else if (chainId == 137) { // Polygon network
-    return CONFIG.polygon
+    return CONFIG.polygon;
   } else if (chainId == 1) { // Ethereum mainnet
     return CONFIG.ethereum;
   }

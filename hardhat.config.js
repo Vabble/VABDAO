@@ -3,8 +3,12 @@ const { utils } = require("ethers");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
-// require("@nomiclabs/hardhat-etherscan");
-require("@nomicfoundation/hardhat-verify");
+if (process.env.NETWORK == "polygonAmoy") {
+  require("@nomicfoundation/hardhat-verify");  
+} else {
+  require("@nomiclabs/hardhat-etherscan");
+}
+
 require("hardhat-contract-sizer");
 require("hardhat-gas-reporter")
 require("solidity-coverage")
@@ -27,6 +31,8 @@ const bscScan_api_key = process.env.BSC_SCAN_API_KEY;
 const polyScan_api_key = process.env.POLYGON_SCAN_API_KEY;
 const avaxScan_api_key = process.env.AVAX_SCAN_API_KEY;
 const amoyScan_api_key = process.env.AMOY_SCAN_API_KEY;
+const sepoliaScan_api_key = process.env.SEPOLIA_SCAN_API_KEY;
+const baseScan_api_key = process.env.BASE_SCAN_API_KEY;
 
 const mnemonic = process.env.MNEMONIC;
 const privateKey = process.env.DEPLOY_PRIVATE_KEY;
@@ -44,6 +50,7 @@ const chainIds = {
   bscMain: 56,   // BSC mainnet
   mumbai: 80001, // Polygon testnet
   amoy: 80002, // Amoy testnet
+  baseSepolia: 84532, // Sepolia testnet
   matic: 137,    // Polygon mainnet
   fuji: 43113,   // Avalance testnet
   avax: 43114,   // Avalance mainnet
@@ -163,6 +170,18 @@ module.exports = {
       gasPrice: 22500000000,
       gasMultiplier: 2
     },
+    // Amoy testnet
+    baseSepolia: {       
+      url: "https://sepolia.base.org/",
+      chainId: chainIds.baseSepolia,
+      accounts: [
+        privateKey
+      ],
+      live: false,
+      saveDeployments: true,
+      gasPrice: 22500000000,
+      gasMultiplier: 2
+    },
     // Polygon mainnet
     matic: { 
       url: "https://polygon-rpc.com",
@@ -195,23 +214,34 @@ module.exports = {
     },
   },
   etherscan: {
-    // apiKey: etherScan_api_key
-    // apiKey: bscScan_api_key    
+    // apiKey: etherScan_api_key,
+    // apiKey: bscScan_api_key,    
     // apiKey: polyScan_api_key,
-    // apiKey: avaxScan_api_key    
+    // apiKey: avaxScan_api_key,
+    apiKey: baseScan_api_key,
     apiKey: {
       polygonAmoy: amoyScan_api_key,
+      baseSepolia: baseScan_api_key
     },
     customChains: [
       {
         network: "polygonAmoy",
-        chainId: 80002,
+        chainId: chainIds.amoy,
         urls: {
           apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET",
           // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
           browserURL: "https://www.oklink.com/amoy",
         },
       },
+      // {
+      //   network: "baseSepolia",
+      //   chainId: chainIds.baseSepolia,
+      //   urls: {
+      //     apiURL: "https://api-sepolia.basescan.org/api",
+      //     // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
+      //     browserURL: "https://base-sepolia.blockscout.com",
+      //   },
+      // },
     ], 
   },
   sourcify: {
