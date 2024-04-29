@@ -17,8 +17,13 @@ const SUSHISWAP2FACTORY_ABI = require('../data/Sushiswap2Factory.json');
 // USDT:VAB = 1 : 100
 // USDC:USDT = 1 : 1
 
-let isMatic = false
-let isToken = true
+// Base Sepolia Liquidity:
+// ETH/USDC = 0.1 : 50
+// ETH/USDT = 0.1 : 50
+// ETH/VAB = 0.1 : 5000
+
+let isMatic = true
+let isToken = false
 
 async function addLiquidity() {
     try {
@@ -68,7 +73,7 @@ async function addLiquidity() {
         console.log("MATIC total", b1.toString()); // 1.466390757273000000
 
         let res;
-        let ethVal = ethers.utils.parseEther('1');
+        let ethVal = ethers.utils.parseEther('0.1');
                 
         if(isToken) {
             // ======== USDC:VAB        
@@ -183,7 +188,7 @@ async function addLiquidity() {
 
                 res = await uniswapRouter.connect(deployer).addLiquidityETH(
                     usdcAddress,            
-                    getBigNumber(500, 6),          
+                    getBigNumber(50, 6),          
                     1,
                     1, 
                     deployer.address,
@@ -209,7 +214,7 @@ async function addLiquidity() {
 
                 res = await uniswapRouter.connect(deployer).addLiquidityETH(
                     usdtAddress,            
-                    getBigNumber(500, 6),          
+                    getBigNumber(50, 6),          
                     1,
                     1, 
                     deployer.address,
@@ -234,7 +239,7 @@ async function addLiquidity() {
                 const deadline = Date.now() + 60 * 60 * 24 * 7;
                 res = await uniswapRouter.connect(deployer).addLiquidityETH(
                     vabTokenAddress,            
-                    getBigNumber(50000),          
+                    getBigNumber(5000),          
                     1,
                     1, 
                     deployer.address,
