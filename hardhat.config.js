@@ -40,6 +40,15 @@ const mnemonic = process.env.MNEMONIC;
 const privateKey = process.env.DEPLOY_PRIVATE_KEY;
 const coinmarketcap_api_key = process.env.COINMARKETCAP_API_KEY;
 
+let local_rpc_url = ``;
+if (process.env.NETWORK == "polygonAmoy") {
+  local_rpc_url = `https://rpc-amoy.polygon.technology/`;
+}
+
+if (process.env.NETWORK == "baseSepolia") {
+  local_rpc_url = `https://sepolia.base.org/`;
+}
+
 const chainIds = {
   ganache: 1337,
   goerli: 5,
@@ -82,10 +91,8 @@ module.exports = {
       chainId: chainIds.ganache,
       saveDeployments: true,
       forking: {
-        // url: `https://eth-goerli.alchemyapi.io/v2/${alchemy_key}`,
         // blockNumber: 11328709,
-        // url: `https://polygon-mumbai.g.alchemy.com/v2/${alchemy_key}`
-        url: `https://rpc-amoy.polygon.technology/`
+        url: local_rpc_url
       },
       accounts: {
         mnemonic,
