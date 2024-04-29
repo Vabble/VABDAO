@@ -13,7 +13,7 @@ const {
 const { parseUnits } = require("ethers/lib/utils")
 
 //? Constants
-const chainId = 80002;  
+const chainId = 84532;  
 console.log("chainId", chainId);
 
 const config = getConfig(chainId);
