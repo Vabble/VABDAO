@@ -1,29 +1,31 @@
 const { utils } = require("ethers");
 
+require('dotenv').config();
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
+
 if (process.env.NETWORK == "polygonAmoy") {
-  require("@nomicfoundation/hardhat-verify");  
+  require("@nomicfoundation/hardhat-verify");    
 } else {
-  require("@nomiclabs/hardhat-etherscan");
+  require("@nomiclabs/hardhat-etherscan");  
 }
 
 require("hardhat-contract-sizer");
 require("hardhat-gas-reporter")
 require("solidity-coverage")
 require("@nomicfoundation/hardhat-network-helpers")
-require('dotenv').config();
 
 
-
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
+task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {  
   const accounts = await hre.ethers.getSigners();
 
   for(const account of accounts) {
     console.log(account.address);
   }
 });
+
+console.log("Hardhat config Network: ", process.env.NETWORK);
 
 const alchemy_key = process.env.ALCHEMY_KEY;
 const etherScan_api_key = process.env.ETHER_SCAN_API_KEY;
@@ -218,10 +220,11 @@ module.exports = {
     // apiKey: bscScan_api_key,    
     // apiKey: polyScan_api_key,
     // apiKey: avaxScan_api_key,
-    apiKey: baseScan_api_key,
+    // apiKey: baseScan_api_key,
+    apiKey: sepoliaScan_api_key,
     // apiKey: {
     //   polygonAmoy: amoyScan_api_key,
-    //   baseSepolia: baseScan_api_key
+    //   baseSepolia: sepoliaScan_api_key + '1'
     // },
     customChains: [
       {
@@ -233,15 +236,15 @@ module.exports = {
           browserURL: "https://www.oklink.com/amoy",
         },
       },
-      // {
-      //   network: "baseSepolia",
-      //   chainId: chainIds.baseSepolia,
-      //   urls: {
-      //     apiURL: "https://api-sepolia.basescan.org/api",
-      //     // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
-      //     browserURL: "https://base-sepolia.blockscout.com",
-      //   },
-      // },
+      {
+        network: "baseSepolia",
+        chainId: chainIds.baseSepolia,
+        urls: {
+          apiURL: "https://api-sepolia.basescan.org/api",
+          // apiURL: "https://www.oklink.com/api/explorer/v1/polygonamoy/contract/verify/async",
+          browserURL: "https://base-sepolia.blockscout.com",
+        },
+      },
     ], 
   },
   sourcify: {
