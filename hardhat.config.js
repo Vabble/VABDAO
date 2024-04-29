@@ -221,7 +221,7 @@ module.exports = {
     // apiKey: polyScan_api_key,
     // apiKey: avaxScan_api_key,
     // apiKey: baseScan_api_key,
-    apiKey: sepoliaScan_api_key,
+    apiKey: baseScan_api_key,
     // apiKey: {
     //   polygonAmoy: amoyScan_api_key,
     //   baseSepolia: sepoliaScan_api_key + '1'
