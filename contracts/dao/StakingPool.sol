@@ -29,9 +29,7 @@ contract StakingPool is ReentrancyGuard {
 
     struct Staker {
         address[] keys;
-        mapping(address => uint256) values;
-        mapping(address => uint256) indexOf;
-        mapping(address => bool) inserted;
+        mapping(address => uint256) indexOf;        
     }
 
     struct Stake {
@@ -140,7 +138,7 @@ contract StakingPool is ReentrancyGuard {
 
         Stake storage si = stakeInfo[msg.sender];
         if (si.stakeAmount == 0 && si.stakeTime == 0) {
-            __stakerSet(msg.sender, stakerCount());
+            __stakerSet(msg.sender);
         }
         si.outstandingReward += calcRealizedRewards(msg.sender);
         si.stakeAmount += _amount;
@@ -810,24 +808,17 @@ contract StakingPool is ReentrancyGuard {
         return stakerMap.keys.length;
     }
 
-    function __stakerSet(address key, uint256 val) private {
-        if (stakerMap.inserted[key]) {
-            stakerMap.values[key] = val;
-        } else {
-            stakerMap.inserted[key] = true;
-            stakerMap.values[key] = val;
-            stakerMap.indexOf[key] = stakerMap.keys.length;
-            stakerMap.keys.push(key);
-        }
+    function __stakerSet(address key) private {
+        if (stakerMap.indexOf[key] > 0) 
+            return;
+            
+        stakerMap.indexOf[key] = stakerMap.keys.length + 1;
+        stakerMap.keys.push(key);
     }
 
     function __stakerRemove(address key) private {
-        if (!stakerMap.inserted[key]) {
+        if (stakerMap.indexOf[key] == 0) 
             return;
-        }
-
-        delete stakerMap.inserted[key];
-        delete stakerMap.values[key];
 
         uint256 index = stakerMap.indexOf[key];
         address lastKey = stakerMap.keys[stakerMap.keys.length - 1];
@@ -835,7 +826,7 @@ contract StakingPool is ReentrancyGuard {
         stakerMap.indexOf[lastKey] = index;
         delete stakerMap.indexOf[key];
 
-        stakerMap.keys[index] = lastKey;
+        stakerMap.keys[index - 1] = lastKey;
         stakerMap.keys.pop();
     }
 }

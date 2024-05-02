@@ -84,98 +84,98 @@ describe('StakerMap', function () {
     let stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([]);
     
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer1.address, 0, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer1.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address]);
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer2.address, 1, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer2.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address]);    
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer3.address, 2, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer3.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address]);    
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer4.address, 3, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer4.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address, this.customer4.address]);    
 
     // add duplicated address
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer1.address, 0, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer1.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address, this.customer4.address]);    
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer2.address, 1, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer2.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address, this.customer4.address]);    
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer3.address, 2, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer3.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address, this.customer4.address]);    
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer4.address, 3, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer4.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address, this.customer4.address]);    
 
     // remove last address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer4.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer4.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address]);
 
     // remove middle address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer2.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer2.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer3.address]);
 
     // remove first address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer1.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer1.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer3.address]);
 
     // remove non exist address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer1.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer1.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer3.address]);
 
     // remove 1 address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer3.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer3.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([]);
 
     // add again
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer1.address, 0, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer1.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address]);
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer2.address, 1, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer2.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address]);    
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer3.address, 2, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer3.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address]);    
 
-    await this.StakingPool.connect(this.customer1).stakerSet(this.customer4.address, 3, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerSet(this.customer4.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer2.address, this.customer3.address, this.customer4.address]);    
 
     // remove 2nd address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer2.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer2.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();    
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer4.address, this.customer3.address]);
 
     // remove 2nd address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer4.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer4.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address, this.customer3.address]);
 
     // remove 2nd address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer3.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer3.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([this.customer1.address]);
 
     // remove 1 address
-    await this.StakingPool.connect(this.customer1).stakerRemove(this.customer1.address, {from: this.customer1.address})
+    await this.StakingPool.connect(this.customer1).__stakerRemove(this.customer1.address, {from: this.customer1.address})
     stakerList = await this.StakingPool.getStakerList();
     expect(stakerList).to.be.deep.equal([]);
   });
