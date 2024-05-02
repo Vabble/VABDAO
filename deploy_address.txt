@@ -615,7 +615,7 @@ Vote (0xa71dE57fa6F3E6f080Ad30A98E6c7E4b3e63828b)
 npx hardhat verify --network polygonAmoy --constructor-args deploy/arguments.js  0x6766B4aDE7Ebd1870e49815422b7addB9464F812 --show-stack-traces
 VAB: 0x6766B4aDE7Ebd1870e49815422b7addB9464F812
 
-// 2024-04-29 Polygon(Base testnet - Deploy VAB/USDC/USDT, Liquidity)
+// 2024-04-29 Base(Base testnet - Deploy VAB/USDC/USDT, Liquidity)
 FactoryFilmNFT (0xdD4457fb8E329Df5Ca3DD940f903B9BE54b3B98E)
 FactorySubNFT (0x3260139B650f0F7c79405cBb888BCF2973387e8a)
 FactoryTierNFT (0x081DB514E3Eef9C9aCA5f8D86a0903897C17334E)
