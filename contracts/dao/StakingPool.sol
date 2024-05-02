@@ -27,6 +27,13 @@ contract StakingPool is ReentrancyGuard {
     event PendingWithdrawApproved(address[] customers, uint256[] withdrawAmounts);
     event PendingWithdrawDenied(address[] customers);
 
+    struct Staker {
+        address[] keys;
+        mapping(address => uint256) values;
+        mapping(address => uint256) indexOf;
+        mapping(address => bool) inserted;
+    }
+
     struct Stake {
         uint256 stakeAmount; // staking amount per staker
         uint256 stakeTime;
@@ -49,28 +56,25 @@ contract StakingPool is ReentrancyGuard {
     address private immutable OWNABLE; // Ownablee contract address
     address private VOTE; // Vote contract address
     address private VABBLE_DAO; // VabbleDAO contract address
-    // TODO - N2-3 updated(remove VABBLE_FUNDING)
     address private DAO_PROPERTY; // Property contract address
 
     uint256 public totalStakingAmount;
     uint256 public totalRewardAmount;
     uint256 public totalRewardIssuedAmount;
     uint256 public lastfundProposalCreateTime; // funding proposal created time(block.timestamp)
-
-    Props[] private propsList; // need for calculating rewards
-    mapping(address => mapping(uint256 => uint256)) private votedTime; // (user, proposalID) => voteTime need for calculating rewards
-    mapping(address => Stake) public stakeInfo;
-    address[] private stakerList;
-    mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
-    mapping(address => UserRent) public userRentInfo;
-
     uint256 public migrationStatus = 0; // 0: not started, 1: started, 2: end
     uint256 public totalMigrationVAB = 0;
 
-    Counters.Counter public stakerCount; // count of stakers is from No.1
+    mapping(address => mapping(uint256 => uint256)) private votedTime; // (user, proposalID) => voteTime need for calculating rewards
+    mapping(address => Stake) public stakeInfo;
+    mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
+    mapping(address => UserRent) public userRentInfo;
+    mapping(address => uint256) public minProposalIndex;
+
     Counters.Counter public proposalCount; // count of stakers is from No.1
 
-    mapping(address => uint256) public minProposalIndex;
+    Staker private stakerMap;
+    Props[] private propsList; // need for calculating rewards
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "not vote");
@@ -136,8 +140,7 @@ contract StakingPool is ReentrancyGuard {
 
         Stake storage si = stakeInfo[msg.sender];
         if (si.stakeAmount == 0 && si.stakeTime == 0) {
-            stakerCount.increment();
-            stakerList.push(msg.sender);
+            __stakerSet(msg.sender, stakerCount());
         }
         si.outstandingReward += calcRealizedRewards(msg.sender);
         si.stakeAmount += _amount;
@@ -173,17 +176,10 @@ contract StakingPool is ReentrancyGuard {
         totalStakingAmount -= _amount;
 
         if (si.stakeAmount == 0) {
-            stakerCount.decrement();
             delete stakeInfo[msg.sender];
 
             // remove staker from list
-            for (uint256 i = 0; i < stakerList.length; ++i) {
-                if (stakerList[i] == msg.sender) {
-                    stakerList[i] = stakerList[stakerList.length - 1];
-                    stakerList.pop();
-                    break;
-                }
-            }
+            __stakerRemove(msg.sender);
         }
 
         emit TokenUnstaked(msg.sender, _amount);
@@ -706,9 +702,9 @@ contract StakingPool is ReentrancyGuard {
         uint256 totalAmount = 0; // sum of each staker's rewards
 
         // calculate the total amount of reward
-        for (uint256 i = 0; i < stakerList.length; ++i) {
-            amount = calcRewardAmount(stakerList[i]); // ToDo: consider pending reward
-            stakeInfo[stakerList[i]].outstandingReward = amount;
+        for (uint256 i = 0; i < stakerCount(); ++i) {
+            amount = calcRewardAmount(stakerMap.keys[i]);
+            stakeInfo[stakerMap.keys[i]].outstandingReward = amount;
             totalAmount = totalAmount + amount;
         }
 
@@ -755,7 +751,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 limitPercent = IProperty(DAO_PROPERTY).minStakerCountPercent();
         uint256 minVoteCount = IProperty(DAO_PROPERTY).minVoteCount();
 
-        uint256 limitStakerCount = stakerCount.current() * limitPercent * 1e4 / 1e10;
+        uint256 limitStakerCount = stakerCount() * limitPercent * 1e4 / 1e10;
         if (limitStakerCount <= minVoteCount * 1e4) {
             count_ = minVoteCount;
         } else {
@@ -807,6 +803,39 @@ contract StakingPool is ReentrancyGuard {
     }
 
     function getStakerList() external view returns (address[] memory) {
-        return stakerList;
+        return stakerMap.keys;
+    }
+
+    function stakerCount() public view returns (uint256) {
+        return stakerMap.keys.length;
+    }
+
+    function __stakerSet(address key, uint256 val) private {
+        if (stakerMap.inserted[key]) {
+            stakerMap.values[key] = val;
+        } else {
+            stakerMap.inserted[key] = true;
+            stakerMap.values[key] = val;
+            stakerMap.indexOf[key] = stakerMap.keys.length;
+            stakerMap.keys.push(key);
+        }
+    }
+
+    function __stakerRemove(address key) private {
+        if (!stakerMap.inserted[key]) {
+            return;
+        }
+
+        delete stakerMap.inserted[key];
+        delete stakerMap.values[key];
+
+        uint256 index = stakerMap.indexOf[key];
+        address lastKey = stakerMap.keys[stakerMap.keys.length - 1];
+
+        stakerMap.indexOf[lastKey] = index;
+        delete stakerMap.indexOf[key];
+
+        stakerMap.keys[index] = lastKey;
+        stakerMap.keys.pop();
     }
 }
