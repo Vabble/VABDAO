@@ -131,8 +131,8 @@ contract StakingPool is ReentrancyGuard {
     function stakeVAB(uint256 _amount) external onlyNormal nonReentrant {
         require(_amount > 0, "sVAB: zero amount");
 
-        uint256 minAmount = 10 ** IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals() / 100;
-        require(_amount > minAmount, "sVAB: min 0.01");
+        uint256 minAmount = 10 ** IERC20Metadata(IOwnablee(OWNABLE).PAYOUT_TOKEN()).decimals();
+        require(_amount > minAmount, "sVAB: min 1");
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
 
