@@ -206,7 +206,7 @@ const {
                   const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
                   const amount = parseEther("0.009")
                   await expect(stakingPoolStaker1.stakeVAB(amount)).to.be.revertedWith(
-                      "sVAB: min 0.01"
+                      "sVAB: min 1"
                   )
               })
 
