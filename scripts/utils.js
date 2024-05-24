@@ -413,6 +413,8 @@ const getConfig = (chainId) => {
     return CONFIG.polygonAmoy;
   } else if (chainId == 84532) { // Base Sepolia network
     return CONFIG.baseSepolia;
+  } else if (chainId == 8453) { // Polygon network
+		return CONFIG.base;
   } else if (chainId == 137) { // Polygon network
     return CONFIG.polygon;
   } else if (chainId == 1) { // Ethereum mainnet
@@ -437,10 +439,14 @@ async function setupProvider(chainId) {
   } else if (chainId == 1337 || chainId == 80002) {
     RPC_URL = `https://rpc-amoy.polygon.technology/`;
   } else if (chainId == 84532) {
-    RPC_URL = `	https://sepolia.base.org/`;
+    RPC_URL = `https://sepolia.base.org/`;
+  } else if (chainId == 8453) {
+    RPC_URL = `https://mainnet.base.org/`;
   } else if(chainId == 137) {
     RPC_URL = `https://polygon-rpc.com`    
-  }
+  } else if (chainId == 1) {
+		RPC_URL = `https://eth-mainnet.g.alchemy.com/v2/eIuD-RvrzAbyNWRmPDaOqC6owKWpQQQu`
+	}
 
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 

@@ -62,6 +62,7 @@ const chainIds = {
   mumbai: 80001, // Polygon testnet
   amoy: 80002, // Amoy testnet
   baseSepolia: 84532, // Sepolia testnet
+  base: 8453,			// Base mainnet
   matic: 137,    // Polygon mainnet
   fuji: 43113,   // Avalance testnet
   avax: 43114,   // Avalance mainnet
