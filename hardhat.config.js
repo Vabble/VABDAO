@@ -192,6 +192,16 @@ module.exports = {
       gasPrice: 22500000000,
       gasMultiplier: 2
     },
+    // Base mainnet
+		base: {
+			url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+			chainId: chainIds.base,
+			accounts: [
+				privateKey,
+			],
+			live: true,
+			saveDeployments: true
+		},
     // Polygon mainnet
     matic: { 
       url: "https://polygon-rpc.com",
