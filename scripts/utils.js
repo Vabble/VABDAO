@@ -451,7 +451,7 @@ const getConfig = (chainId) => {
     return CONFIG.polygonAmoy;
   } else if (chainId == 84532) { // Base Sepolia network
     return CONFIG.baseSepolia;
-  } else if (chainId == 8453) { // Polygon network
+  } else if (chainId == 8453) { // base network
 		return CONFIG.base;
   } else if (chainId == 137) { // Polygon network
     return CONFIG.polygon;

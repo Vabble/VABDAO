@@ -213,14 +213,12 @@ module.exports = async function ({ deployments }) {
   });
 
   // add 10M VAB to Edge Pool
-  if (isTest(chainId)) {
+  if (isTest(chainId) || chainId == 8453) {
     let vab_balance_of_Ownablee = await vabTokenContract.balanceOf(this.Ownablee.address);        
     console.log("vab_balance_of_Ownablee before", vab_balance_of_Ownablee.toString());
 
     let targetAmount = getBigNumber(1, 25); // 10M VAB to Edge Pool
-    if (chainId == 137) // polygon 1 VAB
-      targetAmount = getBigNumber(1, 0);
-
+    
     let diff = targetAmount.sub(vab_balance_of_Ownablee);
     
     await vabTokenContract.connect(deployer).transfer(
