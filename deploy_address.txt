@@ -695,12 +695,15 @@ Step 2: Test Contract Size
 Step 3: Deploy
     Mumbai:     npm run mumbai:deploy
     Polygon:    npm run matic:deploy
+    Base Mainnet:    npm run baseMainnet:deploy
 Step 4: Verify
     Mumbai:     npm run mumbai:verify
     Polygon:    npm run matic:verify
+    Base Mainnet:    npm run baseMainnet:verify
 Step 5: Export ABI
     Mumbai:     npm run mumbai:export
     Polygon:    npm run matic:export
+    Base Mainnet:    npm run baseMainnet:export
 Step 6: deploy contract address on this file
 Step 7: Copy ABI and address to Backend and Frontend
 
