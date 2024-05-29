@@ -174,6 +174,44 @@ const CONFIG = {
       user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
     }
   },
+  base: {
+    // START: Vabble Contracts - Deployed on Amoy
+    FactoryFilmNFT: "",
+    FactorySubNFT: "",
+    FactoryTierNFT: "",
+    GnosisSafeL2: "",
+    Ownablee: "",
+    Property: "",
+    StakingPool: "",
+    Subscription: "",
+    UniHelper: "",
+    VabbleDAO: "",
+    VabbleFunding: "",
+    Vote: "",
+
+    // END: Vabble Contracts - Deployed on Amoy
+    
+    usdcAdress: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",    
+    usdtAdress: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+    daiAddress: "",
+    vabToken: "0x2c9ab600d71967ff259c491ad51f517886740cbc", //"0xc8EC3b38fc2b7406Fc57095eC92b61183E63718A", 
+    wMatic: "0x4200000000000000000000000000000000000006",
+    exmAddress: "",
+    wmatic: "0x4200000000000000000000000000000000000006",
+    walletAddress: "0xE13Cf9Ff533268F3a98961995Ce7681440204361",
+    uniswap: {
+      factory: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
+      router: '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24',
+    },
+    sushiswap: {
+      factory: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
+      router: '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24',
+    },
+    sig: {
+      user1: '0x6fD89350A94A02B003E638c889b54DAB0E251655', // Vabble-Tester1
+      user2: '0x791598E2ab767FAb9e87Fc33ca9EA3263B33A5e0'  // Vabble-Tester2
+    }
+  },
   uniswapV3: { // All(Ethereum, Polygon, Avalance... and testnets)
     router: '0xE592427A0AEce92De3Edee1F18E0157C05861564'
   },  
@@ -413,6 +451,8 @@ const getConfig = (chainId) => {
     return CONFIG.polygonAmoy;
   } else if (chainId == 84532) { // Base Sepolia network
     return CONFIG.baseSepolia;
+  } else if (chainId == 8453) { // Polygon network
+		return CONFIG.base;
   } else if (chainId == 137) { // Polygon network
     return CONFIG.polygon;
   } else if (chainId == 1) { // Ethereum mainnet
@@ -437,10 +477,14 @@ async function setupProvider(chainId) {
   } else if (chainId == 1337 || chainId == 80002) {
     RPC_URL = `https://rpc-amoy.polygon.technology/`;
   } else if (chainId == 84532) {
-    RPC_URL = `	https://sepolia.base.org/`;
+    RPC_URL = `https://sepolia.base.org/`;
+  } else if (chainId == 8453) {
+    RPC_URL = `https://mainnet.base.org/`;
   } else if(chainId == 137) {
     RPC_URL = `https://polygon-rpc.com`    
-  }
+  } else if (chainId == 1) {
+		RPC_URL = `https://eth-mainnet.g.alchemy.com/v2/eIuD-RvrzAbyNWRmPDaOqC6owKWpQQQu`
+	}
 
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 

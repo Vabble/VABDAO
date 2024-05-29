@@ -62,6 +62,7 @@ const chainIds = {
   mumbai: 80001, // Polygon testnet
   amoy: 80002, // Amoy testnet
   baseSepolia: 84532, // Sepolia testnet
+  base: 8453,			// Base mainnet
   matic: 137,    // Polygon mainnet
   fuji: 43113,   // Avalance testnet
   avax: 43114,   // Avalance mainnet
@@ -191,6 +192,16 @@ module.exports = {
       gasPrice: 22500000000,
       gasMultiplier: 2
     },
+    // Base mainnet
+		base: {
+			url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+			chainId: chainIds.base,
+			accounts: [
+				privateKey,
+			],
+			live: true,
+			saveDeployments: true
+		},
     // Polygon mainnet
     matic: { 
       url: "https://polygon-rpc.com",

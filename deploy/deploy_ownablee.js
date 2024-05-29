@@ -20,7 +20,8 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
       walletAddress,
       vabToken, 
       usdcAdress,
-      this.GnosisSafe.address
+      // this.GnosisSafe.address
+      "0x170341dfFAD907f9695Dc1C17De622A5A2F28259",
       // "0xe0536a4D730a78DB8B4c4605D73e107201d9543e"
       // "0x3E5e853d1784cDB519DB1eB175B374FB53FE285C"
     ],

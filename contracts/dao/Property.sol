@@ -221,22 +221,6 @@ contract Property is ReentrancyGuard {
         ];
     }
 
-    function updateForTesting() external onlyDeployer nonReentrant {
-        require(Helper.isTestNet(), "apply on testnet");
-
-        filmVotePeriod = 10 minutes; // 10 days;
-        boardVotePeriod = 10 minutes; // 14 days;
-        agentVotePeriod = 10 minutes; // 10 days;
-        disputeGracePeriod = 10 minutes; // 30 days
-        propertyVotePeriod = 10 minutes; // 10 days;
-        rewardVotePeriod = 10 minutes; // 30 days;
-        lockPeriod = 10 minutes; //30 days;
-        filmRewardClaimPeriod = 10 minutes; // 30 days;
-
-        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-        availableVABAmount = (10 ** IERC20Metadata(vabToken).decimals()); // 1
-    }
-
     /// =================== proposals for replacing auditor ==============
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
     function proposalAuditor(address _agent, string memory _title, string memory _description)
@@ -697,52 +681,5 @@ contract Property is ReentrancyGuard {
 
     function getAllGovProposalInfo(uint256 _flag) external view returns (address[] memory) {
         return allGovProposalInfo[_flag];
-    }
-
-    ///================ @dev Update the property value for only testing in the testnet
-    // we won't deploy this function in the mainnet
-    function updatePropertyForTesting(uint256 _value, uint256 _flag) external onlyDeployer {
-        require(Helper.isTestNet(), "apply on testnet");
-        require(_value != 0, "test: Zero value");
-
-        if (_flag == 0) filmVotePeriod = _value;
-        else if (_flag == 1) agentVotePeriod = _value;
-        else if (_flag == 2) disputeGracePeriod = _value;
-        else if (_flag == 3) propertyVotePeriod = _value;
-        else if (_flag == 4) lockPeriod = _value;
-        else if (_flag == 5) rewardRate = _value;
-        else if (_flag == 6) filmRewardClaimPeriod = _value;
-        else if (_flag == 7) maxAllowPeriod = _value;
-        else if (_flag == 8) proposalFeeAmount = _value;
-        else if (_flag == 9) fundFeePercent = _value;
-        else if (_flag == 10) minDepositAmount = _value;
-        else if (_flag == 11) maxDepositAmount = _value;
-        else if (_flag == 12) maxMintFeePercent = _value;
-        else if (_flag == 13) availableVABAmount = _value;
-        else if (_flag == 14) boardVotePeriod = _value;
-        else if (_flag == 15) boardVoteWeight = _value;
-        else if (_flag == 16) rewardVotePeriod = _value;
-        else if (_flag == 17) subscriptionAmount = _value;
-        else if (_flag == 18) minVoteCount = _value;
-        else if (_flag == 19) minStakerCountPercent = _value;
-        // else if(_flag == 20) disputLimitAmount = _value;
-    }
-
-    /// @dev Update the rewardAddress for only testing in the testnet
-    function updateDAOFundForTesting(address _address) external onlyDeployer {
-        require(Helper.isTestNet(), "apply on testnet");
-        DAO_FUND_REWARD = _address;
-    }
-
-    function updateAvailableVABForTesting(uint256 _amount) external onlyDeployer {
-        require(Helper.isTestNet(), "apply on testnet");
-        availableVABAmount = _amount;
-        // disputLimitAmount = _amount * 3;
-    }
-
-    function addAddressToFilmBoardForTesting(address _address) external onlyDeployer {
-        require(Helper.isTestNet(), "apply on testnet");
-        filmBoardMembers.push(_address);
-        isGovWhitelist[2][_address] = 2;
     }
 }

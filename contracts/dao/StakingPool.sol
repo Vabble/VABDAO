@@ -763,26 +763,6 @@ contract StakingPool is ReentrancyGuard {
         time_ = stakeInfo[_user].stakeTime + IProperty(DAO_PROPERTY).lockPeriod();
     }
 
-    function withdrawToOwner(address to) external onlyDeployer nonReentrant {
-        require(Helper.isTestNet(), "apply on testnet");
-
-        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-
-        uint256 sumAmount;
-
-        // withdraw from staking pool
-        uint256 balance = IERC20(vabToken).balanceOf(address(this));
-        Helper.safeTransfer(vabToken, to, balance);
-
-        sumAmount += balance;
-
-        // Transfer VAB of Edge Pool(Ownable)
-        sumAmount += IOwnablee(OWNABLE).withdrawVABFromEdgePool(to);
-
-        // Transfer VAB of Studio Pool(VabbleDAO)
-        sumAmount += IVabbleDAO(VABBLE_DAO).withdrawVABFromStudioPool(to);
-    }
-
     //? View / Pure functions
     function getOwnableAddress() public view returns (address) {
         return OWNABLE;
