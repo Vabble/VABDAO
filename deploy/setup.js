@@ -9,7 +9,6 @@ module.exports = async function ({ deployments }) {
   this.FactoryFilmNFT = await deployments.get('FactoryFilmNFT'); 
   this.FactorySubNFT = await deployments.get('FactorySubNFT');
   this.FactoryTierNFT = await deployments.get('FactoryTierNFT');
-  this.GnosisSafeL2 = await deployments.get('GnosisSafeL2');
   this.Ownablee = await deployments.get('Ownablee'); 
   this.Property = await deployments.get('Property');
   this.StakingPool = await deployments.get('StakingPool');
@@ -38,6 +37,7 @@ module.exports = async function ({ deployments }) {
   const {GnosisSafeL2} = getConfig(chainId);
 
   if (GnosisSafeL2 == "") {
+    this.GnosisSafeL2 = await deployments.get('GnosisSafeL2');
     const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
     const threshold = await GnosisSafeContract.getThreshold();
     try {
