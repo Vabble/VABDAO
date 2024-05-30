@@ -630,6 +630,20 @@ VabbleFund (0xD50e6a425182e46c7F85E130226Fa742093d3bb1)
 Vote (0xa01D7dFe72bfa3c303EA9e3b8A8f0bF7182Bf1ae)
 
 
+// 2024-05-30 Base(Base Mainnet - Deploy VAB/USDC/USDT, Liquidity)
+FactoryFilmNFT (0xD5A7A246709a7Cf3BeCc6326Afe1de136310Ae69)
+FactorySubNFT (0x284f5b1C7C92B8CDc99D6a91F793266746DaEBd7)
+FactoryTierNFT (0x74b7B9C378a2D2179d28B17fdFD2E32911142F86)
+GnosisSafeL2 (0x170341dffad907f9695dc1c17de622a5a2f28259)
+Ownablee (0x2dDcc6108690bc5EbD77cEF55A61d7F10A62B007)
+Property (0x6c50Cbf1878B7DF0d08055a8d39e145751D259Df)
+StakingPool (0x4e3C3FA5B85f45568f588e5eB3af16029eE433c4)
+Subscription (0x63Fb9040A74468830e48a92E3C7ff648DF2F877F)
+UniHelper (0x38B07C23900608356cb3cf96C5c116465d717899)
+VabbleDAO (0x570e503d3C75D92fB3A39dDE912d3f0429a10414)
+VabbleFund (0x7959F705f7BC152d7Dcb4e8673D4C5547b5D8D03)
+Vote (0xA44DdCAE6eb91359caB6D8D52D14cf0fF0784ab3)
+
 ** 
 - Mumbai Testnet
 Auditor wallet address: 0xb10bcC8B508174c761CFB1E7143bFE37c4fBC3a1 
@@ -693,17 +707,17 @@ Step 2: Test Contract Size
     npx hardhat size-contracts
     All contract size should not be red color (below 24KB)
 Step 3: Deploy
-    Mumbai:     npm run mumbai:deploy
-    Polygon:    npm run matic:deploy
-    Base Mainnet:    npm run baseMainnet:deploy
+    Mumbai:			npm run mumbai:deploy
+    Polygon:		npm run matic:deploy
+    Base Mainnet:	npm run baseMainnet:deploy
 Step 4: Verify
-    Mumbai:     npm run mumbai:verify
-    Polygon:    npm run matic:verify
-    Base Mainnet:    npm run baseMainnet:verify
+    Mumbai:			npm run mumbai:verify
+    Polygon:		npm run matic:verify
+    Base Mainnet:	npm run baseMainnet:verify
 Step 5: Export ABI
-    Mumbai:     npm run mumbai:export
-    Polygon:    npm run matic:export
-    Base Mainnet:    npm run baseMainnet:export
+    Mumbai:			npm run mumbai:export
+	Polygon:    	npm run matic:export
+	Base Mainnet:	npm run baseMainnet:export
 Step 6: deploy contract address on this file
 Step 7: Copy ABI and address to Backend and Frontend
 
