@@ -35,28 +35,30 @@ module.exports = async function ({ deployments }) {
   console.log("Private Signers Address", {user1: signer1.address, user2: signer2.address});
   // console.log("Private Signers", signer1, signer2);
 
-  const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
-  const threshold = await GnosisSafeContract.getThreshold();
-  try {
-    if (threshold == 0) {
-      await GnosisSafeContract.connect(deployer).setup(
-        [signer1.address, signer2.address], 
-        2, 
-        addressZero, 
-        "0x", 
-        addressZero, 
-        addressZero, 
-        0, 
-        addressZero, 
-        {from: deployer.address}
-      )  
-    }      
-    console.log('complete => GnosisSafeL2 setup')
-  } catch (ex) {
-    console.log('error => GnosisSafeL2 setup', ex)
+  const {GnosisSafeL2} = getConfig(chainId);
+
+  if (GnosisSafeL2 == "") {
+    const GnosisSafeContract = await ethers.getContractAt('GnosisSafeL2', this.GnosisSafeL2.address)
+    const threshold = await GnosisSafeContract.getThreshold();
+    try {
+      if (threshold == 0) {
+        await GnosisSafeContract.connect(deployer).setup(
+          [signer1.address, signer2.address], 
+          2, 
+          addressZero, 
+          "0x", 
+          addressZero, 
+          addressZero, 
+          0, 
+          addressZero, 
+          {from: deployer.address}
+        )  
+      }      
+      console.log('complete => GnosisSafeL2 setup')
+    } catch (ex) {
+      console.log('error => GnosisSafeL2 setup', ex)
+    }    
   }
-  
-  
 
   const FactoryFilmNFTContract = await ethers.getContractAt('FactoryFilmNFT', this.FactoryFilmNFT.address)
 
