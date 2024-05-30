@@ -179,7 +179,7 @@ const CONFIG = {
     FactoryFilmNFT: "",
     FactorySubNFT: "",
     FactoryTierNFT: "",
-    GnosisSafeL2: "",
+    GnosisSafeL2: "0x170341dffad907f9695dc1c17de622a5a2f28259",
     Ownablee: "",
     Property: "",
     StakingPool: "",
