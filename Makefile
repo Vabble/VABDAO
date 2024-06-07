@@ -35,12 +35,12 @@ scopefile :; @tree ./contracts/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/
 
 scope :; tree ./contracts/ | sed 's/└/#/g; s/──/--/g; s/├/#/g; s/│ /|/g; s/│/|/g'
 
-
 NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) --broadcast
 
 ifeq ($(findstring --network base_sepolia,$(ARGS)),--network base_sepolia)
 	NETWORK_ARGS := --chain-id 84532 --rpc-url $(BASE_SEPOLIA_RPC_URL) --account LearnSolidity --broadcast --verify --etherscan-api-key $(API_KEY_BASESCAN) -vvvvv
 endif
 
+# run this with: make deploy ARGS="--network base_sepolia"
 deploy:
 	@forge script scripts/foundry/Deploy.s.sol:DeployerScript $(NETWORK_ARGS)
