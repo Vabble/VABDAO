@@ -22,17 +22,19 @@ import { VabbleNFT } from "../../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../../contracts/dao/Vote.sol";
 
 contract BaseTest is Test {
-    Utilities internal utilities;
-    DeployerScript public deployerScript;
+    Utilities private utilities;
+    DeployerScript private deployerScript;
 
-    bool isForkTestEnabled;
-    uint256 public baseSepoliaFork;
-    uint256 public startingBlockNumber = 9_306_318;
-    string BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
+    bool public isForkTestEnabled;
+    uint256 private baseSepoliaFork;
+    uint256 private startingBlockNumber = 9_306_318;
+    string private BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
 
     address payable[] internal users;
     uint256 private userCount;
-    uint256 private userInitialFunds = 100 ether;
+    uint256 public userInitialEtherFunds = 100 ether;
+    uint256 public userInitialUsdcFunds = 10_000e6;
+    uint256 public userInitialVabFunds = 1_000_000e18;
     string[] private userLabels;
 
     address payable internal deployer;
@@ -75,12 +77,16 @@ contract BaseTest is Test {
     function setUp() public virtual {
         baseSepoliaFork = vm.createSelectFork(BASE_SEPOLIA_RPC_URL, startingBlockNumber);
         isForkTestEnabled = true;
+        if (isForkTestEnabled) {
+            console2.log(unicode"⚠️You are running tests on a Fork!", BASE_SEPOLIA_RPC_URL);
+            console2.log("Make sure this was intentional");
+        }
         utilities = new Utilities();
         deployerScript = new DeployerScript();
 
         if (userCount > 0) {
             // check which one we need to call
-            users = utilities.createUsers(userCount, userInitialFunds, userLabels);
+            users = utilities.createUsers(userCount, userInitialEtherFunds, userLabels);
             deployer = users[0];
             auditor = users[1];
             vabWallet = users[2];
@@ -107,5 +113,45 @@ contract BaseTest is Test {
         subscription = deployedContracts.subscription;
         usdc = MockUSDC(_usdc);
         vab = ERC20Mock(_vab);
+
+        if (userCount > 0) {
+            _fundUsersWithTestnetToken(users);
+            _approveContractsForUsers(users);
+        }
+    }
+
+    function _fundUsersWithTestnetToken(address payable[] memory _users) internal {
+        for (uint256 i = 0; i < _users.length; i++) {
+            deal(address(usdc), _users[i], userInitialUsdcFunds);
+            deal(address(vab), _users[i], userInitialVabFunds);
+        }
+    }
+
+    function _approveContractsForUsers(address payable[] memory _users) internal {
+        address[] memory _contracts = new address[](11);
+
+        _contracts[0] = address(ownablee);
+        _contracts[1] = address(uniHelper);
+        _contracts[2] = address(stakingPool);
+        _contracts[3] = address(vote);
+        _contracts[4] = address(property);
+        _contracts[5] = address(factoryFilmNFT);
+        _contracts[6] = address(factorySubNFT);
+        _contracts[7] = address(vabbleFund);
+        _contracts[8] = address(vabbleDAO);
+        _contracts[9] = address(factoryTierNFT);
+        _contracts[10] = address(subscription);
+
+        for (uint256 i = 0; i < _users.length; i++) {
+            address user = _users[i];
+            for (uint256 j = 0; j < _contracts.length; j++) {
+                address contractAddress = _contracts[j];
+                // Approve max Tokens for each contract
+                vm.startPrank(user);
+                usdc.approve(contractAddress, type(uint256).max);
+                vab.approve(contractAddress, type(uint256).max);
+                vm.stopPrank();
+            }
+        }
     }
 }
