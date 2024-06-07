@@ -10,3 +10,7 @@ deployments
 .vscode
 yarn.lock
 gnosis
+
+out
+report
+
