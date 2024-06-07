@@ -28,10 +28,7 @@ contract BaseTest is Test {
     bool isForkTestEnabled;
     uint256 public baseSepoliaFork;
     uint256 public startingBlockNumber = 9_306_318;
-    // TODO: figure out why I can't load this from the .env file ???
-    // it also feels kinda ugly that I need to fork and can't test it local because I need uniswap + sushiswap mocks
-    // https://book.getfoundry.sh/forge/fork-testing#forking-cheatcodes
-    string BASE_SEPOLIA_RPC_URL = "https://sepolia.base.org/";
+    string BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
 
     address payable[] internal users;
     uint256 private userCount;
@@ -79,6 +76,7 @@ contract BaseTest is Test {
         baseSepoliaFork = vm.createSelectFork(BASE_SEPOLIA_RPC_URL, startingBlockNumber);
         isForkTestEnabled = true;
         utilities = new Utilities();
+        deployerScript = new DeployerScript();
 
         if (userCount > 0) {
             // check which one we need to call
@@ -92,7 +90,6 @@ contract BaseTest is Test {
             studio_two = users[6];
         }
 
-        deployerScript = new DeployerScript();
         vm.prank(deployer);
         (DeployerScript.Contracts memory deployedContracts, address _usdc, address _vab) =
             deployerScript.deploy(vabWallet, auditor, isForkTestEnabled);
