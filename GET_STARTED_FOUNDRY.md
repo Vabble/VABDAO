@@ -1,15 +1,15 @@
-- [Getting Started](#getting-started)
-      - [Environment](#environment)
-- [Usage](#usage)
-  - [Build](#build)
-  - [Deployment](#deployment)
-  - [Security Tools](#security-tools)
-    - [Aderyn](#aderyn)
-    - [Slither](#slither)
-- [Good To Know](#good-to-know)
+-   [Getting Started](#getting-started) - [Environment](#environment)
+-   [Usage](#usage)
+    -   [Build](#build)
+    -   [Deployment](#deployment)
+    -   [Security Tools](#security-tools)
+        -   [Aderyn](#aderyn)
+        -   [Slither](#slither)
+-   [Good To Know](#good-to-know)
 
 # Getting Started
 
+```bash
 make
 ```
 
@@ -46,7 +46,6 @@ make build
 make deploy ARGS="--network base_sepolia"
 ```
 
-
 ## Testing
 
 ```bash
@@ -62,8 +61,6 @@ make test
 ```bash
 forge coverage --report debug
 ```
-
-
 
 ## Security Tools
 
