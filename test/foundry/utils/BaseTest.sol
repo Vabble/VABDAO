@@ -104,7 +104,7 @@ contract BaseTest is Test {
 
         vm.prank(deployer);
         (DeployerScript.Contracts memory deployedContracts, address _usdc, address _vab, address _usdt) =
-            deployerScript.deploy(vabWallet, auditor, isForkTestEnabled);
+            deployerScript.deployForLocalTesting(vabWallet, auditor, isForkTestEnabled);
 
         ownablee = deployedContracts.ownablee;
         uniHelper = deployedContracts.uniHelper;

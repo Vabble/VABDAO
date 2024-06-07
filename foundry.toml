@@ -8,7 +8,7 @@ test = 'test/foundry/'
 cache_path = 'cache_forge'
 gas_reports = ["*"]
 optimizer = true
-optimizer_runs = 100_000
+optimizer_runs = 200
 auto_detect_solc = true
 
 # fs_permissions = [
@@ -50,7 +50,7 @@ mainnet = { key = "${API_KEY_ETHERSCAN}" }
 optimism = { key = "${API_KEY_OPTIMISTIC_ETHERSCAN}" }
 polygon = { key = "${API_KEY_POLYGONSCAN}" }
 sepolia = { key = "${API_KEY_ETHERSCAN}" }
-
+base_sepolia = { key = "${API_KEY_BASESCAN}" }
 
 [rpc_endpoints]
 arbitrum = "https://arbitrum-mainnet.infura.io/v3/${API_KEY_INFURA}"

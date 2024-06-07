@@ -40,6 +40,8 @@ contract DeployerScript is Script {
     address usdc;
     address vab;
     address usdt;
+    address auditor;
+    address vabbleWallet;
     address uniswapFactory;
     address uniswapRouter;
     address sushiSwapFactory;
@@ -47,13 +49,19 @@ contract DeployerScript is Script {
     uint256[] discountPercents;
     address[] depositAssets;
 
-    // function run() public {
-    //     vm.startBroadcast();
-    //     deploy();
-    //     vm.stopBroadcast();
-    // }
+    function run() public {
+        vm.startBroadcast();
+        deployForMainOrTestnet();
+        vm.stopBroadcast();
+    }
 
-    function deploy(
+    function deployForMainOrTestnet() public {
+        _getConfig();
+        // TODO: deploy the other contracts.. this is just to test the script for now
+        deployOwnablee(vabbleWallet, vab, usdc, auditor);
+    }
+
+    function deployForLocalTesting(
         address _vabWallet,
         address _auditor,
         bool _isForkTestEnabled
@@ -61,15 +69,17 @@ contract DeployerScript is Script {
         public
         returns (Contracts memory _contracts, address _usdc, address _vab, address _usdt)
     {
+        if (!(block.chainid == 31_337 || _isForkTestEnabled)) {
+            revert("Deploy.s.sol::deployForLocalTesting: Only for local testing enabled");
+        }
+
         deployer = msg.sender;
         _getConfig();
-        // local testnet or fork test enabled => deploy contracts for testing
-        if (block.chainid == 31_337 || _isForkTestEnabled) {
-            _deployAllContracts(_vabWallet, _auditor);
-            _initializeAndSetupContracts();
-        }
-        // TODO: logic for mainnet / testnet deployment
+        _deployAllContracts(_vabWallet, _auditor);
+        _initializeAndSetupContracts();
 
+        auditor = _auditor;
+        vabbleWallet = _vabWallet;
         return (contracts, usdc, vab, usdt);
     }
 
@@ -82,6 +92,8 @@ contract DeployerScript is Script {
         usdc = activeConfig.usdc;
         vab = activeConfig.vab;
         usdt = activeConfig.usdt;
+        auditor = activeConfig.auditor;
+        vabbleWallet = activeConfig.vabbleWallet;
         uniswapFactory = activeConfig.uniswapFactory;
         uniswapRouter = activeConfig.uniswapRouter;
         sushiSwapFactory = activeConfig.sushiSwapFactory;
