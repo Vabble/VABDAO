@@ -4,12 +4,14 @@ pragma solidity ^0.8.4;
 import { BaseTest, console } from "../utils/BaseTest.sol";
 import { HelperConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract DeployTest is BaseTest {
     HelperConfig helperConfig;
 
-    uint256 usdcDecimals = 1e6;
-    uint256 vabDecimals = 1e18;
+    uint256 usdcDecimals = 6;
+    uint256 vabDecimals = 18;
+    uint256 usdtDecimals = 6;
     uint256 filmVotePeriod = 10 days;
     uint256 agentVotePeriod = 10 days;
     uint256 disputeGracePeriod = 30 days;
@@ -18,18 +20,18 @@ contract DeployTest is BaseTest {
     uint256 rewardRate = 25 * 1e5;
     uint256 filmRewardClaimPeriod = 30 days;
     uint256 maxAllowPeriod = 90 days;
-    uint256 proposalFeeAmount = 20 * usdcDecimals;
+    uint256 proposalFeeAmount = 20 * 10 ** usdcDecimals;
     uint256 fundFeePercent = 2 * 1e8;
-    uint256 minDepositAmount = 50 * usdcDecimals;
-    uint256 maxDepositAmount = 5000 * usdcDecimals;
+    uint256 minDepositAmount = 50 * 10 ** usdcDecimals;
+    uint256 maxDepositAmount = 5000 * 10 ** usdcDecimals;
     uint256 maxMintFeePercent = 10 * 1e8;
     uint256 minVoteCount = 1;
     uint256 minStakerCountPercent = 5 * 1e8;
-    uint256 availableVABAmount = 50 * 1e6 * vabDecimals;
+    uint256 availableVABAmount = 50 * 1e6 * 10 ** vabDecimals;
     uint256 boardVotePeriod = 14 days;
     uint256 boardVoteWeight = 30 * 1e8;
     uint256 rewardVotePeriod = 7 days;
-    uint256 subscriptionAmount = 299 * usdcDecimals / 100;
+    uint256 subscriptionAmount = 299 * 10 ** usdcDecimals / 100;
     uint256 boardRewardRate = 25 * 1e8;
 
     function setUp() public override {
@@ -39,8 +41,22 @@ contract DeployTest is BaseTest {
 
     //TODO: test the setup functions more but for now this is ok to get started
 
-    function test_deployUsdcSetup() public view {
-        assertEq(usdc.decimals(), 6);
+    function test_deployUsdcSetup() public {
+        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        assertEq(IERC20Metadata(address(usdc)).decimals(), usdcDecimals);
+        assertEq(address(usdc), activeConfig.usdc);
+    }
+
+    function test_deployVabSetup() public {
+        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        assertEq(IERC20Metadata(address(vab)).decimals(), vabDecimals);
+        assertEq(address(vab), activeConfig.vab);
+    }
+
+    function test_deployUsdtSetup() public {
+        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        assertEq(IERC20Metadata(address(usdt)).decimals(), usdtDecimals);
+        assertEq(address(usdt), activeConfig.usdt);
     }
 
     function test_deployOwnableSetup() public view {
@@ -123,6 +139,7 @@ contract DeployTest is BaseTest {
         for (uint256 i = 0; i < users.length; i++) {
             assertEq(vab.balanceOf(address(users[i])), userInitialVabFunds);
             assertEq(usdc.balanceOf(address(users[i])), userInitialUsdcFunds);
+            assertEq(usdt.balanceOf(address(users[i])), userInitialUsdtFunds);
             assertEq(address(users[i]).balance, userInitialEtherFunds);
         }
     }
@@ -148,6 +165,7 @@ contract DeployTest is BaseTest {
                 address contractAddress = _contracts[j];
                 assertEq(vab.allowance(user, contractAddress), type(uint256).max);
                 assertEq(usdc.allowance(user, contractAddress), type(uint256).max);
+                assertEq(usdt.allowance(user, contractAddress), type(uint256).max);
             }
         }
     }
@@ -156,6 +174,6 @@ contract DeployTest is BaseTest {
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     function getActiveConfig() internal returns (HelperConfig.NetworkConfig memory) {
-        return helperConfig.getActiveNetworkConfig(isForkTestEnabled);
+        return helperConfig.getActiveNetworkConfig();
     }
 }

@@ -39,6 +39,7 @@ contract DeployerScript is Script {
     Contracts public contracts;
     address usdc;
     address vab;
+    address usdt;
     address uniswapFactory;
     address uniswapRouter;
     address sushiSwapFactory;
@@ -58,29 +59,29 @@ contract DeployerScript is Script {
         bool _isForkTestEnabled
     )
         public
-        returns (Contracts memory _contracts, address _usdc, address _vab)
+        returns (Contracts memory _contracts, address _usdc, address _vab, address _usdt)
     {
         deployer = msg.sender;
-        _getConfig(_isForkTestEnabled);
+        _getConfig();
         // local testnet or fork test enabled => deploy contracts for testing
         if (block.chainid == 31_337 || _isForkTestEnabled) {
             _deployAllContracts(_vabWallet, _auditor);
             _initializeAndSetupContracts();
-        } else {
-            // TODO: logic for mainnet / testnet deployment
         }
+        // TODO: logic for mainnet / testnet deployment
 
-        return (contracts, usdc, vab);
+        return (contracts, usdc, vab, usdt);
     }
 
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function _getConfig(bool _isForkTestEnabled) internal {
+    function _getConfig() internal {
         HelperConfig helperConfig = new HelperConfig();
-        HelperConfig.NetworkConfig memory activeConfig = helperConfig.getActiveNetworkConfig(_isForkTestEnabled);
+        HelperConfig.NetworkConfig memory activeConfig = helperConfig.getActiveNetworkConfig();
         usdc = activeConfig.usdc;
         vab = activeConfig.vab;
+        usdt = activeConfig.usdt;
         uniswapFactory = activeConfig.uniswapFactory;
         uniswapRouter = activeConfig.uniswapRouter;
         sushiSwapFactory = activeConfig.sushiSwapFactory;

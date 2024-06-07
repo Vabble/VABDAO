@@ -34,6 +34,7 @@ contract BaseTest is Test {
     uint256 private userCount;
     uint256 public userInitialEtherFunds = 100 ether;
     uint256 public userInitialUsdcFunds = 10_000e6;
+    uint256 public userInitialUsdtFunds = 10_000e6;
     uint256 public userInitialVabFunds = 1_000_000e18;
     string[] private userLabels;
 
@@ -45,8 +46,9 @@ contract BaseTest is Test {
     address payable internal studio_one;
     address payable internal studio_two;
 
-    MockUSDC public usdc;
-    ERC20Mock public vab;
+    IERC20 public usdc;
+    IERC20 public vab;
+    IERC20 public usdt;
 
     Ownablee ownablee;
     UniHelper uniHelper;
@@ -77,10 +79,14 @@ contract BaseTest is Test {
     function setUp() public virtual {
         baseSepoliaFork = vm.createSelectFork(BASE_SEPOLIA_RPC_URL, startingBlockNumber);
         isForkTestEnabled = true;
+
         if (isForkTestEnabled) {
-            console2.log(unicode"⚠️You are running tests on a Fork!", BASE_SEPOLIA_RPC_URL);
+            console2.log(unicode"⚠️You are running tests on a Fork!");
+            console2.log("Chain Id:", block.chainid);
+            console2.log("RPC URL:", BASE_SEPOLIA_RPC_URL);
             console2.log("Make sure this was intentional");
         }
+
         utilities = new Utilities();
         deployerScript = new DeployerScript();
 
@@ -97,7 +103,7 @@ contract BaseTest is Test {
         }
 
         vm.prank(deployer);
-        (DeployerScript.Contracts memory deployedContracts, address _usdc, address _vab) =
+        (DeployerScript.Contracts memory deployedContracts, address _usdc, address _vab, address _usdt) =
             deployerScript.deploy(vabWallet, auditor, isForkTestEnabled);
 
         ownablee = deployedContracts.ownablee;
@@ -111,8 +117,9 @@ contract BaseTest is Test {
         vabbleDAO = deployedContracts.vabbleDAO;
         factoryTierNFT = deployedContracts.factoryTierNFT;
         subscription = deployedContracts.subscription;
-        usdc = MockUSDC(_usdc);
-        vab = ERC20Mock(_vab);
+        usdc = IERC20(_usdc);
+        vab = IERC20(_vab);
+        usdt = IERC20(_usdt);
 
         if (userCount > 0) {
             _fundUsersWithTestnetToken(users);
@@ -124,6 +131,7 @@ contract BaseTest is Test {
         for (uint256 i = 0; i < _users.length; i++) {
             deal(address(usdc), _users[i], userInitialUsdcFunds);
             deal(address(vab), _users[i], userInitialVabFunds);
+            deal(address(usdt), _users[i], userInitialUsdtFunds);
         }
     }
 
@@ -150,6 +158,7 @@ contract BaseTest is Test {
                 vm.startPrank(user);
                 usdc.approve(contractAddress, type(uint256).max);
                 vab.approve(contractAddress, type(uint256).max);
+                usdt.approve(contractAddress, type(uint256).max);
                 vm.stopPrank();
             }
         }
