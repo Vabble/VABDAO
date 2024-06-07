@@ -18,17 +18,17 @@
 <img src="https://img.shields.io/github/languages/top/Vabble/VabbleDAO?style&color=5D6D7E" alt="GitHub top language" />
 </div>
 
----
+--- 
 
 ## 📖 Table of Contents
 - [📖 Table of Contents](#-table-of-contents)
 - [📍 Overview](#-overview)
 - [📂 Repository Structure](#-repository-structure)
-- [⚙️ Modules](#-modules)
+- [⚙️ Modules](#️-modules)
 - [🚀 Getting Started](#-getting-started)
-    - [🔧 Installation](#-installation)
-    - [🤖 Running VabbleDAO](#-running-VabbleDAO)
-    - [🧪 Tests](#-tests)
+  - [🔧 Installation](#-installation)
+  - [🤖 Running VabbleDAO](#-running-vabbledao)
+  - [🧪 Tests](#-tests)
 - [🤝 Contributing](#-contributing)
 
 ---
