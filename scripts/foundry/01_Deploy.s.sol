@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.4;
 
-import { Script, console2 } from "lib/forge-std/src/Script.sol";
-import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import { Script } from "lib/forge-std/src/Script.sol";
 import { HelperConfig, NetworkConfig } from "./HelperConfig.s.sol";
 import { VabbleDAO } from "../../contracts/dao/VabbleDAO.sol";
 import { FactoryFilmNFT } from "../../contracts/dao/FactoryFilmNFT.sol";
@@ -32,9 +31,8 @@ contract DeployerScript is Script {
         VabbleDAO vabbleDAO;
         FactoryTierNFT factoryTierNFT;
         Subscription subscription;
+        VabbleNFT vabbleNFT;
     }
-    // VabbleNFT vabbleNFT; <= not needed right now, be careful when adding to the above Struct, might cause Stack too
-    // deep error
 
     Contracts public contracts;
     address usdc;
@@ -55,12 +53,25 @@ contract DeployerScript is Script {
         vm.stopBroadcast();
     }
 
+    /**
+     * @dev Deploys all the necessary contracts for the mainnet or the testnet.
+     */
     function deployForMainOrTestnet() public {
         _getConfig();
-        // TODO: deploy the other contracts.. this is just to test the script for now
-        deployOwnablee(vabbleWallet, vab, usdc, auditor);
+        _deployAllContracts(vabbleWallet, auditor);
+        _initializeAndSetupContracts();
     }
 
+    /**
+     * @dev Deploys all the necessary contracts for local testing.
+     * @param _vabWallet The address of the Vab Wallet.
+     * @param _auditor The address of the auditor.
+     * @param _isForkTestEnabled Whether or not the fork test is enabled.
+     * @return _contracts The deployed contracts.
+     * @return _usdc The address of the USDC token.
+     * @return _vab The address of the VAB token.
+     * @return _usdt The address of the USDT token.
+     */
     function deployForLocalTesting(
         address _vabWallet,
         address _auditor,
@@ -69,9 +80,10 @@ contract DeployerScript is Script {
         public
         returns (Contracts memory _contracts, address _usdc, address _vab, address _usdt)
     {
-        if (!(block.chainid == 31_337 || _isForkTestEnabled)) {
-            revert("Deploy.s.sol::deployForLocalTesting: Only for local testing enabled");
-        }
+        require(
+            block.chainid == 31_337 || _isForkTestEnabled,
+            "Deploy.s.sol::deployForLocalTesting: Only for local testing enabled"
+        );
 
         deployer = msg.sender;
         _getConfig();
@@ -86,6 +98,11 @@ contract DeployerScript is Script {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Retrieves the active network configuration from the helper contract and assigns the values to the local
+     * variables.
+     */
     function _getConfig() internal {
         HelperConfig helperConfig = new HelperConfig();
         NetworkConfig memory activeConfig = helperConfig.getActiveNetworkConfig();
@@ -103,6 +120,11 @@ contract DeployerScript is Script {
         depositAssets = activeConfig.depositAssets;
     }
 
+    /**
+     * @dev Deploys all the necessary contracts.
+     * @param _vabWallet The address of the Vab Wallet.
+     * @param _auditor The address of the auditor.
+     */
     function _deployAllContracts(address _vabWallet, address _auditor) internal {
         deployOwnablee(_vabWallet, vab, usdc, _auditor);
         deployUniHelper(uniswapFactory, uniswapRouter, sushiSwapFactory, sushiSwapRouter, address(contracts.ownablee));
@@ -135,6 +157,12 @@ contract DeployerScript is Script {
         deploySubscription(address(contracts.ownablee), address(contracts.uniHelper), address(contracts.property));
     }
 
+    /**
+     * @dev Initializes and sets up the contracts.
+     * Calls the initialization functions of various contracts.
+     * Sets up the ownership of the contracts.
+     * Adds the deposit assets to the Ownablee contract.
+     */
     function _initializeAndSetupContracts() internal {
         Ownablee _ownablee = contracts.ownablee;
         UniHelper _uniHelper = contracts.uniHelper;

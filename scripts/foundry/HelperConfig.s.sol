@@ -42,7 +42,6 @@ contract HelperConfig is Script {
 
     // Local network state variables
     NetworkConfig public localNetworkConfig;
-    NetworkConfig public forkNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
 
     /*//////////////////////////////////////////////////////////////

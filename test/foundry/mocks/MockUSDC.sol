@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.4;
 
 import { console } from "lib/forge-std/src/console.sol";
+
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 error AddressBlacklisted(address account);

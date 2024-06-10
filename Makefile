@@ -35,12 +35,15 @@ scopefile :; @tree ./contracts/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/
 
 scope :; tree ./contracts/ | sed 's/└/#/g; s/──/--/g; s/├/#/g; s/│ /|/g; s/│/|/g'
 
-NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) --broadcast
+NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) -vvvv
 
 ifeq ($(findstring --network base_sepolia,$(ARGS)),--network base_sepolia)
-	NETWORK_ARGS := --chain-id 84532 --rpc-url $(BASE_SEPOLIA_RPC_URL) --account LearnSolidity --broadcast --verify --etherscan-api-key $(API_KEY_BASESCAN) -vvvvv
+	NETWORK_ARGS := --chain-id 84532 --rpc-url $(BASE_SEPOLIA_RPC_URL)
 endif
 
 # run this with: make deploy ARGS="--network base_sepolia"
 deploy:
-	@forge script scripts/foundry/Deploy.s.sol:DeployerScript $(NETWORK_ARGS)
+	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast --slow --verify --etherscan-api-key $(API_KEY_BASESCAN)
+
+fund-all:
+	@forge script scripts/foundry/02_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
