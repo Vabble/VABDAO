@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 import { BaseTest, console } from "../utils/BaseTest.sol";
-import { HelperConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
+import { HelperConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -42,19 +42,19 @@ contract DeployTest is BaseTest {
     //TODO: test the setup functions more but for now this is ok to get started
 
     function test_deployUsdcSetup() public {
-        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig();
         assertEq(IERC20Metadata(address(usdc)).decimals(), usdcDecimals);
         assertEq(address(usdc), activeConfig.usdc);
     }
 
     function test_deployVabSetup() public {
-        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig();
         assertEq(IERC20Metadata(address(vab)).decimals(), vabDecimals);
         assertEq(address(vab), activeConfig.vab);
     }
 
     function test_deployUsdtSetup() public {
-        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig();
         assertEq(IERC20Metadata(address(usdt)).decimals(), usdtDecimals);
         assertEq(address(usdt), activeConfig.usdt);
     }
@@ -73,7 +73,7 @@ contract DeployTest is BaseTest {
     }
 
     function test_deployUniHelperSetup() public {
-        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig();
 
         address uniswapFactory = activeConfig.uniswapFactory;
         address uniswapRouter = activeConfig.uniswapRouter;
@@ -128,7 +128,7 @@ contract DeployTest is BaseTest {
     }
 
     function test_deploySubscriptionSetup() public {
-        HelperConfig.NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig();
         uint256[] memory _discountList = subscription.getDiscountPercentList();
         assertEq(activeConfig.discountPercents[0], _discountList[0]);
         assertEq(activeConfig.discountPercents[1], _discountList[1]);
@@ -173,7 +173,7 @@ contract DeployTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function getActiveConfig() internal returns (HelperConfig.NetworkConfig memory) {
+    function getActiveConfig() internal returns (NetworkConfig memory) {
         return helperConfig.getActiveNetworkConfig();
     }
 }

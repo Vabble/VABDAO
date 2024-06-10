@@ -6,6 +6,20 @@ import { console2 } from "lib/forge-std/src/console2.sol";
 import { MockUSDC } from "../../test/foundry/mocks/MockUSDC.sol";
 import { ERC20Mock } from "../../test/foundry/mocks/ERC20Mock.sol";
 
+struct NetworkConfig {
+    address usdc;
+    address vab;
+    address usdt;
+    address auditor;
+    address vabbleWallet;
+    address uniswapFactory;
+    address uniswapRouter;
+    address sushiSwapFactory;
+    address sushiSwapRouter;
+    uint256[] discountPercents;
+    address[] depositAssets;
+}
+
 contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -15,19 +29,6 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                                  TYPES
     //////////////////////////////////////////////////////////////*/
-    struct NetworkConfig {
-        address usdc;
-        address vab;
-        address usdt;
-        address auditor;
-        address vabbleWallet;
-        address uniswapFactory;
-        address uniswapRouter;
-        address sushiSwapFactory;
-        address sushiSwapRouter;
-        uint256[] discountPercents;
-        address[] depositAssets;
-    }
 
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
@@ -72,11 +73,6 @@ contract HelperConfig is Script {
                                 CONFIGS
     //////////////////////////////////////////////////////////////*/
 
-    // TODO: ADD CORRECT ADDRESSES
-    // function getEthMainnetConfig() public pure returns (NetworkConfig memory) {
-    //     return NetworkConfig({ usdc: address(1), vab: address(2) });
-    // }
-
     function getBaseSepoliaConfig() public view returns (NetworkConfig memory) {
         address _vab = 0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda;
         address _usdc = 0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1;
@@ -113,7 +109,6 @@ contract HelperConfig is Script {
         }
         console2.log(unicode"⚠️ You have deployed a mock conract!");
         console2.log("Make sure this was intentional");
-        // vm.prank(Deployer(msg.sender).godFather());
         (address mockUsdc, address mockedVab, address mockedUsdt) = _deployMocks();
 
         address[] memory _depositAssets = new address[](4);
@@ -121,8 +116,6 @@ contract HelperConfig is Script {
         _depositAssets[1] = mockUsdc;
         _depositAssets[2] = mockedUsdt;
         _depositAssets[3] = 0x0000000000000000000000000000000000000000;
-
-        //TODO: Create uniswap and sushiSwap mocks
 
         localNetworkConfig = NetworkConfig({
             usdc: mockUsdc,
@@ -146,6 +139,7 @@ contract HelperConfig is Script {
     function _deployMocks() internal returns (address, address, address) {
         MockUSDC usdc = new MockUSDC();
         // TODO: Use the actual mock of USDT and not USDC but for now I think it's ok
+        //TODO: Create uniswap and sushiSwap mocks
         MockUSDC usdt = new MockUSDC();
         ERC20Mock vab = new ERC20Mock("Vabble", "VAB");
 
