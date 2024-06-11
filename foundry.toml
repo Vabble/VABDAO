@@ -18,9 +18,9 @@ fs_permissions = [
 ]
 
 [fuzz]
-runs = 1000
+runs = 10000
 max_test_rejects = 65536
-seed = '0x1'
+seed = '0x2'
 dictionary_weight = 40
 include_storage = true
 include_push_bytes = true

@@ -23,6 +23,8 @@ test :; forge test --summary --detailed
 
 test-unit :; forge test --summary --detailed --match-path ./test/foundry/unit/*.sol
 
+test-fuzz :; forge test --summary --detailed --match-path ./test/foundry/fuzz/*.sol -vvvv
+
 test-fork :; forge test --summary --detailed --match-path ./test/foundry/fork/*.sol
 
 snapshot :; forge snapshot
