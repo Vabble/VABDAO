@@ -51,6 +51,7 @@ cast wallet import Deployer --interactive
     MNEMONIC=test test test test test test test test test test test junk
     // default foundry private key, only for testing purpose !!!
     DEPLOY_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+    DEPLOYER_ADDRESS="<The Public Address of the Deployer Wallet>"
 ```
 
 # Usage

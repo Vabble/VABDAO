@@ -35,15 +35,24 @@ scopefile :; @tree ./contracts/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/
 
 scope :; tree ./contracts/ | sed 's/└/#/g; s/──/--/g; s/├/#/g; s/│ /|/g; s/│/|/g'
 
-NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) -vvvv
+NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) -vvvvv
+ETHERSCAN_API_KEY := $(API_KEY_ETHERSCAN)
+CHAIN_ID := 31337
 
 ifeq ($(findstring --network base_sepolia,$(ARGS)),--network base_sepolia)
-	NETWORK_ARGS := --chain-id 84532 --rpc-url $(BASE_SEPOLIA_RPC_URL)
+	CHAIN_ID := 84532
+	NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_SEPOLIA_RPC_URL)
+	ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
 endif
 
 # run this with: make deploy ARGS="--network base_sepolia"
 deploy:
-	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast --slow --verify --etherscan-api-key $(API_KEY_BASESCAN)
+	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) --account Deployer --broadcast --force --slow --optimize --optimizer-runs 200 --verify  --etherscan-api-key $(ETHERSCAN_API_KEY)
+
+# make get-deployed-contracts ARGS="--network base_sepolia"
+get-deployed-contracts: 
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --chain-id $(CHAIN_ID)
 
 fund-all:
-	@forge script scripts/foundry/02_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
+	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
+

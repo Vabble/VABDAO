@@ -16,9 +16,13 @@ import { VabbleFund } from "../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../contracts/dao/Vote.sol";
 
+/**
+ * @title A Foundry script to fund the StakingPool and VabbleDAO contract with necessary VAB tokens
+ */
 contract DeployerScript is Script {
-    address public deployer;
-
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
     struct Contracts {
         Ownablee ownablee;
         UniHelper uniHelper;
@@ -35,6 +39,7 @@ contract DeployerScript is Script {
     }
 
     Contracts public contracts;
+    address public deployer;
     address usdc;
     address vab;
     address usdt;
@@ -47,6 +52,9 @@ contract DeployerScript is Script {
     uint256[] discountPercents;
     address[] depositAssets;
 
+    /*//////////////////////////////////////////////////////////////
+                               FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function run() public {
         vm.startBroadcast();
         deployForMainOrTestnet();

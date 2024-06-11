@@ -8,9 +8,12 @@ import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/Test.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * @title A Foundry script to fund the StakingPool and VabbleDAO contract with necessary VAB tokens
+ */
 contract FundContracts is Script {
     /*//////////////////////////////////////////////////////////////
-                                 ERRORS
+                                ERRORS
     //////////////////////////////////////////////////////////////*/
     error FundContracts__InsufficientVab();
     error FundContracts__InsufficientAllowance();
@@ -20,8 +23,11 @@ contract FundContracts is Script {
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
     uint256 private stakingPoolRewardAmount = 1e18;
-    NetworkConfig activeNetworkConfig;
+    NetworkConfig private activeNetworkConfig;
 
+    /*//////////////////////////////////////////////////////////////
+                               FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function run() public {
         vm.startBroadcast();
         getHelperConfig();
@@ -29,10 +35,11 @@ contract FundContracts is Script {
         vm.stopBroadcast();
     }
 
-    /*//////////////////////////////////////////////////////////////
-                               FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-    function addRewardsToStakingPool() public {
+    /**
+     * @dev Adds rewards to the most recent deployed staking pool contract, make sure you have set your DEPLOYER_ADDRESS
+     * in the .env file and that the wallet has enough VAB
+     */
+    function addRewardsToStakingPool() internal {
         NetworkConfig memory _activeNetworkConfig = activeNetworkConfig;
         IERC20 vab = IERC20(_activeNetworkConfig.vab);
         uint256 _stakingPoolRewardAmount = stakingPoolRewardAmount;
@@ -57,6 +64,9 @@ contract FundContracts is Script {
         }
     }
 
+    /**
+     * @dev Get the active network configuration
+     */
     function getHelperConfig() internal {
         address contractAddress = DevOpsTools.get_most_recent_deployment("HelperConfig", block.chainid);
         HelperConfig helperConfig = HelperConfig(contractAddress);
