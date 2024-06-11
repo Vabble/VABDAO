@@ -60,7 +60,8 @@ contract BaseForkTest is Test {
         console2.log("Make sure this was intentional");
 
         HelperConfigFork helperConfig = new HelperConfigFork();
-        FullConfigFork memory fullConfig = helperConfig.getBaseSepoliaConfig();
+        FullConfigFork memory fullConfig = helperConfig.getForkNetworkConfig();
+
         activeNetworkConfig = fullConfig.networkConfig;
         activeContractConfig = fullConfig.contractConfig;
 

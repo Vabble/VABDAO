@@ -52,34 +52,24 @@ contract HelperConfigFork is Script {
     uint256 constant BASE__CHAIN_ID = 8453;
     uint256 constant BASE_SEPOLIA_CHAIN_ID = 84_532;
 
-    mapping(uint256 => NetworkConfigFork) public networkConfigs;
-    mapping(uint256 => ContractConfigFork) public contractConfigs;
+    mapping(uint256 chainId => FullConfigFork) public fullNetworkConfigs;
 
     constructor() {
         // ⚠️ Add more configs for other networks here ⚠️
-        FullConfigFork memory sepoliaConfig = getBaseSepoliaConfig();
-        networkConfigs[BASE_SEPOLIA_CHAIN_ID] = sepoliaConfig.networkConfig;
-        contractConfigs[BASE_SEPOLIA_CHAIN_ID] = sepoliaConfig.contractConfig;
+        fullNetworkConfigs[BASE_SEPOLIA_CHAIN_ID] = getBaseSepoliaConfig();
+        fullNetworkConfigs[BASE__CHAIN_ID] = getBaseConfig();
     }
-
     /*//////////////////////////////////////////////////////////////
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getNetworkConfigByChainId(uint256 chainId) public view returns (NetworkConfigFork memory) {
-        return networkConfigs[chainId];
+    function getConfigByChainId(uint256 chainId) internal view returns (FullConfigFork memory) {
+        if (chainId == 31_337) revert HelperConfigFork__InvalidChainId();
+        return fullNetworkConfigs[chainId];
     }
 
-    function getContractConfigByChainId(uint256 chainId) public view returns (ContractConfigFork memory) {
-        return contractConfigs[chainId];
-    }
-
-    function getActiveNetworkConfig() public view returns (NetworkConfigFork memory) {
-        return getNetworkConfigByChainId(block.chainid);
-    }
-
-    function getActiveContractConfig() public view returns (ContractConfigFork memory) {
-        return getContractConfigByChainId(block.chainid);
+    function getForkNetworkConfig() public view returns (FullConfigFork memory) {
+        return getConfigByChainId(block.chainid);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -114,6 +104,37 @@ contract HelperConfigFork is Script {
             vabbleDAO: 0xDE420d5b4e0D7bDDC5c2B20A96318E566AA238Ce,
             factoryTierNFT: 0x7D287D4280AC484419b1942375bf1E6bBdbC27b9,
             subscription: 0xBB54c5F4D8b97385552AB9f57d092Eb0B9ED1E1c,
+            helperConfig: 0xE18a016246E1aBaF338908B94961C9f13142612c
+        });
+
+        return FullConfigFork({ networkConfig: networkConfig, contractConfig: contractConfig });
+    }
+
+    function getBaseConfig() public pure returns (FullConfigFork memory) {
+        NetworkConfigFork memory networkConfig = NetworkConfigFork({
+            usdc: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            vab: 0x2C9ab600D71967fF259c491aD51F517886740cbc,
+            usdt: 0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2,
+            auditor: 0x170341dfFAD907f9695Dc1C17De622A5A2F28259,
+            vabbleWallet: 0xC8e39373B96a90AFf4b07DA0e431F670f73f8941,
+            uniswapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
+            uniswapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24,
+            sushiSwapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
+            sushiSwapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24
+        });
+
+        ContractConfigFork memory contractConfig = ContractConfigFork({
+            ownablee: 0x2dDcc6108690bc5EbD77cEF55A61d7F10A62B007,
+            uniHelper: 0x38B07C23900608356cb3cf96C5c116465d717899,
+            stakingPool: 0x4e3C3FA5B85f45568f588e5eB3af16029eE433c4,
+            vote: 0xA44DdCAE6eb91359caB6D8D52D14cf0fF0784ab3,
+            property: 0x6c50Cbf1878B7DF0d08055a8d39e145751D259Df,
+            factoryFilmNFT: 0xD5A7A246709a7Cf3BeCc6326Afe1de136310Ae69,
+            factorySubNFT: 0x284f5b1C7C92B8CDc99D6a91F793266746DaEBd7,
+            vabbleFund: 0x7959F705f7BC152d7Dcb4e8673D4C5547b5D8D03,
+            vabbleDAO: 0x570e503d3C75D92fB3A39dDE912d3f0429a10414,
+            factoryTierNFT: 0x74b7B9C378a2D2179d28B17fdFD2E32911142F86,
+            subscription: 0x63Fb9040A74468830e48a92E3C7ff648DF2F877F,
             helperConfig: 0xE18a016246E1aBaF338908B94961C9f13142612c
         });
 
