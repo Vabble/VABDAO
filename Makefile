@@ -12,16 +12,18 @@ clean  :; forge clean
 # Remove modules
 remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
 
-install :; forge install foundry-rs/forge-std --no-commit && forge install openzeppelin/openzeppelin-contracts --no-commit
+install :; forge install foundry-rs/forge-std --no-commit && forge install openzeppelin/openzeppelin-contracts --no-commit && forge install Cyfrin/foundry-devops --no-commit
 
 # Update Dependencies
 update:; forge update
 
 build:; forge build
 
-test :; forge test --summary --detailed 
+test :; forge test --summary --detailed
 
-test-fork :; forge test --summary --detailed --match-path fork
+test-unit :; forge test --summary --detailed --match-path ./test/foundry/unit/*.sol
+
+test-fork :; forge test --summary --detailed --match-path ./test/foundry/fork/*.sol
 
 snapshot :; forge snapshot
 
