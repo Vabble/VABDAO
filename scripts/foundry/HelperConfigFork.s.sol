@@ -116,7 +116,7 @@ contract HelperConfigFork is Script {
             vab: 0x2C9ab600D71967fF259c491aD51F517886740cbc,
             usdt: 0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2,
             auditor: 0x170341dfFAD907f9695Dc1C17De622A5A2F28259,
-            vabbleWallet: 0xC8e39373B96a90AFf4b07DA0e431F670f73f8941,
+            vabbleWallet: 0xE13Cf9Ff533268F3a98961995Ce7681440204361,
             uniswapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
             uniswapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24,
             sushiSwapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,

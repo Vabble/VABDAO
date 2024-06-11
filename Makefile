@@ -19,7 +19,9 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test 
+test :; forge test --summary --detailed 
+
+test-fork :; forge test --summary --detailed --match-path fork
 
 snapshot :; forge snapshot
 

@@ -49,10 +49,15 @@ contract BaseForkTest is Test {
     address internal sushiSwapRouter;
 
     uint256 private baseSepoliaFork;
+    uint256 private baseFork;
     string private BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
+    string private BASE_RPC_URL = vm.envString("BASE_RPC_URL");
 
     function setUp() public virtual {
-        baseSepoliaFork = vm.createSelectFork(BASE_SEPOLIA_RPC_URL);
+        createForks();
+
+        // Change this if you want to test on other chains
+        vm.selectFork(baseFork);
 
         console2.log(unicode"⚠️You are running tests on live on-chain contracts!");
         console2.log("Chain Id:", block.chainid);
@@ -76,6 +81,15 @@ contract BaseForkTest is Test {
         sushiSwapRouter = activeNetworkConfig.sushiSwapRouter;
 
         castAddressToContract(activeContractConfig);
+    }
+
+    function createForks() internal {
+        baseSepoliaFork = vm.createFork(BASE_SEPOLIA_RPC_URL);
+        baseFork = vm.createFork(BASE_RPC_URL);
+    }
+
+    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
     function castAddressToContract(ContractConfigFork memory _activeContractConfig) internal {
