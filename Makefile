@@ -49,6 +49,12 @@ ifeq ($(findstring --network base_sepolia,$(ARGS)),--network base_sepolia)
 	ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
 endif
 
+ifeq ($(findstring --network base,$(ARGS)),--network base)
+	CHAIN_ID := 8453
+	NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_RPC_URL)
+	ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
+endif
+
 # run this with: make deploy ARGS="--network base_sepolia"
 deploy:
 	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) --account Deployer --broadcast --force --slow --optimize --optimizer-runs 200 --verify  --etherscan-api-key $(ETHERSCAN_API_KEY)
