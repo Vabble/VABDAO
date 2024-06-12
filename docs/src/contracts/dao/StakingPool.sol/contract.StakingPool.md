@@ -1,5 +1,5 @@
 # StakingPool
-[Git Source](https://github.com/Mill1995/VABDAO/blob/217c9b2f97086a2b56e9d8ed6314ee399ea48dff/contracts/dao/StakingPool.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/b6d0bc49c06645caa4c08cd044aa829b5ffd9210/contracts/dao/StakingPool.sol)
 
 **Inherits:**
 ReentrancyGuard
@@ -260,6 +260,8 @@ function initialize(address _vabbleDAO, address _property, address _vote) extern
 
 Add reward token (VAB) to the StakingPool
 
+*Should be called before users start staking in order to generate staking rewards*
+
 
 ```solidity
 function addRewardToPool(uint256 _amount) external onlyNormal nonReentrant;
@@ -275,6 +277,10 @@ function addRewardToPool(uint256 _amount) external onlyNormal nonReentrant;
 
 Stake VAB token to the StakingPool to earn rewards and participate in the Governance
 
+*A user turns in to a staker when they stake their tokens*
+
+*When a user stakes for the first time we add his address to the `stakerMap`*
+
 
 ```solidity
 function stakeVAB(uint256 _amount) external onlyNormal nonReentrant;
@@ -283,13 +289,18 @@ function stakeVAB(uint256 _amount) external onlyNormal nonReentrant;
 
 |Name|Type|Description|
 |----|----|-----------|
-|`_amount`|`uint256`|Amount of VAB tokens to stake|
+|`_amount`|`uint256`|Amount of VAB tokens to stake, must be greater than 1 Token|
 
 
 ### unstakeVAB
 
-Unstake VAB tokens after the correct time period has elapsed
-This function can only be called by the staker
+Unstake VAB tokens after the correct time period has elapsed or a migration has started.
+
+*The lock period of the tokens is a Governance property that can be changed through a proposal.*
+
+*This will transfer the stake amount + realized rewards to the user.*
+
+*This will remove the staker from the `stakerMap` when he unstakes all tokens.*
 
 
 ```solidity
@@ -304,21 +315,73 @@ function unstakeVAB(uint256 _amount) external nonReentrant;
 
 ### withdrawReward
 
-Withdraw reward.  isCompound=1 => compound reward, isCompound=0 => withdraw
+Withdraw Rewards without unstaking VAB tokens
+
+*This will lock the staked tokens for the duration of the lock period again*
+
+*There must be rewards in the StakingPool to withdraw*
 
 
 ```solidity
 function withdrawReward(uint256 _isCompound) external nonReentrant;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_isCompound`|`uint256`|can either be 1 to compound rewards or 0 to withdraw the rewards|
+
 
 ### depositVAB
 
-Deposit VAB token from customer for renting the films
+Users on the streaming portal need to deposit VAB used for renting films
+
+*This will update the userRentInfo for the given user.*
 
 
 ```solidity
 function depositVAB(uint256 _amount) external onlyNormal nonReentrant;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_amount`|`uint256`|Amount of VAB tokens to deposit|
+
+
+### sendVAB
+
+Send VAB tokens from the given users to the given address
+
+*This will be called from the VabbleDAO contract function `allocateToPool` by the Auditor*
+
+*The Auditor calculates what a user has to pay*
+
+
+```solidity
+function sendVAB(
+    address[] calldata _users,
+    address _to,
+    uint256[] calldata _amounts
+)
+    external
+    onlyDAO
+    returns (uint256);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_users`|`address[]`|Array of user addresses|
+|`_to`|`address`|Address to send tokens to|
+|`_amounts`|`uint256[]`|Array of amounts to transfer|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|sum Total amount of VAB tokens transferred|
+
 
 ### pendingWithdraw
 
@@ -345,22 +408,6 @@ Deny pending-withdraw of given customers by Auditor
 
 ```solidity
 function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant;
-```
-
-### sendVAB
-
-onlyDAO transfer VAB token to user
-
-
-```solidity
-function sendVAB(
-    address[] calldata _users,
-    address _to,
-    uint256[] calldata _amounts
-)
-    external
-    onlyDAO
-    returns (uint256);
 ```
 
 ### withdrawAllFund
@@ -636,7 +683,7 @@ event TokenStaked(address indexed staker, uint256 stakeAmount);
 
 |Name|Type|Description|
 |----|----|-----------|
-|`staker`|`address`|The address of the user.|
+|`staker`|`address`|The address of the staker.|
 |`stakeAmount`|`uint256`|The amount of VAB tokens staked.|
 
 ### TokenUnstaked
@@ -651,7 +698,7 @@ event TokenUnstaked(address indexed unstaker, uint256 unStakeAmount);
 
 |Name|Type|Description|
 |----|----|-----------|
-|`unstaker`|`address`|The address of the user.|
+|`unstaker`|`address`|The address of the staker.|
 |`unStakeAmount`|`uint256`|The amount of VAB tokens unstaked.|
 
 ### RewardWithdraw
@@ -666,7 +713,7 @@ event RewardWithdraw(address indexed staker, uint256 rewardAmount);
 
 |Name|Type|Description|
 |----|----|-----------|
-|`staker`|`address`|The address of the user.|
+|`staker`|`address`|The address of the staker.|
 |`rewardAmount`|`uint256`|The amount of rewards withdrawn.|
 
 ### RewardContinued
@@ -681,7 +728,7 @@ event RewardContinued(address indexed staker, uint256 isCompound, uint256 reward
 
 |Name|Type|Description|
 |----|----|-----------|
-|`staker`|`address`|The address of the user.|
+|`staker`|`address`|The address of the staker.|
 |`isCompound`|`uint256`|Flag indicating if the rewards are compounded (1) or withdrawn (0).|
 |`rewardAmount`|`uint256`|The amount of rewards continued.|
 

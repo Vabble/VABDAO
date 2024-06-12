@@ -14,9 +14,10 @@ import "../interfaces/IOwnablee.sol";
 
 /**
  * @title StakingPool contract
- * @notice This contract allows users to stake VAB tokens and receive rewards
- * based on the amount staked and the duration of staking.
- * Users must also vote on proposals to receive rewards accordingly.
+ * @notice This contract allows users to stake VAB tokens to receive rewards
+ * based on the amount staked and the duration of the stake.
+ * Users must also vote on proposals (Governance/Film) to receive all rewards accordingly.
+ * This contract is also responsible to receive VAB tokens from the Streaming Portal used to pay for watching films.
  */
 contract StakingPool is ReentrancyGuard {
     using Counters for Counters.Counter;
@@ -273,6 +274,7 @@ contract StakingPool is ReentrancyGuard {
     /**
      * @notice Add reward token (VAB) to the StakingPool
      * @dev Should be called before users start staking in order to generate staking rewards
+     * @dev This can't be called when a migration has started
      * @param _amount Amount of VAB tokens to add as reward
      */
     function addRewardToPool(uint256 _amount) external onlyNormal nonReentrant {
@@ -288,6 +290,7 @@ contract StakingPool is ReentrancyGuard {
      * @notice Stake VAB token to the StakingPool to earn rewards and participate in the Governance
      * @dev A user turns in to a staker when they stake their tokens
      * @dev When a user stakes for the first time we add his address to the `stakerMap`
+     * @dev This can't be called when a migration has started
      * @param _amount Amount of VAB tokens to stake, must be greater than 1 Token
      */
     function stakeVAB(uint256 _amount) external onlyNormal nonReentrant {
@@ -392,6 +395,7 @@ contract StakingPool is ReentrancyGuard {
     /**
      * @notice Users on the streaming portal need to deposit VAB used for renting films
      * @dev This will update the userRentInfo for the given user.
+     * @dev This can't be called when a migration has started.
      * @param _amount Amount of VAB tokens to deposit
      */
     function depositVAB(uint256 _amount) external onlyNormal nonReentrant {
@@ -402,6 +406,66 @@ contract StakingPool is ReentrancyGuard {
         userRentInfo[msg.sender].vabAmount += _amount;
 
         emit VABDeposited(msg.sender, _amount);
+    }
+
+    /**
+     * @notice Request a withdrawal of VAB tokens from the streaming portal
+     * @dev this is the counter part of the `depositVAB` function
+     * @dev users can only request one withdrawal at a time, then the Auditor needs to approve or deny the withdraw
+     * request
+     * @param _amount Amount of VAB tokens to withdraw
+     */
+    function pendingWithdraw(uint256 _amount) external nonReentrant {
+        require(msg.sender != address(0), "pW: zero address");
+        require(_amount > 0, "pW: zero VAB");
+        require(!userRentInfo[msg.sender].pending, "pW: pending");
+
+        uint256 cAmount = userRentInfo[msg.sender].vabAmount;
+        uint256 wAmount = userRentInfo[msg.sender].withdrawAmount;
+        require(_amount <= cAmount - wAmount, "pW: insufficient VAB");
+
+        userRentInfo[msg.sender].withdrawAmount += _amount;
+        userRentInfo[msg.sender].pending = true;
+
+        emit WithdrawPending(msg.sender, _amount);
+    }
+
+    /**
+     * @notice Approve pending withdrawals of given users by Auditor
+     * @dev A user has to call `pendingWithdraw` before
+     * @param _customers Array of user addresses
+     */
+    function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
+        require(_customers.length > 0 && _customers.length < 1000, "aPW: No customer");
+
+        uint256[] memory withdrawAmounts = new uint256[](_customers.length);
+        // Transfer withdrawable amount to _customers
+        uint256 customerLength = _customers.length;
+        for (uint256 i = 0; i < customerLength; ++i) {
+            withdrawAmounts[i] = __transferVABWithdraw(_customers[i]);
+        }
+
+        emit PendingWithdrawApproved(_customers, withdrawAmounts);
+    }
+
+    /**
+     * @notice Deny pending withdrawal of given users by Auditor
+     * @param _customers Array of user addresses
+     */
+    function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
+        require(_customers.length > 0 && _customers.length < 1000, "denyW: bad customers");
+
+        // Release withdrawable amount for _customers
+        uint256 customerLength = _customers.length;
+        for (uint256 i = 0; i < customerLength; ++i) {
+            require(userRentInfo[_customers[i]].withdrawAmount > 0, "denyW: zero withdraw");
+            require(userRentInfo[_customers[i]].pending, "denyW: no pending");
+
+            userRentInfo[_customers[i]].withdrawAmount = 0;
+            userRentInfo[_customers[i]].pending = false;
+        }
+
+        emit PendingWithdrawDenied(_customers);
     }
 
     /**
@@ -437,55 +501,42 @@ contract StakingPool is ReentrancyGuard {
         return sum;
     }
 
-    /// @notice Pending Withdraw VAB token by customer
-    function pendingWithdraw(uint256 _amount) external nonReentrant {
-        require(msg.sender != address(0), "pW: zero address");
-        require(_amount > 0, "pW: zero VAB");
-        require(!userRentInfo[msg.sender].pending, "pW: pending");
+    /**
+     * @notice Calculate VAB amount able to be migrated and for each staker to receive
+     * @dev This can only be called by the `Property::updateGovProposal()` function.
+     * @dev After a proposal to change the reward Address has passed Governance Voting, we calculate the total VAB we
+     * can migrate to a new address. All users should receive their outstanding VAB rewards.
+     * @dev After calling this function the migrationStatus will be set to 1 and stakers wont receive any new rewards.
+     * @dev All stakers can immediately unstake their VAB.
+     */
+    function calcMigrationVAB() external onlyNormal nonReentrant {
+        require(msg.sender == DAO_PROPERTY, "not Property");
 
-        uint256 cAmount = userRentInfo[msg.sender].vabAmount;
-        uint256 wAmount = userRentInfo[msg.sender].withdrawAmount;
-        require(_amount <= cAmount - wAmount, "pW: insufficient VAB");
+        uint256 amount = 0;
+        uint256 totalAmount = 0; // sum of each staker's rewards
 
-        userRentInfo[msg.sender].withdrawAmount += _amount;
-        userRentInfo[msg.sender].pending = true;
-
-        emit WithdrawPending(msg.sender, _amount);
-    }
-
-    /// @notice Approve pending-withdraw of given customers by Auditor
-    function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
-        require(_customers.length > 0 && _customers.length < 1000, "aPW: No customer");
-
-        uint256[] memory withdrawAmounts = new uint256[](_customers.length);
-        // Transfer withdrawable amount to _customers
-        uint256 customerLength = _customers.length;
-        for (uint256 i = 0; i < customerLength; ++i) {
-            withdrawAmounts[i] = __transferVABWithdraw(_customers[i]);
+        // calculate the total amount of reward
+        for (uint256 i = 0; i < stakerCount(); ++i) {
+            amount = calcRewardAmount(stakerMap.keys[i]);
+            stakeInfo[stakerMap.keys[i]].outstandingReward = amount;
+            totalAmount = totalAmount + amount;
         }
 
-        emit PendingWithdrawApproved(_customers, withdrawAmounts);
-    }
-
-    /// @notice Deny pending-withdraw of given customers by Auditor
-    function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant {
-        require(_customers.length > 0 && _customers.length < 1000, "denyW: bad customers");
-
-        // Release withdrawable amount for _customers
-        uint256 customerLength = _customers.length;
-        for (uint256 i = 0; i < customerLength; ++i) {
-            require(userRentInfo[_customers[i]].withdrawAmount > 0, "denyW: zero withdraw");
-            require(userRentInfo[_customers[i]].pending, "denyW: no pending");
-
-            userRentInfo[_customers[i]].withdrawAmount = 0;
-            userRentInfo[_customers[i]].pending = false;
+        if (totalRewardAmount >= totalAmount) {
+            totalMigrationVAB = totalRewardAmount - totalAmount;
         }
 
-        emit PendingWithdrawDenied(_customers);
+        migrationStatus = 1;
     }
 
-    /// @notice Transfer DAO all fund to V2
-    // After call this function, users should be available to withdraw his funds deposited
+    /**
+     * @notice Transfer all funds from the StakingPool, EdgePool and StudioPool to a new address
+     * @dev This will be called by the Auditor after a proposal to change the reward Address
+     * `Property::proposalRewardFund()` has passed Governance Voting and has been finalized.
+     * @dev The `to` address is the address voted for by Governance.
+     * @dev This can only be called after `calcMigrationVAB`.
+     * @dev All VAB tokens will be transfered and the migration status will be updated to 2 (ended).
+     */
     function withdrawAllFund() external onlyAuditor nonReentrant {
         address to = IProperty(DAO_PROPERTY).DAO_FUND_REWARD();
         require(to != address(0), "wAF: zero address");
@@ -513,37 +564,33 @@ contract StakingPool is ReentrancyGuard {
         emit AllFundWithdraw(to, sumAmount);
     }
 
-    function calcMigrationVAB() external onlyNormal nonReentrant {
-        require(msg.sender == DAO_PROPERTY, "not Property");
-
-        uint256 amount = 0;
-        uint256 totalAmount = 0; // sum of each staker's rewards
-
-        // calculate the total amount of reward
-        for (uint256 i = 0; i < stakerCount(); ++i) {
-            amount = calcRewardAmount(stakerMap.keys[i]);
-            stakeInfo[stakerMap.keys[i]].outstandingReward = amount;
-            totalAmount = totalAmount + amount;
-        }
-
-        if (totalRewardAmount >= totalAmount) {
-            totalMigrationVAB = totalRewardAmount - totalAmount;
-        }
-
-        migrationStatus = 1;
-    }
-
-    /// @notice Add voted time for a staker when vote
+    /**
+     * @notice Add voted data for a staker when they vote on (Governance / Film) proposals
+     * @dev We need this so we can track if a user has voted on a proposal in order to calculate rewards
+     * @param _user Address of the user
+     * @param _time Time of the vote
+     * @param _proposalID ID of the proposal
+     */
     function addVotedData(address _user, uint256 _time, uint256 _proposalID) external onlyVote {
         votedTime[_user][_proposalID] = _time;
     }
 
-    /// @notice Update lastfundProposalCreateTime for only fund film proposal
+    /**
+     * @notice Update the last creation time of a film proposal that is for funding
+     * @param _time New creation time
+     */
     function updateLastfundProposalCreateTime(uint256 _time) external onlyDAO {
         lastfundProposalCreateTime = _time;
     }
 
-    /// @notice Add proposal data to array for calculating rewards
+    /**
+     * @notice Add proposal data used for calculating staking rewards
+     * @dev This must be called when a Governance / Film proposal is created
+     * @param _creator Address of the proposal creator
+     * @param _cTime Creation time of the proposal
+     * @param _period Vote period of the proposal
+     * @return proposalID ID of the new proposal
+     */
     function addProposalData(address _creator, uint256 _cTime, uint256 _period) external returns (uint256) {
         require(msg.sender == VABBLE_DAO || msg.sender == DAO_PROPERTY, "not dao/property");
 
@@ -558,6 +605,13 @@ contract StakingPool is ReentrancyGuard {
                               VIEW / PURE
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Function to validate if `sendVAB()` can be called with the given arguments
+     * @dev Should be called before `VabbleDAO::allocateToPool()` to ensure that the arguments are valid
+     * @param _users Array of user addresses
+     * @param _amounts Array of amounts to allocate
+     * @return bool True if allocation is valid, otherwise false
+     */
     function checkAllocateToPool(address[] calldata _users, uint256[] calldata _amounts) external view returns (bool) {
         uint256 sum;
         uint256 userLength = _users.length;
@@ -578,6 +632,12 @@ contract StakingPool is ReentrancyGuard {
         return true;
     }
 
+    /**
+     * @notice Check if pending withdrawals can be denied
+     * @dev Should be called before `denyPendingWithdraw()`
+     * @param _customers Array of user addresses
+     * @return bool True if withdrawals can be denied, otherwise false
+     */
     function checkDenyPendingWithDraw(address[] calldata _customers) external view returns (bool) {
         uint256 customerLength = _customers.length;
         for (uint256 i = 0; i < customerLength; ++i) {
@@ -592,6 +652,12 @@ contract StakingPool is ReentrancyGuard {
         return true;
     }
 
+    /**
+     * @notice Check if pending withdrawals can be approved
+     * @dev Should be called before `approvePendingWithdraw()`
+     * @param _customers Array of user addresses
+     * @return bool True if withdrawals can be approved, otherwise false
+     */
     function checkApprovePendingWithdraw(address[] calldata _customers) external view returns (bool) {
         address _to;
         uint256 payAmount;
@@ -624,7 +690,15 @@ contract StakingPool is ReentrancyGuard {
         return true;
     }
 
-    /// @notice Calculate APR(Annual Percentage Rate) for staking/pending rewards
+    /**
+     * @notice Calculate APR (Annual Percentage Rate) for staking/pending rewards
+     * @param _period The staking period in days (e.g., 2 days, 32 days, 365 days)
+     * @param _stakeAmount The amount of VAB staked (e.g., 100 VAB)
+     * @param _proposalCount The number of proposals during the staking period
+     * @param _voteCount The number of votes cast by the staker during the staking period
+     * @param isBoardMember Indicates whether the staker is a film board member
+     * @return amount_ The calculated APR amount for the specified staking period and conditions
+     */
     function calculateAPR(
         uint256 _period, // ex: 2 days / 32 days / 365 days
         uint256 _stakeAmount, // ex: 100 VAB
@@ -664,17 +738,30 @@ contract StakingPool is ReentrancyGuard {
         amount_ = stakingRewards + pendingRewards;
     }
 
-    /// @notice Get staking amount for a staker
+    /**
+     * @notice Get VAB staking amount for an address
+     * @param _user The address of the user
+     * @return amount_ The staking amount of the user
+     */
     function getStakeAmount(address _user) external view returns (uint256 amount_) {
         amount_ = stakeInfo[_user].stakeAmount;
     }
 
-    /// @notice Get user rent VAB amount
+    /**
+     * @notice Get user rent VAB amoun
+     * @dev This is the amount that was deposited on the streaming portal used to rent films
+     * @param _user The address of the user
+     * @return amount_ The VAB amount of the user
+     */
     function getRentVABAmount(address _user) external view returns (uint256 amount_) {
         amount_ = userRentInfo[_user].vabAmount;
     }
 
-    /// @notice Get limit staker count for voting
+    /**
+     * @notice Get minimum amount of stakers that needs to vote for a proposal to pass
+     * @dev This is a threshold for proposals in order to pass
+     * @return count_ The count of stakers for voting
+     */
     function getLimitCount() external view returns (uint256 count_) {
         uint256 limitPercent = IProperty(DAO_PROPERTY).minStakerCountPercent();
         uint256 minVoteCount = IProperty(DAO_PROPERTY).minVoteCount();
@@ -688,11 +775,19 @@ contract StakingPool is ReentrancyGuard {
         }
     }
 
-    /// @notice Get withdrawTime for a staker
+    /**
+     * @notice Get the time when a staker can withdraw / unstake his VAB
+     * @param _user The address of the user
+     * @return time_ The time when the user can withdraw their stake
+     */
     function getWithdrawableTime(address _user) external view returns (uint256 time_) {
         time_ = stakeInfo[_user].stakeTime + IProperty(DAO_PROPERTY).lockPeriod();
     }
 
+    /**
+     * @notice Get the list of all stakers
+     * @return An array of addresses representing all stakers
+     */
     function getStakerList() external view returns (address[] memory) {
         return stakerMap.keys;
     }
@@ -701,7 +796,12 @@ contract StakingPool is ReentrancyGuard {
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Calculate reward amount with previous reward
+    /**
+     * @notice Calculate the VAB reward amount for a user including previous rewards
+     * @dev When a migration has started returns the outstanding rewards and doesn't generate new rewards
+     * @param _user The address of the user
+     * @return The total reward amount for the user
+     */
     function calcRewardAmount(address _user) public view returns (uint256) {
         Stake memory si = stakeInfo[_user];
 
@@ -715,6 +815,22 @@ contract StakingPool is ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Calculate the proposal time intervals for a user.
+     * This function computes the start and end times of all proposals that overlap with the staking period of a user.
+     * The resulting array includes the user's stake time, the start and end times of the relevant proposals, and the
+     * current block timestamp.
+     * @dev The function retrieves proposals from the `propsList` array and checks if their end time is greater than or
+     * equal to the user's stake time.
+     * It constructs an array containing the user's stake time, the start and end times of the overlapping proposals,
+     * and the current block timestamp.
+     * @param _user The address of the user for whom the proposal time intervals are calculated.
+     * @return times_ An array of timestamps representing the proposal time intervals. The array is sorted in ascending
+     * order and includes:
+     *  - The user's stake time at index 0.
+     *  - The start and end times of the overlapping proposals.
+     *  - The current block timestamp as the last element.
+     */
     function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_) {
         uint256 pLength = propsList.length;
         Props memory pData;
@@ -756,6 +872,21 @@ contract StakingPool is ReentrancyGuard {
         times_.sort();
     }
 
+    /**
+     * @notice Get the count of proposals, votes, and pending votes within a specific time interval for a user.
+     * This function calculates the number of proposals, the number of votes cast by the user, and the number of pending
+     * votes within a specified time interval.
+     * @dev The function iterates through the `propsList` array starting from `minIndex,
+     * and counts proposals whose creation time falls within the interval [_start, _end].
+     * It also counts the number of votes cast by the user during this period and pending votes.
+     * @param _user The address of the user for whom the vote count is calculated.
+     * @param minIndex The minimum index of the proposals to consider.
+     * @param _start The start time of the interval in which the votes are counted.
+     * @param _end The end time of the interval in which the votes are counted.
+     * @return pCount The total number of proposals within the interval.
+     * @return vCount The number of votes cast by the user within the interval.
+     * @return pendingVoteCount The number of pending votes within the interval.
+     */
     function __getProposalVoteCount(
         address _user,
         uint256 minIndex,
@@ -802,7 +933,13 @@ contract StakingPool is ReentrancyGuard {
         return (pCount, vCount, pendingVoteCount);
     }
 
-    /// @notice Calculate realized rewards
+    /**
+     * @notice Calculate the realized rewards for a user
+     * This function calculates the realized rewards for a user based on the proposals they have voted on and the
+     * intervals between proposals within the staking period.
+     * @param _user The address of the user for whom the realized rewards are being calculated.
+     * @return realizeReward The total realized rewards for the user.
+     */
     function calcRealizedRewards(address _user) public view returns (uint256) {
         uint256 realizeReward = 0;
 
@@ -835,6 +972,13 @@ contract StakingPool is ReentrancyGuard {
         return realizeReward;
     }
 
+    /**
+     * @notice Calculate the pending rewards for a user
+     * This function calculates the pending rewards for a user based on the proposals they are yet to vote on within the
+     * specified intervals between proposals within the staking period.
+     * @param _user The address of the user for whom the pending rewards are being calculated.
+     * @return pendingReward The total pending rewards for the user.
+     */
     function calcPendingRewards(address _user) public view returns (uint256) {
         uint256 pendingReward = 0;
 
@@ -869,31 +1013,57 @@ contract StakingPool is ReentrancyGuard {
         return pendingReward;
     }
 
+    /**
+     * @notice Get the count of stakers
+     * @return The total number of stakers
+     */
+    function stakerCount() public view returns (uint256) {
+        return stakerMap.keys.length;
+    }
+
+    /**
+     * @notice Get the address of the Ownable contract
+     * @return The address of the Ownable contract
+     */
     function getOwnableAddress() public view returns (address) {
         return OWNABLE;
     }
 
+    /**
+     * @notice Get the address of the Vote contract
+     * @return The address of the Vote contract
+     */
     function getVoteAddress() public view returns (address) {
         return VOTE;
     }
 
+    /**
+     * @notice Get the address of the VabbleDAO contract
+     * @return The address of the VabbleDAO contract
+     */
     function getVabbleDaoAddress() public view returns (address) {
         return VABBLE_DAO;
     }
 
+    /**
+     * @notice Get the address of the Property contract
+     * @return The address of the Property contract
+     */
     function getPropertyAddress() public view returns (address) {
         return DAO_PROPERTY;
-    }
-
-    function stakerCount() public view returns (uint256) {
-        return stakerMap.keys.length;
     }
 
     /*//////////////////////////////////////////////////////////////
                                 PRIVATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Transfer reward amount
+    /**
+     * @dev Transfer reward amount to the user and update relevant states
+     * This function handles the transfer of the reward amount to the user, updates the total reward amount,
+     * received reward amount, and the user's stake information. It also emits the RewardWithdraw event
+     * and updates the minimum proposal index for the user.
+     * @param _amount The amount of reward to be withdrawn
+     */
     function __withdrawReward(uint256 _amount) private {
         Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, _amount);
 
@@ -910,6 +1080,12 @@ contract StakingPool is ReentrancyGuard {
         __updateMinProposalIndex(msg.sender);
     }
 
+    /**
+     * @dev Update the minimum proposal index for a user
+     * This function updates the minimum proposal index for a user by iterating through the proposals
+     * and finding the first proposal whose end time is greater than or equal to the user's stake time.
+     * @param _user The address of the user whose minimum proposal index is being updated
+     */
     function __updateMinProposalIndex(address _user) private {
         uint256 pLength = propsList.length;
         uint256 minIndex = minProposalIndex[_user];
@@ -921,6 +1097,11 @@ contract StakingPool is ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Add a staker to the staker map
+     * This function adds a staker to the staker map if they are not already present.
+     * @param key The address of the staker to be added
+     */
     function __stakerSet(address key) private {
         if (stakerMap.indexOf[key] > 0) {
             return;
@@ -930,6 +1111,11 @@ contract StakingPool is ReentrancyGuard {
         stakerMap.keys.push(key);
     }
 
+    /**
+     * @dev Remove a staker from the staker map
+     * This function removes a staker from the staker map if they are present.
+     * @param key The address of the staker to be removed
+     */
     function __stakerRemove(address key) private {
         if (stakerMap.indexOf[key] == 0) {
             return;
@@ -945,7 +1131,11 @@ contract StakingPool is ReentrancyGuard {
         stakerMap.keys.pop();
     }
 
-    /// @dev Transfer VAB token to user's withdraw request
+    /**
+     * @dev Transfer VAB tokens to fulfill a user's withdrawal request on the streaming portal
+     * @param _to The address of the user to whom the VAB tokens are being transferred
+     * @return payAmount The amount of VAB tokens transferred to the user
+     */
     function __transferVABWithdraw(address _to) private returns (uint256) {
         uint256 payAmount = userRentInfo[_to].withdrawAmount;
         require(payAmount > 0, "aW: zero withdraw");
@@ -965,6 +1155,15 @@ contract StakingPool is ReentrancyGuard {
                               VIEW / PURE
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @dev Calculate the rewards for a user within a specific time period
+     * This function calculates the rewards for a user based on their stake amount and the time period specified.
+     * If the user is a film board member, additional rewards are included.
+     * @param _user The address of the user for whom the rewards are being calculated
+     * @param startTime The start time of the reward calculation period
+     * @param endTime The end time of the reward calculation period
+     * @return amount_ The calculated reward amount for the user
+     */
     function __calcRewards(address _user, uint256 startTime, uint256 endTime) private view returns (uint256 amount_) {
         Stake memory si = stakeInfo[_user];
         if (si.stakeAmount == 0) return 0;
@@ -982,8 +1181,13 @@ contract StakingPool is ReentrancyGuard {
         }
     }
 
-    // 500 * 1e10 / 1000 = 50*1e8 = 50%
-    // 0.025*1e8 * 50*1e8 / 1e10 = 0.0125*1e8 = 0.0125%
+    /**
+     * @dev Calculate the reward percentage based on the staking amount
+     * This function calculates the reward percentage for a user based on their staking amount
+     * and the total staking amount.
+     * @param _stakingAmount The amount staked by the user
+     * @return percent_ The calculated reward percentage for the user
+     */
     function __rewardPercent(uint256 _stakingAmount) private view returns (uint256 percent_) {
         uint256 poolPercent = _stakingAmount * 1e10 / totalStakingAmount;
         percent_ = IProperty(DAO_PROPERTY).rewardRate() * poolPercent / 1e10;
