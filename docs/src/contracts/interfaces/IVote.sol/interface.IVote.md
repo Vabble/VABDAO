@@ -1,5 +1,5 @@
 # IVote
-[Git Source](https://github.com/Mill1995/VABDAO/blob/df9d3dbfaf61478d7e8a6f44f0a92a8ebe82bada/contracts/interfaces/IVote.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/217c9b2f97086a2b56e9d8ed6314ee399ea48dff/contracts/interfaces/IVote.sol)
 
 
 ## Functions

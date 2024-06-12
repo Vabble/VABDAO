@@ -130,28 +130,28 @@ contract StakingPool is ReentrancyGuard {
 
     /**
      * @dev Emitted when a staker stakes VAB tokens.
-     * @param staker The address of the user.
+     * @param staker The address of the staker.
      * @param stakeAmount The amount of VAB tokens staked.
      */
     event TokenStaked(address indexed staker, uint256 stakeAmount);
 
     /**
      * @dev Emitted when a staker unstakes VAB tokens.
-     * @param unstaker The address of the user.
+     * @param unstaker The address of the staker.
      * @param unStakeAmount The amount of VAB tokens unstaked.
      */
     event TokenUnstaked(address indexed unstaker, uint256 unStakeAmount);
 
     /**
      * @dev Emitted when a staker withdraws rewards.
-     * @param staker The address of the user.
+     * @param staker The address of the staker.
      * @param rewardAmount The amount of rewards withdrawn.
      */
     event RewardWithdraw(address indexed staker, uint256 rewardAmount);
 
     /**
      * @dev Emitted when a staker continues to receive rewards, either by withdrawing or compounding.
-     * @param staker The address of the user.
+     * @param staker The address of the staker.
      * @param isCompound Flag indicating if the rewards are compounded (1) or withdrawn (0).
      * @param rewardAmount The amount of rewards continued.
      */
@@ -254,11 +254,14 @@ contract StakingPool is ReentrancyGuard {
                                 EXTERNAL
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Initialize Pool
+    /**
+     * @notice Initializes the StakingPool contract, can only be called by the Deployer
+     * @param _vabbleDAO Address of the VabbleDAO contract
+     * @param _property Address of the Property contract
+     * @param _vote Address of the Vote contract
+     */
     function initialize(address _vabbleDAO, address _property, address _vote) external onlyDeployer {
-        // TODO - N3-3 updated(add below line)
         require(VABBLE_DAO == address(0), "init: initialized");
-
         require(_vabbleDAO != address(0), "init: zero dao");
         VABBLE_DAO = _vabbleDAO;
         require(_property != address(0), "init: zero property");
@@ -267,7 +270,11 @@ contract StakingPool is ReentrancyGuard {
         VOTE = _vote;
     }
 
-    /// @notice Add reward token(VAB)
+    /**
+     * @notice Add reward token (VAB) to the StakingPool
+     * @dev Should be called before users start staking in order to generate staking rewards
+     * @param _amount Amount of VAB tokens to add as reward
+     */
     function addRewardToPool(uint256 _amount) external onlyNormal nonReentrant {
         require(_amount > 0, "aRTP: zero amount");
 
@@ -277,7 +284,12 @@ contract StakingPool is ReentrancyGuard {
         emit RewardAdded(totalRewardAmount, _amount, msg.sender);
     }
 
-    /// @notice Staking VAB token by staker
+    /**
+     * @notice Stake VAB token to the StakingPool to earn rewards and participate in the Governance
+     * @dev A user turns in to a staker when they stake their tokens
+     * @dev When a user stakes for the first time we add his address to the `stakerMap`
+     * @param _amount Amount of VAB tokens to stake, must be greater than 1 Token
+     */
     function stakeVAB(uint256 _amount) external onlyNormal nonReentrant {
         require(_amount > 0, "sVAB: zero amount");
 
@@ -301,7 +313,13 @@ contract StakingPool is ReentrancyGuard {
         emit TokenStaked(msg.sender, _amount);
     }
 
-    /// @dev Allows user to unstake tokens after the correct time period has elapsed
+    /**
+     * @notice Unstake VAB tokens after the correct time period has elapsed or a migration has started.
+     * @dev The lock period of the tokens is a Governance property that can be changed through a proposal.
+     * @dev This will transfer the stake amount + realized rewards to the user.
+     * @dev This will remove the staker from the `stakerMap` when he unstakes all tokens.
+     * @param _amount Amount of VAB tokens to unstake
+     */
     function unstakeVAB(uint256 _amount) external nonReentrant {
         require(msg.sender != address(0), "usVAB: zero staker");
 
@@ -333,7 +351,12 @@ contract StakingPool is ReentrancyGuard {
         emit TokenUnstaked(msg.sender, _amount);
     }
 
-    /// @notice Withdraw reward.  isCompound=1 => compound reward, isCompound=0 => withdraw
+    /**
+     * @notice Withdraw Rewards without unstaking VAB tokens
+     * @dev This will lock the staked tokens for the duration of the lock period again
+     * @dev There must be rewards in the StakingPool to withdraw
+     * @param _isCompound can either be 1 to compound rewards or 0 to withdraw the rewards
+     */
     function withdrawReward(uint256 _isCompound) external nonReentrant {
         require(_isCompound == 0 || _isCompound == 1, "wR: compound");
         require(stakeInfo[msg.sender].stakeAmount > 0, "wR: zero amount");
@@ -366,8 +389,11 @@ contract StakingPool is ReentrancyGuard {
         }
     }
 
-    // =================== Customer deposit/withdraw VAB START =================
-    /// @notice Deposit VAB token from customer for renting the films
+    /**
+     * @notice Users on the streaming portal need to deposit VAB used for renting films
+     * @dev This will update the userRentInfo for the given user.
+     * @param _amount Amount of VAB tokens to deposit
+     */
     function depositVAB(uint256 _amount) external onlyNormal nonReentrant {
         require(msg.sender != address(0), "dVAB: zero address");
         require(_amount > 0, "dVAB: zero amount");
@@ -376,6 +402,39 @@ contract StakingPool is ReentrancyGuard {
         userRentInfo[msg.sender].vabAmount += _amount;
 
         emit VABDeposited(msg.sender, _amount);
+    }
+
+    /**
+     * @notice Send VAB tokens from the given users to the given address
+     * @dev This will be called from the VabbleDAO contract function `allocateToPool` by the Auditor
+     * @dev The Auditor calculates what a user has to pay
+     * @param _users Array of user addresses
+     * @param _to Address to send tokens to
+     * @param _amounts Array of amounts to transfer
+     * @return sum Total amount of VAB tokens transferred
+     */
+    function sendVAB(
+        address[] calldata _users,
+        address _to,
+        uint256[] calldata _amounts
+    )
+        external
+        onlyDAO
+        returns (uint256)
+    {
+        require(_users.length == _amounts.length && _users.length < 1000, "sendVAB: bad array");
+        uint256 sum;
+        uint256 userLength = _users.length;
+        for (uint256 i = 0; i < userLength; ++i) {
+            require(userRentInfo[_users[i]].vabAmount >= _amounts[i], "sendVAB: insufficient");
+
+            userRentInfo[_users[i]].vabAmount -= _amounts[i];
+            sum += _amounts[i];
+        }
+
+        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _to, sum);
+
+        return sum;
     }
 
     /// @notice Pending Withdraw VAB token by customer
@@ -423,31 +482,6 @@ contract StakingPool is ReentrancyGuard {
         }
 
         emit PendingWithdrawDenied(_customers);
-    }
-
-    /// @notice onlyDAO transfer VAB token to user
-    function sendVAB(
-        address[] calldata _users,
-        address _to,
-        uint256[] calldata _amounts
-    )
-        external
-        onlyDAO
-        returns (uint256)
-    {
-        require(_users.length == _amounts.length && _users.length < 1000, "sendVAB: bad array");
-        uint256 sum;
-        uint256 userLength = _users.length;
-        for (uint256 i = 0; i < userLength; ++i) {
-            require(userRentInfo[_users[i]].vabAmount >= _amounts[i], "sendVAB: insufficient");
-
-            userRentInfo[_users[i]].vabAmount -= _amounts[i];
-            sum += _amounts[i];
-        }
-
-        Helper.safeTransfer(IOwnablee(OWNABLE).PAYOUT_TOKEN(), _to, sum);
-
-        return sum;
     }
 
     /// @notice Transfer DAO all fund to V2

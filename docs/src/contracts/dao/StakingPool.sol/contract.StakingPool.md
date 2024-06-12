@@ -1,5 +1,5 @@
 # StakingPool
-[Git Source](https://github.com/Mill1995/VABDAO/blob/df9d3dbfaf61478d7e8a6f44f0a92a8ebe82bada/contracts/dao/StakingPool.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/217c9b2f97086a2b56e9d8ed6314ee399ea48dff/contracts/dao/StakingPool.sol)
 
 **Inherits:**
 ReentrancyGuard
@@ -241,39 +241,66 @@ constructor(address _ownable);
 
 ### initialize
 
-Initialize Pool
+Initializes the StakingPool contract, can only be called by the Deployer
 
 
 ```solidity
 function initialize(address _vabbleDAO, address _property, address _vote) external onlyDeployer;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_vabbleDAO`|`address`|Address of the VabbleDAO contract|
+|`_property`|`address`|Address of the Property contract|
+|`_vote`|`address`|Address of the Vote contract|
+
 
 ### addRewardToPool
 
-Add reward token(VAB)
+Add reward token (VAB) to the StakingPool
 
 
 ```solidity
 function addRewardToPool(uint256 _amount) external onlyNormal nonReentrant;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_amount`|`uint256`|Amount of VAB tokens to add as reward|
+
 
 ### stakeVAB
 
-Staking VAB token by staker
+Stake VAB token to the StakingPool to earn rewards and participate in the Governance
 
 
 ```solidity
 function stakeVAB(uint256 _amount) external onlyNormal nonReentrant;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_amount`|`uint256`|Amount of VAB tokens to stake|
+
 
 ### unstakeVAB
 
-*Allows user to unstake tokens after the correct time period has elapsed*
+Unstake VAB tokens after the correct time period has elapsed
+This function can only be called by the staker
 
 
 ```solidity
 function unstakeVAB(uint256 _amount) external nonReentrant;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_amount`|`uint256`|Amount of VAB tokens to unstake|
+
 
 ### withdrawReward
 
