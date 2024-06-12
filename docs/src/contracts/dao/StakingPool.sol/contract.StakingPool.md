@@ -1,12 +1,13 @@
 # StakingPool
-[Git Source](https://github.com/Mill1995/VABDAO/blob/b6d0bc49c06645caa4c08cd044aa829b5ffd9210/contracts/dao/StakingPool.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/c1ade743ae4227c63e3d49544ad80f6b569b00da/contracts/dao/StakingPool.sol)
 
 **Inherits:**
 ReentrancyGuard
 
-This contract allows users to stake VAB tokens and receive rewards
-based on the amount staked and the duration of staking.
-Users must also vote on proposals to receive rewards accordingly.
+This contract allows users to stake VAB tokens to receive rewards
+based on the amount staked and the duration of the stake.
+Users must also vote on proposals (Governance/Film) to receive all rewards accordingly.
+This contract is also responsible to receive VAB tokens from the Streaming Portal used to pay for watching films.
 
 
 ## State Variables
@@ -262,6 +263,8 @@ Add reward token (VAB) to the StakingPool
 
 *Should be called before users start staking in order to generate staking rewards*
 
+*This can't be called when a migration has started*
+
 
 ```solidity
 function addRewardToPool(uint256 _amount) external onlyNormal nonReentrant;
@@ -280,6 +283,8 @@ Stake VAB token to the StakingPool to earn rewards and participate in the Govern
 *A user turns in to a staker when they stake their tokens*
 
 *When a user stakes for the first time we add his address to the `stakerMap`*
+
+*This can't be called when a migration has started*
 
 
 ```solidity
@@ -338,6 +343,8 @@ Users on the streaming portal need to deposit VAB used for renting films
 
 *This will update the userRentInfo for the given user.*
 
+*This can't be called when a migration has started.*
+
 
 ```solidity
 function depositVAB(uint256 _amount) external onlyNormal nonReentrant;
@@ -347,6 +354,58 @@ function depositVAB(uint256 _amount) external onlyNormal nonReentrant;
 |Name|Type|Description|
 |----|----|-----------|
 |`_amount`|`uint256`|Amount of VAB tokens to deposit|
+
+
+### pendingWithdraw
+
+Request a withdrawal of VAB tokens from the streaming portal
+
+*this is the counter part of the `depositVAB` function*
+
+*users can only request one withdrawal at a time, then the Auditor needs to approve or deny the withdraw
+request*
+
+
+```solidity
+function pendingWithdraw(uint256 _amount) external nonReentrant;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_amount`|`uint256`|Amount of VAB tokens to withdraw|
+
+
+### approvePendingWithdraw
+
+Approve pending withdrawals of given users by Auditor
+
+*A user has to call `pendingWithdraw` before*
+
+
+```solidity
+function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_customers`|`address[]`|Array of user addresses|
+
+
+### denyPendingWithdraw
+
+Deny pending withdrawal of given users by Auditor
+
+
+```solidity
+function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_customers`|`address[]`|Array of user addresses|
 
 
 ### sendVAB
@@ -383,100 +442,174 @@ function sendVAB(
 |`<none>`|`uint256`|sum Total amount of VAB tokens transferred|
 
 
-### pendingWithdraw
-
-Pending Withdraw VAB token by customer
-
-
-```solidity
-function pendingWithdraw(uint256 _amount) external nonReentrant;
-```
-
-### approvePendingWithdraw
-
-Approve pending-withdraw of given customers by Auditor
-
-
-```solidity
-function approvePendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant;
-```
-
-### denyPendingWithdraw
-
-Deny pending-withdraw of given customers by Auditor
-
-
-```solidity
-function denyPendingWithdraw(address[] calldata _customers) external onlyAuditor nonReentrant;
-```
-
-### withdrawAllFund
-
-Transfer DAO all fund to V2
-
-
-```solidity
-function withdrawAllFund() external onlyAuditor nonReentrant;
-```
-
 ### calcMigrationVAB
+
+Calculate VAB amount able to be migrated and for each staker to receive
+
+*This can only be called by the `Property::updateGovProposal()` function.*
+
+*After a proposal to change the reward Address has passed Governance Voting, we calculate the total VAB we
+can migrate to a new address. All users should receive their outstanding VAB rewards.*
+
+*After calling this function the migrationStatus will be set to 1 and stakers wont receive any new rewards.*
+
+*All stakers can immediately unstake their VAB.*
 
 
 ```solidity
 function calcMigrationVAB() external onlyNormal nonReentrant;
 ```
 
+### withdrawAllFund
+
+Transfer all funds from the StakingPool, EdgePool and StudioPool to a new address
+
+*This will be called by the Auditor after a proposal to change the reward Address
+`Property::proposalRewardFund()` has passed Governance Voting and has been finalized.*
+
+*The `to` address is the address voted for by Governance.*
+
+*This can only be called after `calcMigrationVAB`.*
+
+*All VAB tokens will be transfered and the migration status will be updated to 2 (ended).*
+
+
+```solidity
+function withdrawAllFund() external onlyAuditor nonReentrant;
+```
+
 ### addVotedData
 
-Add voted time for a staker when vote
+Add voted data for a staker when they vote on (Governance / Film) proposals
+
+*We need this so we can track if a user has voted on a proposal in order to calculate rewards*
 
 
 ```solidity
 function addVotedData(address _user, uint256 _time, uint256 _proposalID) external onlyVote;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|Address of the user|
+|`_time`|`uint256`|Time of the vote|
+|`_proposalID`|`uint256`|ID of the proposal|
+
 
 ### updateLastfundProposalCreateTime
 
-Update lastfundProposalCreateTime for only fund film proposal
+Update the last creation time of a film proposal that is for funding
 
 
 ```solidity
 function updateLastfundProposalCreateTime(uint256 _time) external onlyDAO;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_time`|`uint256`|New creation time|
+
 
 ### addProposalData
 
-Add proposal data to array for calculating rewards
+Add proposal data used for calculating staking rewards
+
+*This must be called when a Governance / Film proposal is created*
 
 
 ```solidity
 function addProposalData(address _creator, uint256 _cTime, uint256 _period) external returns (uint256);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_creator`|`address`|Address of the proposal creator|
+|`_cTime`|`uint256`|Creation time of the proposal|
+|`_period`|`uint256`|Vote period of the proposal|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|proposalID ID of the new proposal|
+
 
 ### checkAllocateToPool
+
+Function to validate if `sendVAB()` can be called with the given arguments
+
+*Should be called before `VabbleDAO::allocateToPool()` to ensure that the arguments are valid*
 
 
 ```solidity
 function checkAllocateToPool(address[] calldata _users, uint256[] calldata _amounts) external view returns (bool);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_users`|`address[]`|Array of user addresses|
+|`_amounts`|`uint256[]`|Array of amounts to allocate|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bool`|bool True if allocation is valid, otherwise false|
+
 
 ### checkDenyPendingWithDraw
+
+Check if pending withdrawals can be denied
+
+*Should be called before `denyPendingWithdraw()`*
 
 
 ```solidity
 function checkDenyPendingWithDraw(address[] calldata _customers) external view returns (bool);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_customers`|`address[]`|Array of user addresses|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bool`|bool True if withdrawals can be denied, otherwise false|
+
 
 ### checkApprovePendingWithdraw
+
+Check if pending withdrawals can be approved
+
+*Should be called before `approvePendingWithdraw()`*
 
 
 ```solidity
 function checkApprovePendingWithdraw(address[] calldata _customers) external view returns (bool);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_customers`|`address[]`|Array of user addresses|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bool`|bool True if withdrawals can be approved, otherwise false|
+
 
 ### calculateAPR
 
-Calculate APR(Annual Percentage Rate) for staking/pending rewards
+Calculate APR (Annual Percentage Rate) for staking/pending rewards
 
 
 ```solidity
@@ -491,67 +624,181 @@ function calculateAPR(
     view
     returns (uint256 amount_);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_period`|`uint256`|The staking period in days (e.g., 2 days, 32 days, 365 days)|
+|`_stakeAmount`|`uint256`|The amount of VAB staked (e.g., 100 VAB)|
+|`_proposalCount`|`uint256`|The number of proposals during the staking period|
+|`_voteCount`|`uint256`|The number of votes cast by the staker during the staking period|
+|`isBoardMember`|`bool`|Indicates whether the staker is a film board member|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`amount_`|`uint256`|The calculated APR amount for the specified staking period and conditions|
+
 
 ### getStakeAmount
 
-Get staking amount for a staker
+Get VAB staking amount for an address
 
 
 ```solidity
 function getStakeAmount(address _user) external view returns (uint256 amount_);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`amount_`|`uint256`|The staking amount of the user|
+
 
 ### getRentVABAmount
 
-Get user rent VAB amount
+Get user rent VAB amoun
+
+*This is the amount that was deposited on the streaming portal used to rent films*
 
 
 ```solidity
 function getRentVABAmount(address _user) external view returns (uint256 amount_);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`amount_`|`uint256`|The VAB amount of the user|
+
 
 ### getLimitCount
 
-Get limit staker count for voting
+Get minimum amount of stakers that needs to vote for a proposal to pass
+
+*This is a threshold for proposals in order to pass*
 
 
 ```solidity
 function getLimitCount() external view returns (uint256 count_);
 ```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`count_`|`uint256`|The count of stakers for voting|
+
 
 ### getWithdrawableTime
 
-Get withdrawTime for a staker
+Get the time when a staker can withdraw / unstake his VAB
 
 
 ```solidity
 function getWithdrawableTime(address _user) external view returns (uint256 time_);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`time_`|`uint256`|The time when the user can withdraw their stake|
+
 
 ### getStakerList
+
+Get the list of all stakers
 
 
 ```solidity
 function getStakerList() external view returns (address[] memory);
 ```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`address[]`|An array of addresses representing all stakers|
+
 
 ### calcRewardAmount
 
-Calculate reward amount with previous reward
+Calculate the VAB reward amount for a user including previous rewards
+
+*When a migration has started returns the outstanding rewards and doesn't generate new rewards*
 
 
 ```solidity
 function calcRewardAmount(address _user) public view returns (uint256);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|The total reward amount for the user|
+
 
 ### __calcProposalTimeIntervals
+
+Calculate the proposal time intervals for a user.
+This function computes the start and end times of all proposals that overlap with the staking period of a user.
+The resulting array includes the user's stake time, the start and end times of the relevant proposals, and the
+current block timestamp.
+
+*The function retrieves proposals from the `propsList` array and checks if their end time is greater than or
+equal to the user's stake time.
+It constructs an array containing the user's stake time, the start and end times of the overlapping proposals,
+and the current block timestamp.*
 
 
 ```solidity
 function __calcProposalTimeIntervals(address _user) public view returns (uint256[] memory times_);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user for whom the proposal time intervals are calculated.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`times_`|`uint256[]`|An array of timestamps representing the proposal time intervals. The array is sorted in ascending order and includes: - The user's stake time at index 0. - The start and end times of the overlapping proposals. - The current block timestamp as the last element.|
+
 
 ### __getProposalVoteCount
+
+Get the count of proposals, votes, and pending votes within a specific time interval for a user.
+This function calculates the number of proposals, the number of votes cast by the user, and the number of pending
+votes within a specified time interval.
+
+*The function iterates through the `propsList` array starting from `minIndex,
+and counts proposals whose creation time falls within the interval [_start, _end].
+It also counts the number of votes cast by the user during this period and pending votes.*
 
 
 ```solidity
@@ -565,110 +812,280 @@ function __getProposalVoteCount(
     view
     returns (uint256, uint256, uint256);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user for whom the vote count is calculated.|
+|`minIndex`|`uint256`|The minimum index of the proposals to consider.|
+|`_start`|`uint256`|The start time of the interval in which the votes are counted.|
+|`_end`|`uint256`|The end time of the interval in which the votes are counted.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|pCount The total number of proposals within the interval.|
+|`<none>`|`uint256`|vCount The number of votes cast by the user within the interval.|
+|`<none>`|`uint256`|pendingVoteCount The number of pending votes within the interval.|
+
 
 ### calcRealizedRewards
 
-Calculate realized rewards
+Calculate the realized rewards for a user
+This function calculates the realized rewards for a user based on the proposals they have voted on and the
+intervals between proposals within the staking period.
 
 
 ```solidity
 function calcRealizedRewards(address _user) public view returns (uint256);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user for whom the realized rewards are being calculated.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|realizeReward The total realized rewards for the user.|
+
 
 ### calcPendingRewards
+
+Calculate the pending rewards for a user
+This function calculates the pending rewards for a user based on the proposals they are yet to vote on within the
+specified intervals between proposals within the staking period.
 
 
 ```solidity
 function calcPendingRewards(address _user) public view returns (uint256);
 ```
+**Parameters**
 
-### getOwnableAddress
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user for whom the pending rewards are being calculated.|
 
+**Returns**
 
-```solidity
-function getOwnableAddress() public view returns (address);
-```
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|pendingReward The total pending rewards for the user.|
 
-### getVoteAddress
-
-
-```solidity
-function getVoteAddress() public view returns (address);
-```
-
-### getVabbleDaoAddress
-
-
-```solidity
-function getVabbleDaoAddress() public view returns (address);
-```
-
-### getPropertyAddress
-
-
-```solidity
-function getPropertyAddress() public view returns (address);
-```
 
 ### stakerCount
+
+Get the count of stakers
 
 
 ```solidity
 function stakerCount() public view returns (uint256);
 ```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|The total number of stakers|
+
+
+### getOwnableAddress
+
+Get the address of the Ownable contract
+
+
+```solidity
+function getOwnableAddress() public view returns (address);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`address`|The address of the Ownable contract|
+
+
+### getVoteAddress
+
+Get the address of the Vote contract
+
+
+```solidity
+function getVoteAddress() public view returns (address);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`address`|The address of the Vote contract|
+
+
+### getVabbleDaoAddress
+
+Get the address of the VabbleDAO contract
+
+
+```solidity
+function getVabbleDaoAddress() public view returns (address);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`address`|The address of the VabbleDAO contract|
+
+
+### getPropertyAddress
+
+Get the address of the Property contract
+
+
+```solidity
+function getPropertyAddress() public view returns (address);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`address`|The address of the Property contract|
+
 
 ### __withdrawReward
 
-*Transfer reward amount*
+*Transfer reward amount to the user and update relevant states
+This function handles the transfer of the reward amount to the user, updates the total reward amount,
+received reward amount, and the user's stake information. It also emits the RewardWithdraw event
+and updates the minimum proposal index for the user.*
 
 
 ```solidity
 function __withdrawReward(uint256 _amount) private;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_amount`|`uint256`|The amount of reward to be withdrawn|
+
 
 ### __updateMinProposalIndex
+
+*Update the minimum proposal index for a user
+This function updates the minimum proposal index for a user by iterating through the proposals
+and finding the first proposal whose end time is greater than or equal to the user's stake time.*
 
 
 ```solidity
 function __updateMinProposalIndex(address _user) private;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user whose minimum proposal index is being updated|
+
 
 ### __stakerSet
+
+*Add a staker to the staker map
+This function adds a staker to the staker map if they are not already present.*
 
 
 ```solidity
 function __stakerSet(address key) private;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`key`|`address`|The address of the staker to be added|
+
 
 ### __stakerRemove
+
+*Remove a staker from the staker map
+This function removes a staker from the staker map if they are present.*
 
 
 ```solidity
 function __stakerRemove(address key) private;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`key`|`address`|The address of the staker to be removed|
+
 
 ### __transferVABWithdraw
 
-*Transfer VAB token to user's withdraw request*
+*Transfer VAB tokens to fulfill a user's withdrawal request on the streaming portal*
 
 
 ```solidity
 function __transferVABWithdraw(address _to) private returns (uint256);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_to`|`address`|The address of the user to whom the VAB tokens are being transferred|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|payAmount The amount of VAB tokens transferred to the user|
+
 
 ### __calcRewards
+
+*Calculate the rewards for a user within a specific time period
+This function calculates the rewards for a user based on their stake amount and the time period specified.
+If the user is a film board member, additional rewards are included.*
 
 
 ```solidity
 function __calcRewards(address _user, uint256 startTime, uint256 endTime) private view returns (uint256 amount_);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_user`|`address`|The address of the user for whom the rewards are being calculated|
+|`startTime`|`uint256`|The start time of the reward calculation period|
+|`endTime`|`uint256`|The end time of the reward calculation period|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`amount_`|`uint256`|The calculated reward amount for the user|
+
 
 ### __rewardPercent
+
+*Calculate the reward percentage based on the staking amount
+This function calculates the reward percentage for a user based on their staking amount
+and the total staking amount.*
 
 
 ```solidity
 function __rewardPercent(uint256 _stakingAmount) private view returns (uint256 percent_);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_stakingAmount`|`uint256`|The amount staked by the user|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`percent_`|`uint256`|The calculated reward percentage for the user|
+
 
 ## Events
 ### TokenStaked
