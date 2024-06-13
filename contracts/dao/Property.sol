@@ -5,13 +5,326 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IVote.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IOwnablee.sol";
+import "../libraries/Helper.sol";
 
+/**
+ * @title Property Contract
+ * @notice This contract manages various governance proposals, including auditor replacement, reward fund allocation,
+ * and film board management. It also manages various property proposals.
+ */
 contract Property is ReentrancyGuard {
+    /*//////////////////////////////////////////////////////////////
+                           TYPE DECLARATIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev This structure contains information related to proposals that update governance properties of the contract.
+     * @param title The title of the proposal
+     * @param description The detailed description of the proposal
+     * @param createTime The timestamp when the proposal was created
+     * @param approveTime The timestamp when the proposal was approved
+     * @param proposalID The unique identifier for the proposal
+     * @param value The proposed new value for the governance property
+     * @param creator The address of the creator of the proposal
+     * @param status The current status of the proposal
+     */
+    struct ProProposal {
+        string title;
+        string description;
+        uint256 createTime;
+        uint256 approveTime;
+        uint256 proposalID;
+        uint256 value;
+        address creator;
+        Helper.Status status;
+    }
+
+    /**
+     * @dev This structure contains information related to governance proposals such as Auditor change, Reward Address
+     * allocation, and Filmboard Member addition or removal.
+     * @param title The title of the proposal
+     * @param description The detailed description of the proposal
+     * @param createTime The timestamp when the proposal was created
+     * @param approveTime The timestamp when the proposal was approved
+     * @param proposalID The unique identifier for the proposal
+     * @param value The proposed new address
+     * @param creator The address of the creator of the proposal
+     * @param status The current status of the proposal
+     */
+    struct GovProposal {
+        string title;
+        string description;
+        uint256 createTime;
+        uint256 approveTime;
+        uint256 proposalID;
+        address value;
+        address creator;
+        Helper.Status status;
+    }
+
+    /**
+     * @dev This structure contains information about an agent in the context of auditor replacement proposals.
+     * @param agent The address of the agent
+     * @param stakeAmount The stake amount of the agent proposal creator
+     */
+    struct Agent {
+        address agent;
+        uint256 stakeAmount;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
+    /// @dev The address of the Ownablee contract
+    address private immutable OWNABLE;
+    /// @dev The address of the Vote contract
+    address private immutable VOTE;
+    /// @dev The address of the StakingPool contract
+    address private immutable STAKING_POOL;
+    /// @dev The address of the UniHelper contract
+    address private immutable UNI_HELPER;
+
+    /**
+     * @dev The address for sending the VAB from StakingPool, EdgePool and StudioPool when a proposal to change the
+     * reward address passed.
+     * This is the address where all of the VAB tokens will be send when calling `StakingPool::withdrawAllFund()`.
+     * This address will be updated to the address that was added in the proposal, once it has been finalized.
+     */
+    address public DAO_FUND_REWARD;
+
+    ///@notice contains the minimum values for each property change
+    uint256[] private minPropertyList;
+
+    ///@notice contains the maximum values for each property change
+    uint256[] private maxPropertyList;
+
+    ///@notice total count of all governance proposals
+    uint256 public governanceProposalCount;
+
+    /// @dev List of agents proposed for replacing the auditor.
+    Agent[] private agentList;
+
+    /// @dev List of addresses proposed for receiving all pool funds (migrations proceess).
+    address[] private rewardAddressList;
+
+    /// @dev List of candidates proposed for the filmBoard.
+    address[] private filmBoardCandidates;
+
+    ///@dev List of current filmBoard members.
+    address[] private filmBoardMembers;
+
+    /**
+     * @dev Whitelist status for governance roles (flag: 1 => agent, 2 => board, 3 => reward).
+     * Maps flag to address and status (0: no, 1: candidate, 2: member).
+     */
+    mapping(uint256 => mapping(address => uint256)) private isGovWhitelist;
+
+    /**
+     * @dev Whitelist status for properties (flag: 1 => agent, 2 => board, 3 => reward).
+     * Maps flag to property and status (0: no, 1: candidate, 2: member).
+     */
+    mapping(uint256 => mapping(uint256 => uint256)) private isPropertyWhitelist;
+
+    /**
+     * @dev Information about governance proposals. Maps flag to proposal index and proposal details.
+     */
+    mapping(uint256 => mapping(uint256 => GovProposal)) private govProposalInfo;
+
+    /**
+     * @dev Information about property proposals. Maps flag to proposal index and proposal details.
+     */
+    mapping(uint256 => mapping(uint256 => ProProposal)) private proProposalInfo;
+
+    /**
+     * @dev List of addresses associated with all governance proposals. Maps flag to address array.
+     */
+    mapping(uint256 => address[]) private allGovProposalInfo;
+
+    /**
+     * @dev Count of governance proposals created by each user. Maps user address to proposal count.
+     */
+    mapping(address => uint256) public userGovProposalCount;
+
+    /*//////////////////////////////////////////////////////////////
+                                PERIODS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice The amount of time a vote for a film proposal is open for
+     * @dev index/flag : 0
+     */
+    uint256 public filmVotePeriod;
+    uint256[] private filmVotePeriodList;
+
+    /**
+     * @notice The amount of time a vote to change the auditor is open for
+     * @dev index/flag : 1
+     */
+    uint256 public agentVotePeriod;
+    uint256[] private agentVotePeriodList;
+
+    /**
+     * @notice The amount of time the dispute period is open for, when a proposal to change the Auditor passed Voting
+     * @dev index/flag : 2
+     */
+    uint256 public disputeGracePeriod;
+    uint256[] private disputeGracePeriodList;
+
+    /**
+     * @notice The amount of time a vote to change a property state is open for
+     * @dev index/flag : 3
+     */
+    uint256 public propertyVotePeriod;
+    uint256[] private propertyVotePeriodList;
+
+    /**
+     * @notice The amount of time VAB tokens are locked when added to the staking pool contract.
+     * @dev index/flag : 4
+     */
+    uint256 public lockPeriod;
+    uint256[] private lockPeriodList;
+
+    /**
+     * @notice The period after the auditor can submit the films reward results
+     * @dev index/flag : 6
+     */
+    uint256 public filmRewardClaimPeriod;
+    uint256[] private filmRewardClaimPeriodList;
+
+    /**
+     * TODO: figure out what this does exactly
+     * @notice The max allowed period for removing filmBoard members
+     * @dev index/flag : 7
+     */
+    uint256 public maxAllowPeriod;
+    uint256[] private maxAllowPeriodList;
+
+    /**
+     * @notice The amount of time a vote to add a film board member is open for
+     * @dev index/flag : 16
+     */
+    uint256 public boardVotePeriod;
+    uint256[] private boardVotePeriodList;
+
+    /**
+     * @notice The amount of time a vote to change the reward address (moving pool funds) is open for
+     * @dev index/flag : 18
+     */
+    uint256 public rewardVotePeriod;
+    uint256[] private rewardVotePeriodList;
+
+    /*//////////////////////////////////////////////////////////////
+                                 RATES
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice The amount of daily rewards for staking
+     * (1% = 1e8, 100% = 1e10)
+     * @dev index/flag : 5
+     */
+    uint256 public rewardRate;
+    uint256[] private rewardRateList;
+
+    /**
+     * @notice The reward rate Film Board members receive on top of normal staking rewards
+     * (1% = 1e8, 100% = 1e10)
+     * @dev index/flag : 20
+     */
+    uint256 public boardRewardRate;
+    uint256[] private boardRewardRateList;
+
+    // @audit -info dead code
+    // uint256 public disputLimitAmount;
+
+    /*//////////////////////////////////////////////////////////////
+                        FEES AND DEPOSIT AMOUNTS
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice The amount to submit a proposal to the DAO
+     * @dev index/flag : 8
+     */
+    uint256 public proposalFeeAmount;
+    uint256[] private proposalFeeAmountList;
+
+    /**
+     * @notice The amount of funding fees the DAO takes for film financing proposal raises.
+     * @dev index/flag : 9
+     */
+    uint256 public fundFeePercent;
+    uint256[] private fundFeePercentList;
+
+    /**
+     * @notice The minimum amount to deposit per individual on film financing proposals.
+     * @dev index/flag : 10
+     */
+    uint256 public minDepositAmount;
+    uint256[] private minDepositAmountList; // 10
+
+    /**
+     * @notice The maximum amount to deposit per individual on film financing proposals.
+     * @dev index/flag : 11
+     */
+    uint256 public maxDepositAmount;
+    uint256[] private maxDepositAmountList;
+
+    /**
+     * TODO: figure out why this is not used anywhere
+     * @notice The maximum percent fee Vab DAO takes for minting an NFT collection.
+     * @dev index/flag : 12
+     */
+    uint256 public maxMintFeePercent;
+    uint256[] private maxMintFeePercentList;
+
+    /**
+     * @notice The monthly fee rate for streaming content on Vabble Streaming.
+     * @dev index/flag : 19
+     */
+    uint256 public subscriptionAmount;
+    uint256[] private subscriptionAmountList;
+
+    /*//////////////////////////////////////////////////////////////
+                    VOTING AND STAKING REQUIREMENTS
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice The minimum amount of people that need to vote for a proposal to pass
+     * @dev This variable represents the threshold count of voters required for a proposal to be considered valid.
+     * @dev index/flag : 13
+     */
+    uint256 public minVoteCount;
+    uint256[] private minVoteCountList;
+
+    /**
+     * @notice The minimum percentage of stakers that need to vote for a proposal to pass
+     * @dev This percentage is used to calculate the required number of stakers based on the total staker count.
+     * @dev index/flag: 14
+     */
+    uint256 public minStakerCountPercent;
+    uint256[] private minStakerCountPercentList;
+
+    /*//////////////////////////////////////////////////////////////
+                                  MISC
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice The amount of VAB a user has to stake in order to create a proposal to change the auditor/reward address
+     * @dev index/flag: 15
+     */
+    uint256 public availableVABAmount;
+    uint256[] private availableVABAmountList;
+
+    /**
+     * @notice The percentage weight Film Board members have in voting on proposals.
+     * @dev index/flag: 17
+     */
+    uint256 public boardVoteWeight;
+    uint256[] private boardVoteWeightList;
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
     event AuditorProposalCreated(address indexed creator, address member, string title, string description);
     event RewardFundProposalCreated(address indexed creator, address member, string title, string description);
     event FilmBoardProposalCreated(address indexed creator, address member, string title, string description);
@@ -20,100 +333,9 @@ contract Property is ReentrancyGuard {
         address indexed creator, uint256 property, uint256 flag, string title, string description
     );
 
-    struct ProProposal {
-        string title; // title
-        string description; // description
-        uint256 createTime; // created timestamp
-        uint256 approveTime; // approved timestamp
-        uint256 proposalID; // ID
-        uint256 value; // property
-        address creator; // creator address
-        Helper.Status status; // status
-    }
-
-    struct GovProposal {
-        string title; // title
-        string description; // description
-        uint256 createTime; // created timestamp
-        uint256 approveTime; // approved timestamp
-        uint256 proposalID; // ID
-        address value; // address
-        address creator; // creator address
-        Helper.Status status; // status
-    }
-
-    struct Agent {
-        address agent; // agent address
-        uint256 stakeAmount; // stake amount of agent proposal creator
-    }
-
-    address private immutable OWNABLE; // Ownablee contract address
-    address private immutable VOTE; // Vote contract address
-    address private immutable STAKING_POOL; // StakingPool contract address
-    address private immutable UNI_HELPER; // UniHelper contract address
-    address public DAO_FUND_REWARD; // address for sending the DAO rewards fund
-
-    uint256 public filmVotePeriod; // 0 - film vote period
-    uint256 public agentVotePeriod; // 1 - vote period for replacing auditor
-    uint256 public disputeGracePeriod; // 2 - grace period for replacing Auditor
-    uint256 public propertyVotePeriod; // 3 - vote period for updating properties
-    uint256 public lockPeriod; // 4 - lock period for staked VAB
-    uint256 public rewardRate; // 5 - day rewards rate => 0.0004%(1% = 1e8, 100% = 1e10)
-    uint256 public filmRewardClaimPeriod; // 6 - period when the auditor can submit the films reward results to be claimed
-    uint256 public maxAllowPeriod; // 7 - max allowed period for removing filmBoard member
-    uint256 public proposalFeeAmount; // 8 - USDC amount($100) studio should pay when create a proposal
-    uint256 public fundFeePercent; // 9 - percent(2% = 2*1e8) of fee on the amount raised
-    uint256 public minDepositAmount; // 10 - USDC min amount($50) that a customer can deposit to a film approved for funding
-    uint256 public maxDepositAmount; // 11 - USDC max amount($5000) that a customer can deposit to a film approved for funding
-    uint256 public maxMintFeePercent; // 12 - 10%(1% = 1e8, 100% = 1e10)
-    uint256 public minVoteCount; // 13 - 5 ppl(minium voter count for approving the proposal)
-    uint256 public minStakerCountPercent; // 14 - percent(5% = 5*1e8)
-    uint256 public availableVABAmount; // 15 - vab amount for replacing the auditor
-    uint256 public boardVotePeriod; // 16 - filmBoard vote period
-    uint256 public boardVoteWeight; // 17 - filmBoard member's vote weight
-    uint256 public rewardVotePeriod; // 18 - withdraw address setup for moving to V2
-    uint256 public subscriptionAmount; // 19 - user need to have an active subscription(pay $1 per month) for rent films.
-    uint256 public boardRewardRate; // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
-    // uint256 public disputLimitAmount;
-
-    uint256[] private maxPropertyList;
-    uint256[] private minPropertyList;
-    uint256 public governanceProposalCount;
-
-    uint256[] private filmVotePeriodList; // 0
-    uint256[] private agentVotePeriodList; // 1
-    uint256[] private disputeGracePeriodList; // 2
-    uint256[] private propertyVotePeriodList; // 3
-    uint256[] private lockPeriodList; // 4
-    uint256[] private rewardRateList; // 5
-    uint256[] private filmRewardClaimPeriodList; // 6
-    uint256[] private maxAllowPeriodList; // 7
-    uint256[] private proposalFeeAmountList; // 8
-    uint256[] private fundFeePercentList; // 9
-    uint256[] private minDepositAmountList; // 10
-    uint256[] private maxDepositAmountList; // 11
-    uint256[] private maxMintFeePercentList; // 12
-    uint256[] private minVoteCountList; // 13
-    uint256[] private minStakerCountPercentList; // 14
-    uint256[] private availableVABAmountList; // 15
-    uint256[] private boardVotePeriodList; // 16
-    uint256[] private boardVoteWeightList; // 17
-    uint256[] private rewardVotePeriodList; // 18
-    uint256[] private subscriptionAmountList; // 19
-    uint256[] private boardRewardRateList; // 20
-
-    Agent[] private agentList; // for replacing auditor
-    address[] private rewardAddressList; // for adding v2 pool address
-    address[] private filmBoardCandidates; // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
-    address[] private filmBoardMembers; // filmBoard members
-
-    // flag=1 =>agent, 2=>board, 3=>reward
-    mapping(uint256 => mapping(address => uint256)) private isGovWhitelist; // (flag => (address => 0: no, 1: candiate, 2: member))
-    mapping(uint256 => mapping(uint256 => uint256)) private isPropertyWhitelist; // (flag => (property => 0: no, 1: candiate, 2: member))
-    mapping(uint256 => mapping(uint256 => GovProposal)) private govProposalInfo; // (flag => (index => Proposal))
-    mapping(uint256 => mapping(uint256 => ProProposal)) private proProposalInfo; // (flag => (index => Proposal))
-    mapping(uint256 => address[]) private allGovProposalInfo; // (flag => address array))
-    mapping(address => uint256) public userGovProposalCount; // (user => created governance-proposal count)
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
     modifier onlyVote() {
         require(msg.sender == VOTE, "caller is not the vote contract");
@@ -134,6 +356,14 @@ contract Property is ReentrancyGuard {
         require(IStakingPool(STAKING_POOL).getStakeAmount(msg.sender) >= availableVABAmount, "Not major");
         _;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                               FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     constructor(address _ownable, address _uniHelper, address _vote, address _staking) {
         require(_ownable != address(0), "ownable: zero address");
@@ -169,7 +399,8 @@ contract Property is ReentrancyGuard {
         maxDepositAmount = 5000 * (10 ** IERC20Metadata(usdcToken).decimals()); // amount in cash(usd dollar - $5000)
         availableVABAmount = 50 * 1e6 * (10 ** IERC20Metadata(vabToken).decimals()); // 50M
         // disputLimitAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals());    // 75M
-        subscriptionAmount = 299 * (10 ** IERC20Metadata(usdcToken).decimals()) / 100; // amount in cash(usd dollar - $2.99)
+        subscriptionAmount = 299 * (10 ** IERC20Metadata(usdcToken).decimals()) / 100; // amount in cash(usd dollar -
+            // $2.99)
         minVoteCount = 1; //5;
 
         minPropertyList = [
@@ -221,9 +452,17 @@ contract Property is ReentrancyGuard {
         ];
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                EXTERNAL
+    //////////////////////////////////////////////////////////////*/
+
     /// =================== proposals for replacing auditor ==============
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
-    function proposalAuditor(address _agent, string memory _title, string memory _description)
+    function proposalAuditor(
+        address _agent,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyMajor
         nonReentrant
@@ -270,7 +509,11 @@ contract Property is ReentrancyGuard {
     }
 
     // =================== DAO fund rewards proposal ====================
-    function proposalRewardFund(address _rewardAddress, string memory _title, string memory _description)
+    function proposalRewardFund(
+        address _rewardAddress,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyMajor
         nonReentrant
@@ -301,7 +544,11 @@ contract Property is ReentrancyGuard {
 
     // =================== FilmBoard proposal ====================
     /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
-    function proposalFilmBoard(address _member, string memory _title, string memory _description)
+    function proposalFilmBoard(
+        address _member,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyStaker
         nonReentrant
@@ -343,69 +590,14 @@ contract Property is ReentrancyGuard {
         emit FilmBoardMemberRemoved(msg.sender, _member);
     }
 
-    function __removeBoardMember(address _member) private {
-        for (uint256 k = 0; k < filmBoardMembers.length; k++) {
-            if (_member == filmBoardMembers[k]) {
-                filmBoardMembers[k] = filmBoardMembers[filmBoardMembers.length - 1];
-                filmBoardMembers.pop();
-                break;
-            }
-        }
-    }
-
-    /// @notice Get gov address list
-    // (1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
-    function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
-        require(_flag != 0 && _flag < 5, "bad flag");
-
-        if (_flag == 1) {
-            address[] memory list = new address[](agentList.length);
-            for (uint256 k = 0; k < agentList.length; k++) {
-                list[k] = agentList[k].agent;
-            }
-            return list;
-        } else if (_flag == 2) {
-            return filmBoardCandidates;
-        } else if (_flag == 3) {
-            return rewardAddressList;
-        } else {
-            return filmBoardMembers;
-        }
-    }
-
-    /// @notice Get agent list
-    function getAgentProposerStakeAmount(uint256 _index) external view returns (uint256) {
-        return agentList[_index].stakeAmount;
-    }
-
-    /// @notice Get govProposalInfo(agent=>1, board=>2, pool=>3)
-    function getGovProposalInfo(uint256 _index, uint256 _flag)
-        external
-        view
-        returns (uint256, uint256, uint256, address, address, Helper.Status)
-    {
-        GovProposal memory rp = govProposalInfo[_flag][_index];
-        uint256 cTime_ = rp.createTime;
-        uint256 aTime_ = rp.approveTime;
-        uint256 pID_ = rp.proposalID;
-        address value_ = rp.value;
-        address creator_ = rp.creator;
-        Helper.Status status_ = rp.status;
-
-        return (cTime_, aTime_, pID_, value_, creator_, status_);
-    }
-
-    function getGovProposalStr(uint256 _index, uint256 _flag) external view returns (string memory, string memory) {
-        GovProposal memory rp = govProposalInfo[_flag][_index];
-        string memory title_ = rp.title;
-        string memory desc_ = rp.description;
-
-        return (title_, desc_);
-    }
-
     // ===================properties proposal ====================
     /// @notice proposals for properties
-    function proposalProperty(uint256 _property, uint256 _flag, string memory _title, string memory _description)
+    function proposalProperty(
+        uint256 _property,
+        uint256 _flag,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyStaker
         nonReentrant
@@ -520,60 +712,6 @@ contract Property is ReentrancyGuard {
         emit PropertyProposalCreated(msg.sender, _property, _flag, _title, _description);
     }
 
-    /// @notice Get property proposal list
-    function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list) {
-        if (_flag == 0) _list = filmVotePeriodList;
-        else if (_flag == 1) _list = agentVotePeriodList;
-        else if (_flag == 2) _list = disputeGracePeriodList;
-        else if (_flag == 3) _list = propertyVotePeriodList;
-        else if (_flag == 4) _list = lockPeriodList;
-        else if (_flag == 5) _list = rewardRateList;
-        else if (_flag == 6) _list = filmRewardClaimPeriodList;
-        else if (_flag == 7) _list = maxAllowPeriodList;
-        else if (_flag == 8) _list = proposalFeeAmountList;
-        else if (_flag == 9) _list = fundFeePercentList;
-        else if (_flag == 10) _list = minDepositAmountList;
-        else if (_flag == 11) _list = maxDepositAmountList;
-        else if (_flag == 12) _list = maxMintFeePercentList;
-        else if (_flag == 13) _list = minVoteCountList;
-        else if (_flag == 14) _list = minStakerCountPercentList;
-        else if (_flag == 15) _list = availableVABAmountList;
-        else if (_flag == 16) _list = boardVotePeriodList;
-        else if (_flag == 17) _list = boardVoteWeightList;
-        else if (_flag == 18) _list = rewardVotePeriodList;
-        else if (_flag == 19) _list = subscriptionAmountList;
-        else if (_flag == 20) _list = boardRewardRateList;
-    }
-
-    /// @notice Get property proposal created time
-    function getPropertyProposalInfo(uint256 _index, uint256 _flag)
-        external
-        view
-        returns (uint256, uint256, uint256, uint256, address, Helper.Status)
-    {
-        ProProposal memory rp = proProposalInfo[_flag][_index];
-        uint256 cTime_ = rp.createTime;
-        uint256 aTime_ = rp.approveTime;
-        uint256 pID_ = rp.proposalID;
-        uint256 value_ = rp.value;
-        address creator_ = rp.creator;
-        Helper.Status status_ = rp.status;
-
-        return (cTime_, aTime_, pID_, value_, creator_, status_);
-    }
-
-    function getPropertyProposalStr(uint256 _index, uint256 _flag)
-        external
-        view
-        returns (string memory, string memory)
-    {
-        ProProposal memory rp = proProposalInfo[_flag][_index];
-        string memory title_ = rp.title;
-        string memory desc_ = rp.description;
-
-        return (title_, desc_);
-    }
-
     function updatePropertyProposal(uint256 _index, uint256 _flag, uint256 _approveStatus) external onlyVote {
         uint256 property = proProposalInfo[_flag][_index].value;
 
@@ -641,7 +779,10 @@ contract Property is ReentrancyGuard {
         uint256 _index,
         uint256 _flag, // 1=>agent, 2=>board, 3=>pool
         uint256 _approveStatus // 1/0
-    ) external onlyVote {
+    )
+        external
+        onlyVote
+    {
         address member = govProposalInfo[_flag][_index].value;
 
         // update approve time
@@ -671,6 +812,94 @@ contract Property is ReentrancyGuard {
         }
     }
 
+    /// @notice Get gov address list
+    // (1=>agentList, 2=>boardCandidateList, 3=>rewardAddressList, 4=>rest=>boardMemberList)
+    function getGovProposalList(uint256 _flag) external view returns (address[] memory) {
+        require(_flag != 0 && _flag < 5, "bad flag");
+
+        if (_flag == 1) {
+            address[] memory list = new address[](agentList.length);
+            for (uint256 k = 0; k < agentList.length; k++) {
+                list[k] = agentList[k].agent;
+            }
+            return list;
+        } else if (_flag == 2) {
+            return filmBoardCandidates;
+        } else if (_flag == 3) {
+            return rewardAddressList;
+        } else {
+            return filmBoardMembers;
+        }
+    }
+
+    /// @notice Get agent list
+    function getAgentProposerStakeAmount(uint256 _index) external view returns (uint256) {
+        return agentList[_index].stakeAmount;
+    }
+
+    /// @notice Get govProposalInfo(agent=>1, board=>2, pool=>3)
+    function getGovProposalInfo(
+        uint256 _index,
+        uint256 _flag
+    )
+        external
+        view
+        returns (uint256, uint256, uint256, address, address, Helper.Status)
+    {
+        GovProposal memory rp = govProposalInfo[_flag][_index];
+        uint256 cTime_ = rp.createTime;
+        uint256 aTime_ = rp.approveTime;
+        uint256 pID_ = rp.proposalID;
+        address value_ = rp.value;
+        address creator_ = rp.creator;
+        Helper.Status status_ = rp.status;
+
+        return (cTime_, aTime_, pID_, value_, creator_, status_);
+    }
+
+    function getGovProposalStr(uint256 _index, uint256 _flag) external view returns (string memory, string memory) {
+        GovProposal memory rp = govProposalInfo[_flag][_index];
+        string memory title_ = rp.title;
+        string memory desc_ = rp.description;
+
+        return (title_, desc_);
+    }
+
+    /// @notice Get property proposal created time
+    function getPropertyProposalInfo(
+        uint256 _index,
+        uint256 _flag
+    )
+        external
+        view
+        returns (uint256, uint256, uint256, uint256, address, Helper.Status)
+    {
+        ProProposal memory rp = proProposalInfo[_flag][_index];
+        uint256 cTime_ = rp.createTime;
+        uint256 aTime_ = rp.approveTime;
+        uint256 pID_ = rp.proposalID;
+        uint256 value_ = rp.value;
+        address creator_ = rp.creator;
+        Helper.Status status_ = rp.status;
+
+        return (cTime_, aTime_, pID_, value_, creator_, status_);
+    }
+
+    function getPropertyProposalStr(
+        uint256 _index,
+        uint256 _flag
+    )
+        external
+        view
+        returns (string memory, string memory)
+    {
+        ProProposal memory rp = proProposalInfo[_flag][_index];
+        string memory title_ = rp.title;
+        string memory desc_ = rp.description;
+
+        return (title_, desc_);
+    }
+
     function checkGovWhitelist(uint256 _flag, address _address) external view returns (uint256) {
         return isGovWhitelist[_flag][_address];
     }
@@ -681,5 +910,48 @@ contract Property is ReentrancyGuard {
 
     function getAllGovProposalInfo(uint256 _flag) external view returns (address[] memory) {
         return allGovProposalInfo[_flag];
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 PUBLIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Get property proposal list
+    function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list) {
+        if (_flag == 0) _list = filmVotePeriodList;
+        else if (_flag == 1) _list = agentVotePeriodList;
+        else if (_flag == 2) _list = disputeGracePeriodList;
+        else if (_flag == 3) _list = propertyVotePeriodList;
+        else if (_flag == 4) _list = lockPeriodList;
+        else if (_flag == 5) _list = rewardRateList;
+        else if (_flag == 6) _list = filmRewardClaimPeriodList;
+        else if (_flag == 7) _list = maxAllowPeriodList;
+        else if (_flag == 8) _list = proposalFeeAmountList;
+        else if (_flag == 9) _list = fundFeePercentList;
+        else if (_flag == 10) _list = minDepositAmountList;
+        else if (_flag == 11) _list = maxDepositAmountList;
+        else if (_flag == 12) _list = maxMintFeePercentList;
+        else if (_flag == 13) _list = minVoteCountList;
+        else if (_flag == 14) _list = minStakerCountPercentList;
+        else if (_flag == 15) _list = availableVABAmountList;
+        else if (_flag == 16) _list = boardVotePeriodList;
+        else if (_flag == 17) _list = boardVoteWeightList;
+        else if (_flag == 18) _list = rewardVotePeriodList;
+        else if (_flag == 19) _list = subscriptionAmountList;
+        else if (_flag == 20) _list = boardRewardRateList;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PRIVATE
+    //////////////////////////////////////////////////////////////*/
+
+    function __removeBoardMember(address _member) private {
+        for (uint256 k = 0; k < filmBoardMembers.length; k++) {
+            if (_member == filmBoardMembers[k]) {
+                filmBoardMembers[k] = filmBoardMembers[filmBoardMembers.length - 1];
+                filmBoardMembers.pop();
+                break;
+            }
+        }
     }
 }

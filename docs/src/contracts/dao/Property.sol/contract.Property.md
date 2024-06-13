@@ -1,12 +1,17 @@
 # Property
-[Git Source](https://github.com/Mill1995/VABDAO/blob/6b2692eb00242bb9bb0e30b4b8c33940feb51fa0/contracts/dao/Property.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/da329adf87a2070b031772816f2c7bd185e5f213/contracts/dao/Property.sol)
 
 **Inherits:**
 ReentrancyGuard
 
+This contract manages various governance proposals, including auditor replacement, reward fund allocation,
+and film board management. It also manages various property proposals.
+
 
 ## State Variables
 ### OWNABLE
+*The address of the Ownablee contract*
+
 
 ```solidity
 address private immutable OWNABLE;
@@ -14,6 +19,8 @@ address private immutable OWNABLE;
 
 
 ### VOTE
+*The address of the Vote contract*
+
 
 ```solidity
 address private immutable VOTE;
@@ -21,6 +28,8 @@ address private immutable VOTE;
 
 
 ### STAKING_POOL
+*The address of the StakingPool contract*
+
 
 ```solidity
 address private immutable STAKING_POOL;
@@ -28,6 +37,8 @@ address private immutable STAKING_POOL;
 
 
 ### UNI_HELPER
+*The address of the UniHelper contract*
+
 
 ```solidity
 address private immutable UNI_HELPER;
@@ -35,6 +46,11 @@ address private immutable UNI_HELPER;
 
 
 ### DAO_FUND_REWARD
+*The address for sending the VAB from StakingPool, EdgePool and StudioPool when a proposal to change the
+reward address passed.
+This is the address where all of the VAB tokens will be send when calling `StakingPool::withdrawAllFund()`.
+This address will be updated to the address that was added in the proposal, once it has been finalized.*
+
 
 ```solidity
 address public DAO_FUND_REWARD;
@@ -528,11 +544,35 @@ Remove a member from whitelist if he didn't vote to any propsoal for over 3 mont
 function removeFilmBoardMember(address _member) external onlyStaker nonReentrant;
 ```
 
-### __removeBoardMember
+### proposalProperty
+
+proposals for properties
 
 
 ```solidity
-function __removeBoardMember(address _member) private;
+function proposalProperty(
+    uint256 _property,
+    uint256 _flag,
+    string memory _title,
+    string memory _description
+)
+    external
+    onlyStaker
+    nonReentrant;
+```
+
+### updatePropertyProposal
+
+
+```solidity
+function updatePropertyProposal(uint256 _index, uint256 _flag, uint256 _approveStatus) external onlyVote;
+```
+
+### updateGovProposal
+
+
+```solidity
+function updateGovProposal(uint256 _index, uint256 _flag, uint256 _approveStatus) external onlyVote;
 ```
 
 ### getGovProposalList
@@ -575,32 +615,6 @@ function getGovProposalInfo(
 function getGovProposalStr(uint256 _index, uint256 _flag) external view returns (string memory, string memory);
 ```
 
-### proposalProperty
-
-proposals for properties
-
-
-```solidity
-function proposalProperty(
-    uint256 _property,
-    uint256 _flag,
-    string memory _title,
-    string memory _description
-)
-    external
-    onlyStaker
-    nonReentrant;
-```
-
-### getPropertyProposalList
-
-Get property proposal list
-
-
-```solidity
-function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list);
-```
-
 ### getPropertyProposalInfo
 
 Get property proposal created time
@@ -623,20 +637,6 @@ function getPropertyProposalInfo(
 function getPropertyProposalStr(uint256 _index, uint256 _flag) external view returns (string memory, string memory);
 ```
 
-### updatePropertyProposal
-
-
-```solidity
-function updatePropertyProposal(uint256 _index, uint256 _flag, uint256 _approveStatus) external onlyVote;
-```
-
-### updateGovProposal
-
-
-```solidity
-function updateGovProposal(uint256 _index, uint256 _flag, uint256 _approveStatus) external onlyVote;
-```
-
 ### checkGovWhitelist
 
 
@@ -656,6 +656,22 @@ function checkPropertyWhitelist(uint256 _flag, uint256 _property) external view 
 
 ```solidity
 function getAllGovProposalInfo(uint256 _flag) external view returns (address[] memory);
+```
+
+### getPropertyProposalList
+
+Get property proposal list
+
+
+```solidity
+function getPropertyProposalList(uint256 _flag) public view returns (uint256[] memory _list);
+```
+
+### __removeBoardMember
+
+
+```solidity
+function __removeBoardMember(address _member) private;
 ```
 
 ## Events
@@ -693,6 +709,8 @@ event PropertyProposalCreated(
 
 ## Structs
 ### ProProposal
+*This structure contains information related to proposals that update governance properties of the contract.*
+
 
 ```solidity
 struct ProProposal {
@@ -707,7 +725,23 @@ struct ProProposal {
 }
 ```
 
+**Properties**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`title`|`string`|The title of the proposal|
+|`description`|`string`|The detailed description of the proposal|
+|`createTime`|`uint256`|The timestamp when the proposal was created|
+|`approveTime`|`uint256`|The timestamp when the proposal was approved|
+|`proposalID`|`uint256`|The unique identifier for the proposal|
+|`value`|`uint256`|The proposed new value for the governance property|
+|`creator`|`address`|The address of the creator of the proposal|
+|`status`|`Helper.Status`|The current status of the proposal|
+
 ### GovProposal
+*This structure contains information related to governance proposals such as Auditor change, Reward Address
+allocation, and Filmboard Member addition or removal.*
+
 
 ```solidity
 struct GovProposal {
@@ -722,7 +756,22 @@ struct GovProposal {
 }
 ```
 
+**Properties**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`title`|`string`|The title of the proposal|
+|`description`|`string`|The detailed description of the proposal|
+|`createTime`|`uint256`|The timestamp when the proposal was created|
+|`approveTime`|`uint256`|The timestamp when the proposal was approved|
+|`proposalID`|`uint256`|The unique identifier for the proposal|
+|`value`|`address`|The proposed new address|
+|`creator`|`address`|The address of the creator of the proposal|
+|`status`|`Helper.Status`|The current status of the proposal|
+
 ### Agent
+*This structure contains information about an agent in the context of auditor replacement proposals.*
+
 
 ```solidity
 struct Agent {
@@ -730,4 +779,11 @@ struct Agent {
     uint256 stakeAmount;
 }
 ```
+
+**Properties**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`agent`|`address`|The address of the agent|
+|`stakeAmount`|`uint256`|The stake amount of the agent proposal creator|
 
