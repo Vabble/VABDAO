@@ -13,8 +13,44 @@ import "../libraries/Helper.sol";
 
 /**
  * @title Property Contract
- * @notice This contract manages governance proposals, including auditor replacement, reward fund allocation,
- * and film board management. It also manages property proposals.
+ * @notice This contract manages various types of governance and property proposals
+ *         within a decentralized autonomous organization (DAO). It facilitates
+ *         proposals related to governance changes, property settings, and membership
+ *         adjustments for different roles within the organization.
+ *
+ * @dev The contract allows major stakeholders and stakers to propose and vote on
+ *      changes that impact the organization's governance, including adding or
+ *      replacing auditors, adding new film board members, and modifying various
+ *      operational parameters such as voting periods, fee amounts, and reward rates.
+ *
+ * @dev Major stakeholders, identified as those staking a significant amount of the
+ *      organization's native token (VAB), have exclusive rights to propose changes
+ *      such as adding auditors or modifying reward fund addresses.
+ *
+ * @dev Stakers, who hold tokens and participate in the organization's activities,
+ *      can propose changes related to the film board membership and various other properties.
+ *      They can also initiate the removal of film board members based on inactivity criteria.
+ *
+ * @dev The contract ensures that proposals are paid for using a fee mechanism,
+ *      converting USDC tokens to VAB tokens via Uniswap. This fee is essential for
+ *      incentivizing serious proposals and ensuring they are adequately funded.
+ *
+ * @dev Governance proposals and property proposals are tracked separately, with
+ *      detailed information stored for each proposal type. This includes creation
+ *      timestamps, approval statuses, proposal IDs, proposer addresses, and more.
+ *
+ * @dev Functions in this contract are restricted to specific roles (onlyMajor,
+ *      onlyStaker) to maintain security and prevent unauthorized access to critical
+ *      functions such as proposal creation, voting status updates, and membership
+ *      adjustments.
+ *
+ * @dev Additionally, the contract provides public and external functions for querying
+ *      proposal details, checking whitelist statuses of addresses and properties,
+ *      and retrieving lists of active governance proposals and property proposals.
+ *
+ * @dev This contract forms a crucial part of the DAO's governance framework, ensuring
+ *      that decisions are made transparently, securely, and in accordance with the
+ *      organization's operational needs and community consensus.
  */
 contract Property is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////

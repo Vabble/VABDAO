@@ -6,18 +6,41 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "../libraries/Helper.sol";
-import "../libraries/Arrays.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
+import "../libraries/Helper.sol";
+import "../libraries/Arrays.sol";
 
 /**
- * @title StakingPool contract
- * @notice This contract allows users to stake VAB tokens to receive rewards
- * based on the amount staked and the duration of the stake.
- * Users must also vote on proposals (Governance/Film) to receive all rewards accordingly.
- * This contract is also responsible to receive VAB tokens from the Streaming Portal used to pay for watching films.
+ * @title StakingPool Contract
+ * @notice This contract manages a staking pool where users can stake VAB tokens to earn rewards based on their staked
+ * amount and participation in governance activities.
+ *
+ * The contract handles staking, unstaking, calculating rewards, and distributing rewards to stakers.
+ * It also facilitates  participation in governance by allowing stakers to vote on proposals and earn rewards based on
+ * their voting activities.
+ *
+ * Stakers can:
+ * - Stake VAB tokens to participate in the staking pool.
+ * - Earn rewards based on the amount staked and their participation in governance activities such as voting on
+ * proposals.
+ * - Unstake their tokens after a lock period to withdraw their staked amount and any earned rewards.
+ * - Vote on proposals submitted to the governance system, this includes governance and film proposals.
+ *
+ * The contract calculates rewards based on the staking period, the amount staked, and the user's participation in
+ * governance.
+ *
+ * During a migration process, stakers can withdraw their staked tokens and any accrued rewards without earning new
+ * rewards until the migration is complete.
+ * The contract ensures that stakers can safely withdraw their funds during this period
+ * while maintaining the integrity of the staking pool and ongoing governance activities.
+ *
+ * Stakers are informed about the migration status, allowing them to make informed decisions regarding their staked
+ * amounts and participation in governance activities.
+ *
+ * This contract plays a critical role in the Vabble ecosystem by providing a secure and efficient platform for staking
+ * VAB tokens for participating in governance decisions and earning rewards.
  */
 contract StakingPool is ReentrancyGuard {
     using Counters for Counters.Counter;
