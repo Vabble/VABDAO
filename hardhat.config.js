@@ -1,10 +1,7 @@
-const { utils } = require("ethers")
-
 require("dotenv").config()
 require("@nomiclabs/hardhat-waffle")
 require("hardhat-deploy")
 require("hardhat-deploy-ethers")
-require("@nomicfoundation/hardhat-foundry")
 
 if (process.env.NETWORK == "polygonAmoy") {
     require("@nomicfoundation/hardhat-verify")
@@ -16,16 +13,7 @@ require("hardhat-contract-sizer")
 require("hardhat-gas-reporter")
 require("solidity-coverage")
 require("@nomicfoundation/hardhat-network-helpers")
-
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners()
-
-    for (const account of accounts) {
-        console.log(account.address)
-    }
-})
-
-console.log("Hardhat config Network: ", process.env.NETWORK)
+require("@nomicfoundation/hardhat-foundry")
 
 const alchemy_key = process.env.ALCHEMY_KEY
 const etherScan_api_key = process.env.ETHER_SCAN_API_KEY
@@ -45,10 +33,6 @@ if (process.env.NETWORK == "polygonAmoy") {
     local_rpc_url = `https://rpc-amoy.polygon.technology/`
 }
 
-if (process.env.NETWORK == "baseSepolia") {
-    local_rpc_url = `https://sepolia.base.org/`
-}
-
 const chainIds = {
     ganache: 1337,
     goerli: 5,
@@ -57,17 +41,15 @@ const chainIds = {
     mainnet: 1,
     rinkeby: 4,
     ropsten: 3,
-    bscTest: 97, // BSC testnet
-    bscMain: 56, // BSC mainnet
-    mumbai: 80001, // Polygon testnet
-    amoy: 80002, // Amoy testnet
-    baseSepolia: 84532, // Sepolia testnet
-    base: 8453, // Base mainnet
-    matic: 137, // Polygon mainnet
-    fuji: 43113, // Avalance testnet
-    avax: 43114, // Avalance mainnet
+    bscTest: 97,
+    bscMain: 56,
+    mumbai: 80001,
+    amoy: 80002,
+    baseSepolia: 84532,
+    matic: 137,
+    fuji: 43113,
+    avax: 43114,
 }
-
 if (!mnemonic || !alchemy_key) {
     throw new Error("Please set your data in a .env file")
 }
@@ -89,27 +71,19 @@ module.exports = {
     },
     networks: {
         hardhat: {
+            blockConfirmations: 1,
             allowUnlimitedContractSize: true,
-            chainId: chainIds.ganache,
+            chainId: chainIds.baseSepolia,
             saveDeployments: true,
             forking: {
                 // blockNumber: 11328709,
-                url: local_rpc_url,
+                url: `https://sepolia.base.org/`,
             },
             accounts: {
                 mnemonic,
             },
-            // accounts: [
-            //   {
-            //     privateKey: privateKey,
-            //     balance: "1000000000000000000000000000"
-            //   }
-            // ],
-
             gasPrice: 22500000000,
             gasMultiplier: 2,
-            // throwOnTransactionFailures: true,
-            // blockGasLimit: 1245000000
             blockGasLimit: 3245000000,
         },
         // Ethereum mainnet
@@ -178,14 +152,6 @@ module.exports = {
             saveDeployments: true,
             gasPrice: 22500000000,
             gasMultiplier: 2,
-        },
-        // Base mainnet
-        base: {
-            url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
-            chainId: chainIds.base,
-            accounts: [privateKey],
-            live: true,
-            saveDeployments: true,
         },
         // Polygon mainnet
         matic: {

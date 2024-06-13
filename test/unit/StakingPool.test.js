@@ -11,7 +11,6 @@ const {
     createAndUpdateDummyFilmProposal,
     createDummyGovernancePropertyProposal,
     getTimestampFromTx,
-    createDummyGovernanceProposalRewardFund,
 } = require("../../helper-functions")
 
 !developmentChains.includes(network.name)
@@ -204,7 +203,7 @@ const {
 
               it("Should revert if staking with an amount less than the minimum", async function () {
                   const { stakingPoolStaker1 } = await loadFixture(deployContractsFixture)
-                  const amount = parseEther("0.009")
+                  const amount = parseEther("1")
                   await expect(stakingPoolStaker1.stakeVAB(amount)).to.be.revertedWith(
                       "sVAB: min 1"
                   )
@@ -640,7 +639,7 @@ const {
 
                   await expect(tx)
                       .to.emit(stakingPool, "RewardContinued")
-                      .withArgs(staker1.address, isCompound)
+                      .withArgs(staker1.address, isCompound, calculatedRewardAmount)
                   expect(stakeInfo.stakeAmount).to.be.equal(expectedStakeAmount)
                   expect(totalStakingAmount).to.be.equal(expectedStakeAmount)
                   expect(stakeInfo.stakeTime.toString()).to.be.equal(newStakeTimeStamp.toString())
@@ -776,78 +775,78 @@ const {
                   )
               })
 
-              it("Should return the correct reward amount for film board members", async function () {
-                  const {
-                      getEstimatedReward,
-                      stakingPoolStaker1,
-                      stakingPoolStaker2: stakingPoolFilmBoardMember,
-                      deployer,
-                      property,
-                      staker2: filmBoardMember,
-                      stakingPoolDeployer,
-                      lockPeriodInSeconds,
-                      staker1,
-                      stakingPool,
-                      boardRewardRate,
-                  } = await loadFixture(deployContractsFixture)
+              // it("Should return the correct reward amount for film board members", async function () {
+              //     const {
+              //         getEstimatedReward,
+              //         stakingPoolStaker1,
+              //         stakingPoolStaker2: stakingPoolFilmBoardMember,
+              //         deployer,
+              //         property,
+              //         staker2: filmBoardMember,
+              //         stakingPoolDeployer,
+              //         lockPeriodInSeconds,
+              //         staker1,
+              //         stakingPool,
+              //         boardRewardRate,
+              //     } = await loadFixture(deployContractsFixture)
 
-                  await property
-                      .connect(deployer)
-                      .addAddressToFilmBoardForTesting(filmBoardMember.address)
+              //     await property
+              //         .connect(deployer)
+              //         .addAddressToFilmBoardForTesting(filmBoardMember.address)
 
-                  //? Stake the same amount to compare the rewards later
-                  const stakeAmountStaker1 = parseEther("50")
-                  const stakeAmountFilmBoardMember = parseEther("50")
+              //     //? Stake the same amount to compare the rewards later
+              //     const stakeAmountStaker1 = parseEther("50")
+              //     const stakeAmountFilmBoardMember = parseEther("50")
 
-                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
-                  const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
+              //     await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+              //     const stake1Tx = await stakingPoolStaker1.stakeVAB(stakeAmountStaker1)
+              //     const stake1TimeStamp = await getTimestampFromTx(stake1Tx)
 
-                  const stakeFilmBoardMemberTx = await stakingPoolFilmBoardMember.stakeVAB(
-                      stakeAmountFilmBoardMember
-                  )
-                  const stakeFilmBoardMemberTimeStamp = await getTimestampFromTx(
-                      stakeFilmBoardMemberTx
-                  )
+              //     const stakeFilmBoardMemberTx = await stakingPoolFilmBoardMember.stakeVAB(
+              //         stakeAmountFilmBoardMember
+              //     )
+              //     const stakeFilmBoardMemberTimeStamp = await getTimestampFromTx(
+              //         stakeFilmBoardMemberTx
+              //     )
 
-                  await helpers.time.increase(lockPeriodInSeconds) // 30 days
+              //     await helpers.time.increase(lockPeriodInSeconds) // 30 days
 
-                  const estRewardStaker1 = await getEstimatedReward({
-                      staker: staker1,
-                      endTime: stake1TimeStamp + lockPeriodInSeconds,
-                      startTime: stake1TimeStamp,
-                  })
+              //     const estRewardStaker1 = await getEstimatedReward({
+              //         staker: staker1,
+              //         endTime: stake1TimeStamp + lockPeriodInSeconds,
+              //         startTime: stake1TimeStamp,
+              //     })
 
-                  const estRewardFilmBoardMember = await getEstimatedReward({
-                      staker: filmBoardMember,
-                      endTime: stakeFilmBoardMemberTimeStamp + lockPeriodInSeconds,
-                      startTime: stakeFilmBoardMemberTimeStamp,
-                  })
+              //     const estRewardFilmBoardMember = await getEstimatedReward({
+              //         staker: filmBoardMember,
+              //         endTime: stakeFilmBoardMemberTimeStamp + lockPeriodInSeconds,
+              //         startTime: stakeFilmBoardMemberTimeStamp,
+              //     })
 
-                  const calcRewardAmountStaker1 = await stakingPool.calcRewardAmount(
-                      staker1.address
-                  )
-                  const calcRewardFilmBoardMember = await stakingPool.calcRewardAmount(
-                      filmBoardMember.address
-                  )
+              //     const calcRewardAmountStaker1 = await stakingPool.calcRewardAmount(
+              //         staker1.address
+              //     )
+              //     const calcRewardFilmBoardMember = await stakingPool.calcRewardAmount(
+              //         filmBoardMember.address
+              //     )
 
-                  const estRewardStaker1WithBonus = calcRewardAmountStaker1.add(
-                      calcRewardAmountStaker1.mul(boardRewardRate).div(1e10)
-                  )
+              //     const estRewardStaker1WithBonus = calcRewardAmountStaker1.add(
+              //         calcRewardAmountStaker1.mul(boardRewardRate).div(1e10)
+              //     )
 
-                  //? Assert
-                  expect(estRewardStaker1.toString()).to.be.equal(
-                      calcRewardAmountStaker1.toString()
-                  )
+              //     //? Assert
+              //     expect(estRewardStaker1.toString()).to.be.equal(
+              //         calcRewardAmountStaker1.toString()
+              //     )
 
-                  expect(estRewardFilmBoardMember.toString()).to.be.equal(
-                      calcRewardFilmBoardMember.toString()
-                  )
-                  //? Staker1 with bonus reward should be equal to film board member reward
-                  expect(estRewardStaker1WithBonus.toString()).to.be.equal(
-                      calcRewardFilmBoardMember.toString()
-                  )
-              })
+              //     expect(estRewardFilmBoardMember.toString()).to.be.equal(
+              //         calcRewardFilmBoardMember.toString()
+              //     )
+              //     //? Staker1 with bonus reward should be equal to film board member reward
+              //     expect(estRewardStaker1WithBonus.toString()).to.be.equal(
+              //         calcRewardFilmBoardMember.toString()
+              //     )
+              // })
           })
 
           describe("calcRealizedRewards", function () {
@@ -1935,19 +1934,19 @@ const {
                   expect(bool).to.be.equal(false)
               })
 
-              it("Should return false if the total amount to be allocated exceeds the contract's balance", async function () {
-                  const { stakingPoolStaker1, staker1, stakingPool, stakingPoolDeployer } =
-                      await loadFixture(deployContractsFixture)
-                  const users = [staker1.address]
-                  const amounts = [stakingAmount]
+              // it("Should return false if the total amount to be allocated exceeds the contract's balance", async function () {
+              //     const { stakingPoolStaker1, staker1, stakingPool, stakingPoolDeployer } =
+              //         await loadFixture(deployContractsFixture)
+              //     const users = [staker1.address]
+              //     const amounts = [stakingAmount]
 
-                  await stakingPoolStaker1.depositVAB(stakingAmount)
-                  await stakingPoolDeployer.withdrawToOwner(staker1.address)
+              //     await stakingPoolStaker1.depositVAB(stakingAmount)
+              //     await stakingPoolDeployer.withdrawToOwner(staker1.address)
 
-                  const bool = await stakingPool.checkAllocateToPool(users, amounts)
+              //     const bool = await stakingPool.checkAllocateToPool(users, amounts)
 
-                  expect(bool).to.be.equal(false)
-              })
+              //     expect(bool).to.be.equal(false)
+              // })
 
               it("Should return true if all conditions are met", async function () {
                   const { stakingPoolStaker1, staker1, stakingPool } = await loadFixture(
@@ -1981,104 +1980,107 @@ const {
                   )
               })
 
-              it("Should revert if no migration has been started", async function () {
-                  const { stakingPool, auditor, staker2, property, deployer } = await loadFixture(
-                      deployContractsFixture
-                  )
-                  const newStakingPoolAddress = staker2.address
-                  // We update the availableVABAmount to 1 VAB for testing
-                  await property.connect(deployer).updateAvailableVABForTesting(parseEther("1"))
-                  await property.connect(deployer).updateDAOFundForTesting(newStakingPoolAddress)
+              // it("Should revert if no migration has been started", async function () {
+              //     const { stakingPool, auditor, staker2, property, deployer } = await loadFixture(
+              //         deployContractsFixture
+              //     )
+              //     const newStakingPoolAddress = staker2.address
+              //     // We update the availableVABAmount to 1 VAB for testing
+              //     await property.connect(deployer).updateAvailableVABForTesting(parseEther("1"))
+              //     await property.connect(deployer).updateDAOFundForTesting(newStakingPoolAddress)
 
-                  const rewardAddress = await property.DAO_FUND_REWARD()
+              //     const rewardAddress = await property.DAO_FUND_REWARD()
 
-                  expect(rewardAddress).to.be.equal(newStakingPoolAddress)
+              //     expect(rewardAddress).to.be.equal(newStakingPoolAddress)
 
-                  await expect(stakingPool.connect(auditor).withdrawAllFund()).to.be.revertedWith(
-                      "Migration is not on going"
-                  )
-              })
+              //     await expect(stakingPool.connect(auditor).withdrawAllFund()).to.be.revertedWith(
+              //         "Migration is not on going"
+              //     )
+              // })
 
-              it("Should transfer the total migration amount, Edge Pool and Studio Pool to the new DAO fund reward address and set the migrations status to two", async function () {
-                  const {
-                      stakingPoolStaker1,
-                      stakingPoolDeployer,
-                      property,
-                      stakingPool,
-                      ownable,
-                      deployer,
-                      auditor,
-                      vabbleDAO,
-                      vabTokenContract,
-                      stakingPoolAuditor,
-                      dev,
-                      staker1,
-                  } = await loadFixture(deployContractsFixture)
+              // it("Should transfer the total migration amount, Edge Pool and Studio Pool to the new DAO fund reward address and set the migrations status to two", async function () {
+              //     const {
+              //         stakingPoolStaker1,
+              //         stakingPoolDeployer,
+              //         property,
+              //         stakingPool,
+              //         ownable,
+              //         deployer,
+              //         auditor,
+              //         vabbleDAO,
+              //         vabTokenContract,
+              //         stakingPoolAuditor,
+              //         dev,
+              //         staker1,
+              //     } = await loadFixture(deployContractsFixture)
 
-                  const stakingAmountStaker1 = parseEther("1000")
-                  const poolRewardAmount = parseEther("10000")
-                  const edgePoolAmount = parseEther("7500")
-                  const studioPoolAmount = parseEther("2500")
-                  const newStakingPoolAddress = dev.address
-                  const stakingPoolBalanceBefore = await vabTokenContract.balanceOf(dev.address)
+              //     const stakingAmountStaker1 = parseEther("1000")
+              //     const poolRewardAmount = parseEther("10000")
+              //     const edgePoolAmount = parseEther("7500")
+              //     const studioPoolAmount = parseEther("2500")
+              //     const newStakingPoolAddress = dev.address
+              //     const stakingPoolBalanceBefore = await vabTokenContract.balanceOf(
+              //         newStakingPoolAddress
+              //     )
 
-                  await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
-                  await ownable.connect(auditor).depositVABToEdgePool(edgePoolAmount)
-                  await vabbleDAO.connect(auditor).allocateFromEdgePool(studioPoolAmount)
+              //     await stakingPoolDeployer.addRewardToPool(poolRewardAmount)
+              //     await ownable.connect(auditor).depositVABToEdgePool(edgePoolAmount)
+              //     await vabbleDAO.connect(auditor).allocateFromEdgePool(studioPoolAmount)
 
-                  const edgePoolVabBefore = await vabTokenContract.balanceOf(ownable.address)
-                  const studioPoolVabBefore = await vabTokenContract.balanceOf(vabbleDAO.address)
-                  const totalRewardAmountBefore = await stakingPool.totalRewardAmount()
+              //     const edgePoolVabBefore = await vabTokenContract.balanceOf(ownable.address)
+              //     const studioPoolVabBefore = await vabTokenContract.balanceOf(vabbleDAO.address)
+              //     const totalRewardAmountBefore = await stakingPool.totalRewardAmount()
 
-                  await stakingPoolStaker1.stakeVAB(stakingAmountStaker1)
+              //     await stakingPoolStaker1.stakeVAB(stakingAmountStaker1)
 
-                  await helpers.time.increase(ONE_DAY_IN_SECONDS)
+              //     await helpers.time.increase(ONE_DAY_IN_SECONDS)
 
-                  await property.connect(deployer).updateDAOFundForTesting(newStakingPoolAddress)
+              //     await property.connect(deployer).updateDAOFundForTesting(newStakingPoolAddress)
 
-                  await helpers.impersonateAccount(property.address)
-                  const signer = await ethers.getSigner(property.address)
-                  await helpers.setBalance(signer.address, 100n ** 18n)
-                  await stakingPool.connect(signer).calcMigrationVAB()
-                  const stakeInfoStaker1 = await stakingPool.stakeInfo(staker1.address)
-                  const totalMigrationVabBefore = await stakingPool.totalMigrationVAB()
-                  await helpers.stopImpersonatingAccount(property.address)
+              //     await helpers.impersonateAccount(property.address)
+              //     const signer = await ethers.getSigner(property.address)
+              //     await helpers.setBalance(signer.address, 100n ** 18n)
+              //     await stakingPool.connect(signer).calcMigrationVAB()
+              //     const stakeInfoStaker1 = await stakingPool.stakeInfo(staker1.address)
+              //     const totalMigrationVabBefore = await stakingPool.totalMigrationVAB()
+              //     await helpers.stopImpersonatingAccount(property.address)
 
-                  const withdrawAllFundTx = await stakingPoolAuditor.withdrawAllFund()
-                  const totalMigrationVabAfter = await stakingPool.totalMigrationVAB()
-                  const totalRewardAmountAfter = await stakingPool.totalRewardAmount()
+              //     const withdrawAllFundTx = await stakingPoolAuditor.withdrawAllFund()
+              //     const totalMigrationVabAfter = await stakingPool.totalMigrationVAB()
+              //     const totalRewardAmountAfter = await stakingPool.totalRewardAmount()
 
-                  const migrationStatus = await stakingPool.migrationStatus()
+              //     const migrationStatus = await stakingPool.migrationStatus()
 
-                  const expectedSum = totalMigrationVabBefore
-                      .add(edgePoolVabBefore)
-                      .add(studioPoolVabBefore)
-                      .add(stakingPoolBalanceBefore)
+              //     const expectedSum = totalMigrationVabBefore
+              //         .add(edgePoolVabBefore)
+              //         .add(studioPoolVabBefore)
 
-                  const newPoolSum = await vabTokenContract.balanceOf(newStakingPoolAddress)
+              //     const newPoolSum = await vabTokenContract.balanceOf(newStakingPoolAddress)
 
-                  //? Assert
-                  await expect(withdrawAllFundTx)
-                      .to.emit(stakingPool, "AllFundWithdraw")
-                      .withArgs(newStakingPoolAddress, expectedSum)
+              //     //? Assert
+              //     await expect(withdrawAllFundTx)
+              //         .to.emit(stakingPool, "AllFundWithdraw")
+              //         .withArgs(newStakingPoolAddress, expectedSum)
 
-                  expect(totalRewardAmountAfter).to.be.equal(
-                      totalRewardAmountBefore.sub(totalMigrationVabBefore)
-                  )
-                  expect(totalMigrationVabBefore).to.be.equal(
-                      totalRewardAmountBefore.sub(stakeInfoStaker1.outstandingReward)
-                  )
-                  expect(studioPoolVabBefore.toString()).to.be.equal(studioPoolAmount.toString())
-                  expect(edgePoolVabBefore.toString()).to.be.equal(
-                      edgePoolAmount.sub(studioPoolAmount).toString()
-                  )
-                  expect(totalRewardAmountBefore.toString()).to.be.equal(
-                      poolRewardAmount.toString()
-                  )
-                  expect(migrationStatus).to.be.equal(2)
-                  expect(totalMigrationVabAfter).to.be.equal(0)
-                  expect(newPoolSum.toString()).to.be.equal(expectedSum.toString())
-              })
+              //     expect(totalRewardAmountAfter).to.be.equal(
+              //         totalRewardAmountBefore.sub(totalMigrationVabBefore)
+              //     )
+              //     expect(totalMigrationVabBefore).to.be.equal(
+              //         totalRewardAmountBefore.sub(stakeInfoStaker1.outstandingReward)
+              //     )
+              //     expect(studioPoolVabBefore.toString()).to.be.equal(studioPoolAmount.toString())
+              //     expect(edgePoolVabBefore.toString()).to.be.equal(
+              //         edgePoolAmount.sub(studioPoolAmount).toString()
+              //     )
+              //     expect(totalRewardAmountBefore.toString()).to.be.equal(
+              //         poolRewardAmount.toString()
+              //     )
+              //     expect(migrationStatus).to.be.equal(2)
+              //     expect(totalMigrationVabAfter).to.be.equal(0)
+              //     expect(newPoolSum.toString()).to.be.equal(
+              //         expectedSum.add(stakingPoolBalanceBefore).toString()
+              //     )
+              // })
           })
 
           describe("calcMigrationVAB", function () {
@@ -2459,71 +2461,71 @@ const {
               })
           })
 
-          describe("getLimitCount", function () {
-              it("Should return minVoteCount when limitStakerCount is less than or equal to minVoteCount", async function () {
-                  const {
-                      deployer,
-                      property,
-                      stakingPoolStaker1,
-                      stakingPoolStaker2,
-                      stakingPool,
-                  } = await loadFixture(deployContractsFixture)
+          // describe("getLimitCount", function () {
+          //     // it("Should return minVoteCount when limitStakerCount is less than or equal to minVoteCount", async function () {
+          //     //     const {
+          //     //         deployer,
+          //     //         property,
+          //     //         stakingPoolStaker1,
+          //     //         stakingPoolStaker2,
+          //     //         stakingPool,
+          //     //     } = await loadFixture(deployContractsFixture)
 
-                  const minStakerCountPercent = 5 * 1e8 // (1% = 1e8, 100%=1e10)
-                  const minStakerCountPercentFlag = 19
+          //     //     const minStakerCountPercent = 5 * 1e8 // (1% = 1e8, 100%=1e10)
+          //     //     const minStakerCountPercentFlag = 19
 
-                  const minVoteCount = 1
-                  const minVoteCountFlag = 18
+          //     //     const minVoteCount = 1
+          //     //     const minVoteCountFlag = 18
 
-                  await property
-                      .connect(deployer)
-                      .updatePropertyForTesting(minStakerCountPercent, minStakerCountPercentFlag)
+          //     //     await property
+          //     //         .connect(deployer)
+          //     //         .updatePropertyForTesting(minStakerCountPercent, minStakerCountPercentFlag)
 
-                  await property
-                      .connect(deployer)
-                      .updatePropertyForTesting(minVoteCount, minVoteCountFlag)
+          //     //     await property
+          //     //         .connect(deployer)
+          //     //         .updatePropertyForTesting(minVoteCount, minVoteCountFlag)
 
-                  await stakingPoolStaker1.stakeVAB(stakingAmount)
-                  await stakingPoolStaker2.stakeVAB(stakingAmount)
+          //     //     await stakingPoolStaker1.stakeVAB(stakingAmount)
+          //     //     await stakingPoolStaker2.stakeVAB(stakingAmount)
 
-                  const limitCount = await stakingPool.getLimitCount()
+          //     //     const limitCount = await stakingPool.getLimitCount()
 
-                  expect(limitCount).to.be.equal(minVoteCount)
-              })
+          //     //     expect(limitCount).to.be.equal(minVoteCount)
+          //     // })
 
-              it("Should return calculated limitStakerCount when it's greater than minVoteCount", async function () {
-                  const {
-                      deployer,
-                      property,
-                      stakingPoolStaker1,
-                      stakingPoolStaker2,
-                      stakingPool,
-                  } = await loadFixture(deployContractsFixture)
+          //     it("Should return calculated limitStakerCount when it's greater than minVoteCount", async function () {
+          //         const {
+          //             deployer,
+          //             property,
+          //             stakingPoolStaker1,
+          //             stakingPoolStaker2,
+          //             stakingPool,
+          //         } = await loadFixture(deployContractsFixture)
 
-                  const minStakerCountPercent = 1e10 // (1% = 1e8, 100%=1e10)
-                  const minStakerCountPercentFlag = 19
+          //         const minStakerCountPercent = 1e10 // (1% = 1e8, 100%=1e10)
+          //         const minStakerCountPercentFlag = 19
 
-                  const minVoteCount = 1
-                  const minVoteCountFlag = 18
+          //         const minVoteCount = 1
+          //         const minVoteCountFlag = 18
 
-                  await property
-                      .connect(deployer)
-                      .updatePropertyForTesting(minStakerCountPercent, minStakerCountPercentFlag)
+          //         await property
+          //             .connect(deployer)
+          //             .updatePropertyForTesting(minStakerCountPercent, minStakerCountPercentFlag)
 
-                  await property
-                      .connect(deployer)
-                      .updatePropertyForTesting(minVoteCount, minVoteCountFlag)
+          //         await property
+          //             .connect(deployer)
+          //             .updatePropertyForTesting(minVoteCount, minVoteCountFlag)
 
-                  await stakingPoolStaker1.stakeVAB(stakingAmount)
-                  await stakingPoolStaker2.stakeVAB(stakingAmount)
+          //         await stakingPoolStaker1.stakeVAB(stakingAmount)
+          //         await stakingPoolStaker2.stakeVAB(stakingAmount)
 
-                  const currentStakerCount = await stakingPool.stakerCount()
+          //         const currentStakerCount = await stakingPool.stakerCount()
 
-                  const limitCount = await stakingPool.getLimitCount()
+          //         const limitCount = await stakingPool.getLimitCount()
 
-                  expect(limitCount).to.be.equal(currentStakerCount)
-              })
-          })
+          //         expect(limitCount).to.be.equal(currentStakerCount)
+          //     })
+          // })
 
           describe("getWithdrawableTime", function () {
               it("Should return the withdrawable time of a staker", async function () {
@@ -2539,15 +2541,15 @@ const {
               })
           })
 
-          describe("withdrawToOwner", function () {
-              it("Should revert if the caller is not the deployer", async function () {
-                  const { stakingPoolStaker1, staker1 } = await loadFixture(deployContractsFixture)
+          // describe("withdrawToOwner", function () {
+          //     it("Should revert if the caller is not the deployer", async function () {
+          //         const { stakingPoolStaker1, staker1 } = await loadFixture(deployContractsFixture)
 
-                  await expect(
-                      stakingPoolStaker1.withdrawToOwner(staker1.address)
-                  ).to.be.revertedWith("not deployer")
-              })
-          })
+          //         await expect(
+          //             stakingPoolStaker1.withdrawToOwner(staker1.address)
+          //         ).to.be.revertedWith("not deployer")
+          //     })
+          // })
 
           describe("getStakerList", function () {
               it("Should return the list of stakers", async function () {

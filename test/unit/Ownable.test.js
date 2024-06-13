@@ -541,8 +541,9 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
           describe("getDepositAssetList", function () {
               it("Should return true a list of all deposit assets", async function () {
-                  const { ownable, vabTokenContract, usdcTokenContract } =
-                      await loadFixture(deployContractsFixture)
+                  const { ownable, vabTokenContract, usdcTokenContract } = await loadFixture(
+                      deployContractsFixture
+                  )
 
                   const expectedDepositAssetList = [
                       vabTokenContract.address,
@@ -660,6 +661,8 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
 
                   const newAddress = dev.address
 
+                  const balanceOfNewAddressBefore = await vabTokenContract.balanceOf(newAddress)
+
                   await ownableAuditor.depositVABToEdgePool(edgePoolAmount)
                   await helpers.impersonateAccount(stakingPool.address)
                   const signer = await ethers.getSigner(stakingPool.address)
@@ -667,9 +670,11 @@ const { fundAndApproveAccounts, deployAndInitAllContracts } = require("../../hel
                   await ownable.connect(signer).withdrawVABFromEdgePool(newAddress)
                   await helpers.stopImpersonatingAccount(stakingPool.address)
 
-                  const balanceOfNewAddress = await vabTokenContract.balanceOf(newAddress)
+                  const balanceOfNewAddressAfter = await vabTokenContract.balanceOf(newAddress)
 
-                  expect(balanceOfNewAddress).to.be.equal(edgePoolAmount)
+                  expect(balanceOfNewAddressAfter).to.be.equal(
+                      balanceOfNewAddressBefore.add(edgePoolAmount)
+                  )
               })
           })
 

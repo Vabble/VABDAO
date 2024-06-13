@@ -13,17 +13,20 @@ const {
 const { parseUnits } = require("ethers/lib/utils")
 
 //? Constants
-const chainId = 84532;  
-console.log("chainId", chainId);
 
-const config = getConfig(chainId);
-const VAB_TOKEN_ADDRESS = config.vabToken;
-const EXM_TOKEN_ADDRESS = config.exmAddress;
-const USDC_TOKEN_ADDRESS = config.usdcAdress;
-const UNISWAP_FACTORY_ADDRESS = config.uniswap.factory;
-const UNISWAP_ROUTER_ADDRESS = config.uniswap.router;
-const SUSHISWAP_FACTORY_ADDRESS = config.sushiswap.factory;
-const SUSHISWAP_ROUTER_ADDRESS = config.sushiswap.router;
+const chainId = network.config.chainId
+
+console.log("chainId ===>", chainId)
+
+const config = getConfig(chainId)
+
+const VAB_TOKEN_ADDRESS = config.vabToken
+const EXM_TOKEN_ADDRESS = config.exmAddress
+const USDC_TOKEN_ADDRESS = config.usdcAdress
+const UNISWAP_FACTORY_ADDRESS = config.uniswap.factory
+const UNISWAP_ROUTER_ADDRESS = config.uniswap.router
+const SUSHISWAP_FACTORY_ADDRESS = config.sushiswap.factory
+const SUSHISWAP_ROUTER_ADDRESS = config.sushiswap.router
 
 const proposalStatusMap = {
     0: "LISTED", //0 proposal created by studio
@@ -79,16 +82,18 @@ const fundAndApproveAccounts = async ({
         //         await usdcTokenContract.connect(accounts[0]).faucet(USDC_FAUCET_AMOUNT);
         //     }
         // }
-        for (var i = 1; i < accounts.length; i++) {
-            await vabTokenContract.connect(accounts[0]).transfer(accounts[i].address, VAB_FAUCET_AMOUNT, {from: accounts[0].address});
-            await usdcTokenContract.connect(accounts[0]).transfer(accounts[i].address, USDC_FAUCET_AMOUNT, {from: accounts[0].address});
+        for (let i = 1; i < accounts.length; i++) {
+            await vabTokenContract
+                .connect(accounts[0])
+                .transfer(accounts[i].address, VAB_FAUCET_AMOUNT, { from: accounts[0].address })
+            await usdcTokenContract
+                .connect(accounts[0])
+                .transfer(accounts[i].address, USDC_FAUCET_AMOUNT, { from: accounts[0].address })
         }
-            
+
         for (const account of accounts) {
             for (const contract of contracts) {
-                await vabTokenContract
-                    .connect(account)
-                    .approve(contract.address, VAB_FAUCET_AMOUNT)
+                await vabTokenContract.connect(account).approve(contract.address, VAB_FAUCET_AMOUNT)
 
                 await usdcTokenContract
                     .connect(account)
@@ -121,13 +126,12 @@ const deployAndInitAllContracts = async () => {
         const stakingPoolFactory = await ethers.getContractFactory("StakingPool")
 
         //? get accounts
-        const [deployer, dev, auditor1, staker1, staker2] = await ethers.getSigners()
-        const auditor = deployer;
+        const [deployer, dev, auditor, staker1, staker2] = await ethers.getSigners()
 
         //? token contracts
         const vabTokenContract = new ethers.Contract(
             VAB_TOKEN_ADDRESS,
-            JSON.stringify(ERC20), // we use FxER20 to call the faucet in local network
+            JSON.stringify(ERC20),
             ethers.provider
         )
         const exmTokenContract = new ethers.Contract(
@@ -242,8 +246,6 @@ const deployAndInitAllContracts = async () => {
         const boardRewardRate = await property.boardRewardRate()
         const rewardRate = await property.rewardRate()
         const lockPeriod = await property.lockPeriod()
-
-
 
         return {
             deployer,
