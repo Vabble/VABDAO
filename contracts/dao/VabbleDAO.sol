@@ -16,7 +16,6 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IProperty.sol";
@@ -24,70 +23,233 @@ import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFund.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVote.sol";
+import "../libraries/Helper.sol";
 
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
+    /// @notice Address of the Ownable contract
+    address public immutable OWNABLE;
+
+    /// @notice Address of the Vote contract
+    address public immutable VOTE;
+
+    /// @notice Address of the StakingPool contract
+    address public immutable STAKING_POOL;
+
+    /// @notice Address of the UniHelper contract
+    address public immutable UNI_HELPER;
+
+    /// @notice Address of the DAO property
+    address public immutable DAO_PROPERTY;
+
+    /// @notice Address of the Vabble fund
+    address public immutable VABBLE_FUND;
+
+    /// @notice Total VAB tokens in the StudioPool
+    uint256 public StudioPool;
+
+    /**
+     * @notice Counter for the total number of created films
+     * @dev Film IDs start from 1 and increment for each new film create
+     */
+    Counters.Counter public filmCount;
+
+    /**
+     * @notice Counter for the total number of updated films
+     * @dev Updated film IDs start from 1 and increment for each updated film
+     */
+    Counters.Counter public updatedFilmCount;
+
+    /**
+     * @notice Counter for the current month ID
+     * @dev Month IDs increment for each new month
+     */
+    Counters.Counter public monthId;
+
+    /**
+     * @dev List of users in the StudioPool
+     */
+    address[] private studioPoolUsers;
+
+    /**
+     * @dev List of users in the EdgePool
+     */
+    address[] private edgePoolUsers;
+
+    /**
+     * @notice Mapping of film IDs to film information
+     * @dev Maps each film ID to its corresponding film information
+     */
+    mapping(uint256 => IVabbleDAO.Film) public filmInfo;
+
+    /**
+     * @notice Mapping of finalized amounts by film ID, month ID, and user address
+     * @dev Maps film ID and month ID to user addresses and their finalized amounts
+     */
+    mapping(uint256 => mapping(uint256 => mapping(address => uint256))) public finalizedAmount;
+
+    /**
+     * @notice Mapping of latest claim month ID by film ID and user address
+     * @dev Maps film ID to user addresses and their latest claim month IDs
+     */
+    mapping(uint256 => mapping(address => uint256)) public latestClaimMonthId;
+
+    /**
+     * @notice Mapping of finalized film call times by film ID
+     * @dev Maps film ID to the timestamp when the film was finalized
+     */
+    mapping(uint256 => uint256) public finalFilmCalledTime;
+
+    /**
+     * @dev Mapping of flags to film ID lists
+     * @dev Flags indicate different states:
+     * 1 = proposal, 2 = approveListing, 3 = approveFunding, 4 = updated
+     */
+    mapping(uint256 => uint256[]) private totalFilmIds;
+
+    /**
+     * @dev Mapping of user addresses to film ID lists by flag
+     * @dev (user => (flag => filmId list))
+     * @dev Flags indicate different user actions:
+     * 1 = create, 2 = update, 3 = approve, 4 = final
+     */
+    mapping(address => mapping(uint256 => uint256[])) private userFilmIds;
+
+    /**
+     * @dev Mapping of month IDs to finalized film ID lists
+     * @dev Maps each month ID to a list of finalized film IDs
+     */
+    mapping(uint256 => uint256[]) private finalizedFilmIds;
+
+    /**
+     * @dev Mapping of investment status by investor address and film ID
+     * @dev Maps investor addresses to film IDs indicating if they have invested (true/false)
+     */
+    mapping(address => mapping(uint256 => bool)) private isInvested;
+
+    /**
+     * @dev Mapping indicating if an address is a StudioPool user
+     * @dev Maps user addresses to boolean values indicating StudioPool membership
+     */
+    mapping(address => bool) private isStudioPoolUser;
+
+    /**
+     * @dev Mapping indicating if an address is an EdgePool user
+     * @dev Maps user addresses to boolean values indicating EdgePool membership
+     */
+    mapping(address => bool) private isEdgePoolUser;
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Emitted when a film proposal is created
+     * @param filmId The ID of the film proposal
+     * @param noVote If the proposal can skip voting phase 0 = false, 1 = true
+     * @param fundType The type of funding for the proposal 0 = Distribution, 1 = Token, 2 = NFT, 3 = NFT & Token)
+     * @param studio The address of the studio creating the proposal
+     */
     event FilmProposalCreated(uint256 indexed filmId, uint256 noVote, uint256 fundType, address studio);
+
+    /**
+     * @dev Emitted when a film proposal is updated
+     * @param filmId The ID of the updated film proposal
+     * @param fundType The updated type of funding for the proposal
+     * 0 = Distribution, 1 = Token, 2 = NFT, 3 = NFT & Token)
+     * @param studio The address of the studio updating the proposal
+     */
     event FilmProposalUpdated(uint256 indexed filmId, uint256 fundType, address studio);
+
+    /**
+     * @dev Emitted when the film fund period is updated
+     * @param filmId The ID of the film whose fund period is updated
+     * @param studio The address of the studio updating the fund period
+     * @param fundPeriod The updated fund period
+     */
+    event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod);
+
+    /**
+     * @dev Emitted when funds are allocated to a pool
+     * @param users The list of users receiving allocations
+     * @param amounts The amounts allocated to each user
+     * @param which Indicates the type of pool (1 = studio, 2 = edge)
+     */
+    event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
+
+    /**
+     * @dev Emitted when a user claims all rewards for a month
+     * @param user The address of the user claiming rewards
+     * @param monthId The ID of the month for which rewards are claimed
+     * @param filmIds The list of film IDs involved in the claim
+     * @param claimAmount The total amount claimed
+     */
+    event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);
+
+    /**
+     * @dev Emitted when final films are set by the auditor
+     * @param user The address of the auditor setting the final films
+     * @param filmIds The list of film IDs set as final
+     * @param payouts The payout amounts for each film
+     */
+    event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);
+
+    /**
+     * @dev Emitted when the ownership of a film changes
+     * @param filmId The ID of the film whose ownership is changing
+     * @param oldOwner The address of the previous owner
+     * @param newOwner The address of the new owner
+     */
+    event ChangeFilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);
+
+    //@audit-issue -low unused event
     event FinalFilmSetted(
         address[] users, uint256[] filmIds, uint256[] watchedPercents, uint256[] rentPrices, uint256 setTime
     );
-    event FilmFundPeriodUpdated(uint256 indexed filmId, address studio, uint256 fundPeriod);
-    event AllocatedToPool(address[] users, uint256[] amounts, uint256 which);
-    event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);
-    event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);
-    event ChangeFilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);
 
-    address public immutable OWNABLE; // Ownablee contract address
-    address public immutable VOTE; // Vote contract address
-    address public immutable STAKING_POOL; // StakingPool contract address
-    address public immutable UNI_HELPER; // UniHelper contract address
-    address public immutable DAO_PROPERTY;
-    address public immutable VABBLE_FUND;
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
-    // (flag => filmId list) flag: 1=proposal, 2=approveListing, 3=approveFunding, 4=updated
-    mapping(uint256 => uint256[]) private totalFilmIds;
-
-    address[] private studioPoolUsers; // (which => user list)
-    address[] private edgePoolUsers; // (which => user list)
-
-    mapping(uint256 => IVabbleDAO.Film) public filmInfo; // Each film information(filmId => Film)
-    // (user => (flag => filmId list)) flag: 1=create, 2=update, 3=approve, 4=final
-    mapping(address => mapping(uint256 => uint256[])) private userFilmIds;
-
-    mapping(uint256 => uint256[]) private finalizedFilmIds; // (monthId => filmId list)
-    mapping(uint256 => mapping(uint256 => mapping(address => uint256))) public finalizedAmount;
-    mapping(uint256 => mapping(address => uint256)) public latestClaimMonthId; // (filmId => (user => monthId))
-    mapping(address => mapping(uint256 => bool)) private isInvested; // (investor => (filmId => true/false))
-
-    mapping(address => bool) private isStudioPoolUser;
-    mapping(address => bool) private isEdgePoolUser;
-
-    uint256 public StudioPool;
-    mapping(uint256 => uint256) public finalFilmCalledTime; // (filmId => finalized time)
-
-    Counters.Counter public filmCount; // created filmId is from No.1
-    Counters.Counter public updatedFilmCount; // updated filmId is from No.1
-    Counters.Counter public monthId; // monthId
-
+    /// @dev Restricts access to the current Auditor.
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "only auditor");
         _;
     }
 
+    /// @dev Restricts access to the Vote contract.
     modifier onlyVote() {
         require(msg.sender == VOTE, "only vote");
         _;
     }
 
+    /// @dev Restricts access to the StakingPool contract.
     modifier onlyStakingPool() {
         require(msg.sender == STAKING_POOL, "only stakingPool");
         _;
     }
 
-    receive() external payable {}
+    /*//////////////////////////////////////////////////////////////
+                               FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Constructor for the VabbleDAO contract
+     * @param _ownable The address of the Ownable contract
+     * @param _uniHelper The address of the UniHelper contract
+     * @param _vote The address of the Vote contract
+     * @param _staking The address of the StakingPool contract
+     * @param _property The address of the Property contract
+     * @param _vabbleFund The address of the VabbleFund contract
+     */
     constructor(
         address _ownable,
         address _uniHelper,
@@ -103,6 +265,12 @@ contract VabbleDAO is ReentrancyGuard {
         DAO_PROPERTY = _property;
         VABBLE_FUND = _vabbleFund;
     }
+
+    receive() external payable { }
+
+    /*//////////////////////////////////////////////////////////////
+                                EXTERNAL
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * Film proposal
@@ -145,7 +313,10 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _fundPeriod,
         uint256 _rewardPercent,
         uint256 _enableClaimer
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+    {
         require(_studioPayees.length != 0, "pU: e1");
         require(_studioPayees.length == _sharePercents.length, "pU: e2");
         require(bytes(_title).length != 0, "pU: e3");
@@ -249,61 +420,6 @@ contract VabbleDAO is ReentrancyGuard {
         return true;
     }
 
-    function __moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) private {
-        uint256 arrayLength = array1.length;
-        require(arrayLength < 1e6, "mTAA: too many length");
-        uint256 index = arrayLength;
-
-        for (uint256 i = 0; i < arrayLength; ++i) {
-            if (array1[i] == value) {
-                index = i;
-            }
-        }
-
-        if (index >= arrayLength) return;
-
-        array2.push(value);
-
-        array1[index] = array1[arrayLength - 1];
-        array1.pop();
-    }
-
-    /// @notice Check if proposal fee transferred from studio to stakingPool
-    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
-    function __paidFee(address _dToken, uint256 _noVote) private {
-        uint256 feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount(); // in cash(usdc)
-        if (_noVote == 1) feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount() * 2;
-
-        uint256 expectTokenAmount = feeAmount;
-        if (_dToken != IOwnablee(OWNABLE).USDC_TOKEN()) {
-            expectTokenAmount =
-                IUniHelper(UNI_HELPER).expectedAmount(feeAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _dToken);
-        }
-
-        if (_dToken == address(0)) {
-            require(msg.value >= expectTokenAmount, "paidFee: Insufficient paid");
-            if (msg.value > expectTokenAmount) {
-                Helper.safeTransferETH(msg.sender, msg.value - expectTokenAmount);
-            }
-            // Send ETH from this contract to UNI_HELPER contract
-            Helper.safeTransferETH(UNI_HELPER, expectTokenAmount);
-        } else {
-            Helper.safeTransferFrom(_dToken, msg.sender, address(this), expectTokenAmount);
-            if (IERC20(_dToken).allowance(address(this), UNI_HELPER) == 0) {
-                Helper.safeApprove(_dToken, UNI_HELPER, IERC20(_dToken).totalSupply());
-            }
-        }
-
-        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-        bytes memory swapArgs = abi.encode(expectTokenAmount, _dToken, vabToken);
-        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
-
-        if (IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
-            Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
-        }
-        IStakingPool(STAKING_POOL).addRewardToPool(vabAmount);
-    }
-
     /// @notice Approve a film for funding/listing from vote contract
     function approveFilmByVote(uint256 _filmId, uint256 _flag) external onlyVote {
         require(_filmId != 0, "aFV: e1");
@@ -340,7 +456,11 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO) by Auditor
     // _which = 1 => to EdgePool, _which = 2 => to StudioPool
-    function allocateToPool(address[] calldata _users, uint256[] calldata _amounts, uint256 _which)
+    function allocateToPool(
+        address[] calldata _users,
+        uint256[] calldata _amounts,
+        uint256 _which
+    )
         external
         onlyAuditor
         nonReentrant
@@ -404,28 +524,16 @@ contract VabbleDAO is ReentrancyGuard {
         return poolBalance;
     }
 
-    /// Pre-Checking for set Final Film
-    function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
-        uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
-
-        _valids = new bool[](_filmIds.length);
-
-        uint256 filmLength = _filmIds.length;
-        for (uint256 i = 0; i < filmLength; ++i) {
-            if (finalFilmCalledTime[_filmIds[i]] != 0) {
-                _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] >= fPeriod;
-            } else {
-                _valids[i] = true;
-            }
-        }
-    }
-
     /// @notice Set final films for a customer with watched
     // Auditor call this function per month
     function setFinalFilms(
         uint256[] calldata _filmIds,
         uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
-    ) external onlyAuditor nonReentrant {
+    )
+        external
+        onlyAuditor
+        nonReentrant
+    {
         uint256 filmLength = _filmIds.length;
 
         require(filmLength != 0 && filmLength < 1000 && filmLength == _payouts.length, "sFF: bad length");
@@ -445,6 +553,215 @@ contract VabbleDAO is ReentrancyGuard {
 
     function startNewMonth() external onlyAuditor nonReentrant {
         monthId.increment();
+    }
+
+    // Claim reward for multi-filmIds till current from when auditor call setFinalFilms()
+    function claimReward(uint256[] memory _filmIds) external nonReentrant {
+        require(_filmIds.length != 0 && _filmIds.length < 1000, "cR: bad filmIds");
+
+        __claimAllReward(_filmIds);
+    }
+
+    // Claim reward of all filmIds for each user
+    function claimAllReward() external nonReentrant {
+        uint256[] memory filmIds = userFilmIds[msg.sender][4]; // final
+        require(filmIds.length != 0 && filmIds.length < 1000, "cAR: zero filmIds");
+
+        __claimAllReward(filmIds);
+    }
+
+    /// @notice Set enableClaimer based on Id by studio
+    function updateEnabledClaimer(uint256 _filmId, uint256 _enable) external {
+        require(filmInfo[_filmId].studio == msg.sender, "uEC: not film owner");
+
+        filmInfo[_filmId].enableClaimer = _enable;
+    }
+
+    /// @notice flag: create=1, update=2, approve=3, final=4
+    function getUserFilmIds(address _user, uint256 _flag) external view returns (uint256[] memory) {
+        return userFilmIds[_user][_flag];
+    }
+
+    /// @notice Get film status based on Id
+    function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_) {
+        status_ = filmInfo[_filmId].status;
+    }
+
+    /// @notice Get film owner(studio) based on Id
+    function getFilmOwner(uint256 _filmId) external view returns (address owner_) {
+        owner_ = filmInfo[_filmId].studio;
+    }
+
+    /// @notice Get film fund info based on Id
+    function getFilmFund(uint256 _filmId)
+        external
+        view
+        returns (uint256 raiseAmount_, uint256 fundPeriod_, uint256 fundType_, uint256 rewardPercent_)
+    {
+        raiseAmount_ = filmInfo[_filmId].raiseAmount;
+        fundPeriod_ = filmInfo[_filmId].fundPeriod;
+        fundType_ = filmInfo[_filmId].fundType;
+        rewardPercent_ = filmInfo[_filmId].rewardPercent;
+    }
+
+    /// @notice Get film fund info based on Id
+    function getFilmShare(uint256 _filmId)
+        external
+        view
+        returns (uint256[] memory sharePercents_, address[] memory studioPayees_)
+    {
+        sharePercents_ = filmInfo[_filmId].sharePercents;
+        studioPayees_ = filmInfo[_filmId].studioPayees;
+    }
+
+    /// @notice Get enableClaimer based on Id
+    function isEnabledClaimer(uint256 _filmId) external view returns (bool enable_) {
+        if (filmInfo[_filmId].enableClaimer == 1) enable_ = true;
+        else enable_ = false;
+    }
+
+    /// @notice Get film Ids
+    function getFilmIds(uint256 _flag) external view returns (uint256[] memory list_) {
+        return totalFilmIds[_flag];
+    }
+
+    /// @notice flag=1 => studioPoolUsers, flag=2 => edgePoolUsers
+    function getPoolUsers(uint256 _flag) external view onlyAuditor returns (address[] memory list_) {
+        if (_flag == 1) list_ = studioPoolUsers;
+        else if (_flag == 2) list_ = edgePoolUsers;
+    }
+
+    function getFinalizedFilmIds(uint256 _monthId) external view returns (uint256[] memory) {
+        return finalizedFilmIds[_monthId];
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 PUBLIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// Pre-Checking for set Final Film
+    function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
+        uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
+
+        _valids = new bool[](_filmIds.length);
+
+        uint256 filmLength = _filmIds.length;
+        for (uint256 i = 0; i < filmLength; ++i) {
+            if (finalFilmCalledTime[_filmIds[i]] != 0) {
+                _valids[i] = block.timestamp - finalFilmCalledTime[_filmIds[i]] >= fPeriod;
+            } else {
+                _valids[i] = true;
+            }
+        }
+    }
+
+    function getAllAvailableRewards(uint256 _curMonth, address _user) public view returns (uint256) {
+        uint256[] memory filmIds = userFilmIds[_user][4]; // final
+
+        uint256 rewardSum = 0;
+        uint256 preMonth = 0;
+        uint256 filmLength = filmIds.length;
+        for (uint256 i = 0; i < filmLength; ++i) {
+            preMonth = latestClaimMonthId[filmIds[i]][_user];
+            rewardSum += getUserRewardAmountBetweenMonths(filmIds[i], preMonth, _curMonth, _user);
+        }
+
+        return rewardSum;
+    }
+
+    function getUserRewardAmountForUser(
+        uint256 _filmId,
+        uint256 _curMonth,
+        address _user
+    )
+        public
+        view
+        returns (uint256)
+    {
+        uint256 preMonth = latestClaimMonthId[_filmId][_user];
+        return getUserRewardAmountBetweenMonths(_filmId, preMonth, _curMonth, _user);
+    }
+
+    /// @notice Get film proposal created time based on Id
+    function getFilmProposalTime(uint256 _filmId) public view returns (uint256 cTime_, uint256 aTime_) {
+        cTime_ = filmInfo[_filmId].pCreateTime;
+        aTime_ = filmInfo[_filmId].pApproveTime;
+    }
+
+    function getUserRewardAmountBetweenMonths(
+        uint256 _filmId,
+        uint256 _preMonth,
+        uint256 _curMonth,
+        address _user
+    )
+        public
+        view
+        returns (uint256 amount_)
+    {
+        if (_preMonth < _curMonth) {
+            for (uint256 mon = _preMonth + 1; mon <= _curMonth; ++mon) {
+                amount_ += finalizedAmount[mon][_filmId][_user];
+            }
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PRIVATE
+    //////////////////////////////////////////////////////////////*/
+
+    function __moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) private {
+        uint256 arrayLength = array1.length;
+        require(arrayLength < 1e6, "mTAA: too many length");
+        uint256 index = arrayLength;
+
+        for (uint256 i = 0; i < arrayLength; ++i) {
+            if (array1[i] == value) {
+                index = i;
+            }
+        }
+
+        if (index >= arrayLength) return;
+
+        array2.push(value);
+
+        array1[index] = array1[arrayLength - 1];
+        array1.pop();
+    }
+
+    /// @notice Check if proposal fee transferred from studio to stakingPool
+    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
+    function __paidFee(address _dToken, uint256 _noVote) private {
+        uint256 feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount(); // in cash(usdc)
+        if (_noVote == 1) feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount() * 2;
+
+        uint256 expectTokenAmount = feeAmount;
+        if (_dToken != IOwnablee(OWNABLE).USDC_TOKEN()) {
+            expectTokenAmount =
+                IUniHelper(UNI_HELPER).expectedAmount(feeAmount, IOwnablee(OWNABLE).USDC_TOKEN(), _dToken);
+        }
+
+        if (_dToken == address(0)) {
+            require(msg.value >= expectTokenAmount, "paidFee: Insufficient paid");
+            if (msg.value > expectTokenAmount) {
+                Helper.safeTransferETH(msg.sender, msg.value - expectTokenAmount);
+            }
+            // Send ETH from this contract to UNI_HELPER contract
+            Helper.safeTransferETH(UNI_HELPER, expectTokenAmount);
+        } else {
+            Helper.safeTransferFrom(_dToken, msg.sender, address(this), expectTokenAmount);
+            if (IERC20(_dToken).allowance(address(this), UNI_HELPER) == 0) {
+                Helper.safeApprove(_dToken, UNI_HELPER, IERC20(_dToken).totalSupply());
+            }
+        }
+
+        address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
+        bytes memory swapArgs = abi.encode(expectTokenAmount, _dToken, vabToken);
+        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
+
+        if (IERC20(vabToken).allowance(address(this), STAKING_POOL) == 0) {
+            Helper.safeApprove(vabToken, STAKING_POOL, IERC20(vabToken).totalSupply());
+        }
+        IStakingPool(STAKING_POOL).addRewardToPool(vabAmount);
     }
 
     function __setFinalFilm(uint256 _filmId, uint256 _payout) private {
@@ -513,13 +830,6 @@ contract VabbleDAO is ReentrancyGuard {
         }
     }
 
-    // Claim reward for multi-filmIds till current from when auditor call setFinalFilms()
-    function claimReward(uint256[] memory _filmIds) external nonReentrant {
-        require(_filmIds.length != 0 && _filmIds.length < 1000, "cR: bad filmIds");
-
-        __claimAllReward(_filmIds);
-    }
-
     function __claimAllReward(uint256[] memory _filmIds) private {
         uint256 filmLength = _filmIds.length;
         require(filmLength < 1e5, "cAR: bad array");
@@ -548,126 +858,14 @@ contract VabbleDAO is ReentrancyGuard {
         emit RewardAllClaimed(msg.sender, curMonth, _filmIds, rewardSum);
     }
 
-    // Claim reward of all filmIds for each user
-    function claimAllReward() external nonReentrant {
-        uint256[] memory filmIds = userFilmIds[msg.sender][4]; // final
-        require(filmIds.length != 0 && filmIds.length < 1000, "cAR: zero filmIds");
-
-        __claimAllReward(filmIds);
-    }
-
-    function getUserRewardAmountBetweenMonths(uint256 _filmId, uint256 _preMonth, uint256 _curMonth, address _user)
-        public
-        view
-        returns (uint256 amount_)
-    {
-        if (_preMonth < _curMonth) {
-            for (uint256 mon = _preMonth + 1; mon <= _curMonth; ++mon) {
-                amount_ += finalizedAmount[mon][_filmId][_user];
-            }
-        }
-    }
-
-    function getAllAvailableRewards(uint256 _curMonth, address _user) public view returns (uint256) {
-        uint256[] memory filmIds = userFilmIds[_user][4]; // final
-
-        uint256 rewardSum = 0;
-        uint256 preMonth = 0;
-        uint256 filmLength = filmIds.length;
-        for (uint256 i = 0; i < filmLength; ++i) {
-            preMonth = latestClaimMonthId[filmIds[i]][_user];
-            rewardSum += getUserRewardAmountBetweenMonths(filmIds[i], preMonth, _curMonth, _user);
-        }
-
-        return rewardSum;
-    }
-
-    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 preMonth = latestClaimMonthId[_filmId][_user];
-        return getUserRewardAmountBetweenMonths(_filmId, preMonth, _curMonth, _user);
-    }
-
-    /// @notice flag: create=1, update=2, approve=3, final=4
-    function getUserFilmIds(address _user, uint256 _flag) external view returns (uint256[] memory) {
-        return userFilmIds[_user][_flag];
-    }
-
-    /// @notice Get film status based on Id
-    function getFilmStatus(uint256 _filmId) external view returns (Helper.Status status_) {
-        status_ = filmInfo[_filmId].status;
-    }
-
-    /// @notice Get film owner(studio) based on Id
-    function getFilmOwner(uint256 _filmId) external view returns (address owner_) {
-        owner_ = filmInfo[_filmId].studio;
-    }
-
-    /// @notice Get film fund info based on Id
-    function getFilmFund(uint256 _filmId)
-        external
-        view
-        returns (uint256 raiseAmount_, uint256 fundPeriod_, uint256 fundType_, uint256 rewardPercent_)
-    {
-        raiseAmount_ = filmInfo[_filmId].raiseAmount;
-        fundPeriod_ = filmInfo[_filmId].fundPeriod;
-        fundType_ = filmInfo[_filmId].fundType;
-        rewardPercent_ = filmInfo[_filmId].rewardPercent;
-    }
-
-    /// @notice Get film fund info based on Id
-    function getFilmShare(uint256 _filmId)
-        external
-        view
-        returns (uint256[] memory sharePercents_, address[] memory studioPayees_)
-    {
-        sharePercents_ = filmInfo[_filmId].sharePercents;
-        studioPayees_ = filmInfo[_filmId].studioPayees;
-    }
-
-    /// @notice Get film proposal created time based on Id
-    function getFilmProposalTime(uint256 _filmId) public view returns (uint256 cTime_, uint256 aTime_) {
-        cTime_ = filmInfo[_filmId].pCreateTime;
-        aTime_ = filmInfo[_filmId].pApproveTime;
-    }
-
-    /// @notice Get enableClaimer based on Id
-    function isEnabledClaimer(uint256 _filmId) external view returns (bool enable_) {
-        if (filmInfo[_filmId].enableClaimer == 1) enable_ = true;
-        else enable_ = false;
-    }
-
-    /// @notice Set enableClaimer based on Id by studio
-    function updateEnabledClaimer(uint256 _filmId, uint256 _enable) external {
-        require(filmInfo[_filmId].studio == msg.sender, "uEC: not film owner");
-
-        filmInfo[_filmId].enableClaimer = _enable;
-    }
-
-    /// @notice Get film Ids
-    function getFilmIds(uint256 _flag) external view returns (uint256[] memory list_) {
-        return totalFilmIds[_flag];
-    }
-
-    /// @notice flag=1 => studioPoolUsers, flag=2 => edgePoolUsers
-    function getPoolUsers(uint256 _flag) external view onlyAuditor returns (address[] memory list_) {
-        if (_flag == 1) list_ = studioPoolUsers;
-        else if (_flag == 2) list_ = edgePoolUsers;
-    }
-
-    function getFinalizedFilmIds(uint256 _monthId) external view returns (uint256[] memory) {
-        return finalizedFilmIds[_monthId];
-    }
-
     function __updateFinalizeAmountAndLastClaimMonth(
         uint256 _filmId,
         uint256 _curMonth,
         address _oldOwner,
         address _newOwner
-    ) private {
+    )
+        private
+    {
         uint256 _preMonth = latestClaimMonthId[_filmId][_oldOwner];
 
         // update last claim month for newOwner
