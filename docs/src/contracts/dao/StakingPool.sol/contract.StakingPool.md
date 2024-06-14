@@ -1,5 +1,5 @@
 # StakingPool
-[Git Source](https://github.com/Mill1995/VABDAO/blob/49910eda11ba2d3203435fe324821be24d291140/contracts/dao/StakingPool.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/9050477259e61daa6bf97d9f648c5d24a5f80da7/contracts/dao/StakingPool.sol)
 
 **Inherits:**
 ReentrancyGuard
@@ -29,7 +29,7 @@ VAB tokens for participating in governance decisions and earning rewards.
 
 ## State Variables
 ### OWNABLE
-The Ownablee contract address
+*The Ownablee contract address*
 
 
 ```solidity
@@ -38,7 +38,7 @@ address private immutable OWNABLE;
 
 
 ### VOTE
-The Vote contract address
+*The Vote contract address*
 
 
 ```solidity
@@ -47,7 +47,7 @@ address private VOTE;
 
 
 ### VABBLE_DAO
-The VabbleDAO contract address
+*The VabbleDAO contract address*
 
 
 ```solidity
@@ -56,7 +56,7 @@ address private VABBLE_DAO;
 
 
 ### DAO_PROPERTY
-The Property contract address
+*The Property contract address*
 
 
 ```solidity
@@ -101,10 +101,10 @@ uint256 public lastfundProposalCreateTime;
 
 
 ### migrationStatus
-*Migration status of the contract:
+Migration status of the contract:
 - 0: not started
 - 1: started
-- 2: ended*
+- 2: ended
 
 
 ```solidity
@@ -170,7 +170,7 @@ mapping(address => uint256) public minProposalIndex;
 ### proposalCount
 Counter to keep track of the number of proposals
 
-*Count starts from 1*
+Count starts from 1
 
 
 ```solidity
@@ -179,7 +179,7 @@ Counters.Counter public proposalCount;
 
 
 ### stakerMap
-Struct to store staker information
+*Struct to store staker information*
 
 
 ```solidity
@@ -188,7 +188,7 @@ Staker private stakerMap;
 
 
 ### propsList
-Array to store proposal information, needed for calculating rewards
+*Array to store proposal information, needed for calculating rewards*
 
 
 ```solidity

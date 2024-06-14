@@ -1,5 +1,5 @@
 # Vote
-[Git Source](https://github.com/Mill1995/VABDAO/blob/49910eda11ba2d3203435fe324821be24d291140/contracts/dao/Vote.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/9050477259e61daa6bf97d9f648c5d24a5f80da7/contracts/dao/Vote.sol)
 
 **Inherits:**
 [IVote](/contracts/interfaces/IVote.sol/interface.IVote.md), ReentrancyGuard
@@ -69,7 +69,7 @@ address private UNI_HELPER;
 
 
 ### filmVoting
-*Mapping of film IDs to their corresponding Voting struct.*
+Mapping of film IDs to their corresponding Voting struct.
 
 
 ```solidity
@@ -78,7 +78,7 @@ mapping(uint256 => Voting) public filmVoting;
 
 
 ### filmBoardVoting
-*Mapping of film board indices to their corresponding Voting struct.*
+Mapping of film board indices to their corresponding Voting struct.
 
 
 ```solidity
@@ -87,7 +87,7 @@ mapping(uint256 => Voting) public filmBoardVoting;
 
 
 ### rewardAddressVoting
-*Mapping of reward address indices to their corresponding Voting struct.*
+Mapping of reward address indices to their corresponding Voting struct.
 
 
 ```solidity
@@ -96,8 +96,8 @@ mapping(uint256 => Voting) public rewardAddressVoting;
 
 
 ### propertyVoting
-*Mapping of property flags and indices to their corresponding Voting struct.
-(flag => (property index => Voting))*
+Mapping of property flags and indices to their corresponding Voting struct.
+(flag => (property index => Voting))
 
 
 ```solidity
@@ -106,7 +106,7 @@ mapping(uint256 => mapping(uint256 => Voting)) public propertyVoting;
 
 
 ### agentVoting
-*Mapping of agent indices to their corresponding AgentVoting struct.*
+Mapping of agent indices to their corresponding AgentVoting struct.
 
 
 ```solidity
@@ -115,8 +115,8 @@ mapping(uint256 => AgentVoting) public agentVoting;
 
 
 ### isAttendToFilmVote
-*Mapping to track if a staker has participated in a film vote.
-Maps staker to filmId to true/false.*
+Mapping to track if a staker has participated in a film vote.
+Maps staker to filmId to true/false.
 
 
 ```solidity
@@ -125,8 +125,8 @@ mapping(address => mapping(uint256 => bool)) public isAttendToFilmVote;
 
 
 ### isAttendToBoardVote
-*Mapping to track if a staker has participated in a film board vote.
-Maps staker to filmBoard index to true/false.*
+Mapping to track if a staker has participated in a film board vote.
+Maps staker to filmBoard index to true/false.
 
 
 ```solidity
@@ -135,8 +135,8 @@ mapping(address => mapping(uint256 => bool)) public isAttendToBoardVote;
 
 
 ### isAttendToRewardAddressVote
-*Mapping to track if a staker has participated in a reward address vote.
-Maps staker to rewardAddress index to true/false.*
+Mapping to track if a staker has participated in a reward address vote.
+Maps staker to rewardAddress index to true/false.
 
 
 ```solidity
@@ -145,8 +145,8 @@ mapping(address => mapping(uint256 => bool)) public isAttendToRewardAddressVote;
 
 
 ### isAttendToAgentVote
-*Mapping to track if a staker has participated in an agent vote.
-Maps staker to agent index to true/false.*
+Mapping to track if a staker has participated in an agent vote.
+Maps staker to agent index to true/false.
 
 
 ```solidity
@@ -155,8 +155,8 @@ mapping(address => mapping(uint256 => bool)) public isAttendToAgentVote;
 
 
 ### isAttendToPropertyVote
-*Mapping to track if a staker has participated in a property vote.
-Maps flag to staker to property index to true/false.*
+Mapping to track if a staker has participated in a property vote.
+Maps flag to staker to property index to true/false.
 
 
 ```solidity
@@ -165,7 +165,7 @@ mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isAttend
 
 
 ### userFilmVoteCount
-*Mapping of users to the count of their film votes.*
+Mapping of users to the count of their film votes.
 
 
 ```solidity
@@ -174,7 +174,7 @@ mapping(address => uint256) public userFilmVoteCount;
 
 
 ### userGovernVoteCount
-*Mapping of users to the count of their governance votes.*
+Mapping of users to the count of their governance votes.
 
 
 ```solidity
@@ -183,8 +183,8 @@ mapping(address => uint256) public userGovernVoteCount;
 
 
 ### govPassedVoteCount
-*Mapping of governance flags to the count of passed votes.
-Maps flag to passed vote count. Flags: 1 - agent, 2 - dispute, 3 - board, 4 - pool, 5 - property.*
+Mapping of governance flags to the count of passed votes.
+Maps flag to passed vote count. Flags: 1 - agent, 2 - dispute, 3 - board, 4 - pool, 5 - property.
 
 
 ```solidity
@@ -564,7 +564,7 @@ function isDoubleStaked(uint256 _index, address _user) public view returns (bool
 
 ### __voteToFilm
 
-Function to handle voting on a film.
+*Function to handle voting on a film.*
 
 *This function handles the logic for voting on a film proposal.
 It throws an error if:
@@ -588,7 +588,7 @@ function __voteToFilm(uint256 _filmId, uint256 _voteInfo) private;
 
 ### __approveFilm
 
-Function to approve a film based on voting results.
+*Function to approve a film based on voting results.*
 
 *This function finalizes the film approval process based on the voting results.
 It throws an error if:
@@ -610,7 +610,7 @@ function __approveFilm(uint256 _filmId) private;
 
 ### __paidDoubleFee
 
-Function to check if the proposal fee has been paid double.
+*Function to check if the proposal fee has been paid double.*
 
 *This function verifies if the user has paid double the required proposal fee in VAB tokens.
 A staker that wants to dispute a auditor proposal needs to either pay double the fee or stake double of the
@@ -632,7 +632,7 @@ function __paidDoubleFee() private returns (bool paid_);
 
 ### __isVotePeriod
 
-Function to check if the vote period is still ongoing.
+*Function to check if the vote period is still ongoing.*
 
 *This function calculates if the current time is within the vote period duration from the start time.
 It throws an error if the start time is zero.*

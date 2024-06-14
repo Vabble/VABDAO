@@ -1,5 +1,5 @@
 # Property
-[Git Source](https://github.com/Mill1995/VABDAO/blob/49910eda11ba2d3203435fe324821be24d291140/contracts/dao/Property.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/9050477259e61daa6bf97d9f648c5d24a5f80da7/contracts/dao/Property.sol)
 
 **Inherits:**
 ReentrancyGuard
@@ -82,9 +82,10 @@ address private immutable UNI_HELPER;
 
 
 ### DAO_FUND_REWARD
-*The address for sending the VAB from StakingPool, EdgePool and StudioPool when a proposal to change the
+The address for sending the VAB from StakingPool, EdgePool and StudioPool when a proposal to change the
 reward address passed.
-This is the address where all of the VAB tokens will be send when calling `StakingPool::withdrawAllFund()`.
+
+*This is the address where all of the VAB tokens will be send when calling `StakingPool::withdrawAllFund()`.
 This address will be updated to the address that was added in the proposal, once it has been finalized.*
 
 
@@ -94,7 +95,7 @@ address public DAO_FUND_REWARD;
 
 
 ### minPropertyList
-contains the minimum values for each property change
+*contains the minimum values for each property change*
 
 
 ```solidity
@@ -103,7 +104,7 @@ uint256[] private minPropertyList;
 
 
 ### maxPropertyList
-contains the maximum values for each property change
+*contains the maximum values for each property change*
 
 
 ```solidity
@@ -1073,8 +1074,8 @@ function getPropertyProposalList(uint256 _flag) public view returns (uint256[] m
 
 ### __paidFee
 
-Ensures the proposal fee is paid by transferring the expected amount of VAB tokens from the user to the
-staking pool.
+*Ensures the proposal fee is paid by transferring the expected amount of VAB tokens from the user to the
+staking pool.*
 
 *Converts the specified amount of USDC to the expected amount of VAB using Uniswap, then transfers the VAB to
 the staking pool.*
@@ -1092,7 +1093,7 @@ function __paidFee(uint256 _payAmount) private;
 
 ### __removeBoardMember
 
-Removes a film board member from the list.
+*Removes a film board member from the list.*
 
 *Finds the member in the film board members list and removes them by swapping with the last element and
 reducing the list length.*
