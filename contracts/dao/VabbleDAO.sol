@@ -322,17 +322,46 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /**
-     * TODO: add detailed natspec
-     * @notice Update details of a film proposal
-     * @param _filmId ID of the film proposal to update
-     * @param _title Title of the film
-     * @param _description Description of the film
-     * @param _sharePercents Array of share percentages for studio payees
-     * @param _studioPayees Array of studio payees' addresses
-     * @param _raiseAmount Amount to raise for funding
-     * @param _fundPeriod Duration of the funding period
-     * @param _rewardPercent Reward percentage for funders
-     * @param _enableClaimer Flag to enable claimer
+     * @notice Update the details of an existing film proposal
+     * @dev This function allows the film owner to update the details of their film proposal.
+     * It verifies the validity of the input parameters, ensuring that the share percentages
+     * and studio payee addresses are correctly specified and that other conditions are met
+     * based on the type of funding. The function updates the film proposal details and adjusts
+     * related records and mappings accordingly.
+     *
+     * Requirements:
+     * - `_studioPayees` must not be empty.
+     * - The length of `_studioPayees` must equal the length of `_sharePercents`.
+     * - `_title` must not be an empty string.
+     * - If the film requires funding (`fundType != 0`):
+     *   - `_fundPeriod` must be non-zero.
+     *   - `_raiseAmount` must be greater than the minimum deposit amount defined in the DAO properties.
+     *   - `_rewardPercent` must not exceed 100% (1e10 basis points).
+     * - If the film does not require funding (`fundType == 0`):
+     *   - `_rewardPercent` must be zero.
+     * - The total of `_sharePercents` must equal 100% (1e10 basis points).
+     * - The film proposal must have a status of `LISTED`.
+     * - The caller must be the owner of the film proposal.
+     *
+     * Effects:
+     * - Updates the film proposal details.
+     * - Updates the timestamp of proposal creation.
+     * - Updates the status of the film proposal to `UPDATED`.
+     * - Increments the `updatedFilmCount`.
+     * - Records the film ID in the list of updated film proposals for the current month.
+     * - Records the film ID in the list of film proposals updated by the user.
+     * - Adds a new proposal in the staking pool contract used to calculate staker rewards.
+     * - If the film requires funding and voting is skipped, it directly approves the film for funding.
+     *
+     * @param _filmId The unique identifier of the film proposal to update
+     * @param _title The title of the film
+     * @param _description The description of the film
+     * @param _sharePercents An array of share percentages for the studio payees
+     * @param _studioPayees An array of addresses for the studio payees
+     * @param _raiseAmount The amount to raise for funding
+     * @param _fundPeriod The duration of the funding period in seconds
+     * @param _rewardPercent The reward percentage allocated for funders (in basis points)
+     * @param _enableClaimer A flag to enable or disable the claimer (1 = enabled, 0 = disabled)
      */
     function proposalFilmUpdate(
         uint256 _filmId,
