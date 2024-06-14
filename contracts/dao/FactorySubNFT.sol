@@ -56,16 +56,16 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Address of the Ownable contract
+    /// @dev Address of the Ownable contract
     address private immutable OWNABLE;
 
-    /// @notice Address of the UniHelper contract
+    /// @dev Address of the UniHelper contract
     address private immutable UNI_HELPER;
 
     /// @notice Address of the deployed subscription NFT contract
     address public subNFTAddress;
 
-    /// @notice Instance of the VabbleNFT contract used for subscription NFTs
+    /// @dev Instance of the VabbleNFT contract used for subscription NFTs
     VabbleNFT private subNFTContract;
 
     /// @notice Base URI for the subscription NFTs
@@ -75,13 +75,13 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     string public collectionUri;
 
     /**
-     * @notice Mapping of category IDs to minting information
+     * @dev Mapping of category IDs to minting information
      * @dev Maps each category ID to its corresponding minting information
      */
     mapping(uint256 => Mint) private mintInfo;
 
     /**
-     * @notice Mapping of token IDs to locking information
+     * @dev Mapping of token IDs to locking information
      * @dev Maps each token ID to its corresponding locking information
      */
     mapping(uint256 => Lock) private lockInfo;
@@ -438,7 +438,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     }
 
     /**
-     * @notice Function to handle payment and minting process.
+     * @dev Function to handle payment and minting process.
      * @dev Handles payment in either ETH or ERC20 tokens, calculates expected amount,
      * swaps assets if necessary, and transfers USDC to the `Ownablee::VAB_WALLET`.
      * @param _payToken The address of the payment token

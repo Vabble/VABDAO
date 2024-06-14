@@ -291,7 +291,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Swaps ETH for an ERC20 token using a specified router and path.
+     * @dev Swaps ETH for an ERC20 token using a specified router and path.
      * @dev This function performs a swap of ETH to an ERC20 token using Uniswap or Sushiswap.
      * @param _depositAmount The amount of ETH to swap.
      * @param _expectedAmount The expected amount of ERC20 token to receive.
@@ -318,7 +318,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     }
 
     /**
-     * @notice Swaps an ERC20 token for ETH using a specified router and path.
+     * @dev Swaps an ERC20 token for ETH using a specified router and path.
      * @dev This function performs a swap of an ERC20 token to ETH using Uniswap or Sushiswap.
      * @param _depositAmount The amount of ERC20 token to swap.
      * @param _expectedAmount The expected amount of ETH to receive.
@@ -343,7 +343,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     }
 
     /**
-     * @notice Approves the maximum amount of an ERC20 token to a specified target.
+     * @dev Approves the maximum amount of an ERC20 token to a specified target.
      * @dev This function ensures that the contract has approved enough tokens to perform transactions.
      * @param _asset The address of the ERC20 token.
      * @param _target The address of the spender to approve.
@@ -357,7 +357,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     }
 
     /**
-     * @notice Transfers the entire contract balance of a specified asset to a caller.
+     * @dev Transfers the entire contract balance of a specified asset to a caller.
      * @dev This function safely transfers either ETH or ERC20 tokens to the caller.
      * @param _target The address of the caller to receive the assets.
      * @param _asset The address of the asset to transfer, or `address(0)` for ETH.
@@ -378,7 +378,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     }
 
     /**
-     * @notice Checks for the existence of a liquidity pool on Uniswap or Sushiswap for given assets.
+     * @dev Checks for the existence of a liquidity pool on Uniswap or Sushiswap for given assets.
      * @dev This function checks if a liquidity pool exists between `_depositAsset` and `_incomeAsset`.
      * @param _depositAsset The address of the deposit asset, or `address(0)` for ETH.
      * @param _incomeAsset The address of the incoming asset, or `address(0)` for ETH.

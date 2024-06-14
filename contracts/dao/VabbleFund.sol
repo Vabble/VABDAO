@@ -67,7 +67,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
     /// @dev List of film IDs that have processed funds.
     uint256[] private fundProcessedFilmIds;
 
-    /// @notice Mapping from film ID to list of investor addresses.
+    /// @dev Mapping from film ID to list of investor addresses.
     mapping(uint256 => address[]) private filmInvestorList;
 
     /// @notice Mapping from film ID to list of assets per film.
@@ -79,7 +79,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
     /// @notice Mapping from film ID and customer address to list of assets.
     mapping(uint256 => mapping(address => Asset[])) public assetInfo;
 
-    /// @notice Mapping from film ID and user address to NFT count.
+    /// @dev Mapping from film ID and user address to NFT count.
     mapping(uint256 => mapping(address => uint256)) private allowUserNftCount;
 
     /*//////////////////////////////////////////////////////////////
@@ -569,7 +569,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
     }
 
     /**
-     * @notice Checks if the amount is over the minimum deposit amount allowed for a film.
+     * @dev Checks if the amount is over the minimum deposit amount allowed for a film.
      * @param _amount The amount to check.
      * @return passed_ True if the amount meets or exceeds the minimum deposit amount, otherwise false.
      */
@@ -578,7 +578,7 @@ contract VabbleFund is IVabbleFund, ReentrancyGuard {
     }
 
     /**
-     * @notice Checks if the amount is less than or equal to the maximum deposit amount allowed for a film.
+     * @dev Checks if the amount is less than or equal to the maximum deposit amount allowed for a film.
      * @param _amount The amount to check.
      * @return passed_ True if the amount is within the maximum deposit amount, otherwise false.
      */

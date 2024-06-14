@@ -83,73 +83,73 @@ contract Vote is IVote, ReentrancyGuard {
     address private UNI_HELPER;
 
     /**
-     * @dev Mapping of film IDs to their corresponding Voting struct.
+     * @notice Mapping of film IDs to their corresponding Voting struct.
      */
     mapping(uint256 => Voting) public filmVoting;
 
     /**
-     * @dev Mapping of film board indices to their corresponding Voting struct.
+     * @notice Mapping of film board indices to their corresponding Voting struct.
      */
     mapping(uint256 => Voting) public filmBoardVoting;
 
     /**
-     * @dev Mapping of reward address indices to their corresponding Voting struct.
+     * @notice Mapping of reward address indices to their corresponding Voting struct.
      */
     mapping(uint256 => Voting) public rewardAddressVoting;
 
     /**
-     * @dev Mapping of property flags and indices to their corresponding Voting struct.
+     * @notice Mapping of property flags and indices to their corresponding Voting struct.
      * (flag => (property index => Voting))
      */
     mapping(uint256 => mapping(uint256 => Voting)) public propertyVoting;
 
     /**
-     * @dev Mapping of agent indices to their corresponding AgentVoting struct.
+     * @notice Mapping of agent indices to their corresponding AgentVoting struct.
      */
     mapping(uint256 => AgentVoting) public agentVoting;
 
     /**
-     * @dev Mapping to track if a staker has participated in a film vote.
+     * @notice Mapping to track if a staker has participated in a film vote.
      * Maps staker to filmId to true/false.
      */
     mapping(address => mapping(uint256 => bool)) public isAttendToFilmVote;
 
     /**
-     * @dev Mapping to track if a staker has participated in a film board vote.
+     * @notice Mapping to track if a staker has participated in a film board vote.
      * Maps staker to filmBoard index to true/false.
      */
     mapping(address => mapping(uint256 => bool)) public isAttendToBoardVote;
 
     /**
-     * @dev Mapping to track if a staker has participated in a reward address vote.
+     * @notice Mapping to track if a staker has participated in a reward address vote.
      * Maps staker to rewardAddress index to true/false.
      */
     mapping(address => mapping(uint256 => bool)) public isAttendToRewardAddressVote;
 
     /**
-     * @dev Mapping to track if a staker has participated in an agent vote.
+     * @notice Mapping to track if a staker has participated in an agent vote.
      * Maps staker to agent index to true/false.
      */
     mapping(address => mapping(uint256 => bool)) public isAttendToAgentVote;
 
     /**
-     * @dev Mapping to track if a staker has participated in a property vote.
+     * @notice Mapping to track if a staker has participated in a property vote.
      * Maps flag to staker to property index to true/false.
      */
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) public isAttendToPropertyVote;
 
     /**
-     * @dev Mapping of users to the count of their film votes.
+     * @notice Mapping of users to the count of their film votes.
      */
     mapping(address => uint256) public userFilmVoteCount;
 
     /**
-     * @dev Mapping of users to the count of their governance votes.
+     * @notice Mapping of users to the count of their governance votes.
      */
     mapping(address => uint256) public userGovernVoteCount;
 
     /**
-     * @dev Mapping of governance flags to the count of passed votes.
+     * @notice Mapping of governance flags to the count of passed votes.
      * Maps flag to passed vote count. Flags: 1 - agent, 2 - dispute, 3 - board, 4 - pool, 5 - property.
      */
     mapping(uint256 => uint256) public govPassedVoteCount;
@@ -814,7 +814,7 @@ contract Vote is IVote, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Function to handle voting on a film.
+     * @dev Function to handle voting on a film.
      * @param _filmId The ID of the film to vote on.
      * @param _voteInfo Vote information where 1 indicates 'Yes' and 2 indicates 'No'.
      * @dev This function handles the logic for voting on a film proposal.
@@ -870,7 +870,7 @@ contract Vote is IVote, ReentrancyGuard {
     }
 
     /**
-     * @notice Function to approve a film based on voting results.
+     * @dev Function to approve a film based on voting results.
      * @param _filmId The ID of the film to approve.
      * @dev This function finalizes the film approval process based on the voting results.
      * It throws an error if:
@@ -909,7 +909,7 @@ contract Vote is IVote, ReentrancyGuard {
     }
 
     /**
-     * @notice Function to check if the proposal fee has been paid double.
+     * @dev Function to check if the proposal fee has been paid double.
      * @return paid_ Returns true if the fee has been paid double, otherwise false.
      * @dev This function verifies if the user has paid double the required proposal fee in VAB tokens.
      * A staker that wants to dispute a auditor proposal needs to either pay double the fee or stake double of the
@@ -936,7 +936,7 @@ contract Vote is IVote, ReentrancyGuard {
     }
 
     /**
-     * @notice Function to check if the vote period is still ongoing.
+     * @dev Function to check if the vote period is still ongoing.
      * @param _period The duration of the vote period in seconds.
      * @param _startTime The start time of the vote period as a Unix timestamp.
      * @return Returns true if the vote period is still ongoing, otherwise false.

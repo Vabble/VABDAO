@@ -102,50 +102,63 @@ contract StakingPool is ReentrancyGuard {
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
 
-    /// The Ownablee contract address
+    ///@dev The Ownablee contract address
     address private immutable OWNABLE;
-    /// The Vote contract address
+
+    ///@dev The Vote contract address
     address private VOTE;
-    /// The VabbleDAO contract address
+
+    ///@dev The VabbleDAO contract address
     address private VABBLE_DAO;
-    /// The Property contract address
+
+    ///@dev The Property contract address
     address private DAO_PROPERTY;
-    /// Total amount staked in the contract
+
+    ///@notice  Total amount staked in the contract
     uint256 public totalStakingAmount;
-    /// Total amount of rewards available for distribution
+
+    ///@notice  Total amount of rewards available for distribution
     uint256 public totalRewardAmount;
-    /// Total amount of rewards already distributed
+
+    ///@notice  Total amount of rewards already distributed
     uint256 public totalRewardIssuedAmount;
-    /// Timestamp of the last funding proposal creation on the VabbleDAO contract
+
+    ///@notice  Timestamp of the last funding proposal creation on the VabbleDAO contract
     uint256 public lastfundProposalCreateTime;
 
-    /// @dev  Migration status of the contract:
+    /// @notice  Migration status of the contract:
     /// - 0: not started
     /// - 1: started
     /// - 2: ended
     uint256 public migrationStatus = 0;
-    /// Total amount of tokens that can be migrated
+
+    /// @notice Total amount of tokens that can be migrated
     uint256 public totalMigrationVAB = 0;
 
     /// @dev Mapping to track the time of votes for proposals
     /// (user, proposalID) => voteTime needed for calculating rewards
     mapping(address => mapping(uint256 => uint256)) private votedTime;
-    /// Mapping to store stake information for each address
+
+    ///@notice Mapping to store stake information for each address
     mapping(address => Stake) public stakeInfo;
-    /// Mapping to track the amount of rewards received by each staker
+
+    ///@notice Mapping to track the amount of rewards received by each staker
     mapping(address => uint256) public receivedRewardAmount;
-    /// Mapping to store rental information for each user
+
+    ///@notice Mapping to store rental information for each user
     mapping(address => UserRent) public userRentInfo;
-    /// Mapping to track the minimum proposal index for each address
+
+    ///@notice Mapping to track the minimum proposal index for each address
     mapping(address => uint256) public minProposalIndex;
 
     /// Counter to keep track of the number of proposals
-    /// @dev Count starts from 1
+    /// @notice Count starts from 1
     Counters.Counter public proposalCount;
 
-    /// Struct to store staker information
+    ///@dev Struct to store staker information
     Staker private stakerMap;
-    /// Array to store proposal information, needed for calculating rewards
+
+    ///@dev Array to store proposal information, needed for calculating rewards
     Props[] private propsList;
 
     /*//////////////////////////////////////////////////////////////

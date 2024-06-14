@@ -933,7 +933,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /**
-     * @notice Handles the payment of proposal fees from the user / studio to the staking pool.
+     * @dev Handles the payment of proposal fees from the user / studio to the staking pool.
      * @dev Transfers the required fee amount in a specified token (must be an allowed deposit asset)
      * to the staking pool, calculates the expected amount of VAB tokens using UniswapV2, swaps the token to VAB,
      * and adds the resulting VAB amount as a reward to the staking pool.
@@ -976,7 +976,7 @@ contract VabbleDAO is ReentrancyGuard {
     }
 
     /**
-     * @notice Finalizes the payout and reward distribution for a given film.
+     * @dev Finalizes the payout and reward distribution for a given film.
      * @dev This function updates the final amounts to be paid to payees and investors
      * based on the film's status and the amount raised.
      * It handles both `APPROVED_LISTING` and `APPROVED_FUNDING` statuses. For `APPROVED_LISTING`,

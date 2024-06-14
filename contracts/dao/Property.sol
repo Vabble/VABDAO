@@ -125,17 +125,17 @@ contract Property is ReentrancyGuard {
     address private immutable UNI_HELPER;
 
     /**
-     * @dev The address for sending the VAB from StakingPool, EdgePool and StudioPool when a proposal to change the
+     * @notice The address for sending the VAB from StakingPool, EdgePool and StudioPool when a proposal to change the
      * reward address passed.
-     * This is the address where all of the VAB tokens will be send when calling `StakingPool::withdrawAllFund()`.
+     * @dev This is the address where all of the VAB tokens will be send when calling `StakingPool::withdrawAllFund()`.
      * This address will be updated to the address that was added in the proposal, once it has been finalized.
      */
     address public DAO_FUND_REWARD;
 
-    ///@notice contains the minimum values for each property change
+    ///@dev contains the minimum values for each property change
     uint256[] private minPropertyList;
 
-    ///@notice contains the maximum values for each property change
+    ///@dev contains the maximum values for each property change
     uint256[] private maxPropertyList;
 
     ///@notice total count of all governance proposals
@@ -1194,7 +1194,7 @@ contract Property is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Ensures the proposal fee is paid by transferring the expected amount of VAB tokens from the user to the
+     * @dev Ensures the proposal fee is paid by transferring the expected amount of VAB tokens from the user to the
      * staking pool.
      * @dev Converts the specified amount of USDC to the expected amount of VAB using Uniswap, then transfers the VAB to
      * the staking pool.
@@ -1215,7 +1215,7 @@ contract Property is ReentrancyGuard {
     }
 
     /**
-     * @notice Removes a film board member from the list.
+     * @dev Removes a film board member from the list.
      * @dev Finds the member in the film board members list and removes them by swapping with the last element and
      * reducing the list length.
      * @param _member The address of the film board member to remove.
