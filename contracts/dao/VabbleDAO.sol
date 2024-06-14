@@ -25,6 +25,23 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVote.sol";
 import "../libraries/Helper.sol";
 
+/**
+ * @title VabbleDAO Contract
+ * @notice The VabbleDAO contract manages the creation and updating of film proposals,
+ * reward distribution, payment processing,
+ * and claims related to film projects within the Vabble decentralized platform.
+ * @dev This contract contains various functions to handle film proposals, finalize films,
+ * and distribute rewards to both studio payees and investors. It interacts with multiple
+ * external contracts such as Property, Ownablee, UniHelper, StakingPool, and VabbleFund
+ * to perform these operations. The contract ensures proper reward calculation and distribution
+ * based on the film's status and the amount raised.
+ *
+ * Key Features:
+ * - Film proposal creation and approval times tracking.
+ * - Reward calculation and distribution for both studio payees and investors.
+ * - Finalization of film rewards based on status (listing or funding).
+ * - Secure handling of proposal fees and reward claims.
+ */
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 
@@ -749,7 +766,17 @@ contract VabbleDAO is ReentrancyGuard {
                                  PUBLIC
     //////////////////////////////////////////////////////////////*/
 
-    /// Pre-Checking for set Final Film
+    /**
+     * @notice Checks if the rewards for the provided film IDs can be finalized.
+     * @dev Determines whether each film ID is eligible to have its rewards distributed based on the time since the last
+     * reward distribution.
+     * A film can receive rewards if either:
+     * - It has never received rewards before.
+     * - The required period (specified by `Property::filmRewardClaimPeriod`) has passed since the last time it received
+     * rewards.
+     * @param _filmIds List of film IDs to check for reward finalization eligibility.
+     * @return _valids List of boolean values indicating if each film ID is eligible to have its rewards finalized.
+     */
     function checkSetFinalFilms(uint256[] calldata _filmIds) public view returns (bool[] memory _valids) {
         uint256 fPeriod = IProperty(DAO_PROPERTY).filmRewardClaimPeriod();
 
@@ -765,6 +792,13 @@ contract VabbleDAO is ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Gets all available rewards for a user
+     * @dev Calculates the total available rewards for the user from the last time he claimed up to the current month
+     * @param _curMonth Current month ID
+     * @param _user Address of the user
+     * @return Total available rewards for the user
+     */
     function getAllAvailableRewards(uint256 _curMonth, address _user) public view returns (uint256) {
         uint256[] memory filmIds = userFilmIds[_user][4]; // final
 
@@ -779,6 +813,15 @@ contract VabbleDAO is ReentrancyGuard {
         return rewardSum;
     }
 
+    /**
+     * @notice Gets the reward amount for a user for a specific film ID
+     * @dev Calculates the total reward amount for the user for the specified film ID
+     * from the last time he claimed up to the current month
+     * @param _filmId ID of the film
+     * @param _curMonth Current month ID
+     * @param _user Address of the user
+     * @return Total reward amount for the user
+     */
     function getUserRewardAmountForUser(
         uint256 _filmId,
         uint256 _curMonth,
@@ -792,12 +835,27 @@ contract VabbleDAO is ReentrancyGuard {
         return getUserRewardAmountBetweenMonths(_filmId, preMonth, _curMonth, _user);
     }
 
-    /// @notice Get film proposal created time based on Id
+    /**
+     * @notice Gets the proposal creation and approval times for a film based on its ID
+     * @dev Retrieves the proposal creation and approval times for the specified film
+     * @param _filmId ID of the film
+     * @return cTime_ Creation time of the proposal
+     * @return aTime_ Approval time of the proposal
+     */
     function getFilmProposalTime(uint256 _filmId) public view returns (uint256 cTime_, uint256 aTime_) {
         cTime_ = filmInfo[_filmId].pCreateTime;
         aTime_ = filmInfo[_filmId].pApproveTime;
     }
 
+    /**
+     * @notice Gets the reward amount for a user between two months
+     * @dev Calculates the total reward amount for the user for the specified film ID between the two months
+     * @param _filmId ID of the film
+     * @param _preMonth Previous month ID
+     * @param _curMonth Current month ID
+     * @param _user Address of the user
+     * @return amount_ Total reward amount for the user
+     */
     function getUserRewardAmountBetweenMonths(
         uint256 _filmId,
         uint256 _preMonth,
@@ -819,6 +877,13 @@ contract VabbleDAO is ReentrancyGuard {
                                 PRIVATE
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @dev Moves a value from one storage array to another and removes it from the first array.
+     * @dev Finds the index of the value in `array1`, moves it to `array2`, and updates `array1` accordingly.
+     * @param array1 The source array from which the value will be moved.
+     * @param array2 The destination array to which the value will be moved.
+     * @param value The value to be moved from `array1` to `array2`.
+     */
     function __moveToAnotherArray(uint256[] storage array1, uint256[] storage array2, uint256 value) private {
         uint256 arrayLength = array1.length;
         require(arrayLength < 1e6, "mTAA: too many length");
@@ -838,8 +903,15 @@ contract VabbleDAO is ReentrancyGuard {
         array1.pop();
     }
 
-    /// @notice Check if proposal fee transferred from studio to stakingPool
-    // Get expected VAB amount from UniswapV2 and then Transfer VAB: user(studio) -> stakingPool.
+    /**
+     * @notice Handles the payment of proposal fees from the user / studio to the staking pool.
+     * @dev Transfers the required fee amount in a specified token (must be an allowed deposit asset)
+     * to the staking pool, calculates the expected amount of VAB tokens using UniswapV2, swaps the token to VAB,
+     * and adds the resulting VAB amount as a reward to the staking pool.
+     * @param _dToken The token address used for the payment of the proposal fee.
+     * @param _noVote Flag indicating if the proposal skipped voting phase 0 = false, 1 = true
+     * has to pay double the proposal fee if the proposal skipped voting
+     */
     function __paidFee(address _dToken, uint256 _noVote) private {
         uint256 feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount(); // in cash(usdc)
         if (_noVote == 1) feeAmount = IProperty(DAO_PROPERTY).proposalFeeAmount() * 2;
@@ -913,7 +985,13 @@ contract VabbleDAO is ReentrancyGuard {
         finalizedFilmIds[curMonth].push(_filmId);
     }
 
-    /// @dev Avoid deep error
+    /**
+     * @dev Calculates and sets the final payout amounts for the studio payees of a film.
+     * @dev Avoid stack to deep error here.
+     * @param _filmId The unique identifier of the film.
+     * @param _payout The total payout amount to be distributed to the payees.
+     * @param _curMonth The current month identifier.
+     */
     function __setFinalAmountToPayees(uint256 _filmId, uint256 _payout, uint256 _curMonth) private {
         IVabbleDAO.Film memory fInfo = filmInfo[_filmId];
         uint256 payeeLength = fInfo.studioPayees.length;
@@ -924,8 +1002,13 @@ contract VabbleDAO is ReentrancyGuard {
             __addFinalFilmId(fInfo.studioPayees[k], _filmId);
         }
     }
-    /// @dev Avoid deep error
 
+    /**
+     * @dev Calculates and sets the final reward amounts for the investors of a funded film.
+     * @param _filmId The unique identifier of the film.
+     * @param _rewardAmount The total reward amount to be distributed to the investors.
+     * @param _curMonth The current month identifier.
+     */
     function __setFinalAmountToHelpers(uint256 _filmId, uint256 _rewardAmount, uint256 _curMonth) private {
         uint256 raisedAmount = IVabbleFund(VABBLE_FUND).getTotalFundAmountPerFilm(_filmId);
         if (raisedAmount != 0) {
@@ -943,13 +1026,25 @@ contract VabbleDAO is ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Adds the film ID to the list of finalized rewards based on the film IDs for the user.
+     * @param _user The address of the user.
+     * @param _filmId The unique identifier of the film.
+     */
     function __addFinalFilmId(address _user, uint256 _filmId) private {
         if (!isInvested[_user][_filmId]) {
             userFilmIds[_user][4].push(_filmId); // final
+            //@follow-up why is the user added to the `isInvested` mapping here ?
             isInvested[_user][_filmId] = true;
         }
     }
 
+    /**
+     * @dev Claims all rewards for a given list of film IDs for the caller.
+     * @dev Retrieves the total reward amount for the caller from the specified film IDs,
+     * transfers the rewards in VAB tokens to the caller, and updates the studio pool accordingly.
+     * @param _filmIds List of film IDs for which rewards are being claimed.
+     */
     function __claimAllReward(uint256[] memory _filmIds) private {
         uint256 filmLength = _filmIds.length;
         require(filmLength < 1e5, "cAR: bad array");
@@ -978,6 +1073,13 @@ contract VabbleDAO is ReentrancyGuard {
         emit RewardAllClaimed(msg.sender, curMonth, _filmIds, rewardSum);
     }
 
+    /**
+     * @dev Updates the finalized payout amounts and last claim month for a film when ownership changes.
+     * @param _filmId The unique identifier of the film for which the ownership is being updated.
+     * @param _curMonth The current month identifier.
+     * @param _oldOwner The address of the current owner of the film's payouts.
+     * @param _newOwner The address of the new owner of the film's payouts.
+     */
     function __updateFinalizeAmountAndLastClaimMonth(
         uint256 _filmId,
         uint256 _curMonth,
