@@ -1,12 +1,13 @@
 // // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.4;
+// pragma solidity ^0.8.4;
 
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 // // import "hardhat/console.sol";
 
 // contract MultiSigWallet is ReentrancyGuard {
-//     event SubmitTransaction(address indexed signer, uint256 indexed txIndex, address indexed to, uint256 value, bytes data);
+//     event SubmitTransaction(address indexed signer, uint256 indexed txIndex, address indexed to, uint256 value, bytes
+// data);
 //     event ConfirmTransaction(address indexed signer, uint256 indexed txIndex);
 //     event RevokeConfirmation(address indexed signer, uint256 indexed txIndex);
 //     event ExecuteTransaction(address indexed signer, uint256 indexed txIndex);
@@ -77,11 +78,11 @@ pragma solidity ^0.8.4;
 //     }
 
 //     /// @dev Allows to add a new signer. Transaction has to be sent by wallet.
-//     function addSigner(address _signer) external onlyWallet {   
+//     function addSigner(address _signer) external onlyWallet {
 //         require(_signer != address(0), "addSigner: zero signer");
 //         require(!isSigner[_signer], "addSigner: already signer");
 
-//         isSigner[_signer] = true;        
+//         isSigner[_signer] = true;
 //         signers.push(_signer);
 
 //         emit SignerAdded(_signer);
@@ -106,12 +107,12 @@ pragma solidity ^0.8.4;
 //     }
 
 //     /// @dev Allows to update confirmCount. Transaction has to be sent by wallet.
-//     function changeConfirmCount(uint256 _count) external onlyWallet {   
+//     function changeConfirmCount(uint256 _count) external onlyWallet {
 //         require(_count != 0 && _count <= signers.length, "changeConfirmCount: invalid count");
 
 //         confirmCount = _count;
 //     }
-    
+
 //     /// @dev Submit tx
 //     function submitTransaction(
 //         address _to,
@@ -142,7 +143,8 @@ pragma solidity ^0.8.4;
 //     }
 
 //     /**
-//      * @dev We did not add onlySigner modifier here, because we want to allow any community member to execute transaction
+//      * @dev We did not add onlySigner modifier here, because we want to allow any community member to execute
+// transaction
 //      * which had got at least minimum number of confirmations
 //      */
 //     function executeTransaction(uint256 _txIndex) external {
@@ -192,6 +194,7 @@ pragma solidity ^0.8.4;
 //     {
 //         Transaction storage transaction = transactions[_txIndex];
 
-//         return (transaction.to, transaction.value, transaction.data, transaction.executed, transaction.numConfirmations);
+//         return (transaction.to, transaction.value, transaction.data, transaction.executed,
+// transaction.numConfirmations);
 //     }
 // }
