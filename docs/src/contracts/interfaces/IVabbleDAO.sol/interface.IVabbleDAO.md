@@ -1,5 +1,5 @@
 # IVabbleDAO
-[Git Source](https://github.com/Mill1995/VABDAO/blob/96e45074ef6d32b9660a684b4e42c099c5b394c6/contracts/interfaces/IVabbleDAO.sol)
+[Git Source](https://github.com/Mill1995/VABDAO/blob/4914bdc306cbdb860037485ce4bcebbfdd390c9f/contracts/interfaces/IVabbleDAO.sol)
 
 
 ## Functions
