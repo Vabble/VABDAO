@@ -29,6 +29,11 @@ test-fork :; forge test --summary --detailed --match-path ./test/foundry/fork/*.
 
 snapshot :; forge snapshot
 
+coverage:; forge coverage --report summary
+
+coverageReport:; forge coverage --report lcov
+# then run genhtml -o coverage_foundry lcov.info to generate the HTML files
+
 format :; forge fmt
 
 anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1

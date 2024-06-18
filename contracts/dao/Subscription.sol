@@ -124,11 +124,14 @@ contract Subscription is ReentrancyGuard {
      * @param _period Subscription period in months (e.g., 1, 3, 6, 12).
      */
     function activeSubscription(address _token, uint256 _period) external payable nonReentrant {
+        // Check if token is allowed for deposits
         if (_token != IOwnablee(OWNABLE).PAYOUT_TOKEN() && _token != address(0)) {
             require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset");
         }
 
         uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
+
+        // Send ETH or ERC20 token to this address
         if (_token == address(0)) {
             require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
             if (msg.value > expectAmount) {
@@ -146,7 +149,8 @@ contract Subscription is ReentrancyGuard {
         uint256 usdcAmount;
         address usdcToken = IOwnablee(OWNABLE).USDC_TOKEN();
         address vabToken = IOwnablee(OWNABLE).PAYOUT_TOKEN();
-        // if token is VAB, send USDC(convert from VAB to USDC) to wallet
+
+        // if token is VAB, convert VAB to USDC and send it to the VAB Wallet
         if (_token == vabToken) {
             bytes memory swapArgs = abi.encode(expectAmount, _token, usdcToken);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
@@ -160,7 +164,7 @@ contract Subscription is ReentrancyGuard {
 
             bytes memory swapArgs = abi.encode(amount60, _token, vabToken);
             uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
-            // Transfer VAB to wallet
+            // Transfer VAB to VAB wallet (60%)
             Helper.safeTransfer(vabToken, IOwnablee(OWNABLE).VAB_WALLET(), vabAmount);
 
             if (_token == usdcToken) {
@@ -172,10 +176,11 @@ contract Subscription is ReentrancyGuard {
                 bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdcToken);
                 usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
             }
-            // Transfer USDC to wallet
+            // Transfer USDC to wallet (40%)
             Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
         }
 
+        // Update user subscription info
         UserSubscription storage subscription = subscriptionInfo[msg.sender];
         if (isActivedSubscription(msg.sender)) {
             uint256 oldPeriod = subscription.period;
@@ -234,7 +239,8 @@ contract Subscription is ReentrancyGuard {
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
 
         if (_period < 3) {
-            scriptAmount = scriptAmount;
+            //@audit -low not needed ?
+            // scriptAmount = scriptAmount;
         } else if (_period >= 3 && _period < 6) {
             scriptAmount = scriptAmount * (100 - discountList[0]) * 1e8 / 1e10;
         } else if (_period >= 6 && _period < 12) {
@@ -244,6 +250,9 @@ contract Subscription is ReentrancyGuard {
         }
 
         if (_token == vabToken) {
+            //@audit-issue Why use PERCENT40 here ?
+            // This will result in a wrong subscription price if the user pays with VAB
+            // He always pays only 40% of the actual subscription amount
             expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * PERCENT40 / 1e10, usdcToken, _token);
         } else if (_token == usdcToken) {
             expectAmount_ = scriptAmount;

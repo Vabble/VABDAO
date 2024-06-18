@@ -197,33 +197,45 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
      * @return amount_ The estimated amount of incoming asset.
      */
     function expectedAmount(
-        uint256 _depositAmount,
-        address _depositAsset,
-        address _incomingAsset
+        uint256 _depositAmount, //e: 2.99
+        address _depositAsset, //e: USDC
+        address _incomingAsset //e: USDT
     )
         external
         view
         override
         returns (uint256 amount_)
     {
-        // deposit -> WETH
+        // _depositAsset -> WETH
         uint256 weth_amount;
         if (_depositAsset == address(0)) {
             weth_amount = _depositAmount;
         } else {
+            // example:
+            // User wants to activate a subscription paying with USDT
+            // We want to check how much WETH we need for the given _depositAmount + asset
+            // we check if there is a pool first
             (address router, address[] memory path) = __checkPool(_depositAsset, address(0));
             require(router != address(0), "eA: no pool dA/weth");
-
+            // now we can calculate the amount of WETH we'll need
+            // deposit amount (subscription amount) = 2990000
+            // path: [USDC, WETH]
+            // WETH amount = 862454909597929 = 0.000862454909597929
             weth_amount = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
         }
 
-        // WETH -> income
+        // WETH -> _incomingAsset
         if (_incomingAsset == address(0)) {
             amount_ = weth_amount;
         } else {
+            // Now we want to check how much USDT we need for the calculated WETH
+            // we check if there is a pool again
             (address router, address[] memory path) = __checkPool(address(0), _incomingAsset);
             require(router != address(0), "eA: no pool weth/iA");
-
+            // path: [WETH, USDT]
+            // WETH amount = 862454909597929
+            // USDT amount = ???
+            //@audit-issue There is no liquidty for this token pair
             amount_ = IUniswapV2Router(router).getAmountsOut(weth_amount, path)[1];
         }
     }
@@ -311,7 +323,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         require(address(this).balance >= _depositAmount, "sEToT: insufficient");
 
         __approveMaxAsNeeded(_path[0], _router, _depositAmount);
-
+        //@audit q: why use block.timestamp + 1 as deadline here ?
         amounts_ = IUniswapV2Router(_router).swapExactETHForTokens{ value: address(this).balance }(
             _expectedAmount, _path, address(this), block.timestamp + 1
         );
@@ -337,6 +349,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     {
         __approveMaxAsNeeded(_path[0], _router, _depositAmount);
 
+        //@audit q: why use block.timestamp + 1 as deadline here ?
         amounts_ = IUniswapV2Router(_router).swapExactTokensForETH(
             _depositAmount, _expectedAmount, _path, address(this), block.timestamp + 1
         );
@@ -385,8 +398,8 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
      * @return router The address of the router where the pool exists, and path The token path of the pool.
      */
     function __checkPool(
-        address _depositAsset,
-        address _incomeAsset
+        address _depositAsset, // e: USDC
+        address _incomeAsset // ETH
     )
         private
         view

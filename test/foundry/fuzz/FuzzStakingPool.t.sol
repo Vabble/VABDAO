@@ -15,7 +15,7 @@ contract FuzzStakingPool is BaseTest {
         if (stakeAmount <= minStakeAmount) {
             return;
         }
-        stakeAmount = bound(stakeAmount, minStakeAmount, vab.balanceOf(staker_one));
+        stakeAmount = bound(stakeAmount, minStakeAmount + 1, vab.balanceOf(staker_one));
 
         vm.startPrank(staker_one);
         stakingPool.stakeVAB(stakeAmount);

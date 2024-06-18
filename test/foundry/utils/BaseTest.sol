@@ -45,6 +45,7 @@ contract BaseTest is Test {
     address payable internal staker_two;
     address payable internal studio_one;
     address payable internal studio_two;
+    address payable internal default_user;
 
     IERC20 public usdc;
     IERC20 public vab;
@@ -64,7 +65,7 @@ contract BaseTest is Test {
     // VabbleNFT vabbleNFT;
 
     constructor() {
-        userCount = 7;
+        userCount = 8;
 
         userLabels = new string[](userCount);
         userLabels.push("Deployer");
@@ -100,6 +101,7 @@ contract BaseTest is Test {
             staker_two = users[4];
             studio_one = users[5];
             studio_two = users[6];
+            default_user = users[7];
         }
 
         vm.prank(deployer);

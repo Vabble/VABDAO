@@ -38,6 +38,8 @@ contract BaseForkTest is Test {
     FactoryTierNFT factoryTierNFT;
     Subscription subscription;
 
+    address user = makeAddr("user");
+
     IERC20 internal usdc;
     IERC20 internal vab;
     IERC20 internal usdt;
@@ -61,6 +63,7 @@ contract BaseForkTest is Test {
 
         console2.log(unicode"⚠️You are running tests on live on-chain contracts!");
         console2.log("Chain Id:", block.chainid);
+        console2.log("Current timestamp:", block.timestamp);
         console2.log("RPC URL:", BASE_SEPOLIA_RPC_URL);
         console2.log("Make sure this was intentional");
 
@@ -86,10 +89,6 @@ contract BaseForkTest is Test {
     function createForks() internal {
         baseSepoliaFork = vm.createFork(BASE_SEPOLIA_RPC_URL);
         baseFork = vm.createFork(BASE_RPC_URL);
-    }
-
-    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
     function castAddressToContract(ContractConfigFork memory _activeContractConfig) internal {
