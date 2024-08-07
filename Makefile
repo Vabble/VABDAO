@@ -1,8 +1,10 @@
 -include .env
 
-.PHONY: all test clean deploy fund help install snapshot format anvil scopefile
+.PHONY: all test clean deploy fund help install snapshot format anvil scopefile coverage-html
 
 DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+COVERAGE_OUTPUT_DIR = coverage_foundry
+LCOV_INFO = lcov.info
 
 all: remove install build
 
@@ -21,18 +23,23 @@ build:; forge build
 
 test :; forge test --summary --detailed
 
-test-unit :; forge test --summary --detailed --match-path ./test/foundry/unit/*.sol
+test-unit :; forge test --summary --detailed --match-path "./test/foundry/unit/*.sol"
 
-test-fuzz :; forge test --summary --detailed --match-path ./test/foundry/fuzz/*.sol -vvvv
+test-fuzz :; forge test --summary --detailed --match-path "./test/foundry/fuzz/*.sol" -vvvv
 
-test-fork :; forge test --summary --detailed --match-path ./test/foundry/fork/*.sol
+test-fork :; forge test --summary --detailed --match-path "./test/foundry/fork/*.sol"
 
 snapshot :; forge snapshot
 
 coverage:; forge coverage --report summary
 
-coverageReport:; forge coverage --report lcov
-# then run genhtml -o coverage_foundry lcov.info to generate the HTML files
+coverage-html: coverage-report generate-html
+
+coverage-report:; forge coverage --report lcov
+	
+generate-html:;
+	genhtml -o $(COVERAGE_OUTPUT_DIR) $(LCOV_INFO)
+	
 
 format :; forge fmt
 
@@ -73,3 +80,4 @@ get-deployed-contracts:
 fund-all:
 	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
 
+SHELL := /bin/bash

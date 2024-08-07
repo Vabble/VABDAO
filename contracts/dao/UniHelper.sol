@@ -38,19 +38,19 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev The address of the UniswapV2 Router contract.
-    address private immutable UNISWAP2_ROUTER;
+    address internal immutable UNISWAP2_ROUTER;
 
     /// @dev The address of the UniswapV2 Factory contract.
-    address private immutable UNISWAP2_FACTORY;
+    address internal immutable UNISWAP2_FACTORY;
 
     /// @dev The address of the Sushiswap Router contract.
-    address private immutable SUSHI_ROUTER;
+    address internal immutable SUSHI_ROUTER;
 
     /// @dev The address of the Sushiswap Factory contract.
-    address private immutable SUSHI_FACTORY;
+    address internal immutable SUSHI_FACTORY;
 
     /// @dev The address of the Ownable contract.
-    address private immutable OWNABLE;
+    address internal immutable OWNABLE;
 
     /// @dev mapping to keep track of all Vabble contract addresses
     /// allowed to interact with this contract
@@ -168,6 +168,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
             (address router, address[] memory path) = __checkPool(depositAsset, address(0));
             require(router != address(0), "sA: no pool dA/weth");
 
+            // maximum output token amount we can get
             uint256 expectAmount = IUniswapV2Router(router).getAmountsOut(depositAmount, path)[1];
 
             weth_amount = __swapTokenToETH(depositAmount, expectAmount, router, path)[1];
@@ -299,7 +300,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                PRIVATE
+                                internal
     //////////////////////////////////////////////////////////////*/
 
     /**
@@ -317,7 +318,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address _router,
         address[] memory _path
     )
-        private
+        internal
         returns (uint256[] memory amounts_)
     {
         require(address(this).balance >= _depositAmount, "sEToT: insufficient");
@@ -344,12 +345,15 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address _router,
         address[] memory _path
     )
-        private
+        internal
         returns (uint256[] memory amounts_)
     {
         __approveMaxAsNeeded(_path[0], _router, _depositAmount);
 
         //@audit q: why use block.timestamp + 1 as deadline here ?
+
+        //Swaps an exact amount of tokens for as much ETH as possible
+        // uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline
         amounts_ = IUniswapV2Router(_router).swapExactTokensForETH(
             _depositAmount, _expectedAmount, _path, address(this), block.timestamp + 1
         );
@@ -362,7 +366,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
      * @param _target The address of the spender to approve.
      * @param _neededAmount The amount of tokens needed to be approved.
      */
-    function __approveMaxAsNeeded(address _asset, address _target, uint256 _neededAmount) private {
+    function __approveMaxAsNeeded(address _asset, address _target, uint256 _neededAmount) internal {
         if (IERC20(_asset).allowance(address(this), _target) < _neededAmount) {
             // Helper.safeApprove(_asset, _target, type(uint256).max);
             Helper.safeApprove(_asset, _target, _neededAmount);
@@ -375,7 +379,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
      * @param _target The address of the caller to receive the assets.
      * @param _asset The address of the asset to transfer, or `address(0)` for ETH.
      */
-    function __transferAssetToCaller(address payable _target, address _asset) private {
+    function __transferAssetToCaller(address payable _target, address _asset) internal {
         uint256 transferAmount;
         if (_asset == address(0)) {
             transferAmount = address(this).balance;
@@ -401,7 +405,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address _depositAsset, // e: USDC
         address _incomeAsset // ETH
     )
-        private
+        internal
         view
         returns (address router, address[] memory path)
     {

@@ -9,7 +9,7 @@ contract SubscriptionForkTest is BaseForkTest {
     uint256 constant PERCENT_SCALING_FACTOR = 1e8;
     uint256 private constant SUBSCRIPTION_PERIOD = 30 days;
 
-    function logSubscriptionPrices() public view {
+    function _printSubscriptionPrices() internal view {
         uint256 subscriptionAmount = property.subscriptionAmount();
         console2.log("subscriptionAmount: ", subscriptionAmount);
         // 2.990000 $USDC
@@ -25,11 +25,12 @@ contract SubscriptionForkTest is BaseForkTest {
         uint256 expectedSubscriptionAmountUSDC = subscription.getExpectedSubscriptionAmount(address(usdc), 1);
         console2.log("expectedSubscriptionAmountUSDC: ", expectedSubscriptionAmountUSDC);
 
-        uint256 expectedSubscriptionAmountUSDT = subscription.getExpectedSubscriptionAmount(address(usdt), 1);
-        console2.log("expectedSubscriptionAmountUSDT: ", expectedSubscriptionAmountUSDT);
+        // uint256 expectedSubscriptionAmountUSDT = subscription.getExpectedSubscriptionAmount(address(usdt), 1);
+        // console2.log("expectedSubscriptionAmountUSDT: ", expectedSubscriptionAmountUSDT);
     }
 
     function testFork_subscriptionPrice() public view {
+        _printSubscriptionPrices();
         uint256 subscriptionPeriod = 1;
         address token = address(usdc);
         uint256 subscriptionAmount = property.subscriptionAmount();

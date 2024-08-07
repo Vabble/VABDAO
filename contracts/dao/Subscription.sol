@@ -131,13 +131,13 @@ contract Subscription is ReentrancyGuard {
 
         uint256 expectAmount = getExpectedSubscriptionAmount(_token, _period);
 
-        // Send ETH or ERC20 token to this address
         if (_token == address(0)) {
             require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
             if (msg.value > expectAmount) {
                 Helper.safeTransferETH(msg.sender, msg.value - expectAmount);
             }
         } else {
+            // Send ETH or ERC20 token to this address
             Helper.safeTransferFrom(_token, msg.sender, address(this), expectAmount);
 
             // Approve token to send from this contract to UNI_HELPER contract
@@ -159,22 +159,26 @@ contract Subscription is ReentrancyGuard {
         // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC) to wallet
         else {
             uint256 amount60 = expectAmount * PERCENT60 / 1e10;
-            // Send ETH from this contract to UNI_HELPER contract
-            if (_token == address(0)) Helper.safeTransferETH(UNI_HELPER, amount60); // 60%
-
-            bytes memory swapArgs = abi.encode(amount60, _token, vabToken);
-            uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
-            // Transfer VAB to VAB wallet (60%)
-            Helper.safeTransfer(vabToken, IOwnablee(OWNABLE).VAB_WALLET(), vabAmount);
+            // If token ins ETH send it from this contract to UNI_HELPER contract
+            if (_token == address(0)) {
+                Helper.safeTransferETH(UNI_HELPER, amount60); // 60%
+            } else {
+                bytes memory swapArgs = abi.encode(amount60, _token, vabToken);
+                uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
+                // Transfer VAB to VAB wallet (60%)
+                Helper.safeTransfer(vabToken, IOwnablee(OWNABLE).VAB_WALLET(), vabAmount);
+            }
 
             if (_token == usdcToken) {
                 usdcAmount = expectAmount - amount60;
             } else {
-                // Send ETH from this contract to UNI_HELPER contract
-                if (_token == address(0)) Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60); // 40%
-
-                bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdcToken);
-                usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
+                //If token is ETH send it from this contract to UNI_HELPER contract
+                if (_token == address(0)) {
+                    Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60); // 40%
+                } else {
+                    bytes memory swapArgs1 = abi.encode(expectAmount - amount60, _token, usdcToken);
+                    usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs1);
+                }
             }
             // Transfer USDC to wallet (40%)
             Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);

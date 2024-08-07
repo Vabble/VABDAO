@@ -52,6 +52,8 @@ import "../libraries/Helper.sol";
  *      that decisions are made transparently, securely, and in accordance with the
  *      organization's operational needs and community consensus.
  */
+
+//@audit q: Why is this not inheriting from it's interface ?
 contract Property is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS

@@ -23,7 +23,11 @@ contract SubscriptionTest is BaseTest {
         basisSubscriptionAmount = property.subscriptionAmount();
     }
 
-    function test_constructorZeroOwnableAddress() public {
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    function test_revertConstructorCannotSetZeroOwnableAddress() public {
         address _ownable = address(0);
         address _uniHelper = address(0x2);
         address _property = address(0x3);
@@ -31,7 +35,7 @@ contract SubscriptionTest is BaseTest {
         new Subscription(_ownable, _uniHelper, _property, expectedDiscountList);
     }
 
-    function test_constructorZeroUniHelperAddress() public {
+    function test_revertConstructorCannotSetZeroUniHelperAddress() public {
         address _ownable = address(0x1);
         address _uniHelper = address(0);
         address _property = address(0x3);
@@ -39,7 +43,7 @@ contract SubscriptionTest is BaseTest {
         new Subscription(_ownable, _uniHelper, _property, expectedDiscountList);
     }
 
-    function test_constructorZeroPropertyAddress() public {
+    function test_revertConstructorCannotSetZeroPropertyAddress() public {
         address _ownable = address(0x1);
         address _uniHelper = address(0x2);
         address _property = address(0);
@@ -47,7 +51,7 @@ contract SubscriptionTest is BaseTest {
         new Subscription(_ownable, _uniHelper, _property, expectedDiscountList);
     }
 
-    function test_constructorBadDiscountLength() public {
+    function test_revertConstructorCannotSetBadDiscountLength() public {
         address _ownable = address(0x1);
         address _uniHelper = address(0x2);
         address _property = address(0x3);
@@ -58,6 +62,10 @@ contract SubscriptionTest is BaseTest {
         new Subscription(_ownable, _uniHelper, _property, _discountPercents);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                RECEIVE
+    //////////////////////////////////////////////////////////////*/
+
     function test_canReceiveEth() public {
         uint256 amount = 1 ether;
         deal(default_user, amount);
@@ -66,6 +74,111 @@ contract SubscriptionTest is BaseTest {
         assertEq(success, true);
         assertEq(default_user.balance, 0);
         assertEq(address(subscription).balance, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           activeSubscription
+    //////////////////////////////////////////////////////////////*/
+
+    function test_activatingSubscriptionRevertsIfLessEthSend() public {
+        uint256 period = 1;
+        uint256 amount = 1 wei;
+        address token = address(0);
+
+        deal(default_user, amount);
+        vm.startPrank(default_user);
+        vm.expectRevert("activeSubscription: Insufficient paid");
+        subscription.activeSubscription{ value: amount }(token, period);
+        vm.stopPrank();
+    }
+
+    function test_activatingSubscriptionWithMoreEthOnlyTransfersNecessary() public {
+        uint256 period = 1;
+        uint256 startingAmountEth = 1 ether;
+        address token = address(0);
+
+        deal(default_user, startingAmountEth);
+        assertEq(default_user.balance, startingAmountEth);
+
+        uint256 expectedAmountEthToBeTransfered = subscription.getExpectedSubscriptionAmount(token, period);
+
+        vm.startPrank(default_user);
+        // We transfer 1 ETH to the subscription contract which is way more then needed
+        subscription.activeSubscription{ value: startingAmountEth }(token, period);
+        vm.stopPrank();
+
+        uint256 expectedUserEndBalance = startingAmountEth - expectedAmountEthToBeTransfered;
+        uint256 actualUserEndBalance = default_user.balance;
+        assertEq(actualUserEndBalance, expectedUserEndBalance);
+    }
+
+    function test_activatingSubscriptionWithVab() public {
+        uint256 period = 1;
+        address token = address(vab);
+
+        deal(address(usdc), vabWallet, 0);
+
+        vm.prank(default_user);
+        subscription.activeSubscription(token, period);
+
+        uint256 usdcWalletEndingBalance = usdc.balanceOf(address(vabWallet));
+        uint256 expectedEndingBalance = (basisSubscriptionAmount * (40 * PERCENT_SCALING_FACTOR)) / PERCENT_BASIS_FACTOR;
+
+        // 15 % Tolerance because testnet liquidity is super bad
+        assertApproxEqRel(expectedEndingBalance, usdcWalletEndingBalance, 1e16 * 15);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           addDiscountPercent
+    //////////////////////////////////////////////////////////////*/
+
+    function test_auditorCanSetDiscount() public {
+        uint256[] memory newDiscountList = new uint256[](3);
+        newDiscountList[0] = 10;
+        newDiscountList[1] = 20;
+        newDiscountList[2] = 30;
+        vm.startPrank(auditor);
+        subscription.addDiscountPercent(newDiscountList);
+
+        uint256[] memory _actualDiscountList = subscription.getDiscountPercentList();
+        assertEq(newDiscountList[0], _actualDiscountList[0]);
+        assertEq(newDiscountList[1], _actualDiscountList[1]);
+        assertEq(newDiscountList[2], _actualDiscountList[2]);
+    }
+
+    function test_addDiscountValuesRevertIfNotThree() public {
+        uint256[] memory newDiscountList = new uint256[](4);
+        newDiscountList[0] = 10;
+        newDiscountList[1] = 20;
+        newDiscountList[2] = 30;
+        newDiscountList[3] = 40;
+        vm.startPrank(auditor);
+        vm.expectRevert("discountList: bad length");
+        subscription.addDiscountPercent(newDiscountList);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           getDiscountPercentList
+    //////////////////////////////////////////////////////////////*/
+
+    function test_discountSetToCorrectValue() public view {
+        uint256[] memory _expectedDiscountList = expectedDiscountList;
+        uint256[] memory _actualDiscountList = subscription.getDiscountPercentList();
+
+        assertEq(_expectedDiscountList[0], _actualDiscountList[0]);
+        assertEq(_expectedDiscountList[1], _actualDiscountList[1]);
+        assertEq(_expectedDiscountList[2], _actualDiscountList[2]);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           getExpectedSubscriptionAmount
+    //////////////////////////////////////////////////////////////*/
+
+    function test_subscriptionPriceMatchesWithGovernanceValue() public view {
+        uint256 subscriptionPeriod = 1;
+        address token = address(usdc);
+        uint256 expectSubscriptionCost = subscription.getExpectedSubscriptionAmount(token, subscriptionPeriod);
+        assertEq(basisSubscriptionAmount, expectSubscriptionCost);
     }
 
     function test_subscriptionPriceVabExpectedSwapValue() public view {
@@ -88,13 +201,6 @@ contract SubscriptionTest is BaseTest {
 
         uint256 actualSubscriptionCost = subscription.getExpectedSubscriptionAmount(token, subscriptionPeriod);
         assertEq(expectedSwapAmount, actualSubscriptionCost);
-    }
-
-    function test_subscriptionPrice() public view {
-        uint256 subscriptionPeriod = 1;
-        address token = address(usdc);
-        uint256 expectSubscriptionCost = subscription.getExpectedSubscriptionAmount(token, subscriptionPeriod);
-        assertEq(basisSubscriptionAmount, expectSubscriptionCost);
     }
 
     function test_subscriptionPriceNoDiscount() public view {
@@ -155,87 +261,9 @@ contract SubscriptionTest is BaseTest {
         assertEq(actualSubscriptionCostThirdDiscount, expectedSubscriptionCostThirdDiscount);
     }
 
-    function test_discountSetToCorrectValue() public view {
-        uint256[] memory _expectedDiscountList = expectedDiscountList;
-        uint256[] memory _actualDiscountList = subscription.getDiscountPercentList();
-
-        assertEq(_expectedDiscountList[0], _actualDiscountList[0]);
-        assertEq(_expectedDiscountList[1], _actualDiscountList[1]);
-        assertEq(_expectedDiscountList[2], _actualDiscountList[2]);
-    }
-
-    function test_auditorCanSetDiscount() public {
-        uint256[] memory newDiscountList = new uint256[](3);
-        newDiscountList[0] = 10;
-        newDiscountList[1] = 20;
-        newDiscountList[2] = 30;
-        vm.startPrank(auditor);
-        subscription.addDiscountPercent(newDiscountList);
-
-        uint256[] memory _actualDiscountList = subscription.getDiscountPercentList();
-        assertEq(newDiscountList[0], _actualDiscountList[0]);
-        assertEq(newDiscountList[1], _actualDiscountList[1]);
-        assertEq(newDiscountList[2], _actualDiscountList[2]);
-    }
-
-    function test_addDiscountValuesRevertIfNotThree() public {
-        uint256[] memory newDiscountList = new uint256[](4);
-        newDiscountList[0] = 10;
-        newDiscountList[1] = 20;
-        newDiscountList[2] = 30;
-        newDiscountList[3] = 40;
-        vm.startPrank(auditor);
-        vm.expectRevert("discountList: bad length");
-        subscription.addDiscountPercent(newDiscountList);
-    }
-
-    function test_activatingSubscriptionRevertsIfLessEthSend() public {
-        uint256 period = 1;
-        uint256 amount = 1 wei;
-        address token = address(0);
-
-        deal(default_user, amount);
-        vm.startPrank(default_user);
-        vm.expectRevert("activeSubscription: Insufficient paid");
-        subscription.activeSubscription{ value: amount }(token, period);
-        vm.stopPrank();
-    }
-
-    function test_activatingSubscriptionWithMoreEthOnlyTransfersNecessary() public {
-        uint256 period = 1;
-        uint256 startingAmountEth = 1 ether;
-        address token = address(0);
-
-        deal(default_user, startingAmountEth);
-        assertEq(default_user.balance, startingAmountEth);
-
-        uint256 expectedAmountEthToBeTransfered = subscription.getExpectedSubscriptionAmount(token, period);
-
-        vm.startPrank(default_user);
-        // We transfer 1 ETH to the subscription contract which is way more then needed
-        subscription.activeSubscription{ value: startingAmountEth }(token, period);
-        vm.stopPrank();
-
-        uint256 expectedUserEndBalance = startingAmountEth - expectedAmountEthToBeTransfered;
-        uint256 actualUserEndBalance = default_user.balance;
-        assertEq(actualUserEndBalance, expectedUserEndBalance);
-    }
-
-    function test_activatingSubscriptionWithVab() public {
-        uint256 period = 1;
-        address token = address(vab);
-
-        deal(address(usdc), vabWallet, 0);
-
-        vm.prank(default_user);
-        subscription.activeSubscription(token, period);
-
-        uint256 usdcWalletEndingBalance = usdc.balanceOf(address(vabWallet));
-        uint256 expectedEndingBalance = (basisSubscriptionAmount * (40 * PERCENT_SCALING_FACTOR)) / PERCENT_BASIS_FACTOR;
-
-        // 15 % Tolerance because testnet liquidity is super bad
-        assertApproxEqRel(expectedEndingBalance, usdcWalletEndingBalance, 1e16 * 15);
-    }
+    /*//////////////////////////////////////////////////////////////
+                           isActivedSubscription
+    //////////////////////////////////////////////////////////////*/
 
     function test_subscriptionNotActiveWhenNoSubscription() public view {
         assertEq(subscription.isActivedSubscription(address(default_user)), false);

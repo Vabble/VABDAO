@@ -42,6 +42,8 @@ import "../libraries/Helper.sol";
  * - Finalization of film rewards based on status (listing or funding).
  * - Secure handling of proposal fees and reward claims.
  */
+
+//@audit q: Why is this not inheriting from it's interface ?
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 

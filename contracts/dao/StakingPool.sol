@@ -42,6 +42,8 @@ import "../libraries/Arrays.sol";
  * This contract plays a critical role in the Vabble ecosystem by providing a secure and efficient platform for staking
  * VAB tokens for participating in governance decisions and earning rewards.
  */
+
+//@audit q: Why is this not inheriting from it's interface ?
 contract StakingPool is ReentrancyGuard {
     using Counters for Counters.Counter;
     using Arrays for uint256[];
