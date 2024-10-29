@@ -50,7 +50,7 @@
     "chai": "^4.5.0",
     "dotenv": "^10.0.0",
     "ethers": "^5.7.2",
-    "hardhat": "^2.22.13",
+    "hardhat": "^2.22.15",
     "hardhat-contract-sizer": "^2.0.3",
     "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^2.3.2",
@@ -58,6 +58,7 @@
     "solidity-coverage": "^0.8.11"
   },
   "dependencies": {
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "ethereum-waffle": "^4.0.10"
   }
 }
