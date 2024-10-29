@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../libraries/Helper.sol";
+import "../interfaces/IUniHelper.sol";
+import "../interfaces/IStakingPool.sol";
 
 contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // --------------------
@@ -53,6 +58,10 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     uint256 public maxDurationInMinutes;
     uint256 public minBidIncrementAllowed;
     uint256 public maxBidIncrementAllowed;
+
+    address public immutable STAKING_POOL; // StakingPool contract address
+    address public immutable UNI_HELPER; // UniHelper contract address
+    address public immutable UNISWAP_ROUTER; // UniswapV2Router contract address
 
     // --------------------
     // Events
@@ -112,7 +121,14 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // Constructor
     // --------------------
 
-    constructor(address payable _vabbleAddress, address payable _daoAddress, address payable _ipOwnerAddress) {
+    constructor(
+        address payable _vabbleAddress,
+        address payable _daoAddress,
+        address payable _ipOwnerAddress,
+        address _uniHelper,
+        address _staking,
+        address _uniswapRouter
+    ) {
         vabbleAddress = _vabbleAddress;
         daoAddress = _daoAddress;
         ipOwnerAddress = _ipOwnerAddress;
@@ -127,6 +143,10 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         maxDurationInMinutes = 2880; // 48 hours * 60 minutes
         minBidIncrementAllowed = 1; // 0.01%
         maxBidIncrementAllowed = 50000; // 5000%
+
+        UNI_HELPER = _uniHelper;
+        STAKING_POOL = _staking;
+        UNISWAP_ROUTER = _uniswapRouter;
     }
 
     // --------------------
@@ -234,6 +254,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(block.timestamp > sale.endTime || sale.settled, "Sale not ended or already settled");
         require(!sale.fundsClaimed, "Funds already claimed");
         require(sale.highestBid > 0, "No funds to distribute");
+        require(vabbleShare + daoShare + sale.ipOwnerShare <= percentagePrecision, "Total shares exceed 100%");
 
         uint256 totalAmount = sale.highestBid;
 
@@ -247,11 +268,45 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         // Transfer funds
         _safeTransfer(vabbleAddress, vabbleAmount, "Vabble transfer failed");
-        _safeTransfer(daoAddress, daoAmount, "DAO transfer failed");
+        __stakingPoolFee(daoAmount); // Swap ETH to VAB and add to staking pool
         _safeTransfer(ipOwnerAddress, ipOwnerAmount, "IP Owner transfer failed");
         _safeTransfer(sale.roomOwner, roomOwnerAmount, "Room Owner transfer failed");
 
         emit SaleSettled(saleId, sale.highestBidder, sale.highestBid);
+    }
+
+    function __stakingPoolFee(uint256 amountToPool) private {
+        // Ensure the contract has enough ETH
+        require(address(this).balance >= amountToPool, "stakingPoolFee: Insufficient contract balance");
+
+        // Prepare the swap path: ETH -> VAB
+        address[] memory path = new address[](2);
+        path[0] = IUniswapV2Router02(UNISWAP_ROUTER).WETH();
+        path[1] = vabbleAddress;
+
+        // Get expected amount of VAB tokens
+        uint256[] memory amountsOut = IUniswapV2Router02(UNISWAP_ROUTER).getAmountsOut(amountToPool, path);
+        uint256 expectedAmountOut = amountsOut[1];
+
+        uint256 slippageTolerance = (expectedAmountOut * 995) / 1000; // 0.5% slippage
+
+        // Swap ETH to VAB tokens
+        uint256[] memory amountsReceived = IUniswapV2Router02(UNISWAP_ROUTER).swapExactETHForTokens{value: amountToPool}(
+            slippageTolerance,
+            path,
+            address(this),
+            block.timestamp + 5
+        );
+
+        uint256 vabAmount = amountsReceived[1];
+
+        // Approve the staking pool to spend VAB tokens
+        if (IERC20(vabbleAddress).allowance(address(this), STAKING_POOL) < vabAmount) {
+            Helper.safeApprove(vabbleAddress, STAKING_POOL, vabAmount);
+        }
+
+        // Add the VAB tokens to the staking pool
+        IStakingPool(STAKING_POOL).addRewardToPool(vabAmount);
     }
 
     function claimRefund(uint256 saleId) external saleExists(saleId) whenNotPaused nonReentrant {
