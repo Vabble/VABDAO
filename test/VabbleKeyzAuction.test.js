@@ -514,6 +514,89 @@ describe("VabbleKeyzAuction", function () {
                     auction.connect(bidder1).buyNow(saleId, 0, { value: price })
                 ).to.be.revertedWith("Pausable: paused");
             });
+
+            it("should fail when contract is paused", async function () {
+                // Use the contract owner to pause the contract, not the room owner
+                await auction.connect(owner).pause();
+
+                await expect(
+                    auction.connect(bidder1).buyNow(saleId, 0, { value: price })
+                ).to.be.revertedWith("Pausable: paused");
+
+                // Cleanup: unpause for other tests
+                await auction.connect(owner).unpause();
+            });
+
+            // Add more comprehensive pause-related tests
+            it("should handle pause/unpause state transitions correctly", async function () {
+                // Initial purchase should work
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+
+                // Pause contract
+                await auction.connect(owner).pause();
+
+                // Purchases should fail while paused
+                await expect(
+                    auction.connect(bidder2).buyNow(saleId, 1, { value: price })
+                ).to.be.revertedWith("Pausable: paused");
+
+                // Unpause contract
+                await auction.connect(owner).unpause();
+
+                // Purchases should work again after unpause
+                await expect(
+                    auction.connect(bidder2).buyNow(saleId, 1, { value: price })
+                ).to.not.be.reverted;
+            });
+
+            it("should prevent non-owners from pausing", async function () {
+                await expect(
+                    auction.connect(bidder1).pause()
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+
+                await expect(
+                    auction.connect(roomOwner).pause()
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+            });
+
+            it("should prevent non-owners from unpausing", async function () {
+                // Owner pauses first
+                await auction.connect(owner).pause();
+
+                await expect(
+                    auction.connect(bidder1).unpause()
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+
+                await expect(
+                    auction.connect(roomOwner).unpause()
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+
+                // Cleanup: unpause for other tests
+                await auction.connect(owner).unpause();
+            });
+
+            it("should maintain key state correctly through pause/unpause cycles", async function () {
+                // Make initial purchase
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+
+                // Pause contract
+                await auction.connect(owner).pause();
+
+                // Verify key state persists during pause
+                expect(await auction.isKeyAvailable(saleId, 0)).to.be.false;
+                const [amount, buyer] = await auction.getKeyBid(saleId, 0);
+                expect(amount).to.equal(price);
+                expect(buyer).to.equal(bidder1.address);
+
+                // Unpause contract
+                await auction.connect(owner).unpause();
+
+                // Verify key state remains correct after unpause
+                expect(await auction.isKeyAvailable(saleId, 0)).to.be.false;
+                const [amountAfter, buyerAfter] = await auction.getKeyBid(saleId, 0);
+                expect(amountAfter).to.equal(price);
+                expect(buyerAfter).to.equal(bidder1.address);
+            });
         });
 
         describe("Sale State Verification", function () {
