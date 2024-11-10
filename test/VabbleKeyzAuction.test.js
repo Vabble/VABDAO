@@ -8,7 +8,7 @@ describe("VabbleKeyzAuction", function () {
     const durationInMinutes = 60;
 
     async function deployContractsFixture() {
-        const [owner, roomOwner, bidder1, bidder2, bidder3, bidder4, daoAddress, ipOwnerAddress] = await ethers.getSigners();
+        const [owner, roomOwner, bidder1, bidder2, bidder3, bidder4, daoAddress, ipOwner1, ipOwner2] = await ethers.getSigners();
 
         // Deploy ETH receiver first
         const ETHReceiver = await ethers.getContractFactory("ETHReceiver");
@@ -46,7 +46,6 @@ describe("VabbleKeyzAuction", function () {
         const auction = await VabbleKeyzAuction.deploy(
             mockVabbleToken.address,
             daoAddress.address,
-            ipOwnerAddress.address,
             mockUniHelper.address,
             mockStakingPool.address,
             mockUniswapRouter.address
@@ -83,7 +82,8 @@ describe("VabbleKeyzAuction", function () {
             bidder3,
             bidder4,
             daoAddress,
-            ipOwnerAddress
+            ipOwner1,
+            ipOwner2
         };
     }
 
@@ -95,13 +95,11 @@ describe("VabbleKeyzAuction", function () {
                 mockUniHelper,
                 mockStakingPool,
                 mockUniswapRouter,
-                daoAddress,
-                ipOwnerAddress
+                daoAddress
             } = await loadFixture(deployContractsFixture);
 
             expect(await auction.vabbleAddress()).to.equal(mockVabbleToken.address);
             expect(await auction.daoAddress()).to.equal(daoAddress.address);
-            expect(await auction.ipOwnerAddress()).to.equal(ipOwnerAddress.address);
             expect(await auction.UNI_HELPER()).to.equal(mockUniHelper.address);
             expect(await auction.STAKING_POOL()).to.equal(mockStakingPool.address);
             expect(await auction.UNISWAP_ROUTER()).to.equal(mockUniswapRouter.address);
@@ -118,7 +116,7 @@ describe("VabbleKeyzAuction", function () {
 
     describe("Sale Creation", function () {
         it("Should create an auction sale successfully", async function () {
-            const { auction, roomOwner } = await loadFixture(deployContractsFixture);
+            const { auction, roomOwner, ipOwner1 } = await loadFixture(deployContractsFixture);
 
             const tx = await auction.connect(roomOwner).createSale(
                 1, // roomId
@@ -127,7 +125,8 @@ describe("VabbleKeyzAuction", function () {
                 5, // totalKeys
                 price,
                 100, // minBidIncrement (10%)
-                50 // ipOwnerShare (5%)
+                50, // ipOwnerShare (5%)
+                ipOwner1.address
             );
 
             const receipt = await tx.wait();
@@ -146,7 +145,7 @@ describe("VabbleKeyzAuction", function () {
         });
 
         it("Should fail if duration exceeds max limit", async function () {
-            const { auction, roomOwner } = await loadFixture(deployContractsFixture);
+            const { auction, roomOwner, ipOwner1 } = await loadFixture(deployContractsFixture);
             const maxDuration = await auction.maxDurationInMinutes();
 
             await expect(auction.connect(roomOwner).createSale(
@@ -156,12 +155,13 @@ describe("VabbleKeyzAuction", function () {
                 5,
                 price,
                 100,
-                50
+                50,
+                ipOwner1.address
             )).to.be.revertedWith("Duration exceeds max limit");
         });
 
         it("Should fail if IP owner share is too low", async function () {
-            const { auction, roomOwner } = await loadFixture(deployContractsFixture);
+            const { auction, roomOwner, ipOwner1 } = await loadFixture(deployContractsFixture);
             const minShare = await auction.minIpOwnerShare();
 
             await expect(auction.connect(roomOwner).createSale(
@@ -171,13 +171,29 @@ describe("VabbleKeyzAuction", function () {
                 5,
                 price,
                 100,
-                minShare.sub(1)
+                minShare.sub(1),
+                ipOwner1.address
             )).to.be.revertedWith("IP Owner share too low");
+        });
+
+        it("Should fail when creating sale with zero IP owner address", async function () {
+            const { auction, roomOwner } = await loadFixture(deployContractsFixture);
+
+            await expect(auction.connect(roomOwner).createSale(
+                1,
+                0,
+                60,
+                5,
+                price,
+                100,
+                50,
+                ethers.constants.AddressZero
+            )).to.be.revertedWith("Invalid IP owner address");
         });
     });
 
     describe("Bidding", function () {
-        let auction, roomOwner, bidder1, bidder2;
+        let auction, roomOwner, bidder1, bidder2, bidder3, bidder4, ipOwner1;
         let saleId = 1;
 
         beforeEach(async function () {
@@ -188,15 +204,17 @@ describe("VabbleKeyzAuction", function () {
             bidder2 = contracts.bidder2;
             bidder3 = contracts.bidder3;
             bidder4 = contracts.bidder4;
+            ipOwner1 = contracts.ipOwner1;
 
             await auction.connect(roomOwner).createSale(
                 1,
                 0,
-                60,
+                durationInMinutes,
                 5,
                 price,
                 100,
-                50
+                50,
+                ipOwner1.address
             );
         });
 
@@ -337,7 +355,7 @@ describe("VabbleKeyzAuction", function () {
 
         beforeEach(async function () {
             const contracts = await loadFixture(deployContractsFixture);
-            ({ auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner } = contracts);
+            ({ auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner, ipOwner1 } = contracts);
 
             // Create instant buy sale
             await auction.connect(roomOwner).createSale(
@@ -347,7 +365,8 @@ describe("VabbleKeyzAuction", function () {
                 5, // totalKeys
                 price, // fixed price
                 0, // minBidIncrement (not used)
-                50 // ipOwnerShare (5%)
+                50, // ipOwnerShare (5%)
+                ipOwner1.address
             );
         });
 
@@ -685,7 +704,8 @@ describe("VabbleKeyzAuction", function () {
                     2, // totalKeys
                     price, // starting price
                     100, // minBidIncrement (10%)
-                    50 // ipOwnerShare (5%)
+                    50, // ipOwnerShare (5%)
+                    contracts.ipOwner1.address
                 );
 
                 // Place bids
@@ -704,7 +724,7 @@ describe("VabbleKeyzAuction", function () {
 
                 // Get initial balances
                 const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const roomOwnerBalanceBefore = await ethers.provider.getBalance(contracts.roomOwner.address);
                 const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
@@ -717,7 +737,7 @@ describe("VabbleKeyzAuction", function () {
 
                 // Check final balances
                 const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const roomOwnerBalanceAfter = await ethers.provider.getBalance(contracts.roomOwner.address);
                 const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
@@ -741,7 +761,8 @@ describe("VabbleKeyzAuction", function () {
                     2,
                     price,
                     100,
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 await time.increase(3600);
@@ -760,7 +781,8 @@ describe("VabbleKeyzAuction", function () {
                     2,
                     price,
                     100,
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 // Place single bid
@@ -782,7 +804,8 @@ describe("VabbleKeyzAuction", function () {
                     4, // 4 keys
                     price,
                     100,
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 // Place multiple bids on different keys
@@ -800,13 +823,13 @@ describe("VabbleKeyzAuction", function () {
                 const ipOwnerAmount = totalAmount.mul(50).div(1000);
 
                 const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
                 await contracts.auction.settleSale(2);
 
                 const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
                 expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
@@ -825,7 +848,8 @@ describe("VabbleKeyzAuction", function () {
                     2,
                     price,
                     0, // minBidIncrement not used for instant buy
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 // Make purchases
@@ -842,13 +866,13 @@ describe("VabbleKeyzAuction", function () {
                 const ipOwnerAmount = totalAmount.mul(50).div(1000);
 
                 const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
                 await contracts.auction.settleSale(saleId);
 
                 const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
                 expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
@@ -865,7 +889,8 @@ describe("VabbleKeyzAuction", function () {
                     4,
                     price,
                     0,
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 // Only buy some of the keys
@@ -903,7 +928,8 @@ describe("VabbleKeyzAuction", function () {
                     2,
                     price,
                     100,
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 await expect(
@@ -919,7 +945,8 @@ describe("VabbleKeyzAuction", function () {
                     2,
                     price,
                     100,
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price });
@@ -950,7 +977,8 @@ describe("VabbleKeyzAuction", function () {
                     1,
                     price,
                     100,
-                    maxIpOwnerShare
+                    maxIpOwnerShare,
+                    contracts.ipOwner1.address
                 );
 
                 await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
@@ -978,7 +1006,8 @@ describe("VabbleKeyzAuction", function () {
                     1,
                     price,
                     100,
-                    invalidIpOwnerShare
+                    invalidIpOwnerShare,
+                    contracts.ipOwner1.address
                 );
 
                 await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
@@ -998,7 +1027,8 @@ describe("VabbleKeyzAuction", function () {
                     1,
                     price,
                     100,
-                    50
+                    50,
+                    contracts.ipOwner1.address
                 );
 
                 await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
@@ -1016,7 +1046,7 @@ describe("VabbleKeyzAuction", function () {
 
     describe("Administrative Functions", function () {
         let auction, owner, nonOwner;
-        let vabbleReceiver, daoAddress, ipOwnerReceiver;
+        let vabbleReceiver, daoAddress, ipOwner1;
 
         beforeEach(async function () {
             const contracts = await loadFixture(deployContractsFixture);
@@ -1025,7 +1055,7 @@ describe("VabbleKeyzAuction", function () {
             nonOwner = contracts.bidder1;
             vabbleReceiver = contracts.vabbleReceiver;
             daoAddress = contracts.daoAddress;
-            ipOwnerReceiver = contracts.ipOwnerReceiver;
+            ipOwner1 = contracts.ipOwner1;
         });
 
         describe("Share Management", function () {
@@ -1095,44 +1125,6 @@ describe("VabbleKeyzAuction", function () {
                     .to.emit(auction, "DaoAddressUpdated")
                     .withArgs(newAddress);
                 expect(await auction.daoAddress()).to.equal(newAddress);
-            });
-
-            it("Should allow owner to update IP owner address", async function () {
-                const newAddress = nonOwner.address;
-                await expect(auction.connect(owner).setIpOwnerAddress(newAddress))
-                    .to.emit(auction, "IpOwnerAddressUpdated")
-                    .withArgs(newAddress);
-                expect(await auction.ipOwnerAddress()).to.equal(newAddress);
-            });
-
-            it("Should prevent setting addresses to zero address", async function () {
-                const zeroAddress = ethers.constants.AddressZero;
-                await expect(
-                    auction.connect(owner).setVabbleAddress(zeroAddress)
-                ).to.be.revertedWith("Invalid address");
-
-                await expect(
-                    auction.connect(owner).setDaoAddress(zeroAddress)
-                ).to.be.revertedWith("Invalid address");
-
-                await expect(
-                    auction.connect(owner).setIpOwnerAddress(zeroAddress)
-                ).to.be.revertedWith("Invalid address");
-            });
-
-            it("Should prevent non-owner from updating addresses", async function () {
-                const newAddress = nonOwner.address;
-                await expect(
-                    auction.connect(nonOwner).setVabbleAddress(newAddress)
-                ).to.be.revertedWith("Ownable: caller is not the owner");
-
-                await expect(
-                    auction.connect(nonOwner).setDaoAddress(newAddress)
-                ).to.be.revertedWith("Ownable: caller is not the owner");
-
-                await expect(
-                    auction.connect(nonOwner).setIpOwnerAddress(newAddress)
-                ).to.be.revertedWith("Ownable: caller is not the owner");
             });
         });
 
@@ -1225,6 +1217,7 @@ describe("VabbleKeyzAuction", function () {
             });
 
             it("Should prevent actions when paused", async function () {
+                const { ipOwner1 } = await loadFixture(deployContractsFixture);
                 await auction.connect(owner).pause();
 
                 // Try to create a sale while paused
@@ -1232,11 +1225,12 @@ describe("VabbleKeyzAuction", function () {
                     auction.connect(owner).createSale(
                         1,
                         0,
-                        60,
+                        durationInMinutes,
                         5,
                         ethers.utils.parseEther("1"),
                         100,
-                        50
+                        50,
+                        ipOwner1.address
                     )
                 ).to.be.revertedWith("Pausable: paused");
             });

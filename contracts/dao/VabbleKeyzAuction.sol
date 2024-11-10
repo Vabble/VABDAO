@@ -33,10 +33,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         uint256 startTime;
         uint256 endTime;
         uint256 totalKeys;
-        uint256 price; // For instant buy or starting price for auction
+        uint256 price;
         mapping(uint256 => KeyBid) keyBids;
         uint256 minBidIncrement;
         uint256 ipOwnerShare;
+        address payable ipOwnerAddress;
         bool settled;
     }
 
@@ -53,7 +54,6 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // Addresses for revenue splits
     address payable public vabbleAddress;
     address payable public daoAddress;
-    address payable public ipOwnerAddress;
 
     // Variables for revenue percentages
     uint256 public vabbleShare; // e.g., 15 represents 1.5%
@@ -132,14 +132,12 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     constructor(
         address payable _vabbleAddress,
         address payable _daoAddress,
-        address payable _ipOwnerAddress,
         address _uniHelper,
         address _staking,
         address _uniswapRouter
     ) {
         vabbleAddress = _vabbleAddress;
         daoAddress = _daoAddress;
-        ipOwnerAddress = _ipOwnerAddress;
 
         // Initialize default shares and precision
         vabbleShare = 15; // 1.5%
@@ -168,11 +166,13 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         uint256 _totalKeys,
         uint256 _price,
         uint256 _minBidIncrement,
-        uint256 _ipOwnerShare
+        uint256 _ipOwnerShare,
+        address payable _ipOwnerAddress // Added parameter
     ) external whenNotPaused {
         require(_durationInMinutes <= maxDurationInMinutes, "Duration exceeds max limit");
         require(_ipOwnerShare >= minIpOwnerShare, "IP Owner share too low");
         require(_totalKeys > 0, "Must sell at least one key");
+        require(_ipOwnerAddress != address(0), "Invalid IP owner address");
 
         if (_saleType == SaleType.Auction) {
             require(
@@ -195,6 +195,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         newSale.price = _price;
         newSale.minBidIncrement = _minBidIncrement;
         newSale.ipOwnerShare = _ipOwnerShare;
+        newSale.ipOwnerAddress = _ipOwnerAddress;
         newSale.settled = false;
 
         // Mark all keys as available
@@ -286,7 +287,6 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         uint256 totalAmount = 0;
 
-        // Calculate total amount from all successful bids
         for (uint256 i = 0; i < sale.totalKeys; i++) {
             KeyBid storage keyBid = sale.keyBids[i];
             if (keyBid.bidder != address(0)) {
@@ -297,7 +297,6 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         require(totalAmount > 0, "No funds to distribute");
 
-        // Calculate shares
         uint256 vabbleAmount = (totalAmount * vabbleShare) / percentagePrecision;
         uint256 daoAmount = (totalAmount * daoShare) / percentagePrecision;
         uint256 ipOwnerAmount = (totalAmount * sale.ipOwnerShare) / percentagePrecision;
@@ -305,10 +304,9 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         sale.settled = true;
 
-        // Transfer funds
         _safeTransfer(vabbleAddress, vabbleAmount, "Vabble transfer failed");
-        __stakingPoolFee(daoAmount); // Swap ETH to VAB and add to staking pool
-        _safeTransfer(ipOwnerAddress, ipOwnerAmount, "IP Owner transfer failed");
+        __stakingPoolFee(daoAmount);
+        _safeTransfer(sale.ipOwnerAddress, ipOwnerAmount, "IP Owner transfer failed"); // Use sale-specific ipOwnerAddress
         _safeTransfer(sale.roomOwner, roomOwnerAmount, "Room Owner transfer failed");
 
         emit SaleSettled(saleId, totalAmount);
@@ -412,12 +410,6 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(_daoAddress != address(0), "Invalid address");
         daoAddress = _daoAddress;
         emit DaoAddressUpdated(_daoAddress);
-    }
-
-    function setIpOwnerAddress(address payable _ipOwnerAddress) external onlyOwner {
-        require(_ipOwnerAddress != address(0), "Invalid address");
-        ipOwnerAddress = _ipOwnerAddress;
-        emit IpOwnerAddressUpdated(_ipOwnerAddress);
     }
 
     function setMaxDurationInMinutes(uint256 _maxDurationInMinutes) external onlyOwner {
