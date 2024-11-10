@@ -42,6 +42,7 @@
   "author": "Vabble",
   "license": "MIT",
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-verify": "^2.0.5",
     "@nomiclabs/hardhat-ethers": "^2.2.3",

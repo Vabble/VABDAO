@@ -1,5 +1,7 @@
 require('dotenv').config();
 require("@nomiclabs/hardhat-ethers");
+require("@nomicfoundation/hardhat-chai-matchers");
+require("@nomiclabs/hardhat-ethers");
 
 const mnemonic = process.env.MNEMONIC;
 const privateKey = process.env.DEPLOY_PRIVATE_KEY;
