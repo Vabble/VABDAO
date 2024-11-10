@@ -268,65 +268,350 @@ describe("VabbleKeyzAuction", function () {
 
     describe("Sale Settlement", function () {
         let contracts;
-        let saleId = 1;
+        let saleId;
+        const price = ethers.utils.parseEther("1");
 
         beforeEach(async function () {
             contracts = await loadFixture(deployContractsFixture);
-
-            await contracts.auction.connect(contracts.roomOwner).createSale(
-                1,
-                0,
-                60,
-                2,
-                price,
-                100,
-                50
-            );
-
-            await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
-            await contracts.auction.connect(contracts.bidder2).placeBid(saleId, 1, { value: price.mul(3) });
+            saleId = 1;
         });
 
-        it("Should settle sale and distribute funds correctly", async function () {
-            await time.increase(3600);
+        describe("Auction Settlement", function () {
+            beforeEach(async function () {
+                // Create auction sale
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    1, // roomId
+                    0, // SaleType.Auction
+                    60, // durationInMinutes
+                    2, // totalKeys
+                    price, // starting price
+                    100, // minBidIncrement (10%)
+                    50 // ipOwnerShare (5%)
+                );
 
-            const totalAmount = price.mul(5);
-            const vabbleAmount = totalAmount.mul(15).div(1000);
-            const daoAmount = totalAmount.mul(10).div(1000);
-            const ipOwnerAmount = totalAmount.mul(50).div(1000);
+                // Place bids
+                await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
+                await contracts.auction.connect(contracts.bidder2).placeBid(saleId, 1, { value: price.mul(3) });
+            });
 
-            const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-            const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
-            const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+            it("Should settle auction correctly with proper fund distribution", async function () {
+                await time.increase(3600); // Advance time past auction end
 
-            await contracts.auction.settleSale(saleId);
+                const totalAmount = price.mul(5); // 2 ETH + 3 ETH = 5 ETH total
+                const vabbleAmount = totalAmount.mul(15).div(1000); // 1.5%
+                const daoAmount = totalAmount.mul(10).div(1000); // 1%
+                const ipOwnerAmount = totalAmount.mul(50).div(1000); // 5%
+                const roomOwnerAmount = totalAmount.sub(vabbleAmount).sub(daoAmount).sub(ipOwnerAmount);
 
-            const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-            const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
-            const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+                // Get initial balances
+                const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const roomOwnerBalanceBefore = await ethers.provider.getBalance(contracts.roomOwner.address);
+                const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
-            expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
-            expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
+                // Settle the sale
+                const tx = await contracts.auction.settleSale(saleId);
+                const receipt = await tx.wait();
 
-            const expectedVabIncrease = daoAmount.mul(2);
-            expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(expectedVabIncrease);
+                // Verify event emission
+                expect(receipt.events.some(e => e.event === "SaleSettled")).to.be.true;
 
-            const sale = await contracts.auction.sales(saleId);
-            expect(sale.settled).to.be.true;
+                // Check final balances
+                const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const roomOwnerBalanceAfter = await ethers.provider.getBalance(contracts.roomOwner.address);
+                const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+
+                // Verify distributions
+                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
+                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
+                expect(roomOwnerBalanceAfter.sub(roomOwnerBalanceBefore)).to.equal(roomOwnerAmount);
+                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2)); // 2x due to mock conversion rate
+
+                // Verify sale is marked as settled
+                const sale = await contracts.auction.sales(saleId);
+                expect(sale.settled).to.be.true;
+            });
+
+            it("Should handle auction with no bids", async function () {
+                // Create new auction without bids
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    2, // different roomId
+                    0,
+                    60,
+                    2,
+                    price,
+                    100,
+                    50
+                );
+
+                await time.increase(3600);
+
+                await expect(
+                    contracts.auction.settleSale(2)
+                ).to.be.revertedWith("No funds to distribute");
+            });
+
+            it("Should handle auction with single bid", async function () {
+                // Create new auction
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    2,
+                    0,
+                    60,
+                    2,
+                    price,
+                    100,
+                    50
+                );
+
+                // Place single bid
+                await contracts.auction.connect(contracts.bidder1).placeBid(2, 0, { value: price.mul(2) });
+
+                await time.increase(3600);
+
+                // Settlement should succeed with single bid
+                await expect(contracts.auction.settleSale(2))
+                    .to.emit(contracts.auction, "SaleSettled");
+            });
+
+            it("Should handle multiple key settlements correctly", async function () {
+                // Create auction with more keys
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    2,
+                    0,
+                    60,
+                    4, // 4 keys
+                    price,
+                    100,
+                    50
+                );
+
+                // Place multiple bids on different keys
+                await contracts.auction.connect(contracts.bidder1).placeBid(2, 0, { value: price.mul(2) });
+                await contracts.auction.connect(contracts.bidder2).placeBid(2, 1, { value: price.mul(3) });
+                await contracts.auction.connect(contracts.bidder1).placeBid(2, 2, { value: price.mul(4) });
+                await contracts.auction.connect(contracts.bidder2).placeBid(2, 3, { value: price.mul(5) });
+
+                await time.increase(3600);
+
+                // Verify total distribution with multiple keys
+                const totalAmount = price.mul(14); // 2 + 3 + 4 + 5 = 14 ETH
+                const vabbleAmount = totalAmount.mul(15).div(1000);
+                const daoAmount = totalAmount.mul(10).div(1000);
+                const ipOwnerAmount = totalAmount.mul(50).div(1000);
+
+                const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+
+                await contracts.auction.settleSale(2);
+
+                const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+
+                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
+                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
+                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2));
+            });
         });
 
-        it("Should not allow settling before sale ends", async function () {
-            await expect(
-                contracts.auction.settleSale(saleId)
-            ).to.be.revertedWith("Sale not ended");
+        describe("Instant Buy Settlement", function () {
+            beforeEach(async function () {
+                // Create instant buy sale
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    1,
+                    1, // SaleType.InstantBuy
+                    60,
+                    2,
+                    price,
+                    0, // minBidIncrement not used for instant buy
+                    50
+                );
+
+                // Make purchases
+                await contracts.auction.connect(contracts.bidder1).buyNow(saleId, 0, { value: price });
+                await contracts.auction.connect(contracts.bidder2).buyNow(saleId, 1, { value: price });
+            });
+
+            it("Should settle instant buy sale correctly", async function () {
+                await time.increase(3600);
+
+                const totalAmount = price.mul(2); // 2 keys sold at fixed price
+                const vabbleAmount = totalAmount.mul(15).div(1000);
+                const daoAmount = totalAmount.mul(10).div(1000);
+                const ipOwnerAmount = totalAmount.mul(50).div(1000);
+
+                const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+
+                await contracts.auction.settleSale(saleId);
+
+                const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+                const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+
+                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
+                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
+                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2));
+            });
+
+            it("Should handle partial key sales in instant buy", async function () {
+                // Create new instant buy sale with more keys
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    2,
+                    1,
+                    60,
+                    4,
+                    price,
+                    0,
+                    50
+                );
+
+                // Only buy some of the keys
+                await contracts.auction.connect(contracts.bidder1).buyNow(2, 0, { value: price });
+                await contracts.auction.connect(contracts.bidder2).buyNow(2, 1, { value: price });
+                // Keys 2 and 3 remain unsold
+
+                await time.increase(3600);
+
+                const totalAmount = price.mul(2); // Only 2 keys sold
+                const vabbleAmount = totalAmount.mul(15).div(1000);
+                const daoAmount = totalAmount.mul(10).div(1000);
+                const ipOwnerAmount = totalAmount.mul(50).div(1000);
+
+                const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                await contracts.auction.settleSale(2);
+                const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+
+                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
+            });
         });
 
-        it("Should not allow settling twice", async function () {
-            await time.increase(3600);
-            await contracts.auction.settleSale(saleId);
-            await expect(
-                contracts.auction.settleSale(saleId)
-            ).to.be.revertedWith("Sale already settled");
+        describe("Settlement Edge Cases", function () {
+            it("Should prevent settling non-existent sale", async function () {
+                await expect(
+                    contracts.auction.settleSale(999)
+                ).to.be.revertedWith("Sale does not exist");
+            });
+
+            it("Should prevent settling before end time", async function () {
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    1,
+                    0,
+                    60,
+                    2,
+                    price,
+                    100,
+                    50
+                );
+
+                await expect(
+                    contracts.auction.settleSale(saleId)
+                ).to.be.revertedWith("Sale not ended");
+            });
+
+            it("Should prevent settling already settled sale", async function () {
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    1,
+                    0,
+                    60,
+                    2,
+                    price,
+                    100,
+                    50
+                );
+
+                await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price });
+
+                await time.increase(3600);
+                await contracts.auction.settleSale(saleId);
+
+                await expect(
+                    contracts.auction.settleSale(saleId)
+                ).to.be.revertedWith("Sale already settled");
+            });
+
+            it("Should handle sale with percentage total at maximum", async function () {
+                // Set shares to maximum allowed total
+                const maxVabbleShare = 100; // 10%
+                const maxDaoShare = 100; // 10%
+                const maxIpOwnerShare = 800; // 80%
+                // Total = 100%
+
+                await contracts.auction.connect(contracts.owner).setVabbleShare(maxVabbleShare);
+                await contracts.auction.connect(contracts.owner).setDaoShare(maxDaoShare);
+                await contracts.auction.connect(contracts.owner).setMinIpOwnerShare(maxIpOwnerShare);
+
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    1,
+                    0,
+                    60,
+                    1,
+                    price,
+                    100,
+                    maxIpOwnerShare
+                );
+
+                await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
+
+                await time.increase(3600);
+
+                // Settlement should succeed with maximum shares
+                await expect(contracts.auction.settleSale(saleId))
+                    .to.emit(contracts.auction, "SaleSettled");
+            });
+
+            it("Should prevent settlement when share total exceeds 100%", async function () {
+                const invalidVabbleShare = 400; // 40%
+                const invalidDaoShare = 400; // 40%
+                const invalidIpOwnerShare = 400; // 40%
+                // Total = 120% (invalid)
+
+                await contracts.auction.connect(contracts.owner).setVabbleShare(invalidVabbleShare);
+                await contracts.auction.connect(contracts.owner).setDaoShare(invalidDaoShare);
+
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    1,
+                    0,
+                    60,
+                    1,
+                    price,
+                    100,
+                    invalidIpOwnerShare
+                );
+
+                await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
+
+                await time.increase(3600);
+
+                await expect(
+                    contracts.auction.settleSale(saleId)
+                ).to.be.revertedWith("Total shares exceed 100%");
+            });
+
+            it("Should prevent settlement when paused", async function () {
+                await contracts.auction.connect(contracts.roomOwner).createSale(
+                    1,
+                    0,
+                    60,
+                    1,
+                    price,
+                    100,
+                    50
+                );
+
+                await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
+
+                await time.increase(3600);
+
+                await contracts.auction.connect(contracts.owner).pause();
+
+                await expect(
+                    contracts.auction.settleSale(saleId)
+                ).to.be.revertedWith("Pausable: paused");
+            });
         });
     });
 
