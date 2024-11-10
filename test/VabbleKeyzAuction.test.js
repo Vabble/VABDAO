@@ -7,7 +7,7 @@ describe("VabbleKeyzAuction", function () {
     const price = ethers.utils.parseEther("1");
 
     async function deployContractsFixture() {
-        const [owner, roomOwner, bidder1, bidder2, daoAddress, ipOwnerAddress] = await ethers.getSigners();
+        const [owner, roomOwner, bidder1, bidder2, bidder3, bidder4, daoAddress, ipOwnerAddress] = await ethers.getSigners();
 
         // Deploy ETH receiver first
         const ETHReceiver = await ethers.getContractFactory("ETHReceiver");
@@ -79,6 +79,8 @@ describe("VabbleKeyzAuction", function () {
             roomOwner,
             bidder1,
             bidder2,
+            bidder3,
+            bidder4,
             daoAddress,
             ipOwnerAddress
         };
@@ -183,6 +185,8 @@ describe("VabbleKeyzAuction", function () {
             roomOwner = contracts.roomOwner;
             bidder1 = contracts.bidder1;
             bidder2 = contracts.bidder2;
+            bidder3 = contracts.bidder3;
+            bidder4 = contracts.bidder4;
 
             await auction.connect(roomOwner).createSale(
                 1,
@@ -222,6 +226,107 @@ describe("VabbleKeyzAuction", function () {
 
             const bidder1BalanceAfter = await bidder1.getBalance();
             expect(bidder1BalanceAfter.sub(bidder1BalanceBefore)).to.equal(price);
+        });
+
+        it("should handle multiple bids from different bidders correctly", async function () {
+            const bidAmount = price.mul(2);
+
+            // Place bids sequentially but verify they can all exist together
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: bidAmount });
+            await auction.connect(bidder2).placeBid(saleId, 1, { value: bidAmount });
+            await auction.connect(bidder3).placeBid(saleId, 2, { value: bidAmount });
+
+            // Verify all bids are recorded correctly
+            const [amount0, bidder0] = await auction.getKeyBid(saleId, 0);
+            const [amount1, bidder1Address] = await auction.getKeyBid(saleId, 1);
+            const [amount2, bidder2Address] = await auction.getKeyBid(saleId, 2);
+
+            expect(amount0).to.equal(bidAmount);
+            expect(amount1).to.equal(bidAmount);
+            expect(amount2).to.equal(bidAmount);
+            expect(bidder0).to.equal(bidder1.address);
+            expect(bidder1Address).to.equal(bidder2.address);
+            expect(bidder2Address).to.equal(bidder3.address);
+        });
+
+        it("should handle rapid sequential bids correctly", async function () {
+            const bidAmount = price.mul(2);
+            const bidAmountHigher = price.mul(3);
+
+            // Test rapid sequential bidding on the same key
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: bidAmount });
+
+            // Immediately followed by another bid
+            await auction.connect(bidder2).placeBid(saleId, 0, { value: bidAmountHigher });
+
+            const [finalAmount, finalBidder] = await auction.getKeyBid(saleId, 0);
+            expect(finalAmount).to.equal(bidAmountHigher);
+            expect(finalBidder).to.equal(bidder2.address);
+        });
+
+        it("should handle multiple bids on different keys with interwoven timing", async function () {
+            // Place bids on different keys with varying amounts
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price });
+            await auction.connect(bidder2).placeBid(saleId, 1, { value: price.mul(2) });
+            await auction.connect(bidder1).placeBid(saleId, 2, { value: price.mul(3) });
+            await auction.connect(bidder2).placeBid(saleId, 0, { value: price.mul(4) }); // Outbid on key 0
+
+            const [amount0, bidder0] = await auction.getKeyBid(saleId, 0);
+            const [amount1, bidder1Address] = await auction.getKeyBid(saleId, 1);
+            const [amount2, bidder2Address] = await auction.getKeyBid(saleId, 2);
+
+            expect(amount0).to.equal(price.mul(4));
+            expect(amount1).to.equal(price.mul(2));
+            expect(amount2).to.equal(price.mul(3));
+            expect(bidder0).to.equal(bidder2.address);
+            expect(bidder1Address).to.equal(bidder2.address);
+            expect(bidder2Address).to.equal(bidder1.address);
+        });
+
+        it("should maintain correct state during high-frequency bidding", async function () {
+            // Series of rapid bids on the same key with increasing values
+            const bids = [
+                { bidder: bidder1, amount: price.mul(1) },
+                { bidder: bidder2, amount: price.mul(2) },
+                { bidder: bidder3, amount: price.mul(3) },
+                { bidder: bidder1, amount: price.mul(4) },
+                { bidder: bidder2, amount: price.mul(5) }
+            ];
+
+            // Place bids in quick succession
+            for (const bid of bids) {
+                await auction.connect(bid.bidder).placeBid(saleId, 0, { value: bid.amount });
+
+                // Verify immediate state after each bid
+                const [currentAmount, currentBidder] = await auction.getKeyBid(saleId, 0);
+                expect(currentAmount).to.equal(bid.amount);
+                expect(currentBidder).to.equal(bid.bidder.address);
+            }
+
+            // Verify final state
+            const [finalAmount, finalBidder] = await auction.getKeyBid(saleId, 0);
+            expect(finalAmount).to.equal(price.mul(5));
+            expect(finalBidder).to.equal(bidder2.address);
+        });
+
+        it("should handle edge case of multiple keys being bid on simultaneously", async function () {
+            // Place bids on all available keys
+            const totalKeys = 5; // from sale creation
+            const bidPromises = [];
+
+            for (let i = 0; i < totalKeys; i++) {
+                const bidder = [bidder1, bidder2, bidder3, bidder4][i % 4];
+                const bidAmount = price.mul(i + 1);
+                await auction.connect(bidder).placeBid(saleId, i, { value: bidAmount });
+            }
+
+            // Verify all keys have correct bids
+            for (let i = 0; i < totalKeys; i++) {
+                const [amount, bidder] = await auction.getKeyBid(saleId, i);
+                expect(amount).to.equal(price.mul(i + 1));
+                const expectedBidder = [bidder1, bidder2, bidder3, bidder4][i % 4];
+                expect(bidder).to.equal(expectedBidder.address);
+            }
         });
     });
 
