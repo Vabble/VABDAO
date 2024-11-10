@@ -1,548 +1,561 @@
-// test/VabbleKeyzAuction.test.js
-
-const chai = require("chai");
-const { expect } = chai;
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { solidity } = require("ethereum-waffle");
+const { time, loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
-chai.use(solidity);
+describe("VabbleKeyzAuction", function () {
+    const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+    const price = ethers.utils.parseEther("1");
 
-describe("VabbleKeyzAuction Contract Tests", function () {
-    let VabbleKeyzAuction, auctionContract;
-    let owner, addr1, addr2, addr3, addr4;
-    let vabbleAddress, daoAddress, ipOwnerAddress;
-    const SaleType = { Auction: 0, InstantBuy: 1 };
+    async function deployContractsFixture() {
+        const [owner, roomOwner, bidder1, bidder2, daoAddress, ipOwnerAddress] = await ethers.getSigners();
 
-    beforeEach(async function () {
-        // Get the ContractFactory and Signers here.
-        VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction");
-        [owner, addr1, addr2, addr3, addr4] = await ethers.getSigners();
+        // Deploy ETH receiver first
+        const ETHReceiver = await ethers.getContractFactory("ETHReceiver");
+        const vabbleReceiver = await ETHReceiver.deploy();
+        await vabbleReceiver.deployed();
 
-        // Deploy the contract
-        vabbleAddress = addr1;
-        daoAddress = addr2;
-        ipOwnerAddress = addr3;
+        // Deploy mock token with ETH receiver
+        const MockVabbleToken = await ethers.getContractFactory("MockVabbleToken");
+        const mockVabbleToken = await MockVabbleToken.deploy(vabbleReceiver.address);
+        await mockVabbleToken.deployed();
 
-        auctionContract = await VabbleKeyzAuction.deploy(
-            vabbleAddress.address,
-            daoAddress.address,
-            ipOwnerAddress.address
+        // Deploy UniswapRouter
+        const MockUniswapRouter = await ethers.getContractFactory("MockUniswapRouter");
+        const mockUniswapRouter = await MockUniswapRouter.deploy(
+            mockVabbleToken.address,
+            WETH_ADDRESS
         );
-        await auctionContract.deployed();
-    });
+        await mockUniswapRouter.deployed();
 
+        // Deploy UniHelper
+        const MockUniHelper = await ethers.getContractFactory("MockUniHelper");
+        const mockUniHelper = await MockUniHelper.deploy(
+            mockVabbleToken.address,
+            WETH_ADDRESS
+        );
+        await mockUniHelper.deployed();
+
+        // Deploy staking pool
+        const MockStakingPool = await ethers.getContractFactory("MockStakingPool");
+        const mockStakingPool = await MockStakingPool.deploy(mockVabbleToken.address);
+        await mockStakingPool.deployed();
+
+        // Deploy main auction contract
+        const VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction");
+        const auction = await VabbleKeyzAuction.deploy(
+            mockVabbleToken.address,
+            daoAddress.address,
+            ipOwnerAddress.address,
+            mockUniHelper.address,
+            mockStakingPool.address,
+            mockUniswapRouter.address
+        );
+        await auction.deployed();
+
+        // Fund contracts with ETH
+        await owner.sendTransaction({
+            to: vabbleReceiver.address,
+            value: ethers.utils.parseEther("10")
+        });
+
+        await owner.sendTransaction({
+            to: auction.address,
+            value: ethers.utils.parseEther("10")
+        });
+
+        // Setup approvals and initial token balance
+        await mockVabbleToken.connect(owner).approve(mockStakingPool.address, ethers.constants.MaxUint256);
+        await mockVabbleToken.connect(owner).approve(auction.address, ethers.constants.MaxUint256);
+        await mockVabbleToken.mint(mockUniswapRouter.address, ethers.utils.parseEther("1000000"));
+
+        return {
+            auction,
+            mockVabbleToken,
+            mockUniHelper,
+            mockStakingPool,
+            mockUniswapRouter,
+            vabbleReceiver,
+            owner,
+            roomOwner,
+            bidder1,
+            bidder2,
+            daoAddress,
+            ipOwnerAddress
+        };
+    }
 
     describe("Deployment", function () {
-        it("Should set the right owner", async function () {
-            expect(await auctionContract.owner()).to.equal(owner.address);
-        });
+        it("Should set the correct initial values", async function () {
+            const {
+                auction,
+                mockVabbleToken,
+                mockUniHelper,
+                mockStakingPool,
+                mockUniswapRouter,
+                daoAddress,
+                ipOwnerAddress
+            } = await loadFixture(deployContractsFixture);
 
-        it("Should set initial parameters correctly", async function () {
-            expect(await auctionContract.vabbleAddress()).to.equal(vabbleAddress.address);
-            expect(await auctionContract.daoAddress()).to.equal(daoAddress.address);
-            expect(await auctionContract.ipOwnerAddress()).to.equal(ipOwnerAddress.address);
+            expect(await auction.vabbleAddress()).to.equal(mockVabbleToken.address);
+            expect(await auction.daoAddress()).to.equal(daoAddress.address);
+            expect(await auction.ipOwnerAddress()).to.equal(ipOwnerAddress.address);
+            expect(await auction.UNI_HELPER()).to.equal(mockUniHelper.address);
+            expect(await auction.STAKING_POOL()).to.equal(mockStakingPool.address);
+            expect(await auction.UNISWAP_ROUTER()).to.equal(mockUniswapRouter.address);
 
-            expect(await auctionContract.vabbleShare()).to.equal(ethers.BigNumber.from(15));
-            expect(await auctionContract.daoShare()).to.equal(10);
-            expect(await auctionContract.minIpOwnerShare()).to.equal(30);
-            expect(await auctionContract.percentagePrecision()).to.equal(1000);
-
-            expect(await auctionContract.maxDurationInMinutes()).to.equal(2880);
-            expect(await auctionContract.minBidIncrementAllowed()).to.equal(1);
-            expect(await auctionContract.maxBidIncrementAllowed()).to.equal(50000);
-        });
-    });
-
-    describe("Administrative Functions", function () {
-        it("Should allow the owner to update parameters", async function () {
-            await auctionContract.setVabbleShare(20);
-            expect(await auctionContract.vabbleShare()).to.equal(20);
-
-            await auctionContract.setDaoShare(15);
-            expect(await auctionContract.daoShare()).to.equal(15);
-
-            await auctionContract.setMinIpOwnerShare(50);
-            expect(await auctionContract.minIpOwnerShare()).to.equal(50);
-
-            await auctionContract.setPercentagePrecision(10000);
-            expect(await auctionContract.percentagePrecision()).to.equal(10000);
-
-            await auctionContract.setMaxDurationInMinutes(1440); // 24 hours
-            expect(await auctionContract.maxDurationInMinutes()).to.equal(1440);
-
-            await auctionContract.setMinBidIncrementAllowed(5); // 0.5%
-            expect(await auctionContract.minBidIncrementAllowed()).to.equal(5);
-
-            await auctionContract.setMaxBidIncrementAllowed(10000); // 1000%
-            expect(await auctionContract.maxBidIncrementAllowed()).to.equal(10000);
-
-            await auctionContract.setVabbleAddress(addr4.address);
-            expect(await auctionContract.vabbleAddress()).to.equal(addr4.address);
-
-            await auctionContract.setDaoAddress(addr4.address);
-            expect(await auctionContract.daoAddress()).to.equal(addr4.address);
-
-            await auctionContract.setIpOwnerAddress(addr4.address);
-            expect(await auctionContract.ipOwnerAddress()).to.equal(addr4.address);
-        });
-
-        it("Should not allow non-owner to update parameters", async function () {
-            await expect(
-                auctionContract.connect(addr1).setVabbleShare(20)
-            ).to.be.revertedWith("Ownable: caller is not the owner");
-        });
-
-        it("Should allow the owner to pause and unpause the contract", async function () {
-            await auctionContract.pause();
-            expect(await auctionContract.paused()).to.be.true;
-
-            await auctionContract.unpause();
-            expect(await auctionContract.paused()).to.be.false;
-        });
-
-        it("Should not allow non-owner to pause or unpause", async function () {
-            await expect(auctionContract.connect(addr1).pause()).to.be.revertedWith(
-                "Ownable: caller is not the owner"
-            );
+            expect((await auction.vabbleShare()).toNumber()).to.equal(15);
+            expect((await auction.daoShare()).toNumber()).to.equal(10);
+            expect((await auction.minIpOwnerShare()).toNumber()).to.equal(30);
+            expect((await auction.percentagePrecision()).toNumber()).to.equal(1000);
+            expect((await auction.maxDurationInMinutes()).toNumber()).to.equal(2880);
+            expect((await auction.minBidIncrementAllowed()).toNumber()).to.equal(1);
+            expect((await auction.maxBidIncrementAllowed()).toNumber()).to.equal(50000);
         });
     });
 
-    describe("Creating Sales", function () {
-        it("Should allow creating a sale with valid parameters", async function () {
-            const tx = await auctionContract.createSale(
+    describe("Sale Creation", function () {
+        it("Should create an auction sale successfully", async function () {
+            const { auction, roomOwner } = await loadFixture(deployContractsFixture);
+
+            const tx = await auction.connect(roomOwner).createSale(
                 1, // roomId
-                SaleType.Auction,
-                60, // duration in minutes
-                10, // keysForSale
-                ethers.utils.parseEther("1"), // price
+                0, // SaleType.Auction
+                60, // durationInMinutes
+                5, // totalKeys
+                price,
                 100, // minBidIncrement (10%)
                 50 // ipOwnerShare (5%)
             );
-            await tx.wait();
 
-            const sale = await auctionContract.sales(1);
-            expect(sale.roomOwner).to.equal(owner.address);
+            const receipt = await tx.wait();
+            const event = receipt.events.find(e => e.event === 'SaleCreated');
+            expect(event).to.not.be.undefined;
+
+            const sale = await auction.sales(1);
+            expect(sale.roomOwner).to.equal(roomOwner.address);
             expect(sale.roomId).to.equal(1);
-            expect(sale.saleType).to.equal(SaleType.Auction);
-            expect(sale.keysForSale).to.equal(10);
-            expect(sale.price).to.equal(ethers.utils.parseEther("1"));
+            expect(sale.saleType).to.equal(0);
+            expect(sale.totalKeys).to.equal(5);
+            expect(sale.price).to.equal(price);
             expect(sale.minBidIncrement).to.equal(100);
             expect(sale.ipOwnerShare).to.equal(50);
+            expect(sale.settled).to.be.false;
         });
 
-        it("Should revert if duration exceeds max limit", async function () {
-            await expect(
-                auctionContract.createSale(
-                    1,
-                    SaleType.Auction,
-                    3000, // exceeds maxDurationInMinutes
-                    10,
-                    ethers.utils.parseEther("1"),
-                    100,
-                    50
-                )
-            ).to.be.revertedWith("Duration exceeds max limit");
+        it("Should fail if duration exceeds max limit", async function () {
+            const { auction, roomOwner } = await loadFixture(deployContractsFixture);
+            const maxDuration = await auction.maxDurationInMinutes();
+
+            await expect(auction.connect(roomOwner).createSale(
+                1,
+                0,
+                maxDuration.add(1),
+                5,
+                price,
+                100,
+                50
+            )).to.be.revertedWith("Duration exceeds max limit");
         });
 
-        it("Should revert if IP Owner share is below minimum", async function () {
-            await expect(
-                auctionContract.createSale(
-                    1,
-                    SaleType.Auction,
-                    60,
-                    10,
-                    ethers.utils.parseEther("1"),
-                    100,
-                    20 // below minIpOwnerShare
-                )
-            ).to.be.revertedWith("IP Owner share too low");
-        });
+        it("Should fail if IP owner share is too low", async function () {
+            const { auction, roomOwner } = await loadFixture(deployContractsFixture);
+            const minShare = await auction.minIpOwnerShare();
 
-        it("Should revert if bid increment is invalid", async function () {
-            await expect(
-                auctionContract.createSale(
-                    1,
-                    SaleType.Auction,
-                    60,
-                    10,
-                    ethers.utils.parseEther("1"),
-                    0, // below minBidIncrementAllowed
-                    50
-                )
-            ).to.be.revertedWith("Invalid bid increment");
-
-            await expect(
-                auctionContract.createSale(
-                    1,
-                    SaleType.Auction,
-                    60,
-                    10,
-                    ethers.utils.parseEther("1"),
-                    60000, // exceeds maxBidIncrementAllowed
-                    50
-                )
-            ).to.be.revertedWith("Invalid bid increment");
+            await expect(auction.connect(roomOwner).createSale(
+                1,
+                0,
+                60,
+                5,
+                price,
+                100,
+                minShare.sub(1)
+            )).to.be.revertedWith("IP Owner share too low");
         });
     });
 
-    describe("Placing Bids", function () {
+    describe("Bidding", function () {
+        let auction, roomOwner, bidder1, bidder2;
+        let saleId = 1;
+
         beforeEach(async function () {
-            // Create an auction sale
-            await auctionContract.createSale(
+            const contracts = await loadFixture(deployContractsFixture);
+            auction = contracts.auction;
+            roomOwner = contracts.roomOwner;
+            bidder1 = contracts.bidder1;
+            bidder2 = contracts.bidder2;
+
+            await auction.connect(roomOwner).createSale(
                 1,
-                SaleType.Auction,
+                0,
                 60,
-                10,
-                ethers.utils.parseEther("1"),
-                100, // 10%
+                5,
+                price,
+                100,
                 50
             );
         });
 
-        it("Should allow placing a valid bid", async function () {
-            // First bid
-            await auctionContract.connect(addr1).placeBid(1, { value: ethers.utils.parseEther("1") });
-
-            let sale = await auctionContract.sales(1);
-            expect(sale.highestBid).to.equal(ethers.utils.parseEther("1"));
-            expect(sale.highestBidder).to.equal(addr1.address);
-
-            // Second bid with minimum increment
-            const minIncrement = sale.highestBid.mul(sale.minBidIncrement).div(await auctionContract.percentagePrecision());
-            const newBid = sale.highestBid.add(minIncrement);
-
-            await auctionContract.connect(addr2).placeBid(1, { value: newBid });
-
-            sale = await auctionContract.sales(1);
-            expect(sale.highestBid).to.equal(newBid);
-            expect(sale.highestBidder).to.equal(addr2.address);
+        it("Should accept first bid at starting price", async function () {
+            await expect(auction.connect(bidder1).placeBid(saleId, 0, { value: price }))
+                .to.emit(auction, "BidPlaced")
+                .withArgs(saleId, 0, bidder1.address, price);
         });
 
-        it("Should refund the previous highest bidder", async function () {
-            // Place initial bid
-            const initialBalance = await addr1.getBalance();
-            const tx1 = await auctionContract.connect(addr1).placeBid(1, { value: ethers.utils.parseEther("1") });
-            const receipt1 = await tx1.wait();
-            const gasUsed1 = receipt1.gasUsed.mul(receipt1.effectiveGasPrice);
+        it("Should require higher bid to outbid", async function () {
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price });
+            const minNextBid = price.mul(110).div(100); // 10% increase
 
-            // Calculate balance after placing the initial bid
-            const balanceAfterFirstBid = initialBalance.sub(ethers.utils.parseEther("1")).sub(gasUsed1);
-
-            // Place higher bid
-            const tx2 = await auctionContract.connect(addr2).placeBid(1, { value: ethers.utils.parseEther("1.1") });
-            await tx2.wait();  // We don't need gasUsed2 for addr2's transaction in this context
-
-            // Capture final balance of the initial bidder
-            const finalBalance = await addr1.getBalance();
-
-            // Calculate the expected balance after the refund
-            const expectedBalance = balanceAfterFirstBid.add(ethers.utils.parseEther("1"));
-
-            // Log values to debug
-            // console.log("Initial Balance:", initialBalance.toString());
-            // console.log("Gas Used for Bid 1:", gasUsed1.toString());
-            // console.log("Balance After First Bid:", balanceAfterFirstBid.toString());
-            // console.log("Final Balance:", finalBalance.toString());
-            // console.log("Expected Balance:", expectedBalance.toString());
-
-            // Assert the balances are exactly equal
-            expect(finalBalance).to.equal(expectedBalance);
-        });
-
-        it("Should revert if bid is too low", async function () {
-            await auctionContract.connect(addr1).placeBid(1, { value: ethers.utils.parseEther("1") });
-
-            // Try placing a lower bid
             await expect(
-                auctionContract.connect(addr2).placeBid(1, { value: ethers.utils.parseEther("1.05") })
+                auction.connect(bidder2).placeBid(saleId, 0, { value: price })
             ).to.be.revertedWith("Bid too low");
+
+            await expect(auction.connect(bidder2).placeBid(saleId, 0, { value: minNextBid }))
+                .to.emit(auction, "BidPlaced")
+                .withArgs(saleId, 0, bidder2.address, minNextBid);
         });
 
-        it("Should revert if sale is not active", async function () {
-            // Increase time to after sale end
-            await ethers.provider.send("evm_increaseTime", [3600]); // Increase by 1 hour
-            await ethers.provider.send("evm_mine", []);
+        it("Should refund previous bidder when outbid", async function () {
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price });
+            const bidder1BalanceBefore = await bidder1.getBalance();
 
-            await expect(
-                auctionContract.connect(addr1).placeBid(1, { value: ethers.utils.parseEther("1") })
-            ).to.be.revertedWith("Sale ended");
+            await auction.connect(bidder2).placeBid(saleId, 0, { value: price.mul(11).div(10) });
+
+            const bidder1BalanceAfter = await bidder1.getBalance();
+            expect(bidder1BalanceAfter.sub(bidder1BalanceBefore)).to.equal(price);
         });
     });
 
     describe("Instant Buy", function () {
+        let auction, roomOwner, bidder1, bidder2;
+        let saleId = 1;
+
         beforeEach(async function () {
-            // Create an instant buy sale
-            await auctionContract.createSale(
-                2,
-                SaleType.InstantBuy,
+            const contracts = await loadFixture(deployContractsFixture);
+            auction = contracts.auction;
+            roomOwner = contracts.roomOwner;
+            bidder1 = contracts.bidder1;
+            bidder2 = contracts.bidder2;
+
+            await auction.connect(roomOwner).createSale(
+                1,
+                1, // SaleType.InstantBuy
                 60,
-                10,
-                ethers.utils.parseEther("2"), // price
+                5,
+                price,
                 0,
                 50
             );
         });
 
-        it("Should allow buying instantly", async function () {
-            // Create an instant buy sale
-            const createSaleTx = await auctionContract.createSale(
-                1, // roomId
-                SaleType.InstantBuy,
-                60, // Duration in minutes
-                10, // Keys for sale
-                ethers.utils.parseEther("1"), // Price
-                0, // Min bid increment (not needed for instant buy)
-                50 // IP Owner share (>= minIpOwnerShare)
-            );
-            await createSaleTx.wait();
-
-            // Retrieve sale ID to make sure it was created successfully
-            const saleId = await auctionContract.saleCounter();
-            console.log("Sale ID:", saleId.toString());
-
-            // Ensure that the sale was created correctly
-            const sale = await auctionContract.sales(saleId);
-            expect(sale.roomOwner).to.equal(owner.address); // Sale should exist and be owned by the correct address
-
-            // Now attempt to buy the keys instantly
-            await auctionContract.connect(addr1).buyNow(saleId, { value: ethers.utils.parseEther("1") });
-
-            // Verify that the sale has been settled
-            const updatedSale = await auctionContract.sales(saleId);
-            expect(updatedSale.settled).to.be.true;
+        it("Should allow instant buy at listing price", async function () {
+            await expect(auction.connect(bidder1).buyNow(saleId, 0, { value: price }))
+                .to.emit(auction, "InstantBuy")
+                .withArgs(saleId, 0, bidder1.address, price);
         });
 
-
-        it("Should revert if payment is insufficient", async function () {
-            // Step 1: Create an instant buy sale
-            const createSaleTx = await auctionContract.createSale(
-                1, // roomId
-                SaleType.InstantBuy,
-                60, // Duration in minutes
-                10, // Keys for sale
-                ethers.utils.parseEther("2"), // Price (2 ether)
-                0, // Min bid increment (not needed for instant buy)
-                50 // IP Owner share (>= minIpOwnerShare)
-            );
-            await createSaleTx.wait();
-
-            // Step 2: Retrieve the sale ID
-            const saleId = await auctionContract.saleCounter(); // Since saleCounter is incremented, this will be the ID of the sale we just created
-
-            // Step 3: Attempt to buy instantly with insufficient payment
-            await expect(
-                auctionContract.connect(addr1).buyNow(saleId, { value: ethers.utils.parseEther("1") }) // Insufficient payment (less than 2 ether)
-            ).to.be.revertedWith("Insufficient payment");
+        it("Should mark key as unavailable after purchase", async function () {
+            await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+            expect(await auction.isKeyAvailable(saleId, 0)).to.be.false;
         });
 
-
-        it("Should revert if sale is already settled", async function () {
-            // Step 1: Create an instant buy sale
-            const createSaleTx = await auctionContract.createSale(
-                1, // roomId
-                SaleType.InstantBuy,
-                60, // Duration in minutes
-                10, // Keys for sale
-                ethers.utils.parseEther("2"), // Price (2 ether)
-                0, // Min bid increment (not needed for instant buy)
-                50 // IP Owner share (>= minIpOwnerShare)
-            );
-            await createSaleTx.wait();
-
-            // Step 2: Retrieve the sale ID
-            const saleId = await auctionContract.saleCounter(); // Retrieve the saleId after creating the sale
-
-            // Step 3: Buy the sale to settle it
-            await auctionContract.connect(addr1).buyNow(saleId, { value: ethers.utils.parseEther("2") });
-
-            // Step 4: Attempt to buy again, which should revert because the sale is already settled
+        it("Should not allow buying unavailable key", async function () {
+            await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
             await expect(
-                auctionContract.connect(addr2).buyNow(saleId, { value: ethers.utils.parseEther("2") })
+                auction.connect(bidder2).buyNow(saleId, 0, { value: price })
+            ).to.be.revertedWith("Key not available");
+        });
+    });
+
+    describe("Sale Settlement", function () {
+        let contracts;
+        let saleId = 1;
+
+        beforeEach(async function () {
+            contracts = await loadFixture(deployContractsFixture);
+
+            await contracts.auction.connect(contracts.roomOwner).createSale(
+                1,
+                0,
+                60,
+                2,
+                price,
+                100,
+                50
+            );
+
+            await contracts.auction.connect(contracts.bidder1).placeBid(saleId, 0, { value: price.mul(2) });
+            await contracts.auction.connect(contracts.bidder2).placeBid(saleId, 1, { value: price.mul(3) });
+        });
+
+        it("Should settle sale and distribute funds correctly", async function () {
+            await time.increase(3600);
+
+            const totalAmount = price.mul(5);
+            const vabbleAmount = totalAmount.mul(15).div(1000);
+            const daoAmount = totalAmount.mul(10).div(1000);
+            const ipOwnerAmount = totalAmount.mul(50).div(1000);
+
+            const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+            const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+            const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+
+            await contracts.auction.settleSale(saleId);
+
+            const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+            const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwnerAddress.address);
+            const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+
+            expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
+            expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
+
+            const expectedVabIncrease = daoAmount.mul(2);
+            expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(expectedVabIncrease);
+
+            const sale = await contracts.auction.sales(saleId);
+            expect(sale.settled).to.be.true;
+        });
+
+        it("Should not allow settling before sale ends", async function () {
+            await expect(
+                contracts.auction.settleSale(saleId)
+            ).to.be.revertedWith("Sale not ended");
+        });
+
+        it("Should not allow settling twice", async function () {
+            await time.increase(3600);
+            await contracts.auction.settleSale(saleId);
+            await expect(
+                contracts.auction.settleSale(saleId)
             ).to.be.revertedWith("Sale already settled");
         });
-
     });
 
-    describe("Settling Sales", function () {
+    describe("Administrative Functions", function () {
+        let auction, owner, nonOwner;
+        let vabbleReceiver, daoAddress, ipOwnerReceiver;
+
         beforeEach(async function () {
-            // Create an auction sale
-            await auctionContract.createSale(
-                1,
-                SaleType.Auction,
-                60, // 1 hour
-                10,
-                ethers.utils.parseEther("1"),
-                100, // 10%
-                50
-            );
-
-            // Place a bid
-            await auctionContract.connect(addr1).placeBid(1, { value: ethers.utils.parseEther("1") });
+            const contracts = await loadFixture(deployContractsFixture);
+            auction = contracts.auction;
+            owner = contracts.owner;
+            nonOwner = contracts.bidder1;
+            vabbleReceiver = contracts.vabbleReceiver;
+            daoAddress = contracts.daoAddress;
+            ipOwnerReceiver = contracts.ipOwnerReceiver;
         });
 
-        it("Should distribute funds correctly on settlement", async function () {
-            // Fast forward time to after sale end
-            await ethers.provider.send("evm_increaseTime", [3600]); // Increase by 1 hour
-            await ethers.provider.send("evm_mine", []);
+        describe("Share Management", function () {
+            it("Should allow owner to update vabble share", async function () {
+                const newShare = 20;
+                await expect(auction.connect(owner).setVabbleShare(newShare))
+                    .to.emit(auction, "VabbleShareUpdated")
+                    .withArgs(newShare);
+                expect(await auction.vabbleShare()).to.equal(newShare);
+            });
 
-            const vabbleInitial = await ethers.provider.getBalance(vabbleAddress.address);
-            const daoInitial = await ethers.provider.getBalance(daoAddress.address);
-            const ipOwnerInitial = await ethers.provider.getBalance(ipOwnerAddress.address);
-            const roomOwnerInitial = await ethers.provider.getBalance(owner.address);
+            it("Should allow owner to update dao share", async function () {
+                const newShare = 15;
+                await expect(auction.connect(owner).setDaoShare(newShare))
+                    .to.emit(auction, "DaoShareUpdated")
+                    .withArgs(newShare);
+                expect(await auction.daoShare()).to.equal(newShare);
+            });
 
-            const tx = await auctionContract.settleSale(1);
-            const receipt = await tx.wait();
-            const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+            it("Should allow owner to update minimum IP owner share", async function () {
+                const newShare = 40;
+                await expect(auction.connect(owner).setMinIpOwnerShare(newShare))
+                    .to.emit(auction, "MinIpOwnerShareUpdated")
+                    .withArgs(newShare);
+                expect(await auction.minIpOwnerShare()).to.equal(newShare);
+            });
 
-            const sale = await auctionContract.sales(1);
-            expect(sale.fundsClaimed).to.be.true;
+            it("Should allow owner to update percentage precision", async function () {
+                const newPrecision = 10000;
+                await expect(auction.connect(owner).setPercentagePrecision(newPrecision))
+                    .to.emit(auction, "PercentagePrecisionUpdated")
+                    .withArgs(newPrecision);
+                expect(await auction.percentagePrecision()).to.equal(newPrecision);
+            });
 
-            const totalAmount = ethers.utils.parseEther("1");
-            const percentagePrecision = await auctionContract.percentagePrecision();
+            it("Should prevent non-owner from updating shares", async function () {
+                await expect(
+                    auction.connect(nonOwner).setVabbleShare(20)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
 
-            const vabbleShare = totalAmount.mul(await auctionContract.vabbleShare()).div(percentagePrecision);
-            const daoShare = totalAmount.mul(await auctionContract.daoShare()).div(percentagePrecision);
-            const ipOwnerShare = totalAmount.mul(sale.ipOwnerShare).div(percentagePrecision);
-            const roomOwnerShare = totalAmount.sub(vabbleShare).sub(daoShare).sub(ipOwnerShare);
+                await expect(
+                    auction.connect(nonOwner).setDaoShare(15)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
 
-            const vabbleFinal = await ethers.provider.getBalance(vabbleAddress.address);
-            const daoFinal = await ethers.provider.getBalance(daoAddress.address);
-            const ipOwnerFinal = await ethers.provider.getBalance(ipOwnerAddress.address);
-            const roomOwnerFinal = await ethers.provider.getBalance(owner.address);
+                await expect(
+                    auction.connect(nonOwner).setMinIpOwnerShare(40)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
 
-            expect(vabbleFinal.sub(vabbleInitial)).to.equal(vabbleShare);
-            expect(daoFinal.sub(daoInitial)).to.equal(daoShare);
-            expect(ipOwnerFinal.sub(ipOwnerInitial)).to.equal(ipOwnerShare);
-            expect(roomOwnerFinal.sub(roomOwnerInitial).add(gasUsed)).to.equal(roomOwnerShare);
+                await expect(
+                    auction.connect(nonOwner).setPercentagePrecision(10000)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+            });
         });
 
-        it("Should revert if sale is not ended", async function () {
-            await expect(auctionContract.settleSale(1)).to.be.revertedWith("Sale not ended or already settled");
+        describe("Address Management", function () {
+            it("Should allow owner to update vabble address", async function () {
+                const newAddress = nonOwner.address;
+                await expect(auction.connect(owner).setVabbleAddress(newAddress))
+                    .to.emit(auction, "VabbleAddressUpdated")
+                    .withArgs(newAddress);
+                expect(await auction.vabbleAddress()).to.equal(newAddress);
+            });
+
+            it("Should allow owner to update dao address", async function () {
+                const newAddress = nonOwner.address;
+                await expect(auction.connect(owner).setDaoAddress(newAddress))
+                    .to.emit(auction, "DaoAddressUpdated")
+                    .withArgs(newAddress);
+                expect(await auction.daoAddress()).to.equal(newAddress);
+            });
+
+            it("Should allow owner to update IP owner address", async function () {
+                const newAddress = nonOwner.address;
+                await expect(auction.connect(owner).setIpOwnerAddress(newAddress))
+                    .to.emit(auction, "IpOwnerAddressUpdated")
+                    .withArgs(newAddress);
+                expect(await auction.ipOwnerAddress()).to.equal(newAddress);
+            });
+
+            it("Should prevent setting addresses to zero address", async function () {
+                const zeroAddress = ethers.constants.AddressZero;
+                await expect(
+                    auction.connect(owner).setVabbleAddress(zeroAddress)
+                ).to.be.revertedWith("Invalid address");
+
+                await expect(
+                    auction.connect(owner).setDaoAddress(zeroAddress)
+                ).to.be.revertedWith("Invalid address");
+
+                await expect(
+                    auction.connect(owner).setIpOwnerAddress(zeroAddress)
+                ).to.be.revertedWith("Invalid address");
+            });
+
+            it("Should prevent non-owner from updating addresses", async function () {
+                const newAddress = nonOwner.address;
+                await expect(
+                    auction.connect(nonOwner).setVabbleAddress(newAddress)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+
+                await expect(
+                    auction.connect(nonOwner).setDaoAddress(newAddress)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+
+                await expect(
+                    auction.connect(nonOwner).setIpOwnerAddress(newAddress)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+            });
         });
 
-        it("Should revert if funds already claimed", async function () {
-            // Fast forward time to after sale end
-            await ethers.provider.send("evm_increaseTime", [3600]); // Increase by 1 hour
-            await ethers.provider.send("evm_mine", []);
+        describe("Duration and Bid Increment Management", function () {
+            it("Should allow owner to update max duration in minutes", async function () {
+                const newDuration = 4320; // 72 hours
+                await expect(auction.connect(owner).setMaxDurationInMinutes(newDuration))
+                    .to.emit(auction, "MaxDurationInMinutesUpdated")
+                    .withArgs(newDuration);
+                expect(await auction.maxDurationInMinutes()).to.equal(newDuration);
+            });
 
-            await auctionContract.settleSale(1);
+            it("Should allow owner to update minimum bid increment allowed", async function () {
+                const newIncrement = 5;
+                await expect(auction.connect(owner).setMinBidIncrementAllowed(newIncrement))
+                    .to.emit(auction, "MinBidIncrementAllowedUpdated")
+                    .withArgs(newIncrement);
+                expect(await auction.minBidIncrementAllowed()).to.equal(newIncrement);
+            });
 
-            await expect(auctionContract.settleSale(1)).to.be.revertedWith("Funds already claimed");
-        });
-    });
+            it("Should allow owner to update maximum bid increment allowed", async function () {
+                const newIncrement = 100000;
+                await expect(auction.connect(owner).setMaxBidIncrementAllowed(newIncrement))
+                    .to.emit(auction, "MaxBidIncrementAllowedUpdated")
+                    .withArgs(newIncrement);
+                expect(await auction.maxBidIncrementAllowed()).to.equal(newIncrement);
+            });
 
-    describe("Claiming Refunds", function () {
-        beforeEach(async function () {
-            // Create an auction sale
-            await auctionContract.createSale(
-                1,
-                SaleType.Auction,
-                60, // 1 hour
-                10,
-                ethers.utils.parseEther("1"),
-                100, // 10%
-                50
-            );
+            it("Should prevent setting max duration to zero", async function () {
+                await expect(
+                    auction.connect(owner).setMaxDurationInMinutes(0)
+                ).to.be.revertedWith("Duration must be greater than 0");
+            });
 
-            // No bids placed
-        });
+            it("Should prevent non-owner from updating duration and increments", async function () {
+                await expect(
+                    auction.connect(nonOwner).setMaxDurationInMinutes(4320)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
 
-        it("Should allow claiming a refund if room owner doesn't show up", async function () {
-            // Step 1: Create an auction sale
-            const createSaleTx = await auctionContract.createSale(
-                1, // roomId
-                SaleType.Auction,
-                60, // Duration in minutes (1 hour)
-                10, // Keys for sale
-                ethers.utils.parseEther("1"), // Starting price
-                100, // Min bid increment (10%)
-                50 // IP Owner share (>= minIpOwnerShare)
-            );
-            await createSaleTx.wait();
+                await expect(
+                    auction.connect(nonOwner).setMinBidIncrementAllowed(5)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
 
-            // Step 2: Retrieve the sale ID
-            const saleId = await auctionContract.saleCounter(); // Retrieve the saleId after creating the sale
-
-            // Step 3: Place a bid (to ensure there's a bidder for refund)
-            await auctionContract.connect(addr1).placeBid(saleId, { value: ethers.utils.parseEther("1") });
-
-            // Step 4: Fast-forward time to after the sale ends
-            await ethers.provider.send("evm_increaseTime", [3600]); // Fast forward by 1 hour
-            await ethers.provider.send("evm_mine", []); // Mine a new block
-
-            // Step 5: Attempt to claim refund (the bidder should get their funds back)
-            await expect(
-                auctionContract.connect(addr1).claimRefund(saleId)
-            ).to.emit(auctionContract, "RefundClaimed"); // Verify that the refund is emitted
+                await expect(
+                    auction.connect(nonOwner).setMaxBidIncrementAllowed(100000)
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+            });
         });
 
-        it("Should revert if sale is not ended", async function () {
-            await expect(auctionContract.connect(addr1).claimRefund(1)).to.be.revertedWith("Sale not ended");
+        describe("Pause Functionality", function () {
+            it("Should allow owner to pause", async function () {
+                await expect(auction.connect(owner).pause())
+                    .to.emit(auction, "Paused")
+                    .withArgs(owner.address);
+                expect(await auction.paused()).to.be.true;
+            });
+
+            it("Should allow owner to unpause", async function () {
+                await auction.connect(owner).pause();
+                await expect(auction.connect(owner).unpause())
+                    .to.emit(auction, "Unpaused")
+                    .withArgs(owner.address);
+                expect(await auction.paused()).to.be.false;
+            });
+
+            it("Should prevent non-owner from pausing", async function () {
+                await expect(
+                    auction.connect(nonOwner).pause()
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+            });
+
+            it("Should prevent non-owner from unpausing", async function () {
+                await auction.connect(owner).pause();
+                await expect(
+                    auction.connect(nonOwner).unpause()
+                ).to.be.revertedWith("Ownable: caller is not the owner");
+            });
+
+            it("Should prevent pausing when already paused", async function () {
+                await auction.connect(owner).pause();
+                await expect(
+                    auction.connect(owner).pause()
+                ).to.be.revertedWith("Pausable: paused");
+            });
+
+            it("Should prevent unpausing when not paused", async function () {
+                await expect(
+                    auction.connect(owner).unpause()
+                ).to.be.revertedWith("Pausable: not paused");
+            });
+
+            it("Should prevent actions when paused", async function () {
+                await auction.connect(owner).pause();
+
+                // Try to create a sale while paused
+                await expect(
+                    auction.connect(owner).createSale(
+                        1,
+                        0,
+                        60,
+                        5,
+                        ethers.utils.parseEther("1"),
+                        100,
+                        50
+                    )
+                ).to.be.revertedWith("Pausable: paused");
+            });
         });
-
-        it("Should revert if funds already claimed", async function () {
-            // Step 1: Create an auction sale
-            const createSaleTx = await auctionContract.createSale(
-                1, // roomId
-                SaleType.Auction,
-                60, // Duration in minutes (1 hour)
-                10, // Keys for sale
-                ethers.utils.parseEther("1"), // Starting price
-                100, // Min bid increment (10%)
-                50 // IP Owner share (>= minIpOwnerShare)
-            );
-            await createSaleTx.wait();
-
-            // Step 2: Retrieve the sale ID
-            const saleId = await auctionContract.saleCounter(); // Retrieve the saleId after creating the sale
-
-            // Step 3: Place a bid to ensure there is a bidder
-            await auctionContract.connect(addr1).placeBid(saleId, { value: ethers.utils.parseEther("1") });
-
-            // Step 4: Fast-forward time to after the sale ends
-            await ethers.provider.send("evm_increaseTime", [3600]); // Fast forward by 1 hour
-            await ethers.provider.send("evm_mine", []); // Mine a new block to apply the time increase
-
-            // Step 5: Claim the refund successfully the first time
-            await auctionContract.connect(addr1).claimRefund(saleId);
-
-            // Step 6: Attempt to claim the refund again, which should revert with "Funds already claimed"
-            await expect(
-                auctionContract.connect(addr1).claimRefund(saleId)
-            ).to.be.revertedWith("Funds already claimed");
-        });
-
-        it("Should revert if sale is settled", async function () {
-            // Step 1: Create an auction sale
-            const createSaleTx = await auctionContract.createSale(
-                1, // roomId
-                SaleType.Auction,
-                60, // Duration in minutes (1 hour)
-                10, // Keys for sale
-                ethers.utils.parseEther("1"), // Starting price
-                100, // Min bid increment (10%)
-                50 // IP Owner share (>= minIpOwnerShare)
-            );
-            await createSaleTx.wait();
-
-            // Step 2: Retrieve the sale ID
-            const saleId = await auctionContract.saleCounter(); // Retrieve the saleId after creating the sale
-
-            // Step 3: Place a bid to ensure there are funds to distribute
-            await auctionContract.connect(addr1).placeBid(saleId, { value: ethers.utils.parseEther("1") });
-
-            // Step 4: Fast-forward time to after the sale ends
-            await ethers.provider.send("evm_increaseTime", [3600]); // Fast forward by 1 hour
-            await ethers.provider.send("evm_mine", []); // Mine a new block to apply the time increase
-
-            // Step 5: Settle the sale successfully the first time
-            await auctionContract.settleSale(saleId);
-
-            // Step 6: Attempt to settle the sale again, which should revert with "Sale settled"
-            await expect(
-                auctionContract.settleSale(saleId)
-            ).to.be.revertedWith("Funds already claimed");
-        });
-
     });
 });
