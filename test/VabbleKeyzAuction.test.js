@@ -5,6 +5,7 @@ const { time, loadFixture } = require("@nomicfoundation/hardhat-network-helpers"
 describe("VabbleKeyzAuction", function () {
     const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
     const price = ethers.utils.parseEther("1");
+    const durationInMinutes = 60;
 
     async function deployContractsFixture() {
         const [owner, roomOwner, bidder1, bidder2, bidder3, bidder4, daoAddress, ipOwnerAddress] = await ethers.getSigners();
@@ -122,7 +123,7 @@ describe("VabbleKeyzAuction", function () {
             const tx = await auction.connect(roomOwner).createSale(
                 1, // roomId
                 0, // SaleType.Auction
-                60, // durationInMinutes
+                durationInMinutes,
                 5, // totalKeys
                 price,
                 100, // minBidIncrement (10%)
@@ -342,7 +343,7 @@ describe("VabbleKeyzAuction", function () {
             await auction.connect(roomOwner).createSale(
                 1, // roomId
                 1, // SaleType.InstantBuy
-                60, // durationInMinutes
+                durationInMinutes,
                 5, // totalKeys
                 price, // fixed price
                 0, // minBidIncrement (not used)
@@ -597,7 +598,7 @@ describe("VabbleKeyzAuction", function () {
                 await contracts.auction.connect(contracts.roomOwner).createSale(
                     1, // roomId
                     0, // SaleType.Auction
-                    60, // durationInMinutes
+                    durationInMinutes,
                     2, // totalKeys
                     price, // starting price
                     100, // minBidIncrement (10%)
