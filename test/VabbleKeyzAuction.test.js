@@ -330,44 +330,254 @@ describe("VabbleKeyzAuction", function () {
         });
     });
 
-    describe("Instant Buy", function () {
-        let auction, roomOwner, bidder1, bidder2;
-        let saleId = 1;
+    describe("Instant Buy Core Functionality", function () {
+        let auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner;
+        const saleId = 1;
 
         beforeEach(async function () {
             const contracts = await loadFixture(deployContractsFixture);
-            auction = contracts.auction;
-            roomOwner = contracts.roomOwner;
-            bidder1 = contracts.bidder1;
-            bidder2 = contracts.bidder2;
+            ({ auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner } = contracts);
 
+            // Create instant buy sale
             await auction.connect(roomOwner).createSale(
-                1,
+                1, // roomId
                 1, // SaleType.InstantBuy
-                60,
-                5,
-                price,
-                0,
-                50
+                60, // durationInMinutes
+                5, // totalKeys
+                price, // fixed price
+                0, // minBidIncrement (not used)
+                50 // ipOwnerShare (5%)
             );
         });
 
-        it("Should allow instant buy at listing price", async function () {
-            await expect(auction.connect(bidder1).buyNow(saleId, 0, { value: price }))
-                .to.emit(auction, "InstantBuy")
-                .withArgs(saleId, 0, bidder1.address, price);
+        describe("Basic Purchase Scenarios", function () {
+            it("should process a basic instant buy correctly", async function () {
+                await expect(auction.connect(bidder1).buyNow(saleId, 0, { value: price }))
+                    .to.emit(auction, "InstantBuy")
+                    .withArgs(saleId, 0, bidder1.address, price);
+
+                const [amount, buyer, claimed] = await auction.getKeyBid(saleId, 0);
+                expect(amount).to.equal(price);
+                expect(buyer).to.equal(bidder1.address);
+                expect(claimed).to.be.false;
+                expect(await auction.isKeyAvailable(saleId, 0)).to.be.false;
+            });
+
+            it("should allow purchase of all available keys", async function () {
+                for (let i = 0; i < 5; i++) {
+                    const buyer = [bidder1, bidder2, bidder3, bidder4][i % 4];
+                    await auction.connect(buyer).buyNow(saleId, i, { value: price });
+
+                    const [amount, buyerAddr] = await auction.getKeyBid(saleId, i);
+                    expect(amount).to.equal(price);
+                    expect(buyerAddr).to.equal(buyer.address);
+                    expect(await auction.isKeyAvailable(saleId, i)).to.be.false;
+                }
+            });
+
+            it("should handle multiple purchases from the same buyer", async function () {
+                const keysToBuy = [0, 2, 4]; // Non-sequential keys
+
+                for (const keyId of keysToBuy) {
+                    await auction.connect(bidder1).buyNow(saleId, keyId, { value: price });
+
+                    const [amount, buyer] = await auction.getKeyBid(saleId, keyId);
+                    expect(amount).to.equal(price);
+                    expect(buyer).to.equal(bidder1.address);
+                    expect(await auction.isKeyAvailable(saleId, keyId)).to.be.false;
+                }
+
+                // Verify other keys are still available
+                expect(await auction.isKeyAvailable(saleId, 1)).to.be.true;
+                expect(await auction.isKeyAvailable(saleId, 3)).to.be.true;
+            });
+
+            it("should process purchases with exact amount correctly", async function () {
+                const exactPrice = price;
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: exactPrice });
+
+                const [recordedAmount] = await auction.getKeyBid(saleId, 0);
+                expect(recordedAmount).to.equal(exactPrice);
+            });
         });
 
-        it("Should mark key as unavailable after purchase", async function () {
-            await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
-            expect(await auction.isKeyAvailable(saleId, 0)).to.be.false;
+        describe("Edge Cases and Special Scenarios", function () {
+            it("should handle overpayment correctly", async function () {
+                const overpayAmount = price.mul(2);
+                const initialBalance = await bidder1.getBalance();
+
+                const tx = await auction.connect(bidder1).buyNow(saleId, 0, { value: overpayAmount });
+                const receipt = await tx.wait();
+                const gasCost = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+                const [recordedAmount] = await auction.getKeyBid(saleId, 0);
+                expect(recordedAmount).to.equal(overpayAmount);
+
+                const finalBalance = await bidder1.getBalance();
+                expect(initialBalance.sub(finalBalance).sub(gasCost)).to.equal(overpayAmount);
+            });
+
+            it("should handle minimum payment edge case", async function () {
+                const exactPrice = price;
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: exactPrice });
+
+                // Try with 1 wei less than price
+                await expect(
+                    auction.connect(bidder2).buyNow(saleId, 1, { value: exactPrice.sub(1) })
+                ).to.be.revertedWith("Insufficient payment");
+            });
+
+            it("should handle rapid sequential purchases correctly", async function () {
+                // Simulate rapid purchases of different keys
+                const purchases = [
+                    { buyer: bidder1, keyId: 0 },
+                    { buyer: bidder2, keyId: 1 },
+                    { buyer: bidder3, keyId: 2 },
+                    { buyer: bidder4, keyId: 3 }
+                ];
+
+                for (const purchase of purchases) {
+                    await auction.connect(purchase.buyer).buyNow(saleId, purchase.keyId, { value: price });
+
+                    // Verify immediate state after each purchase
+                    const [amount, buyer] = await auction.getKeyBid(saleId, purchase.keyId);
+                    expect(amount).to.equal(price);
+                    expect(buyer).to.equal(purchase.buyer.address);
+                    expect(await auction.isKeyAvailable(saleId, purchase.keyId)).to.be.false;
+                }
+            });
+
+            it("should handle zero key ID edge case", async function () {
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+
+                const [amount, buyer] = await auction.getKeyBid(saleId, 0);
+                expect(amount).to.equal(price);
+                expect(buyer).to.equal(bidder1.address);
+            });
+
+            it("should handle maximum key ID edge case", async function () {
+                const maxKeyId = 4; // totalKeys - 1
+                await auction.connect(bidder1).buyNow(saleId, maxKeyId, { value: price });
+
+                const [amount, buyer] = await auction.getKeyBid(saleId, maxKeyId);
+                expect(amount).to.equal(price);
+                expect(buyer).to.equal(bidder1.address);
+            });
         });
 
-        it("Should not allow buying unavailable key", async function () {
-            await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
-            await expect(
-                auction.connect(bidder2).buyNow(saleId, 0, { value: price })
-            ).to.be.revertedWith("Key not available");
+        describe("Failure Scenarios", function () {
+            it("should fail when trying to buy an already purchased key", async function () {
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+
+                await expect(
+                    auction.connect(bidder2).buyNow(saleId, 0, { value: price })
+                ).to.be.revertedWith("Key not available");
+            });
+
+            it("should fail when trying to buy after sale end", async function () {
+                await time.increase(3601); // 60 minutes + 1 second
+
+                await expect(
+                    auction.connect(bidder1).buyNow(saleId, 0, { value: price })
+                ).to.be.revertedWith("Sale ended");
+            });
+
+            it("should fail when trying to buy from non-existent sale", async function () {
+                const nonExistentSaleId = 999;
+
+                await expect(
+                    auction.connect(bidder1).buyNow(nonExistentSaleId, 0, { value: price })
+                ).to.be.revertedWith("Sale does not exist");
+            });
+
+            it("should fail when trying to buy invalid key ID", async function () {
+                const invalidKeyId = 99;
+
+                await expect(
+                    auction.connect(bidder1).buyNow(saleId, invalidKeyId, { value: price })
+                ).to.be.revertedWith("Invalid key ID");
+            });
+
+            it("should fail when trying to buy with insufficient payment", async function () {
+                const insufficientAmount = price.sub(1);
+
+                await expect(
+                    auction.connect(bidder1).buyNow(saleId, 0, { value: insufficientAmount })
+                ).to.be.revertedWith("Insufficient payment");
+            });
+
+            it("should fail when contract is paused", async function () {
+                await auction.connect(owner).pause();
+
+                await expect(
+                    auction.connect(bidder1).buyNow(saleId, 0, { value: price })
+                ).to.be.revertedWith("Pausable: paused");
+            });
+        });
+
+        describe("Sale State Verification", function () {
+            it("should maintain correct availability state after multiple purchases", async function () {
+                // Buy some keys in non-sequential order
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+                await auction.connect(bidder2).buyNow(saleId, 2, { value: price });
+                await auction.connect(bidder3).buyNow(saleId, 4, { value: price });
+
+                // Verify availability of all keys
+                expect(await auction.isKeyAvailable(saleId, 0)).to.be.false;
+                expect(await auction.isKeyAvailable(saleId, 1)).to.be.true;
+                expect(await auction.isKeyAvailable(saleId, 2)).to.be.false;
+                expect(await auction.isKeyAvailable(saleId, 3)).to.be.true;
+                expect(await auction.isKeyAvailable(saleId, 4)).to.be.false;
+            });
+
+            it("should maintain correct state after sale is filled", async function () {
+                // Buy all available keys
+                for (let i = 0; i < 5; i++) {
+                    await auction.connect(bidder1).buyNow(saleId, i, { value: price });
+                }
+
+                // Verify all keys are unavailable
+                for (let i = 0; i < 5; i++) {
+                    expect(await auction.isKeyAvailable(saleId, i)).to.be.false;
+                    const [amount, buyer] = await auction.getKeyBid(saleId, i);
+                    expect(amount).to.equal(price);
+                    expect(buyer).to.equal(bidder1.address);
+                }
+
+                // Verify cannot buy any more keys
+                await expect(
+                    auction.connect(bidder2).buyNow(saleId, 0, { value: price })
+                ).to.be.revertedWith("Key not available");
+            });
+        });
+
+        describe("Settlement Interaction", function () {
+            it("should allow settlement after all keys are purchased", async function () {
+                // Buy all keys
+                for (let i = 0; i < 5; i++) {
+                    await auction.connect(bidder1).buyNow(saleId, i, { value: price });
+                }
+
+                // Advance time
+                await time.increase(3601);
+
+                // Settlement should succeed
+                await expect(auction.settleSale(saleId))
+                    .to.emit(auction, "SaleSettled");
+            });
+
+            it("should allow settlement with partial key sales", async function () {
+                // Buy only some keys
+                await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+                await auction.connect(bidder2).buyNow(saleId, 2, { value: price });
+
+                // Advance time
+                await time.increase(3601);
+
+                // Settlement should succeed
+                await expect(auction.settleSale(saleId))
+                    .to.emit(auction, "SaleSettled");
+            });
         });
     });
 
