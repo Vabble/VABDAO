@@ -255,6 +255,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         emit BidPlaced(saleId, keyId, msg.sender, msg.value);
     }
 
+    function getKeyBid(uint256 saleId, uint256 keyId) external view returns (uint256 amount, address bidder, bool claimed) {
+        KeyBid storage bid = sales[saleId].keyBids[keyId];
+        return (bid.amount, bid.bidder, bid.claimed);
+    }
+
     function buyNow(
         uint256 saleId,
         uint256 keyId
