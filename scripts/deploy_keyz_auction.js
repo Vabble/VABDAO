@@ -5,8 +5,8 @@ const { ethers, network, run } = require("hardhat");
 const CONFIG = {
     baseSepolia: {
         WETH: "0x4200000000000000000000000000000000000006",
-        vabbleAddress: "0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda",
-        vabTokenAddress: "0x2C9ab600D71967fF259c491aD51F517886740cbc", // VAB token
+        vabbleAddress: "0x6fD89350A94A02B003E638c889b54DAB0E251655",
+        vabTokenAddress: "0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda",
         daoAddress: "0x368980Cc885DF672A168bDF873B19c1eEB10D5c2",
         uniHelper: "0x0CAc3092DCFf7a5194aD79AFbE5fF52dD767e4e9",
         staking: "0xdE758e55f5D3a94311137f8665417800f0d94747",
@@ -15,7 +15,7 @@ const CONFIG = {
     base: {
         WETH: "0x4200000000000000000000000000000000000006",
         vabbleAddress: "0x6fD89350A94A02B003E638c889b54DAB0E251655",
-        vabTokenAddress: "0x2C9ab600D71967fF259c491aD51F517886740cbc", // VAB token
+        vabTokenAddress: "0x2C9ab600D71967fF259c491aD51F517886740cbc",
         daoAddress: "0x368980Cc885DF672A168bDF873B19c1eEB10D5c2",
         uniHelper: "0x0CAc3092DCFf7a5194aD79AFbE5fF52dD767e4e9",
         staking: "0xdE758e55f5D3a94311137f8665417800f0d94747",
