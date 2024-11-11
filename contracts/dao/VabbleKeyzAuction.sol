@@ -51,6 +51,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // Mapping to track available keys in each sale
     mapping(uint256 => mapping(uint256 => bool)) public isKeyAvailable;
 
+    address public vabTokenAddress; // VAB token address for swaps
+
     // Addresses for revenue splits
     address payable public vabbleAddress;
     address payable public daoAddress;
@@ -130,13 +132,15 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // --------------------
 
     constructor(
-        address payable _vabbleAddress,
+        address payable _vabbleAddress, // Address to receive fee
+        address _vabTokenAddress, // VAB token address
         address payable _daoAddress,
         address _uniHelper,
         address _staking,
         address _uniswapRouter
     ) {
         vabbleAddress = _vabbleAddress;
+        vabTokenAddress = _vabTokenAddress;
         daoAddress = _daoAddress;
 
         // Initialize default shares and precision
@@ -256,11 +260,6 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         emit BidPlaced(saleId, keyId, msg.sender, msg.value);
     }
 
-    function getKeyBid(uint256 saleId, uint256 keyId) external view returns (uint256 amount, address bidder, bool claimed) {
-        KeyBid storage bid = sales[saleId].keyBids[keyId];
-        return (bid.amount, bid.bidder, bid.claimed);
-    }
-
     function buyNow(
         uint256 saleId,
         uint256 keyId
@@ -319,7 +318,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         // Prepare the swap path: ETH -> VAB
         address[] memory path = new address[](2);
         path[0] = IUniswapV2Router02(UNISWAP_ROUTER).WETH();
-        path[1] = vabbleAddress;
+        path[1] = vabTokenAddress;
 
         // Get expected amount of VAB tokens
         uint256[] memory amountsOut = IUniswapV2Router02(UNISWAP_ROUTER).getAmountsOut(amountToPool, path);
@@ -338,8 +337,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         uint256 vabAmount = amountsReceived[1];
 
         // Approve the staking pool to spend VAB tokens
-        if (IERC20(vabbleAddress).allowance(address(this), STAKING_POOL) < vabAmount) {
-            Helper.safeApprove(vabbleAddress, STAKING_POOL, vabAmount);
+        if (IERC20(vabTokenAddress).allowance(address(this), STAKING_POOL) < vabAmount) {
+            Helper.safeApprove(vabTokenAddress, STAKING_POOL, vabAmount);
         }
 
         // Add the VAB tokens to the staking pool
@@ -376,6 +375,16 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    // Getter functions for variables
+    function getKeyBid(uint256 saleId, uint256 keyId) external view returns (uint256 amount, address bidder, bool claimed) {
+        KeyBid storage bid = sales[saleId].keyBids[keyId];
+        return (bid.amount, bid.bidder, bid.claimed);
+    }
+
+    function getVabTokenAddress() external view returns (address) {
+        return vabTokenAddress;
     }
 
     // Setter functions for changeable state variables
