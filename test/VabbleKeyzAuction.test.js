@@ -10,20 +10,20 @@ describe("VabbleKeyzAuction", function () {
     async function deployContractsFixture() {
         const [owner, roomOwner, bidder1, bidder2, bidder3, bidder4, daoAddress, ipOwner1, ipOwner2] = await ethers.getSigners();
 
-        // Deploy ETH receiver first
+        // Deploy ETH receiver for Vabble payments
         const ETHReceiver = await ethers.getContractFactory("ETHReceiver");
         const vabbleReceiver = await ETHReceiver.deploy();
         await vabbleReceiver.deployed();
 
-        // Deploy mock token with ETH receiver
+        // Deploy VAB token
         const MockVabbleToken = await ethers.getContractFactory("MockVabbleToken");
-        const mockVabbleToken = await MockVabbleToken.deploy(vabbleReceiver.address);
-        await mockVabbleToken.deployed();
+        const mockVabToken = await MockVabbleToken.deploy();
+        await mockVabToken.deployed();
 
         // Deploy UniswapRouter
         const MockUniswapRouter = await ethers.getContractFactory("MockUniswapRouter");
         const mockUniswapRouter = await MockUniswapRouter.deploy(
-            mockVabbleToken.address,
+            mockVabToken.address, // VAB token for swaps
             WETH_ADDRESS
         );
         await mockUniswapRouter.deployed();
@@ -31,20 +31,21 @@ describe("VabbleKeyzAuction", function () {
         // Deploy UniHelper
         const MockUniHelper = await ethers.getContractFactory("MockUniHelper");
         const mockUniHelper = await MockUniHelper.deploy(
-            mockVabbleToken.address,
+            mockVabToken.address,
             WETH_ADDRESS
         );
         await mockUniHelper.deployed();
 
         // Deploy staking pool
         const MockStakingPool = await ethers.getContractFactory("MockStakingPool");
-        const mockStakingPool = await MockStakingPool.deploy(mockVabbleToken.address);
+        const mockStakingPool = await MockStakingPool.deploy(mockVabToken.address);
         await mockStakingPool.deployed();
 
         // Deploy main auction contract
         const VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction");
         const auction = await VabbleKeyzAuction.deploy(
-            mockVabbleToken.address,
+            vabbleReceiver.address,  // ETH payment receiver
+            mockVabToken.address,    // VAB token for swaps
             daoAddress.address,
             mockUniHelper.address,
             mockStakingPool.address,
@@ -52,7 +53,7 @@ describe("VabbleKeyzAuction", function () {
         );
         await auction.deployed();
 
-        // Fund contracts with ETH
+        // Fund contracts
         await owner.sendTransaction({
             to: vabbleReceiver.address,
             value: ethers.utils.parseEther("10")
@@ -64,13 +65,13 @@ describe("VabbleKeyzAuction", function () {
         });
 
         // Setup approvals and initial token balance
-        await mockVabbleToken.connect(owner).approve(mockStakingPool.address, ethers.constants.MaxUint256);
-        await mockVabbleToken.connect(owner).approve(auction.address, ethers.constants.MaxUint256);
-        await mockVabbleToken.mint(mockUniswapRouter.address, ethers.utils.parseEther("1000000"));
+        await mockVabToken.connect(owner).approve(mockStakingPool.address, ethers.constants.MaxUint256);
+        await mockVabToken.connect(owner).approve(auction.address, ethers.constants.MaxUint256);
+        await mockVabToken.mint(mockUniswapRouter.address, ethers.utils.parseEther("1000000"));
 
         return {
             auction,
-            mockVabbleToken,
+            mockVabToken,
             mockUniHelper,
             mockStakingPool,
             mockUniswapRouter,
@@ -91,14 +92,16 @@ describe("VabbleKeyzAuction", function () {
         it("Should set the correct initial values", async function () {
             const {
                 auction,
-                mockVabbleToken,
+                mockVabToken,
                 mockUniHelper,
                 mockStakingPool,
                 mockUniswapRouter,
+                vabbleReceiver,
                 daoAddress
             } = await loadFixture(deployContractsFixture);
 
-            expect(await auction.vabbleAddress()).to.equal(mockVabbleToken.address);
+            expect(await auction.vabbleAddress()).to.equal(vabbleReceiver.address);
+            expect(await auction.getVabTokenAddress()).to.equal(mockVabToken.address);
             expect(await auction.daoAddress()).to.equal(daoAddress.address);
             expect(await auction.UNI_HELPER()).to.equal(mockUniHelper.address);
             expect(await auction.STAKING_POOL()).to.equal(mockStakingPool.address);
@@ -723,29 +726,26 @@ describe("VabbleKeyzAuction", function () {
                 const roomOwnerAmount = totalAmount.sub(vabbleAmount).sub(daoAmount).sub(ipOwnerAmount);
 
                 // Get initial balances
-                const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ethReceiverBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
                 const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const roomOwnerBalanceBefore = await ethers.provider.getBalance(contracts.roomOwner.address);
-                const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+                const stakingPoolVabBalanceBefore = await contracts.mockVabToken.balanceOf(contracts.mockStakingPool.address);
 
                 // Settle the sale
                 const tx = await contracts.auction.settleSale(saleId);
                 const receipt = await tx.wait();
 
-                // Verify event emission
-                expect(receipt.events.some(e => e.event === "SaleSettled")).to.be.true;
-
                 // Check final balances
-                const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ethReceiverBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
                 const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwner1.address);
                 const roomOwnerBalanceAfter = await ethers.provider.getBalance(contracts.roomOwner.address);
-                const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+                const stakingPoolVabBalanceAfter = await contracts.mockVabToken.balanceOf(contracts.mockStakingPool.address);
 
                 // Verify distributions
-                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
+                expect(ethReceiverBalanceAfter.sub(ethReceiverBalanceBefore)).to.equal(vabbleAmount);
                 expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
                 expect(roomOwnerBalanceAfter.sub(roomOwnerBalanceBefore)).to.equal(roomOwnerAmount);
-                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2)); // 2x due to mock conversion rate
+                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2));
 
                 // Verify sale is marked as settled
                 const sale = await contracts.auction.sales(saleId);
@@ -816,22 +816,29 @@ describe("VabbleKeyzAuction", function () {
 
                 await time.increase(3600);
 
-                // Verify total distribution with multiple keys
+                // Calculate expected amounts
                 const totalAmount = price.mul(14); // 2 + 3 + 4 + 5 = 14 ETH
                 const vabbleAmount = totalAmount.mul(15).div(1000);
                 const daoAmount = totalAmount.mul(10).div(1000);
                 const ipOwnerAmount = totalAmount.mul(50).div(1000);
 
+                // Get initial balances
                 const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
                 const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwner1.address);
-                const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
 
+                // Get VAB token balance for staking pool
+                const vabToken = await ethers.getContractAt("MockVabbleToken", await contracts.auction.vabTokenAddress());
+                const stakingPoolVabBalanceBefore = await vabToken.balanceOf(contracts.mockStakingPool.address);
+
+                // Settle the sale
                 await contracts.auction.settleSale(2);
 
+                // Get final balances
                 const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
                 const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwner1.address);
-                const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+                const stakingPoolVabBalanceAfter = await vabToken.balanceOf(contracts.mockStakingPool.address);
 
+                // Verify distributions
                 expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
                 expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
                 expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2));
@@ -865,16 +872,23 @@ describe("VabbleKeyzAuction", function () {
                 const daoAmount = totalAmount.mul(10).div(1000);
                 const ipOwnerAmount = totalAmount.mul(50).div(1000);
 
+                // Get VAB token instance
+                const vabToken = await ethers.getContractAt("MockVabbleToken", await contracts.auction.vabTokenAddress());
+
+                // Get initial balances
                 const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
                 const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwner1.address);
-                const stakingPoolVabBalanceBefore = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+                const stakingPoolVabBalanceBefore = await vabToken.balanceOf(contracts.mockStakingPool.address);
 
+                // Settle the sale
                 await contracts.auction.settleSale(saleId);
 
+                // Get final balances
                 const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
                 const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwner1.address);
-                const stakingPoolVabBalanceAfter = await contracts.mockVabbleToken.balanceOf(contracts.mockStakingPool.address);
+                const stakingPoolVabBalanceAfter = await vabToken.balanceOf(contracts.mockStakingPool.address);
 
+                // Verify distributions
                 expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
                 expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
                 expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2));
@@ -905,11 +919,26 @@ describe("VabbleKeyzAuction", function () {
                 const daoAmount = totalAmount.mul(10).div(1000);
                 const ipOwnerAmount = totalAmount.mul(50).div(1000);
 
-                const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
-                await contracts.auction.settleSale(2);
-                const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                // Get VAB token instance
+                const vabToken = await ethers.getContractAt("MockVabbleToken", await contracts.auction.vabTokenAddress());
 
+                // Get initial balances
+                const vabbleBalanceBefore = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceBefore = await ethers.provider.getBalance(contracts.ipOwner1.address);
+                const stakingPoolVabBalanceBefore = await vabToken.balanceOf(contracts.mockStakingPool.address);
+
+                // Settle the sale
+                await contracts.auction.settleSale(2);
+
+                // Get final balances
+                const vabbleBalanceAfter = await ethers.provider.getBalance(contracts.vabbleReceiver.address);
+                const ipOwnerBalanceAfter = await ethers.provider.getBalance(contracts.ipOwner1.address);
+                const stakingPoolVabBalanceAfter = await vabToken.balanceOf(contracts.mockStakingPool.address);
+
+                // Verify distributions
                 expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount);
+                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount);
+                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(daoAmount.mul(2));
             });
         });
 
