@@ -171,7 +171,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         uint256 _price,
         uint256 _minBidIncrement,
         uint256 _ipOwnerShare,
-        address payable _ipOwnerAddress // Added parameter
+        address payable _ipOwnerAddress
     ) external whenNotPaused {
         require(_durationInMinutes <= maxDurationInMinutes, "Duration exceeds max limit");
         require(_ipOwnerShare >= minIpOwnerShare, "IP Owner share too low");
