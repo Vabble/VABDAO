@@ -58,10 +58,10 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     address payable public daoAddress;
 
     // Variables for revenue percentages
-    uint256 public vabbleShare; // e.g., 15 represents 1.5%
-    uint256 public daoShare; // e.g., 10 represents 1%
-    uint256 public minIpOwnerShare; // e.g., 30 represents 3%
-    uint256 public percentagePrecision; // Represents 100%, e.g., 1000
+    uint256 public vabbleShare; // e.g., 150 represents 1.5%
+    uint256 public daoShare; // e.g., 100 represents 1%
+    uint256 public minIpOwnerShare; // e.g., 300 represents 3%
+    uint256 public percentagePrecision; // Represents 100%, e.g., 10000
 
     // Variables for configurable parameters
     uint256 public maxDurationInMinutes;
@@ -139,15 +139,15 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         daoAddress = _daoAddress;
 
         // Initialize default shares and precision
-        vabbleShare = 15; // 1.5%
-        daoShare = 10; // 1%
-        minIpOwnerShare = 30; // 3%
-        percentagePrecision = 1000; // 100%
+        vabbleShare = 150; // 1.5%
+        daoShare = 100; // 1%
+        minIpOwnerShare = 300; // 3%
+        percentagePrecision = 10000; // 100%
 
         // Initialize configurable parameters
         maxDurationInMinutes = 2880; // 48 hours * 60 minutes
         minBidIncrementAllowed = 1; // 0.01%
-        maxBidIncrementAllowed = 50000; // 5000%
+        maxBidIncrementAllowed = 500000; // 5000%
 
         UNI_HELPER = _uniHelper;
         STAKING_POOL = _staking;
