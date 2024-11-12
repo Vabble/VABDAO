@@ -68,6 +68,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     uint256 public minBidIncrementAllowed;
     uint256 public maxBidIncrementAllowed;
 
+    uint256 public maxRoomKeys;
+
     address public immutable STAKING_POOL; // StakingPool contract address
     address public immutable UNI_HELPER; // UniHelper contract address
     address public immutable UNISWAP_ROUTER; // UniswapV2Router contract address
@@ -106,6 +108,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     event MaxDurationInMinutesUpdated(uint256 newMaxDuration);
     event MinBidIncrementAllowedUpdated(uint256 newMinBidIncrement);
     event MaxBidIncrementAllowedUpdated(uint256 newMaxBidIncrement);
+
+    event MaxRoomKeysUpdated(uint256 newMaxRoomKeys)
 
     // --------------------
     // Modifiers
@@ -149,6 +153,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         minBidIncrementAllowed = 1; // 0.01%
         maxBidIncrementAllowed = 500000; // 5000%
 
+        maxRoomKeyz = 5;
+
         UNI_HELPER = _uniHelper;
         STAKING_POOL = _staking;
         UNISWAP_ROUTER = _uniswapRouter;
@@ -171,6 +177,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(_durationInMinutes <= maxDurationInMinutes, "Duration exceeds max limit");
         require(_ipOwnerShare >= minIpOwnerShare, "IP Owner share too low");
         require(_totalKeys > 0, "Must sell at least one key");
+        require(_totalKeys <= maxRoomKeys, "Total keys exceed max limit"),
         require(_ipOwnerAddress != address(0), "Invalid IP owner address");
 
         if (_saleType == SaleType.Auction) {
@@ -396,6 +403,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     function setVabbleShare(uint256 _vabbleShare) external onlyOwner {
         vabbleShare = _vabbleShare;
         emit VabbleShareUpdated(_vabbleShare);
+    }
+
+    function setMaxRoomKeyz(uint256 _maxRoomKeys) external onlyOwner {
+        maxRoomKeys = _maxRoomKeys;
+        emit MaxRoomKeyzUpdated(_maxRoomKeys);
     }
 
     function setDaoShare(uint256 _daoShare) external onlyOwner {
