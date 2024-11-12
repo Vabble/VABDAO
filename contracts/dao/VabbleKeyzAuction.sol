@@ -189,7 +189,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         saleCounter++;
         uint256 saleId = saleCounter;
-        uint256 durationInSeconds = _durationInMinutes * 1 minutes;
+        uint256 durationInSeconds = _durationInMinutes * 1 seconds;
 
         Sale storage newSale = sales[saleId];
         newSale.roomOwner = payable(msg.sender);
