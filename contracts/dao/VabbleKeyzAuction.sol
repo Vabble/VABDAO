@@ -77,9 +77,9 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // --------------------
 
     event SaleCreated(
-        uint256 saleId,
-        uint256 roomId,
-        address roomOwner,
+        uint256 indexed saleId,
+        uint256 indexed roomId,
+        address indexed roomOwner,
         SaleType saleType,
         uint256 startTime,
         uint256 endTime,
@@ -89,11 +89,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         uint256 ipOwnerShare
     );
 
-    event BidPlaced(uint256 saleId, uint256 keyId, address bidder, uint256 amount);
-    event InstantBuy(uint256 saleId, uint256 keyId, address buyer, uint256 amount);
-    event SaleSettled(uint256 saleId, uint256 totalAmount);
-    event KeyClaimed(uint256 saleId, uint256 keyId, address winner);
-    event RefundClaimed(uint256 saleId, uint256 keyId, address claimant, uint256 amount);
+    event BidPlaced(uint256 indexed saleId, uint256 indexed keyId, address indexed bidder, uint256 amount);
+    event InstantBuy(uint256 indexed saleId, uint256 indexed keyId, address indexed buyer, uint256 amount);
+    event SaleSettled(uint256 indexed saleId, uint256 totalAmount);
+    event KeyClaimed(uint256 indexed saleId, uint256 indexed keyId, address indexed winner);
+    event RefundClaimed(uint256 indexed saleId, uint256 indexed keyId, address indexed claimant, uint256 amount);
 
     event VabbleShareUpdated(uint256 newShare);
     event DaoShareUpdated(uint256 newShare);
@@ -221,10 +221,14 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         );
     }
 
-    function placeBid(
-        uint256 saleId,
-        uint256 keyId
-    ) external payable saleExists(saleId) saleActive(saleId) whenNotPaused nonReentrant {
+    function placeBid(uint256 saleId, uint256 keyId)
+        external
+        payable
+        saleExists(saleId)
+        saleActive(saleId)
+        whenNotPaused
+        nonReentrant
+    {
         Sale storage sale = sales[saleId];
         require(sale.saleType == SaleType.Auction, "Not an auction");
         require(keyId < sale.totalKeys, "Invalid key ID");
@@ -250,7 +254,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
             currentBid.amount = msg.value;
             currentBid.bidder = payable(msg.sender);
 
-            (bool success, ) = previousBidder.call{value: refundAmount}("");
+            (bool success,) = previousBidder.call{value: refundAmount}("");
             require(success, "Refund failed");
         } else {
             currentBid.amount = msg.value;
@@ -260,10 +264,14 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         emit BidPlaced(saleId, keyId, msg.sender, msg.value);
     }
 
-    function buyNow(
-        uint256 saleId,
-        uint256 keyId
-    ) external payable saleExists(saleId) saleActive(saleId) whenNotPaused nonReentrant {
+    function buyNow(uint256 saleId, uint256 keyId)
+        external
+        payable
+        saleExists(saleId)
+        saleActive(saleId)
+        whenNotPaused
+        nonReentrant
+    {
         Sale storage sale = sales[saleId];
         require(sale.saleType == SaleType.InstantBuy, "Not an instant buy sale");
         require(keyId < sale.totalKeys, "Invalid key ID");
@@ -328,10 +336,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         // Swap ETH to VAB tokens
         uint256[] memory amountsReceived = IUniswapV2Router02(UNISWAP_ROUTER).swapExactETHForTokens{value: amountToPool}(
-            slippageTolerance,
-            path,
-            address(this),
-            block.timestamp + 5
+            slippageTolerance, path, address(this), block.timestamp + 5
         );
 
         uint256 vabAmount = amountsReceived[1];
@@ -359,7 +364,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         keyBid.amount = 0;
         keyBid.claimed = true;
 
-        (bool success, ) = msg.sender.call{value: refundAmount}("");
+        (bool success,) = msg.sender.call{value: refundAmount}("");
         require(success, "Refund failed");
 
         emit RefundClaimed(saleId, keyId, msg.sender, refundAmount);
@@ -378,7 +383,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     }
 
     // Getter functions for variables
-    function getKeyBid(uint256 saleId, uint256 keyId) external view returns (uint256 amount, address bidder, bool claimed) {
+    function getKeyBid(uint256 saleId, uint256 keyId)
+        external
+        view
+        returns (uint256 amount, address bidder, bool claimed)
+    {
         KeyBid storage bid = sales[saleId].keyBids[keyId];
         return (bid.amount, bid.bidder, bid.claimed);
     }
@@ -442,7 +451,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // --------------------
 
     function _safeTransfer(address payable recipient, uint256 amount, string memory errorMessage) internal {
-        (bool success, ) = recipient.call{value: amount}("");
+        (bool success,) = recipient.call{value: amount}("");
         require(success, errorMessage);
     }
 
