@@ -111,11 +111,6 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // Modifiers
     // --------------------
 
-    modifier onlyRoomOwner(uint256 saleId) {
-        require(msg.sender == sales[saleId].roomOwner, "Not room owner");
-        _;
-    }
-
     modifier saleExists(uint256 saleId) {
         require(sales[saleId].roomOwner != address(0), "Sale does not exist");
         _;
