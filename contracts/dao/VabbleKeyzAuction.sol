@@ -48,6 +48,9 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     uint256 public saleCounter;
     mapping(uint256 => Sale) public sales;
 
+    // Mapping to track pending returns after bid
+    mapping(address => uint256) public pendingReturns;
+
     // Mapping to track available keys in each sale
     mapping(uint256 => mapping(uint256 => bool)) public isKeyAvailable;
 
@@ -109,7 +112,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     event MinBidIncrementAllowedUpdated(uint256 newMinBidIncrement);
     event MaxBidIncrementAllowedUpdated(uint256 newMaxBidIncrement);
 
-    event MaxRoomKeysUpdated(uint256 newMaxRoomKeys)
+    event MaxRoomKeysUpdated(uint256 newMaxRoomKeys);
 
     // --------------------
     // Modifiers
@@ -153,7 +156,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         minBidIncrementAllowed = 1; // 0.01%
         maxBidIncrementAllowed = 500000; // 5000%
 
-        maxRoomKeyz = 5;
+        maxRoomKeys = 5;
 
         UNI_HELPER = _uniHelper;
         STAKING_POOL = _staking;
@@ -177,7 +180,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(_durationInMinutes <= maxDurationInMinutes, "Duration exceeds max limit");
         require(_ipOwnerShare >= minIpOwnerShare, "IP Owner share too low");
         require(_totalKeys > 0, "Must sell at least one key");
-        require(_totalKeys <= maxRoomKeys, "Total keys exceed max limit"),
+        require(_totalKeys <= maxRoomKeys, "Total keys exceed max limit");
         require(_ipOwnerAddress != address(0), "Invalid IP owner address");
 
         if (_saleType == SaleType.Auction) {
@@ -252,12 +255,12 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
             uint256 refundAmount = currentBid.amount;
             address payable previousBidder = currentBid.bidder;
 
-            // Update state before external call
+            pendingReturns[previousBidder] += refundAmount;
+
+            // Update state 
             currentBid.amount = msg.value;
             currentBid.bidder = payable(msg.sender);
 
-            (bool success,) = previousBidder.call{value: refundAmount}("");
-            require(success, "Refund failed");
         } else {
             currentBid.amount = msg.value;
             currentBid.bidder = payable(msg.sender);
@@ -372,6 +375,14 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         emit RefundClaimed(saleId, keyId, msg.sender, refundAmount);
     }
 
+    function withdrawPendingReturns() external nonReentrant {
+        uint256 amount = pendingReturns[msg.sender];
+        require(amount > 0, "No funds to withdraw");
+        pendingReturns[msg.sender] = 0;
+        (bool success, ) = msg.sender.call{ value: amount }(""); 
+        require(success, "Withdrawal failed");
+    }
+
     // --------------------
     // Administrative Functions
     // --------------------
@@ -407,7 +418,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
     function setMaxRoomKeyz(uint256 _maxRoomKeys) external onlyOwner {
         maxRoomKeys = _maxRoomKeys;
-        emit MaxRoomKeyzUpdated(_maxRoomKeys);
+        emit MaxRoomKeysUpdated(_maxRoomKeys);
     }
 
     function setDaoShare(uint256 _daoShare) external onlyOwner {
