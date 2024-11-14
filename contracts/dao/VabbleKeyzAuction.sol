@@ -416,7 +416,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         emit VabbleShareUpdated(_vabbleShare);
     }
 
-    function setMaxRoomKeyz(uint256 _maxRoomKeys) external onlyOwner {
+    function setMaxRoomKeys(uint256 _maxRoomKeys) external onlyOwner {
         maxRoomKeys = _maxRoomKeys;
         emit MaxRoomKeysUpdated(_maxRoomKeys);
     }

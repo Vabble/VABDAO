@@ -123,6 +123,7 @@ describe("VabbleKeyzAuction", function () {
             expect((await auction.maxDurationInMinutes()).toNumber()).to.equal(2880)
             expect((await auction.minBidIncrementAllowed()).toNumber()).to.equal(1)
             expect((await auction.maxBidIncrementAllowed()).toNumber()).to.equal(500000)
+            expect((await auction.maxRoomKeys()).toNumber()).to.equal(5)
         })
     })
 
@@ -186,6 +187,16 @@ describe("VabbleKeyzAuction", function () {
                     .connect(roomOwner)
                     .createSale(1, 0, 60, 5, price, 100, 500, ethers.constants.AddressZero)
             ).to.be.revertedWith("Invalid IP owner address")
+        })
+
+        it("Should fail when creating sale with more then max keys allowed", async function () {
+            const { auction, roomOwner } = await loadFixture(deployContractsFixture)
+
+            await expect(
+                auction
+                    .connect(roomOwner)
+                    .createSale(1, 0, 60, 6, price, 100, 500, ethers.constants.AddressZero)
+            ).to.be.revertedWith("Total keys exceed max limit")
         })
     })
 
@@ -1235,7 +1246,15 @@ describe("VabbleKeyzAuction", function () {
             })
         })
 
-        describe("Duration and Bid Increment Management", function () {
+        describe("Duration, Bid Increment Management and Max Keys Update", function () {
+            it("Should allow owner to update max allowed room keys", async function () {
+                const newMaxRoomKeys = 6
+                await expect(auction.connect(owner).setMaxRoomKeys(newMaxRoomKeys))
+                    .to.emit(auction, "MaxRoomKeysUpdated")
+                    .withArgs(newMaxRoomKeys)
+                expect(await auction.maxRoomKeys()).to.equal(newMaxRoomKeys)
+            })
+
             it("Should allow owner to update max duration in minutes", async function () {
                 const newDuration = 4320 // 72 hours
                 await expect(auction.connect(owner).setMaxDurationInMinutes(newDuration))
