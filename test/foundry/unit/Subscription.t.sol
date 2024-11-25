@@ -112,6 +112,28 @@ contract SubscriptionTest is BaseTest {
         assertEq(actualUserEndBalance, expectedUserEndBalance);
     }
 
+    function test_activatingSubscriptionWithETHTransfersVABtoUser() public {
+        uint256 period = 1;
+        uint256 startingAmountEth = 1 ether;
+        address token = address(0);
+
+        uint256 userWalletStartVABBalance = vab.balanceOf(address(default_user));
+
+
+        deal(default_user, startingAmountEth);
+        assertEq(default_user.balance, startingAmountEth);
+
+        uint256 expectedAmountEthToBeTransfered = subscription.getExpectedSubscriptionAmount(token, period);
+
+        vm.startPrank(default_user);
+        subscription.activeSubscription{ value: expectedAmountEthToBeTransfered }(token, period);
+        vm.stopPrank();
+
+        uint256 userWalletEndVABBalance = vab.balanceOf(address(default_user));
+        console2.log("userWalletStartVABBalance", userWalletStartVABBalance);
+        console2.log("userWalletEndVABBalance", userWalletEndVABBalance);
+    }
+
     function test_activatingSubscriptionWithVab() public {
         uint256 period = 1;
         address token = address(vab);

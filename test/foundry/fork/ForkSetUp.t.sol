@@ -72,7 +72,7 @@ contract ForkSetUp is BaseForkTest {
         assertEq(sushiSwapRouter, uniHelper.getSushiRouter());
     }
 
-    function testFork_OwnableeCorrectSetup() public view {
+    function testFork_OwnableeCorrectSetup() public {
         bytes32 VAB_WALLET_slot = bytes32(uint256(1));
         bytes32 VOTE_slot = bytes32(uint256(2));
         bytes32 VABBLE_DAO_slot = bytes32(uint256(3));
@@ -102,5 +102,17 @@ contract ForkSetUp is BaseForkTest {
         assertEq(true, ownablee.isDepositAsset(address(usdc)));
         assertEq(true, ownablee.isDepositAsset(address(0)));
         assertEq(true, ownablee.isDepositAsset(address(vab)));
+
+        // Prank as deployer before attempting setup
+        address deployer = ownablee.deployer();
+        vm.prank(deployer);
+
+        // Test that setup fails when called again
+        vm.expectRevert("setupVote: already setup");
+        ownablee.setup(
+            address(0x1), // New vote address
+            address(0x2), // New dao address
+            address(0x3) // New staking pool address
+        );
     }
 }

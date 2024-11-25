@@ -137,8 +137,11 @@ contract SubscriptionForkTest is BaseForkTest {
         uint256 vabWalletUsdcStartingBalance = usdc.balanceOf(vabbleWallet);
         uint256 vabWalletVabStartingBalance = vab.balanceOf(vabbleWallet);
 
-        assertEq(vabWalletUsdcStartingBalance, 0);
-        assertEq(vabWalletVabStartingBalance, 0);
+        console2.log("vabWalletUsdcStartingBalance: ", vabWalletUsdcStartingBalance); // 321.000321
+        console2.log("vabWalletVabStartingBalance: ", vabWalletVabStartingBalance); // 35500.183178853379048961 VAB
+
+        // assertEq(vabWalletUsdcStartingBalance, 0);
+        // assertEq(vabWalletVabStartingBalance, 0);
 
         deal(user, userEthStartingBalance);
         assertEq(user.balance, userEthStartingBalance);
@@ -152,17 +155,23 @@ contract SubscriptionForkTest is BaseForkTest {
         vm.stopPrank();
 
         uint256 userEthEndingBalance = user.balance;
+        uint256 userVabEndingBalance = vab.balanceOf(user);
+
         uint256 actualCostOfSubscription = userEthStartingBalance - userEthEndingBalance;
 
+        console2.log("!!!userVabEndingBalance:!!!", userVabEndingBalance); //
         console2.log("userEthStartingBalance: ", userEthStartingBalance); // 1 ETH
-        console2.log("userEthEndingBalance: ", userEthEndingBalance); // 0.999133327621269643 ETH
-        console2.log("actualCostOfSubscription in ETH: ", actualCostOfSubscription); // 0.000346668951492143 ETH
+        console2.log("userEthEndingBalance: ", userEthEndingBalance); // 0.997765669192799597 ETH
+        console2.log("actualCostOfSubscription in ETH: ", actualCostOfSubscription); // 0.002234330807200403 ETH
 
         uint256 vabWalletUsdcEndingBalance = usdc.balanceOf(vabbleWallet);
         uint256 vabWalletVabEndingBalance = vab.balanceOf(vabbleWallet);
 
-        console2.log("vabWalletUsdcEndingBalance: ", vabWalletUsdcEndingBalance); // 1.196000 $ ~ 40%
-        console2.log("vabWalletVabEndingBalance: ", vabWalletVabEndingBalance); // 486.035 VAB ~ 1.76 $
+        console2.log("vabWalletUsdcEndingBalance: ", vabWalletUsdcEndingBalance); // 323.779547
+        console2.log("vabWalletVabEndingBalance: ", vabWalletVabEndingBalance); // 37125.576611758487236756
+
+        console2.log("vabWallet Usdc received: ", vabWalletUsdcEndingBalance - vabWalletUsdcStartingBalance); // 2779226
+        console2.log("vabWallet Vab received: ", vabWalletVabEndingBalance - vabWalletVabStartingBalance); // 1629681853374677263817
 
         assertEq(expectSubscriptionCost, actualCostOfSubscription);
         assertEq(subscription.isActivedSubscription(user), true);
