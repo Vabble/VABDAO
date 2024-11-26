@@ -38,6 +38,7 @@ contract VabbleDAO is ReentrancyGuard {
     event RewardAllClaimed(address indexed user, uint256 indexed monthId, uint256[] filmIds, uint256 claimAmount);
     event SetFinalFilms(address indexed user, uint256[] filmIds, uint256[] payouts);
     event ChangeFilmOwner(uint256 indexed filmId, address indexed oldOwner, address indexed newOwner);
+    event FilmProposalsMigrated(uint256 numberOfFilms, address migrator);
 
     address public immutable OWNABLE; // Ownablee contract address
     address public immutable VOTE; // Vote contract address
@@ -66,6 +67,8 @@ contract VabbleDAO is ReentrancyGuard {
 
     uint256 public StudioPool;
     mapping(uint256 => uint256) public finalFilmCalledTime; // (filmId => finalized time)
+
+    bool private migrationPerformed;
 
     Counters.Counter public filmCount; // created filmId is from No.1
     Counters.Counter public updatedFilmCount; // updated filmId is from No.1
@@ -102,6 +105,64 @@ contract VabbleDAO is ReentrancyGuard {
         STAKING_POOL = _staking;
         DAO_PROPERTY = _property;
         VABBLE_FUND = _vabbleFund;
+    }
+
+    /// @notice One-time migration function to import existing film proposals
+    /// @dev Can only be called once by the auditor
+    /// @param _filmDetails Array of film details corresponding to the film IDs
+    function migrateFilmProposals(IVabbleDAO.Film[] calldata _filmDetails) external onlyAuditor {
+        require(!migrationPerformed, "Migration already completed");
+        require(_filmDetails.length > 0, "No films to migrate");
+        require(_filmDetails.length < 1000, "Too many films");
+
+        // Mark migration as performed to prevent future calls
+        migrationPerformed = true;
+
+        // Iterate through each film and populate existing data structures
+        for (uint256 i = 0; i < _filmDetails.length; ++i) {
+            filmCount.increment();
+
+            uint256 filmId = filmCount.current();
+            IVabbleDAO.Film memory filmDetail = _filmDetails[i];
+
+            filmInfo[filmId] = filmDetail;
+
+            // Every proposal must be in this list because it has already been created successfully
+            totalFilmIds[1].push(filmId);
+            userFilmIds[filmDetail.studio][1].push(filmId);
+
+            // Update total film ID lists based on status
+            if (filmDetail.status == Helper.Status.APPROVED_LISTING) {
+                updatedFilmCount.increment();
+                totalFilmIds[2].push(filmId);
+                userFilmIds[filmDetail.studio][3].push(filmId);
+
+                totalFilmIds[4].push(filmId);
+                userFilmIds[filmDetail.studio][2].push(filmId);
+            } else if (filmDetail.status == Helper.Status.APPROVED_FUNDING) {
+                updatedFilmCount.increment();
+                totalFilmIds[3].push(filmId);
+                userFilmIds[filmDetail.studio][3].push(filmId);
+
+                totalFilmIds[4].push(filmId);
+                userFilmIds[filmDetail.studio][2].push(filmId);
+            } else if (filmDetail.status == Helper.Status.UPDATED) {
+                updatedFilmCount.increment();
+                totalFilmIds[4].push(filmId);
+                userFilmIds[filmDetail.studio][2].push(filmId);
+            } else if (filmDetail.status == Helper.Status.REJECTED) {
+                if (
+                    filmDetail.pCreateTime != 0 && filmDetail.pApproveTime != 0
+                        && filmDetail.pApproveTime > filmDetail.pCreateTime
+                ) {
+                    updatedFilmCount.increment();
+                    userFilmIds[filmDetail.studio][2].push(filmId);
+                    totalFilmIds[4].push(filmId);
+                }
+            }
+        }
+
+        emit FilmProposalsMigrated(_filmDetails.length, msg.sender);
     }
 
     /**
