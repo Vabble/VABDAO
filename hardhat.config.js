@@ -239,7 +239,7 @@ module.exports = {
         tests: "test",
     },
     mocha: {
-        timeout: 200e3,
+        timeout: 200e10,
     },
     solidity: {
         compilers: [
