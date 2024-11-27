@@ -113,7 +113,7 @@ const fundAndApproveAccounts = async ({
 const deployAndInitAllContracts = async () => {
     try {
         // Deploy the DAOOperations  contract first
-        const DAOOperations = await ethers.getContractFactory("DAOOperations ")
+        const DAOOperations = await ethers.getContractFactory("DAOOperations")
         const deployedLibrary = await DAOOperations.deploy()
         await deployedLibrary.deployed()
 
