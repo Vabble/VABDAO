@@ -24,6 +24,7 @@ import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleFund.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVote.sol";
+import "../libraries/DAOOperations .sol";
 
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
@@ -112,56 +113,10 @@ contract VabbleDAO is ReentrancyGuard {
     /// @param _filmDetails Array of film details corresponding to the film IDs
     function migrateFilmProposals(IVabbleDAO.Film[] calldata _filmDetails) external onlyAuditor {
         require(!migrationPerformed, "Migration already completed");
-        require(_filmDetails.length > 0, "No films to migrate");
-        require(_filmDetails.length < 1000, "Too many films");
-
-        // Mark migration as performed to prevent future calls
         migrationPerformed = true;
-
-        // Iterate through each film and populate existing data structures
-        for (uint256 i = 0; i < _filmDetails.length; ++i) {
-            filmCount.increment();
-
-            uint256 filmId = filmCount.current();
-            IVabbleDAO.Film memory filmDetail = _filmDetails[i];
-
-            filmInfo[filmId] = filmDetail;
-
-            // Every proposal must be in this list because it has already been created successfully
-            totalFilmIds[1].push(filmId);
-            userFilmIds[filmDetail.studio][1].push(filmId);
-
-            // Update total film ID lists based on status
-            if (filmDetail.status == Helper.Status.APPROVED_LISTING) {
-                updatedFilmCount.increment();
-                totalFilmIds[2].push(filmId);
-                userFilmIds[filmDetail.studio][3].push(filmId);
-
-                totalFilmIds[4].push(filmId);
-                userFilmIds[filmDetail.studio][2].push(filmId);
-            } else if (filmDetail.status == Helper.Status.APPROVED_FUNDING) {
-                updatedFilmCount.increment();
-                totalFilmIds[3].push(filmId);
-                userFilmIds[filmDetail.studio][3].push(filmId);
-
-                totalFilmIds[4].push(filmId);
-                userFilmIds[filmDetail.studio][2].push(filmId);
-            } else if (filmDetail.status == Helper.Status.UPDATED) {
-                updatedFilmCount.increment();
-                totalFilmIds[4].push(filmId);
-                userFilmIds[filmDetail.studio][2].push(filmId);
-            } else if (filmDetail.status == Helper.Status.REJECTED) {
-                if (
-                    filmDetail.pCreateTime != 0 && filmDetail.pApproveTime != 0
-                        && filmDetail.pApproveTime > filmDetail.pCreateTime
-                ) {
-                    updatedFilmCount.increment();
-                    userFilmIds[filmDetail.studio][2].push(filmId);
-                    totalFilmIds[4].push(filmId);
-                }
-            }
-        }
-
+        DAOOperations.migrateFilmProposals(
+            _filmDetails, filmInfo, totalFilmIds, userFilmIds, filmCount, updatedFilmCount
+        );
         emit FilmProposalsMigrated(_filmDetails.length, msg.sender);
     }
 
