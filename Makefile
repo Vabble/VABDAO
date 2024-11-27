@@ -74,10 +74,26 @@ deploy:
 	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) --account Deployer --broadcast --force --slow --optimize --optimizer-runs 200 --verify  --etherscan-api-key $(ETHERSCAN_API_KEY)
 
 # make get-deployed-contracts ARGS="--network base_sepolia"
-get-deployed-contracts: 
+# Get deployed contract addresses - first batch
+get-deployed-contracts-1: 
+	@echo "Fetching first batch of deployed contracts..."
 	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --chain-id $(CHAIN_ID)
+
+# Get deployed contract addresses - second batch
+get-deployed-contracts-2:
+	@echo "Fetching second batch of deployed contracts..."
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "runSecondBatch()" --chain-id $(CHAIN_ID)
+
+# Get all deployed contracts (runs both batches)
+get-deployed-contracts: get-deployed-contracts-1 
+	@echo "\nFirst batch complete. Starting second batch...\n"
+	@make get-deployed-contracts-2
 
 fund-all:
 	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
+
+# make migrate-films ARGS="--network base_sepolia"
+migrate-films:
+	@forge script scripts/foundry/05_FilmMigration.s.sol $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
 
 SHELL := /bin/bash
