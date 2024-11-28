@@ -135,7 +135,7 @@ contract DeployerScript is Script {
      */
     function _deployAllContracts(address _vabWallet, address _auditor) internal {
         deployOwnablee(_vabWallet, vab, usdc, _auditor);
-        deployUniHelper(uniswapFactory, uniswapRouter, sushiSwapFactory, sushiSwapRouter, address(contracts.ownablee));
+        deployUniHelper(uniswapFactory, uniswapRouter, address(contracts.ownablee));
         deployStakingPool(address(contracts.ownablee));
         deployVote(address(contracts.ownablee));
         deployProperty(
@@ -206,17 +206,8 @@ contract DeployerScript is Script {
         contracts.ownablee = new Ownablee(_vabWallet, _vab, _usdc, _auditor);
     }
 
-    function deployUniHelper(
-        address _uniswapFactory,
-        address _uniswapRouter,
-        address _sushiSwapFactory,
-        address _sushiSwapRouter,
-        address _ownablee
-    )
-        internal
-    {
-        contracts.uniHelper =
-            new UniHelper(_uniswapFactory, _uniswapRouter, _sushiSwapFactory, _sushiSwapRouter, _ownablee);
+    function deployUniHelper(address _uniswapFactory, address _uniswapRouter, address _ownablee) internal {
+        contracts.uniHelper = new UniHelper(_uniswapFactory, _uniswapRouter, _ownablee);
     }
 
     function deployStakingPool(address _ownablee) internal {

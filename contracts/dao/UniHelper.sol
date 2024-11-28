@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
 import "../libraries/Helper.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IUniswapV2Factory.sol";
@@ -12,40 +10,43 @@ import "../interfaces/IOwnablee.sol";
 import "../interfaces/IUniHelper.sol";
 
 contract UniHelper is IUniHelper, ReentrancyGuard {
-        
-    address private immutable UNISWAP2_ROUTER;
-    address private immutable UNISWAP2_FACTORY;    
-    address private immutable SUSHI_FACTORY;
-    address private immutable SUSHI_ROUTER;
+    // Immutable state variables
+    address private immutable UNISWAP_ROUTER;
+    address private immutable UNISWAP_FACTORY;
     address private immutable OWNABLE;
+    address private immutable WETH;
 
+    // State variables
     mapping(address => bool) public isVabbleContract;
-    bool public isInitialized;         // check if contract initialized or not
+    bool public isInitialized;
+
+    // Events
+    event WhitelistUpdated(address indexed contract_, bool status);
+    event SwapExecuted(address indexed fromToken, address indexed toToken, uint256 amountIn, uint256 amountOut);
+
+    // Errors
+    error Unauthorized();
+    error AlreadyInitialized();
+    error ZeroAddress();
+    error InvalidContract();
+    error NoLiquidityPool();
+    error InsufficientBalance();
 
     modifier onlyDeployer() {
-        require(msg.sender == IOwnablee(OWNABLE).deployer(), "caller is not the deployer");
+        if (msg.sender != IOwnablee(OWNABLE).deployer()) revert Unauthorized();
         _;
     }
-    
-    receive() external payable {}
 
-    constructor(
-        address _uniswap2Factory,
-        address _uniswap2Router,
-        address _sushiswapFactory,
-        address _sushiswapRouter,
-        address _ownable
-    ) {
-        require(_uniswap2Factory != address(0), "UniHelper: _uniswap2Factory must not be zero address");
-        UNISWAP2_FACTORY = _uniswap2Factory;
-        require(_uniswap2Router != address(0), "UniHelper: _uniswap2Router must not be zero address");
-        UNISWAP2_ROUTER = _uniswap2Router;
-        require(_sushiswapFactory != address(0), "UniHelper: _sushiswapFactory must not be zero address");
-        SUSHI_FACTORY = _sushiswapFactory;    
-        require(_sushiswapRouter != address(0), "UniHelper: _sushiswapRouter must not be zero address");
-        SUSHI_ROUTER = _sushiswapRouter;  
-        require(_ownable != address(0), "UniHelper: _ownable must not be zero address");
-        OWNABLE = _ownable;  
+    receive() external payable { }
+
+    constructor(address _uniswapFactory, address _uniswapRouter, address _ownable) {
+        if (_uniswapFactory == address(0) || _uniswapRouter == address(0) || _ownable == address(0)) {
+            revert ZeroAddress();
+        }
+        UNISWAP_FACTORY = _uniswapFactory;
+        UNISWAP_ROUTER = _uniswapRouter;
+        OWNABLE = _ownable;
+        WETH = IUniswapV2Router(_uniswapRouter).WETH();
     }
 
     function setWhiteList(
@@ -54,247 +55,145 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address _subscription,
         address _factoryFilm,
         address _factorySub
-    ) external onlyDeployer {
-        require(!isInitialized, "setWhiteList: already initialized");
+    )
+        external
+        onlyDeployer
+    {
+        if (isInitialized) revert AlreadyInitialized();
 
-        require(_vabbleDAO != address(0) && Helper.isContract(_vabbleDAO), "setWhiteList: zero vabbleDAO address");
-        isVabbleContract[_vabbleDAO] = true;
-        require(_vabbleFund != address(0) && Helper.isContract(_vabbleFund), "setWhiteList: zero vabbleFund address");
-        isVabbleContract[_vabbleFund] = true;
-        require(_subscription != address(0) && Helper.isContract(_subscription), "setWhiteList: zero subscription address");
-        isVabbleContract[_subscription] = true;
-        require(_factoryFilm != address(0) && Helper.isContract(_factoryFilm), "setWhiteList: zero factory film address");
-        isVabbleContract[_factoryFilm] = true;          
-        require(_factorySub != address(0) && Helper.isContract(_factorySub), "setWhiteList: zero factory sub address");
-        isVabbleContract[_factorySub] = true;  
-        
+        address[] memory contracts = new address[](5);
+        contracts[0] = _vabbleDAO;
+        contracts[1] = _vabbleFund;
+        contracts[2] = _subscription;
+        contracts[3] = _factoryFilm;
+        contracts[4] = _factorySub;
+
+        for (uint256 i = 0; i < contracts.length; i++) {
+            if (contracts[i] == address(0) || !Helper.isContract(contracts[i])) {
+                revert InvalidContract();
+            }
+            isVabbleContract[contracts[i]] = true;
+            emit WhitelistUpdated(contracts[i], true);
+        }
+
         isInitialized = true;
     }
 
-    /// @notice Get incoming amount <- WETH <- deposit amount
     function expectedAmount(
         uint256 _depositAmount,
-        address _depositAsset, 
+        address _depositAsset,
         address _incomingAsset
-    ) external view override returns (uint256 amount_) {      
-        // deposit -> WETH
-        uint256 weth_amount;
-        if(_depositAsset == address(0)) {
-            weth_amount = _depositAmount;
-        } else {
-            (address router, address[] memory path) = __checkPool(_depositAsset, address(0));                
-            require(router != address(0), "eA: no pool dA/weth");
+    )
+        external
+        view
+        override
+        returns (uint256)
+    {
+        // First conversion: deposit -> WETH
+        uint256 wethAmount =
+            _depositAsset == address(0) ? _depositAmount : _getExpectedOutput(_depositAmount, _depositAsset, address(0));
 
-            weth_amount = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
-        }        
-
-        // WETH -> income
-        if(_incomingAsset == address(0)) {
-            amount_ = weth_amount;
-        } else {
-            (address router, address[] memory path) = __checkPool(address(0), _incomingAsset);        
-            require(router != address(0), "eA: no pool weth/iA");
-
-            amount_ = IUniswapV2Router(router).getAmountsOut(weth_amount, path)[1];
-        }    
+        // Second conversion: WETH -> incoming
+        return _incomingAsset == address(0) ? wethAmount : _getExpectedOutput(wethAmount, address(0), _incomingAsset);
     }
 
-    function expectedAmountForTest(
-        uint256 _depositAmount,
-        address _depositAsset, 
-        address _incomingAsset
-    ) external view returns (uint256 amount_) {   
-        require(Helper.isTestNet(), "only avaiable on testnet");
-                         
-        (address router, address[] memory path) = __checkPool(_depositAsset, _incomingAsset);        
-        require(router != address(0), "expectedAmount: No Pool");
+    function swapAsset(bytes calldata _swapArgs) external override nonReentrant returns (uint256) {
+        if (!isVabbleContract[msg.sender]) revert Unauthorized();
 
-        amount_ = IUniswapV2Router(router).getAmountsOut(_depositAmount, path)[1];
-    }
+        (uint256 depositAmount, address depositAsset, address incomingAsset) =
+            abi.decode(_swapArgs, (uint256, address, address));
 
-    /// @notice check pool exist on uniswap
-    function __checkPool(
-        address _depositAsset, 
-        address _incomeAsset
-    ) private view returns (address router, address[] memory path) {
-        address WETH1 = IUniswapV2Router(UNISWAP2_ROUTER).WETH();
-        address WETH2 = IUniswapV2Router(SUSHI_ROUTER).WETH();
-
-        address[] memory path1 = new address[](2);
-        address[] memory path2 = new address[](2);
-
-        if(_depositAsset == address(0)) {
-            path1[0] = WETH1;
-            path1[1] = _incomeAsset;
-            
-            path2[0] = WETH2;
-            path2[1] = _incomeAsset;
-        } 
-        if (_incomeAsset == address(0)) {
-            path1[0] = _depositAsset;
-            path1[1] = WETH1;        
-
-            path2[0] = _depositAsset;
-            path2[1] = WETH2;
-        }
-        if(_depositAsset != address(0) && _incomeAsset != address(0)) {
-            path1[0] = _depositAsset;
-            path1[1] = _incomeAsset;        
-
-            path2[0] = _depositAsset;
-            path2[1] = _incomeAsset;
-        }
-
-        address uniPool = IUniswapV2Factory(UNISWAP2_FACTORY).getPair(path1[0], path1[1]);
-        address sushiPool = IUniswapV2Factory(SUSHI_FACTORY).getPair(path2[0], path2[1]);
-        
-        if(uniPool == address(0) && sushiPool != address(0)) {
-            return (SUSHI_ROUTER, path2);
-        } else if(uniPool != address(0) && sushiPool == address(0)) {
-            return (UNISWAP2_ROUTER, path1);
-        } else if(uniPool != address(0) && sushiPool != address(0)) {
-            return (UNISWAP2_ROUTER, path1);
-        } else if(uniPool == address(0) && sushiPool == address(0)) {
-            return (address(0), path1);
-        }
-    }
-
-    /// @notice Swap depositAsset -> WETH -> incomingAsset
-    function swapAsset(bytes calldata _swapArgs) external override nonReentrant returns (uint256 amount_) {
-        (
-            uint256 depositAmount,
-            address depositAsset,
-            address incomingAsset
-        ) = abi.decode(_swapArgs, (uint256, address, address));
-
-        require(isVabbleContract[msg.sender], "caller is not one of vabble contracts");
-
-        // Swap depositAsset -> WETH
-        uint256 weth_amount = depositAmount;
-        if(depositAsset != address(0)) {
+        // Handle deposit asset to WETH swap
+        uint256 wethAmount = depositAmount;
+        if (depositAsset != address(0)) {
             Helper.safeTransferFrom(depositAsset, msg.sender, address(this), depositAmount);
-
-            (address router, address[] memory path) = __checkPool(depositAsset, address(0));        
-            require(router != address(0), "sA: no pool dA/weth");
-
-            uint256 expectAmount = IUniswapV2Router(router).getAmountsOut(depositAmount, path)[1];            
-            
-            weth_amount = __swapTokenToETH(depositAmount, expectAmount, router, path)[1];
+            wethAmount = _executeSwap(depositAmount, depositAsset, address(0));
         }
 
-        // Swap WETH -> incomingAsset
-        amount_ = weth_amount;
-        if(incomingAsset != address(0)) {
-            (address router, address[] memory path) = __checkPool(address(0), incomingAsset);        
-            require(router != address(0), "sA: no pool weth/iA");
-
-            uint256 expectAmount = IUniswapV2Router(router).getAmountsOut(weth_amount, path)[1];
-                               
-            amount_ = __swapETHToToken(weth_amount, expectAmount, router, path)[1];
+        // Handle WETH to incoming asset swap
+        uint256 finalAmount = wethAmount;
+        if (incomingAsset != address(0)) {
+            finalAmount = _executeSwap(wethAmount, address(0), incomingAsset);
         }
 
-        // remain asset to send caller back
-        __transferAssetToCaller(payable(msg.sender), depositAsset);        
-        __transferAssetToCaller(payable(msg.sender), incomingAsset);
+        // Transfer any remaining assets back to caller
+        _transferRemainingAssets(payable(msg.sender), depositAsset);
+        _transferRemainingAssets(payable(msg.sender), incomingAsset);
+
+        emit SwapExecuted(depositAsset, incomingAsset, depositAmount, finalAmount);
+        return finalAmount;
     }
 
-    // TODO - N6 updated(private)
-    /// @notice Swap ERC20 Token to ERC20 Token
-    // function __swapTokenToToken(
-    //     uint256 _depositAmount,
-    //     uint256 _expectedAmount,
-    //     address _router,
-    //     address[] memory _path
-    // ) private returns (uint256[] memory amounts_) {
-    //     __approveMaxAsNeeded(_path[0], _router, _depositAmount);
-        
-    //     amounts_ = IUniswapV2Router(_router).swapExactTokensForTokens(
-    //         _depositAmount,
-    //         _expectedAmount,
-    //         _path,
-    //         address(this),
-    //         block.timestamp + 1
-    //     );
-    // }
+    function _getSwapPath(
+        address _tokenIn,
+        address _tokenOut
+    )
+        private
+        view
+        returns (address router, address[] memory path)
+    {
+        path = new address[](2);
 
-    /// @notice Swap ETH to ERC20 Token
-    function __swapETHToToken(
-        uint256 _depositAmount,
-        uint256 _expectedAmount,
-        address _router,
-        address[] memory _path
-    ) private returns (uint256[] memory amounts_) {
-        require(address(this).balance >= _depositAmount, "sEToT: insufficient");
+        // Handle ETH cases by using WETH
+        path[0] = _tokenIn == address(0) ? WETH : _tokenIn;
+        path[1] = _tokenOut == address(0) ? WETH : _tokenOut;
 
-        __approveMaxAsNeeded(_path[0], _router, _depositAmount);
-
-        amounts_ = IUniswapV2Router(_router).swapExactETHForTokens{value: address(this).balance}(
-            _expectedAmount,
-            _path,
-            address(this),
-            block.timestamp + 1
-        );
+        // Check if pool exists
+        address pool = IUniswapV2Factory(UNISWAP_FACTORY).getPair(path[0], path[1]);
+        router = pool != address(0) ? UNISWAP_ROUTER : address(0);
     }
 
-    /// @notice Swap Token to ETH
-    function __swapTokenToETH(
-        uint256 _depositAmount,
-        uint256 _expectedAmount,
-        address _router,
-        address[] memory _path
-    ) private returns (uint256[] memory amounts_) {        
-        __approveMaxAsNeeded(_path[0], _router, _depositAmount);
-
-        amounts_ = IUniswapV2Router(_router).swapExactTokensForETH(
-            _depositAmount,
-            _expectedAmount,
-            _path,
-            address(this),
-            block.timestamp + 1
-        );
+    // Internal helper functions
+    function _getExpectedOutput(uint256 _amount, address _tokenIn, address _tokenOut) private view returns (uint256) {
+        (address router, address[] memory path) = _getSwapPath(_tokenIn, _tokenOut);
+        if (router == address(0)) revert NoLiquidityPool();
+        return IUniswapV2Router(router).getAmountsOut(_amount, path)[1];
     }
 
-    /// @notice Helper to transfer full contract balances of assets to the caller
-    function __transferAssetToCaller(address payable _target, address _asset) private {
-        uint256 transferAmount;
-        if(_asset == address(0)) {
-            transferAmount = address(this).balance;
-            if (transferAmount != 0) {
-                Helper.safeTransferETH(_target, transferAmount);
+    function _executeSwap(uint256 _amount, address _tokenIn, address _tokenOut) private returns (uint256) {
+        (address router, address[] memory path) = _getSwapPath(_tokenIn, _tokenOut);
+        if (router == address(0)) revert NoLiquidityPool();
+
+        uint256 expectedOut = IUniswapV2Router(router).getAmountsOut(_amount, path)[1];
+
+        if (_tokenIn == address(0)) {
+            if (address(this).balance < _amount) revert InsufficientBalance();
+            return IUniswapV2Router(router).swapExactETHForTokens{ value: _amount }(
+                expectedOut, path, address(this), block.timestamp + 1
+            )[1];
+        } else if (_tokenOut == address(0)) {
+            _approveIfNeeded(_tokenIn, router, _amount);
+            return IUniswapV2Router(router).swapExactTokensForETH(
+                _amount, expectedOut, path, address(this), block.timestamp + 1
+            )[1];
+        }
+        return 0;
+    }
+
+    function _approveIfNeeded(address _token, address _spender, uint256 _amount) private {
+        if (IERC20(_token).allowance(address(this), _spender) < _amount) {
+            Helper.safeApprove(_token, _spender, _amount);
+        }
+    }
+
+    function _transferRemainingAssets(address payable _target, address _asset) private {
+        uint256 balance = _asset == address(0) ? address(this).balance : IERC20(_asset).balanceOf(address(this));
+
+        if (balance > 0) {
+            if (_asset == address(0)) {
+                Helper.safeTransferETH(_target, balance);
+            } else {
+                Helper.safeTransfer(_asset, _target, balance);
             }
-        } else {
-            transferAmount = IERC20(_asset).balanceOf(address(this));
-            if (transferAmount != 0) {
-                Helper.safeTransfer(_asset, _target, transferAmount);
-            }
-        }        
-    }
-
-    /// @dev Helper for asset to approve their max amount of an asset.
-    function __approveMaxAsNeeded(address _asset, address _target, uint256 _neededAmount) private {
-        if (IERC20(_asset).allowance(address(this), _target) < _neededAmount) {
-            // Helper.safeApprove(_asset, _target, type(uint256).max);
-            Helper.safeApprove(_asset, _target, _neededAmount);
         }
     }
 
-    /// @notice Gets the `UNISWAP2_ROUTER` variable
-    function getUniswapRouter() external view returns (address router_) {
-        router_ = UNISWAP2_ROUTER;
+    // Getter functions
+    function getUniswapRouter() external view returns (address) {
+        return UNISWAP_ROUTER;
     }
 
-    /// @notice Gets the `UNISWAP2_FACTORY` variable
-    function getUniswapFactory() external view returns (address factory_) {
-        factory_ = UNISWAP2_FACTORY;
-    }
-
-    /// @notice Gets the `SUSHI_FACTORY` variable
-    function getSushiFactory() external view returns (address factory_) {
-        return SUSHI_FACTORY;
-    }
-
-    /// @notice Gets the `SUSHI_ROUTER` variable
-    function getSushiRouter() external view returns (address router_) {
-        return SUSHI_ROUTER;
+    function getUniswapFactory() external view returns (address) {
+        return UNISWAP_FACTORY;
     }
 }

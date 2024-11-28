@@ -160,7 +160,57 @@ contract SubscriptionForkTest is BaseForkTest {
         uint256 actualCostOfSubscription = userEthStartingBalance - userEthEndingBalance;
 
         console2.log("!!!userVabEndingBalance:!!!", userVabEndingBalance); //
-        console2.log("userEthStartingBalance: ", userEthStartingBalance); // 1 ETH
+        console2.log("userEthStartingBalance: ", userEthStartingBalance);
+        // 1 ETH
+        console2.log("userEthEndingBalance: ", userEthEndingBalance); // 0.997765669192799597 ETH
+        console2.log("actualCostOfSubscription in ETH: ", actualCostOfSubscription); // 0.002234330807200403 ETH
+
+        uint256 vabWalletUsdcEndingBalance = usdc.balanceOf(vabbleWallet);
+        uint256 vabWalletVabEndingBalance = vab.balanceOf(vabbleWallet);
+
+        console2.log("vabWalletUsdcEndingBalance: ", vabWalletUsdcEndingBalance); // 323.779547
+        console2.log("vabWalletVabEndingBalance: ", vabWalletVabEndingBalance); // 37125.576611758487236756
+
+        console2.log("vabWallet Usdc received: ", vabWalletUsdcEndingBalance - vabWalletUsdcStartingBalance); // 2779226
+        console2.log("vabWallet Vab received: ", vabWalletVabEndingBalance - vabWalletVabStartingBalance); // 1629681853374677263817
+
+        assertEq(expectSubscriptionCost, actualCostOfSubscription);
+        assertEq(subscription.isActivedSubscription(user), true);
+    }
+
+    function testFork_subscriptionPayWithEthAndSwapBefore() public {
+        uint256 userEthStartingBalance = 1 * 1e18; // 1 ETH
+        uint256 subscriptionPeriod = 1;
+        address eth = address(0);
+
+        uint256 vabWalletUsdcStartingBalance = usdc.balanceOf(vabbleWallet);
+        uint256 vabWalletVabStartingBalance = vab.balanceOf(vabbleWallet);
+
+        console2.log("vabWalletUsdcStartingBalance: ", vabWalletUsdcStartingBalance); // 321.000321
+        console2.log("vabWalletVabStartingBalance: ", vabWalletVabStartingBalance); // 35500.183178853379048961 VAB
+
+        // assertEq(vabWalletUsdcStartingBalance, 0);
+        // assertEq(vabWalletVabStartingBalance, 0);
+
+        deal(user, userEthStartingBalance);
+        assertEq(user.balance, userEthStartingBalance);
+
+        uint256 expectSubscriptionCost = subscription.getExpectedSubscriptionAmount(eth, subscriptionPeriod);
+
+        vm.startPrank(user);
+        vm.expectEmit(address(subscription));
+        emit SubscriptionActivated(user, eth, subscriptionPeriod);
+        subscription.activeSubscription{ value: expectSubscriptionCost }(eth, subscriptionPeriod);
+        vm.stopPrank();
+
+        uint256 userEthEndingBalance = user.balance;
+        uint256 userVabEndingBalance = vab.balanceOf(user);
+
+        uint256 actualCostOfSubscription = userEthStartingBalance - userEthEndingBalance;
+
+        console2.log("!!!userVabEndingBalance:!!!", userVabEndingBalance); //
+        console2.log("userEthStartingBalance: ", userEthStartingBalance);
+        // 1 ETH
         console2.log("userEthEndingBalance: ", userEthEndingBalance); // 0.997765669192799597 ETH
         console2.log("actualCostOfSubscription in ETH: ", actualCostOfSubscription); // 0.002234330807200403 ETH
 

@@ -68,8 +68,6 @@ contract ForkSetUp is BaseForkTest {
     function testFork_UniHelperCorrectSetup() public view {
         assertEq(uniswapRouter, uniHelper.getUniswapRouter());
         assertEq(uniswapFactory, uniHelper.getUniswapFactory());
-        assertEq(sushiSwapFactory, uniHelper.getSushiFactory());
-        assertEq(sushiSwapRouter, uniHelper.getSushiRouter());
     }
 
     function testFork_OwnableeCorrectSetup() public {
