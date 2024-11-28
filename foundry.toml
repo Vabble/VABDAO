@@ -11,7 +11,7 @@ optimizer = true
 optimizer_runs = 200
 auto_detect_solc = true
 ffi = true
-via-ir = true
+# via-ir = true
 
 fs_permissions = [
   { access = "read", path = "./broadcast" },
