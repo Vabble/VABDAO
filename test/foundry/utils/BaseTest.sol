@@ -21,6 +21,8 @@ import { VabbleFund } from "../../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../../contracts/dao/Vote.sol";
 
+import "../../../contracts/interfaces/IUniswapV2Router.sol";
+
 contract BaseTest is Test {
     Utilities private utilities;
     DeployerScript private deployerScript;
@@ -32,10 +34,10 @@ contract BaseTest is Test {
 
     address payable[] internal users;
     uint256 private userCount;
-    uint256 public userInitialEtherFunds = 100 ether;
+    uint256 public userInitialEtherFunds = 1_000_000 ether;
     uint256 public userInitialUsdcFunds = 10_000e6;
     uint256 public userInitialUsdtFunds = 10_000e6;
-    uint256 public userInitialVabFunds = 1_000_000e18;
+    uint256 public userInitialVabFunds = 1_000_000_000e18;
     string[] private userLabels;
 
     address payable internal deployer;
@@ -46,6 +48,7 @@ contract BaseTest is Test {
     address payable internal studio_one;
     address payable internal studio_two;
     address payable internal default_user;
+    address payable internal liquidity_provider;
 
     IERC20 public usdc;
     IERC20 public vab;
@@ -65,7 +68,7 @@ contract BaseTest is Test {
     // VabbleNFT vabbleNFT;
 
     constructor() {
-        userCount = 8;
+        userCount = 9;
 
         userLabels = new string[](userCount);
         userLabels.push("Deployer");
@@ -75,6 +78,8 @@ contract BaseTest is Test {
         userLabels.push("Staker_two");
         userLabels.push("Studio_one");
         userLabels.push("Studio_two");
+        userLabels.push("Default_user");
+        userLabels.push("Liquidity_Provider");
     }
 
     function setUp() public virtual {
@@ -102,11 +107,13 @@ contract BaseTest is Test {
             studio_one = users[5];
             studio_two = users[6];
             default_user = users[7];
+            liquidity_provider = users[8];
         }
 
-        vm.prank(deployer);
+        vm.startPrank(deployer);
         (DeployerScript.Contracts memory deployedContracts, address _usdc, address _vab, address _usdt) =
             deployerScript.deployForLocalTesting(vabWallet, auditor, isForkTestEnabled);
+        vm.stopPrank();
 
         ownablee = deployedContracts.ownablee;
         uniHelper = deployedContracts.uniHelper;
@@ -127,6 +134,8 @@ contract BaseTest is Test {
             _fundUsersWithTestnetToken(users);
             _approveContractsForUsers(users);
         }
+
+        _addInitialLiquidity();
     }
 
     function _fundUsersWithTestnetToken(address payable[] memory _users) internal {
@@ -164,5 +173,27 @@ contract BaseTest is Test {
                 vm.stopPrank();
             }
         }
+    }
+
+    function _addInitialLiquidity() internal {
+        uint256 vabAmount = 1_000_000e18;
+        uint256 ethAmount = 1000 ether;
+        address uniswapRouter = address(uniHelper.getUniswapRouter());
+
+        vm.startPrank(liquidity_provider);
+        vab.approve(uniswapRouter, vabAmount);
+
+        IUniswapV2Router(uniswapRouter).addLiquidityETH{ value: ethAmount }(
+            address(vab),
+            vabAmount,
+            0, // slippage is unavoidable
+            0, // slippage is unavoidable
+            liquidity_provider,
+            block.timestamp + 1
+        );
+        vm.stopPrank();
+
+        deal(address(vab), liquidity_provider, userInitialVabFunds);
+        deal(liquidity_provider, userInitialEtherFunds);
     }
 }

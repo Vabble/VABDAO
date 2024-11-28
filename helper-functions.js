@@ -156,8 +156,8 @@ const deployAndInitAllContracts = async () => {
         const uniHelper = await uniHelperFactory.deploy(
             UNISWAP_FACTORY_ADDRESS,
             UNISWAP_ROUTER_ADDRESS,
-            SUSHISWAP_FACTORY_ADDRESS,
-            SUSHISWAP_ROUTER_ADDRESS,
+            // SUSHISWAP_FACTORY_ADDRESS,
+            // SUSHISWAP_ROUTER_ADDRESS,
             ownable.address
         )
 

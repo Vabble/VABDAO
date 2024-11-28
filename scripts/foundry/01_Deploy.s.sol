@@ -15,6 +15,7 @@ import { UniHelper } from "../../contracts/dao/UniHelper.sol";
 import { VabbleFund } from "../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../contracts/dao/Vote.sol";
+import { console2 } from "lib/forge-std/src/console2.sol";
 
 /**
  * @title A Foundry script to fund the StakingPool and VabbleDAO contract with necessary VAB tokens
@@ -94,9 +95,12 @@ contract DeployerScript is Script {
         );
 
         deployer = msg.sender;
+
+        vm.startPrank(deployer);
         _getConfig();
         _deployAllContracts(_vabWallet, _auditor);
         _initializeAndSetupContracts();
+        vm.stopPrank();
 
         auditor = _auditor;
         vabbleWallet = _vabWallet;

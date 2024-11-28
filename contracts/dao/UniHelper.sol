@@ -196,4 +196,12 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     function getUniswapFactory() external view returns (address) {
         return UNISWAP_FACTORY;
     }
+
+    function getWethAddress() external view returns (address) {
+        return WETH;
+    }
+
+    function getOwnableAddress() external view returns (address) {
+        return OWNABLE;
+    }
 }
