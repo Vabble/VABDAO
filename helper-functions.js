@@ -76,13 +76,26 @@ const fundAndApproveAccounts = async ({
 }) => {
     try {
         console.log("Funding and Approving accounts...")
-        // if (accounts.length > 0) {
-        //     for (const account of accounts) {
-        //         await vabTokenContract.connect(accounts[0]).faucet(VAB_FAUCET_AMOUNT);
-        //         await usdcTokenContract.connect(accounts[0]).faucet(USDC_FAUCET_AMOUNT);
-        //     }
-        // }
+
         for (let i = 1; i < accounts.length; i++) {
+            // Reset balance to ensure consistent state
+            await vabTokenContract
+                .connect(accounts[i])
+                .transfer(
+                    accounts[0].address,
+                    await vabTokenContract.balanceOf(accounts[i].address),
+                    { from: accounts[i].address }
+                )
+
+            await usdcTokenContract
+                .connect(accounts[i])
+                .transfer(
+                    accounts[0].address,
+                    await usdcTokenContract.balanceOf(accounts[i].address),
+                    { from: accounts[i].address }
+                )
+
+            // Transfer the required faucet amount
             await vabTokenContract
                 .connect(accounts[0])
                 .transfer(accounts[i].address, VAB_FAUCET_AMOUNT, { from: accounts[0].address })
@@ -165,8 +178,8 @@ const deployAndInitAllContracts = async () => {
         const uniHelper = await uniHelperFactory.deploy(
             UNISWAP_FACTORY_ADDRESS,
             UNISWAP_ROUTER_ADDRESS,
-            SUSHISWAP_FACTORY_ADDRESS,
-            SUSHISWAP_ROUTER_ADDRESS,
+            // SUSHISWAP_FACTORY_ADDRESS,
+            // SUSHISWAP_ROUTER_ADDRESS,
             ownable.address
         )
 
