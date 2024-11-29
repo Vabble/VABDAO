@@ -31,6 +31,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     error InvalidContract();
     error NoLiquidityPool();
     error InsufficientBalance();
+    error UnexpectedSwapPath();
 
     modifier onlyDeployer() {
         if (msg.sender != IOwnablee(OWNABLE).deployer()) revert Unauthorized();
@@ -121,6 +122,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         _transferRemainingAssets(payable(msg.sender), incomingAsset);
 
         emit SwapExecuted(depositAsset, incomingAsset, depositAmount, finalAmount);
+
         return finalAmount;
     }
 
@@ -167,7 +169,8 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
                 _amount, expectedOut, path, address(this), block.timestamp + 1
             )[1];
         }
-        return 0;
+
+        revert UnexpectedSwapPath();
     }
 
     function _approveIfNeeded(address _token, address _spender, uint256 _amount) private {

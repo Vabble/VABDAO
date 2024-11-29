@@ -21,7 +21,9 @@ import { VabbleFund } from "../../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../../contracts/dao/Vote.sol";
 
-import "../../../contracts/interfaces/IUniswapV2Router.sol";
+import { IUniswapV2Pair } from "../../../contracts/interfaces/uniswap-v2/IUniswapV2Pair.sol";
+import { IUniswapV2Factory } from "../../../contracts/interfaces/uniswap-v2/IUniswapV2Factory.sol";
+import { IUniswapV2Router02 } from "../../../contracts/interfaces/uniswap-v2/IUniswapV2Router02.sol";
 
 contract BaseTest is Test {
     Utilities private utilities;
@@ -183,7 +185,7 @@ contract BaseTest is Test {
         vm.startPrank(liquidity_provider);
         vab.approve(uniswapRouter, vabAmount);
 
-        IUniswapV2Router(uniswapRouter).addLiquidityETH{ value: ethAmount }(
+        IUniswapV2Router02(uniswapRouter).addLiquidityETH{ value: ethAmount }(
             address(vab),
             vabAmount,
             0, // slippage is unavoidable
@@ -195,5 +197,30 @@ contract BaseTest is Test {
 
         deal(address(vab), liquidity_provider, userInitialVabFunds);
         deal(liquidity_provider, userInitialEtherFunds);
+    }
+
+    function _printCurrentLiquidity() internal view {
+        // Get the WETH address from the router
+        address weth = IUniswapV2Router02(uniHelper.getUniswapRouter()).WETH();
+
+        // Get the addresses of the tokens in the pair
+        address token0 = address(vab);
+        address token1 = weth; // Use WETH instead of address(0)
+
+        // Get the pair address from the Uniswap factory
+        address uniswapFactory = uniHelper.getUniswapFactory();
+        address pair = IUniswapV2Factory(uniswapFactory).getPair(token0, token1);
+
+        require(pair != address(0), "Pair does not exist");
+
+        // Get reserves from the pair contract
+        (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pair).getReserves();
+
+        // Determine which reserve corresponds to which token
+        bool isToken0Vab = token0 < token1;
+
+        console2.log("Current Liquidity in Uniswap Pool:");
+        console2.log("VAB Reserve:", isToken0Vab ? reserve0 : reserve1);
+        console2.log("ETH Reserve:", isToken0Vab ? reserve1 : reserve0);
     }
 }
