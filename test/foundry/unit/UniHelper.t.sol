@@ -387,10 +387,13 @@ contract UniHelperTest is BaseTest {
 
         console2.log("Router gas used:", routerGas);
         // Router gas used: 111306
+        // Router gas used old: 111250
         console2.log("Helper gas used:", helperGas);
         // Helper gas used: 113471
+        // Helper gas used old: 141148
         console2.log("Gas diff:", helperGas - routerGas);
         //  Gas diff: 2285
+        //  Gas diff old: 29898
         vm.stopPrank();
     }
 
