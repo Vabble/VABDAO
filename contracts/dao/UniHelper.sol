@@ -31,13 +31,14 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
     error InvalidContract();
     error NoLiquidityPool();
     error InsufficientBalance();
+    error UnexpectedSwapPath();
 
     modifier onlyDeployer() {
         if (msg.sender != IOwnablee(OWNABLE).deployer()) revert Unauthorized();
         _;
     }
 
-    receive() external payable { }
+    receive() external payable {}
 
     constructor(address _uniswapFactory, address _uniswapRouter, address _ownable) {
         if (_uniswapFactory == address(0) || _uniswapRouter == address(0) || _ownable == address(0)) {
@@ -55,10 +56,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         address _subscription,
         address _factoryFilm,
         address _factorySub
-    )
-        external
-        onlyDeployer
-    {
+    ) external onlyDeployer {
         if (isInitialized) revert AlreadyInitialized();
 
         address[] memory contracts = new address[](5);
@@ -79,11 +77,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         isInitialized = true;
     }
 
-    function expectedAmount(
-        uint256 _depositAmount,
-        address _depositAsset,
-        address _incomingAsset
-    )
+    function expectedAmount(uint256 _depositAmount, address _depositAsset, address _incomingAsset)
         external
         view
         override
@@ -121,13 +115,11 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
         _transferRemainingAssets(payable(msg.sender), incomingAsset);
 
         emit SwapExecuted(depositAsset, incomingAsset, depositAmount, finalAmount);
+
         return finalAmount;
     }
 
-    function _getSwapPath(
-        address _tokenIn,
-        address _tokenOut
-    )
+    function _getSwapPath(address _tokenIn, address _tokenOut)
         private
         view
         returns (address router, address[] memory path)
@@ -158,7 +150,7 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
 
         if (_tokenIn == address(0)) {
             if (address(this).balance < _amount) revert InsufficientBalance();
-            return IUniswapV2Router(router).swapExactETHForTokens{ value: _amount }(
+            return IUniswapV2Router(router).swapExactETHForTokens{value: _amount}(
                 expectedOut, path, address(this), block.timestamp + 1
             )[1];
         } else if (_tokenOut == address(0)) {
@@ -167,7 +159,8 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
                 _amount, expectedOut, path, address(this), block.timestamp + 1
             )[1];
         }
-        return 0;
+
+        revert UnexpectedSwapPath();
     }
 
     function _approveIfNeeded(address _token, address _spender, uint256 _amount) private {
@@ -195,5 +188,13 @@ contract UniHelper is IUniHelper, ReentrancyGuard {
 
     function getUniswapFactory() external view returns (address) {
         return UNISWAP_FACTORY;
+    }
+
+    function getWethAddress() external view returns (address) {
+        return WETH;
+    }
+
+    function getOwnableAddress() external view returns (address) {
+        return OWNABLE;
     }
 }
