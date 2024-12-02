@@ -119,7 +119,6 @@ contract SubscriptionTest is BaseTest {
 
         uint256 userWalletStartVABBalance = vab.balanceOf(address(default_user));
 
-
         deal(default_user, startingAmountEth);
         assertEq(default_user.balance, startingAmountEth);
 
@@ -141,7 +140,11 @@ contract SubscriptionTest is BaseTest {
         deal(address(usdc), vabWallet, 0);
 
         vm.prank(default_user);
+        uint256 gasStart = gasleft();
         subscription.activeSubscription(token, period);
+        uint256 activeSubscriptionGas = gasStart - gasleft();
+
+        console2.log("activeSubscriptionGas", activeSubscriptionGas); // 597840
 
         uint256 usdcWalletEndingBalance = usdc.balanceOf(address(vabWallet));
         uint256 expectedEndingBalance = (basisSubscriptionAmount * (40 * PERCENT_SCALING_FACTOR)) / PERCENT_BASIS_FACTOR;

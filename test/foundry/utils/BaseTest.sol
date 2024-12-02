@@ -136,8 +136,6 @@ contract BaseTest is Test {
             _fundUsersWithTestnetToken(users);
             _approveContractsForUsers(users);
         }
-
-        _addInitialLiquidity();
     }
 
     function _fundUsersWithTestnetToken(address payable[] memory _users) internal {

@@ -26,6 +26,8 @@ contract UniHelperTest is BaseTest {
     function setUp() public override {
         super.setUp();
         helperConfig = new HelperConfig();
+
+        _addInitialLiquidity();
     }
 
     /*//////////////////////////////////////////////////////////////
