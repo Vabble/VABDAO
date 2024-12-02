@@ -13,7 +13,7 @@ const {
 const { parseUnits } = require("ethers/lib/utils")
 
 //? Constants
-const chainId = 84532;  
+const chainId = 84532;
 console.log("chainId", chainId);
 
 const config = getConfig(chainId);
@@ -80,10 +80,10 @@ const fundAndApproveAccounts = async ({
         //     }
         // }
         for (var i = 1; i < accounts.length; i++) {
-            await vabTokenContract.connect(accounts[0]).transfer(accounts[i].address, VAB_FAUCET_AMOUNT, {from: accounts[0].address});
-            await usdcTokenContract.connect(accounts[0]).transfer(accounts[i].address, USDC_FAUCET_AMOUNT, {from: accounts[0].address});
+            await vabTokenContract.connect(accounts[0]).transfer(accounts[i].address, VAB_FAUCET_AMOUNT, { from: accounts[0].address });
+            await usdcTokenContract.connect(accounts[0]).transfer(accounts[i].address, USDC_FAUCET_AMOUNT, { from: accounts[0].address });
         }
-            
+
         for (const account of accounts) {
             for (const contract of contracts) {
                 await vabTokenContract
@@ -199,6 +199,7 @@ const deployAndInitAllContracts = async () => {
             ownable.address,
             uniHelper.address,
             property.address,
+            stakingPool.address,
             [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
         )
 
