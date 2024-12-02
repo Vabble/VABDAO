@@ -15,6 +15,7 @@ import { UniHelper } from "../../contracts/dao/UniHelper.sol";
 import { VabbleFund } from "../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../contracts/dao/Vote.sol";
+import { console2 } from "lib/forge-std/src/console2.sol";
 
 /**
  * @title A Foundry script to fund the StakingPool and VabbleDAO contract with necessary VAB tokens
@@ -94,9 +95,12 @@ contract DeployerScript is Script {
         );
 
         deployer = msg.sender;
+
+        vm.startPrank(deployer);
         _getConfig();
         _deployAllContracts(_vabWallet, _auditor);
         _initializeAndSetupContracts();
+        vm.stopPrank();
 
         auditor = _auditor;
         vabbleWallet = _vabWallet;
@@ -135,7 +139,7 @@ contract DeployerScript is Script {
      */
     function _deployAllContracts(address _vabWallet, address _auditor) internal {
         deployOwnablee(_vabWallet, vab, usdc, _auditor);
-        deployUniHelper(uniswapFactory, uniswapRouter, sushiSwapFactory, sushiSwapRouter, address(contracts.ownablee));
+        deployUniHelper(uniswapFactory, uniswapRouter, address(contracts.ownablee));
         deployStakingPool(address(contracts.ownablee));
         deployVote(address(contracts.ownablee));
         deployProperty(
@@ -206,17 +210,8 @@ contract DeployerScript is Script {
         contracts.ownablee = new Ownablee(_vabWallet, _vab, _usdc, _auditor);
     }
 
-    function deployUniHelper(
-        address _uniswapFactory,
-        address _uniswapRouter,
-        address _sushiSwapFactory,
-        address _sushiSwapRouter,
-        address _ownablee
-    )
-        internal
-    {
-        contracts.uniHelper =
-            new UniHelper(_uniswapFactory, _uniswapRouter, _sushiSwapFactory, _sushiSwapRouter, _ownablee);
+    function deployUniHelper(address _uniswapFactory, address _uniswapRouter, address _ownablee) internal {
+        contracts.uniHelper = new UniHelper(_uniswapFactory, _uniswapRouter, _ownablee);
     }
 
     function deployStakingPool(address _ownablee) internal {

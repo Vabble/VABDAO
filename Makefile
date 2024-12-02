@@ -47,7 +47,7 @@ anvil :; anvil -m 'test test test test test test test test test test test junk' 
 
 slither :; slither . --config-file slither.config.json --checklist > ./reports/slither.md
 
-aderyn :; aderyn --src contracts/keyz --output  ./reports/aderyn.md
+aderyn :; aderyn --src contracts/dao/UniHelper.sol --output  ./reports/aderyn.md
 
 scopefile :; @tree ./contracts/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/ { path[int((length($$0) - length($$2))/2)] = $$2; next } { p = "src"; for(i=2; i<=int((length($$0) - length($$2))/2); i++) if (path[i] != "") p = p "/" path[i]; print p "/" $$2; }' > scope.txt
 

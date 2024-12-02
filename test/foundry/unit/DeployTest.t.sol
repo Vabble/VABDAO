@@ -77,14 +77,9 @@ contract DeployTest is BaseTest {
 
         address uniswapFactory = activeConfig.uniswapFactory;
         address uniswapRouter = activeConfig.uniswapRouter;
-        address sushiSwapFactory = activeConfig.sushiSwapFactory;
-        address sushiSwapRouter = activeConfig.sushiSwapRouter;
 
         assertEq(uniswapRouter, uniHelper.getUniswapRouter());
         assertEq(uniswapFactory, uniHelper.getUniswapFactory());
-
-        assertEq(sushiSwapFactory, uniHelper.getSushiFactory());
-        assertEq(sushiSwapRouter, uniHelper.getSushiRouter());
     }
 
     function test_deployStakingPoolSetup() public view {
