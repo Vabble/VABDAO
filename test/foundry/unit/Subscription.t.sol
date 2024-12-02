@@ -144,7 +144,7 @@ contract SubscriptionTest is BaseTest {
         subscription.activeSubscription(token, period);
         uint256 gasUsed = vm.stopSnapshotGas();
 
-        console2.log("activeSubscriptionGas", gasUsed); // 598_564
+        console2.log("activeSubscriptionGas", gasUsed); // 598_564 // 587_071 // 586_964
 
         uint256 usdcWalletEndingBalance = usdc.balanceOf(address(vabWallet));
         uint256 expectedEndingBalance = (basisSubscriptionAmount * (40 * PERCENT_SCALING_FACTOR)) / PERCENT_BASIS_FACTOR;

@@ -8,6 +8,7 @@ import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
+import { Test, console2, console } from "forge-std/Test.sol";
 
 contract Subscription is ReentrancyGuard {
     event SubscriptionActivated(address indexed customer, address token, uint256 period);
@@ -58,19 +59,23 @@ contract Subscription is ReentrancyGuard {
     }
 
     function activeSubscription(address _token, uint256 _period) external payable nonReentrant {
+        // Cache the msg.sender to avoid multiple SLOAD operations
+        address user = msg.sender;
+
         // Validate token and get expected amount
         uint256 expectAmount = _validateAndGetAmount(_token, _period);
 
         // Handle payment
-        _handlePayment(_token, expectAmount);
+        _handlePayment(_token, expectAmount, user);
+        console.log("gasUsedHandlePayment", 123);
 
         // Handle token swaps and transfers
         _handleSwapsAndTransfers(_token, expectAmount);
 
         // Update subscription
-        _updateSubscription(msg.sender, _period);
+        _updateSubscription(user, _period);
 
-        emit SubscriptionActivated(msg.sender, _token, _period);
+        emit SubscriptionActivated(user, _token, _period);
     }
 
     function _validateAndGetAmount(address _token, uint256 _period) private view returns (uint256) {
@@ -80,14 +85,14 @@ contract Subscription is ReentrancyGuard {
         return getExpectedSubscriptionAmount(_token, _period);
     }
 
-    function _handlePayment(address _token, uint256 expectAmount) private {
+    function _handlePayment(address _token, uint256 expectAmount, address _user) private {
         if (_token == address(0)) {
             require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
             if (msg.value > expectAmount) {
-                Helper.safeTransferETH(msg.sender, msg.value - expectAmount);
+                Helper.safeTransferETH(_user, msg.value - expectAmount);
             }
         } else {
-            Helper.safeTransferFrom(_token, msg.sender, address(this), expectAmount);
+            Helper.safeTransferFrom(_token, _user, address(this), expectAmount);
             if (IERC20(_token).allowance(address(this), UNI_HELPER) == 0) {
                 Helper.safeApprove(_token, UNI_HELPER, expectAmount);
             }
@@ -124,13 +129,15 @@ contract Subscription is ReentrancyGuard {
 
     function _updateSubscription(address user, uint256 _period) private {
         UserSubscription storage subscription = subscriptionInfo[user];
-        if (isActivedSubscription(user)) {
+        uint256 currentTime = block.timestamp;
+
+        if (subscription.expireTime > currentTime) {
             subscription.period += _period;
             subscription.expireTime = subscription.activeTime + PERIOD_UNIT * subscription.period;
         } else {
-            subscription.activeTime = block.timestamp;
+            subscription.activeTime = currentTime;
             subscription.period = _period;
-            subscription.expireTime = block.timestamp + PERIOD_UNIT * _period;
+            subscription.expireTime = currentTime + PERIOD_UNIT * _period;
         }
     }
 
