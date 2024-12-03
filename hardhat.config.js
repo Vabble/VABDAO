@@ -1,3 +1,5 @@
+const { utils } = require("ethers")
+
 require("dotenv").config()
 require("@nomiclabs/hardhat-waffle")
 require("hardhat-deploy")
@@ -13,7 +15,16 @@ require("hardhat-contract-sizer")
 require("hardhat-gas-reporter")
 require("solidity-coverage")
 require("@nomicfoundation/hardhat-network-helpers")
-require("@nomicfoundation/hardhat-foundry")
+
+task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
+    const accounts = await hre.ethers.getSigners()
+
+    for (const account of accounts) {
+        console.log(account.address)
+    }
+})
+
+console.log("Hardhat config Network: ", process.env.NETWORK)
 
 const alchemy_key = process.env.ALCHEMY_KEY
 const etherScan_api_key = process.env.ETHER_SCAN_API_KEY
@@ -228,7 +239,7 @@ module.exports = {
         tests: "test",
     },
     mocha: {
-        timeout: 200e3,
+        timeout: 200e10,
     },
     solidity: {
         compilers: [

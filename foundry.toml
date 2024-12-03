@@ -12,16 +12,16 @@ optimizer_runs = 200
 auto_detect_solc = true
 ffi = true
 # via-ir = true
-
-[profile.lite]
-optimizer = false
-via-ir = true
-
 fs_permissions = [
   { access = "read", path = "./broadcast" },
   { access = "write", path = "film_data.json" },
   { access = "read", path = "film_data.json" },
 ]
+
+[profile.lite]
+optimizer = false
+via-ir = true
+
 
 [fuzz]
 runs = 2000

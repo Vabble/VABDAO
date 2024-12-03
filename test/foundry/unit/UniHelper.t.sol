@@ -4,9 +4,9 @@ pragma solidity ^0.8.4;
 import { BaseTest, console2 } from "../utils/BaseTest.sol";
 import { UniHelper } from "../../../contracts/dao/UniHelper.sol";
 import { HelperConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
-import "../../../contracts/interfaces/uniswap-v2/IUniswapV2Router02.sol";
-import "../../../contracts/interfaces/uniswap-v2/IUniswapV2Pair.sol";
-import "../../../contracts/interfaces/uniswap-v2/IUniswapV2Factory.sol";
+import "../interfaces/uniswap-v2/IUniswapV2Router02.sol";
+import "../interfaces/uniswap-v2/IUniswapV2Pair.sol";
+import "../interfaces/uniswap-v2/IUniswapV2Factory.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract UniHelperTest is BaseTest {

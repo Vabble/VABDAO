@@ -8,10 +8,10 @@ import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
-import { Test, console2, console } from "forge-std/Test.sol";
 
 contract Subscription is ReentrancyGuard {
     event SubscriptionActivated(address indexed customer, address token, uint256 period);
+    event AssetWithdrawn(address indexed token, address indexed recipient, uint256 amount);
 
     address private immutable OWNABLE; // Ownablee contract address
     address private immutable UNI_HELPER; // UniHelper contract
@@ -22,8 +22,10 @@ contract Subscription is ReentrancyGuard {
     address private immutable VAB_WALLET;
 
     uint256 private constant PERIOD_UNIT = 30 days; // 30 days
-    uint256 private constant PERCENT60 = 60 * 1e8;
-    uint256 private constant PERCENT40 = 40 * 1e8;
+    uint256 constant PERCENT_SCALING_FACTOR = 1e8;
+    uint256 private constant PRECISION_FACTOR = 1e10;
+    uint256 private constant PERCENT60 = 60 * PERCENT_SCALING_FACTOR;
+    uint256 private constant PERCENT40 = 40 * PERCENT_SCALING_FACTOR;
 
     uint256[] private discountList;
 
@@ -37,6 +39,11 @@ contract Subscription is ReentrancyGuard {
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
+        _;
+    }
+
+    modifier onlyVabWallet() {
+        require(msg.sender == VAB_WALLET, "Unauthorized Access");
         _;
     }
 
@@ -58,24 +65,86 @@ contract Subscription is ReentrancyGuard {
         VAB_WALLET = IOwnablee(_ownable).VAB_WALLET();
     }
 
+    function withdrawAsset(address token) external nonReentrant onlyVabWallet {
+        uint256 amount;
+
+        // Handle ETH withdrawal
+        if (token == address(0)) {
+            amount = address(this).balance;
+            require(amount > 0, "Insufficient ETH balance");
+            Helper.safeTransferETH(VAB_WALLET, amount);
+        }
+        // Handle token withdrawal
+        else {
+            amount = IERC20(token).balanceOf(address(this));
+            require(amount > 0, "Insufficient token balance");
+            Helper.safeTransfer(token, VAB_WALLET, amount);
+        }
+
+        emit AssetWithdrawn(token, VAB_WALLET, amount);
+    }
+
+    function withdrawAllAssets() external nonReentrant onlyVabWallet {
+        uint256 totalEthBalance = address(this).balance;
+        uint256 totalUsdcBalance = IERC20(USDC_TOKEN).balanceOf(address(this));
+        uint256 totalVabBalance = IERC20(VAB_TOKEN).balanceOf(address(this));
+
+        require(totalEthBalance > 0 || totalUsdcBalance > 0 || totalVabBalance > 0, "Nothing to withdraw");
+
+        if (totalEthBalance > 0) {
+            Helper.safeTransferETH(VAB_WALLET, totalEthBalance);
+            emit AssetWithdrawn(address(0), VAB_WALLET, totalEthBalance);
+        }
+
+        if (totalUsdcBalance > 0) {
+            Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, totalUsdcBalance);
+            emit AssetWithdrawn(USDC_TOKEN, VAB_WALLET, totalUsdcBalance);
+        }
+
+        if (totalVabBalance > 0) {
+            Helper.safeTransfer(VAB_TOKEN, VAB_WALLET, totalVabBalance);
+            emit AssetWithdrawn(VAB_TOKEN, VAB_WALLET, totalVabBalance);
+        }
+    }
+
+    function swapAssetAndSendToVabWallet(address token) external nonReentrant {
+        uint256 amount;
+
+        if (token == address(0)) {
+            amount = address(this).balance;
+            Helper.safeTransferETH(UNI_HELPER, amount);
+        } else {
+            amount = IERC20(token).balanceOf(address(this));
+            if (IERC20(token).allowance(address(this), UNI_HELPER) < amount) {
+                Helper.safeApprove(token, UNI_HELPER, amount);
+            }
+        }
+
+        require(amount > 0, "Insufficient balance");
+
+        if (token != USDC_TOKEN) {
+            amount = IUniHelper(UNI_HELPER).swapAsset(abi.encode(amount, token, USDC_TOKEN));
+        }
+
+        uint256 totalUsdcBalance = IERC20(USDC_TOKEN).balanceOf(address(this));
+
+        Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, totalUsdcBalance);
+
+        emit AssetWithdrawn(USDC_TOKEN, VAB_WALLET, totalUsdcBalance);
+    }
+
     function activeSubscription(address _token, uint256 _period) external payable nonReentrant {
-        // Cache the msg.sender to avoid multiple SLOAD operations
-        address user = msg.sender;
+        uint256 expectedAmount = _validateAndGetAmount(_token, _period);
 
-        // Validate token and get expected amount
-        uint256 expectAmount = _validateAndGetAmount(_token, _period);
+        _handlePayment(_token, expectedAmount);
 
-        // Handle payment
-        _handlePayment(_token, expectAmount, user);
-        console.log("gasUsedHandlePayment", 123);
+        if (_token != VAB_TOKEN) {
+            _handleSwapsAndTransfers(_token, expectedAmount);
+        }
 
-        // Handle token swaps and transfers
-        _handleSwapsAndTransfers(_token, expectAmount);
+        _updateSubscription(_period);
 
-        // Update subscription
-        _updateSubscription(user, _period);
-
-        emit SubscriptionActivated(user, _token, _period);
+        emit SubscriptionActivated(msg.sender, _token, _period);
     }
 
     function _validateAndGetAmount(address _token, uint256 _period) private view returns (uint256) {
@@ -85,56 +154,49 @@ contract Subscription is ReentrancyGuard {
         return getExpectedSubscriptionAmount(_token, _period);
     }
 
-    function _handlePayment(address _token, uint256 expectAmount, address _user) private {
+    function _handlePayment(address _token, uint256 expectedAmount) private {
         if (_token == address(0)) {
-            require(msg.value >= expectAmount, "activeSubscription: Insufficient paid");
-            if (msg.value > expectAmount) {
-                Helper.safeTransferETH(_user, msg.value - expectAmount);
+            require(msg.value >= expectedAmount, "activeSubscription: Insufficient paid");
+            if (msg.value > expectedAmount) {
+                Helper.safeTransferETH(msg.sender, msg.value - expectedAmount);
             }
         } else {
-            Helper.safeTransferFrom(_token, _user, address(this), expectAmount);
-            if (IERC20(_token).allowance(address(this), UNI_HELPER) == 0) {
-                Helper.safeApprove(_token, UNI_HELPER, expectAmount);
-            }
+            Helper.safeTransferFrom(_token, msg.sender, address(this), expectedAmount);
         }
     }
 
-    function _handleSwapsAndTransfers(address _token, uint256 expectAmount) private {
-        uint256 usdcAmount;
+    function _handleSwapsAndTransfers(address _token, uint256 expectedAmount) private {
+        uint256 amount60 = expectedAmount * PERCENT60 / PRECISION_FACTOR;
 
-        if (_token == VAB_TOKEN) {
-            usdcAmount = IUniHelper(UNI_HELPER).swapAsset(abi.encode(expectAmount, _token, USDC_TOKEN));
-            Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, usdcAmount);
+        if (_token == address(0)) {
+            Helper.safeTransferETH(UNI_HELPER, amount60);
         } else {
-            uint256 amount60 = expectAmount * PERCENT60 / 1e10;
-
-            if (_token == address(0)) {
-                Helper.safeTransferETH(UNI_HELPER, amount60);
+            if (IERC20(_token).allowance(address(this), UNI_HELPER) < expectedAmount) {
+                Helper.safeApprove(_token, UNI_HELPER, expectedAmount);
             }
+        }
 
-            uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(abi.encode(amount60, _token, VAB_TOKEN));
-            Helper.safeTransfer(VAB_TOKEN, VAB_WALLET, vabAmount);
+        // Swap 60 % ETH / USDC => VAB and send it to the user
+        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(abi.encode(amount60, _token, VAB_TOKEN));
+        // TODO: This should go to the streaming balance of the user
+        Helper.safeTransfer(VAB_TOKEN, VAB_WALLET, vabAmount);
 
-            if (_token == USDC_TOKEN) {
-                usdcAmount = expectAmount - amount60;
-            } else {
-                if (_token == address(0)) {
-                    Helper.safeTransferETH(UNI_HELPER, expectAmount - amount60);
-                }
-                usdcAmount = IUniHelper(UNI_HELPER).swapAsset(abi.encode(expectAmount - amount60, _token, USDC_TOKEN));
-            }
+        if (_token == USDC_TOKEN) {
+            // @follow-up : should we send the total usdc balance of the contract ?
+            uint256 usdcAmount = expectedAmount - amount60;
             Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, usdcAmount);
         }
     }
 
-    function _updateSubscription(address user, uint256 _period) private {
-        UserSubscription storage subscription = subscriptionInfo[user];
+    function _updateSubscription(uint256 _period) private {
+        UserSubscription storage subscription = subscriptionInfo[msg.sender];
         uint256 currentTime = block.timestamp;
 
         if (subscription.expireTime > currentTime) {
             subscription.period += _period;
             subscription.expireTime = subscription.activeTime + PERIOD_UNIT * subscription.period;
         } else {
+            // first time a user bought a subscription
             subscription.activeTime = currentTime;
             subscription.period = _period;
             subscription.expireTime = currentTime + PERIOD_UNIT * _period;
@@ -148,33 +210,37 @@ contract Subscription is ReentrancyGuard {
     )
         public
         view
-        returns (uint256 expectAmount_)
+        returns (uint256 expectedAmount_)
     {
         require(_period != 0, "getExpectedSubscriptionAmount: Zero period");
 
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
 
-        if (_period < 3) {
-            scriptAmount = scriptAmount;
-        } else if (_period >= 3 && _period < 6) {
-            scriptAmount = scriptAmount * (100 - discountList[0]) * 1e8 / 1e10;
-        } else if (_period >= 6 && _period < 12) {
-            scriptAmount = scriptAmount * (100 - discountList[1]) * 1e8 / 1e10;
-        } else {
-            scriptAmount = scriptAmount * (100 - discountList[2]) * 1e8 / 1e10;
+        uint256 discount;
+        if (_period >= 12) {
+            discount = discountList[2];
+        } else if (_period >= 6) {
+            discount = discountList[1];
+        } else if (_period >= 3) {
+            discount = discountList[0];
+        }
+
+        if (discount > 0) {
+            scriptAmount = scriptAmount * (100 - discount) * PERCENT_SCALING_FACTOR / PRECISION_FACTOR;
         }
 
         if (_token == VAB_TOKEN) {
-            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount * PERCENT40 / 1e10, USDC_TOKEN, _token);
+            expectedAmount_ =
+                IUniHelper(UNI_HELPER).expectedAmount((scriptAmount * PERCENT40) / PRECISION_FACTOR, USDC_TOKEN, _token);
         } else if (_token == USDC_TOKEN) {
-            expectAmount_ = scriptAmount;
+            expectedAmount_ = scriptAmount;
         } else {
-            expectAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
+            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
         }
     }
 
     /// @notice Check if subscription period
-    function isActivedSubscription(address _customer) public view returns (bool active_) {
+    function isActivedSubscription(address _customer) external view returns (bool active_) {
         if (subscriptionInfo[_customer].expireTime > block.timestamp) active_ = true;
         else active_ = false;
     }

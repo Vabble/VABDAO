@@ -3,9 +3,20 @@ pragma solidity ^0.8.4;
 
 import { BaseTest, console2 } from "../utils/BaseTest.sol";
 import { Subscription } from "../../../contracts/dao/Subscription.sol";
+import { ERC20Mock } from "../mocks/ERC20Mock.sol";
 
 contract SubscriptionTest is BaseTest {
+    struct BalanceSnapshot {
+        uint256 subscriptionEth;
+        uint256 subscriptionVab;
+        uint256 subscriptionUsdc;
+        uint256 walletEth;
+        uint256 walletVab;
+        uint256 walletUsdc;
+    }
+
     event SubscriptionActivated(address indexed customer, address token, uint256 period);
+    event AssetWithdrawn(address indexed token, address indexed recipient, uint256 amount);
 
     uint256 constant PERCENT_SCALING_FACTOR = 1e8;
     uint256 constant PERCENT_BASIS_FACTOR = 1e10;
@@ -21,6 +32,8 @@ contract SubscriptionTest is BaseTest {
         expectedDiscountList[2] = 25;
 
         basisSubscriptionAmount = property.subscriptionAmount();
+
+        _addInitialLiquidity();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -92,6 +105,30 @@ contract SubscriptionTest is BaseTest {
         vm.stopPrank();
     }
 
+    function test_activatingSubscriptionRevertsIfAccountBalanceIsToLow() public {
+        uint256 period = 1;
+        uint256 amount = 1e18;
+        address token = address(vab);
+
+        deal(token, default_user, amount);
+        vm.startPrank(default_user);
+        vm.expectRevert("VabbleDAO::transferFrom: transferFrom failed");
+        subscription.activeSubscription{ value: amount }(token, period);
+        vm.stopPrank();
+    }
+
+    function test_activatingSubscriptionRevertsIfWrongToken() public {
+        uint256 period = 1;
+        uint256 amount = 100e18;
+        ERC20Mock unallowedToken = new ERC20Mock("Unallowed", "UAD");
+
+        deal(address(unallowedToken), default_user, amount);
+        vm.startPrank(default_user);
+        vm.expectRevert("activeSubscription: not allowed asset");
+        subscription.activeSubscription(address(unallowedToken), period);
+        vm.stopPrank();
+    }
+
     function test_activatingSubscriptionWithMoreEthOnlyTransfersNecessary() public {
         uint256 period = 1;
         uint256 startingAmountEth = 1 ether;
@@ -112,45 +149,99 @@ contract SubscriptionTest is BaseTest {
         assertEq(actualUserEndBalance, expectedUserEndBalance);
     }
 
-    function test_activatingSubscriptionWithETHTransfersVABtoUser() public {
-        uint256 period = 1;
-        uint256 startingAmountEth = 1 ether;
-        address token = address(0);
-
-        uint256 userWalletStartVABBalance = vab.balanceOf(address(default_user));
-
-        deal(default_user, startingAmountEth);
-        assertEq(default_user.balance, startingAmountEth);
-
-        uint256 expectedAmountEthToBeTransfered = subscription.getExpectedSubscriptionAmount(token, period);
-
-        vm.startPrank(default_user);
-        subscription.activeSubscription{ value: expectedAmountEthToBeTransfered }(token, period);
-        vm.stopPrank();
-
-        uint256 userWalletEndVABBalance = vab.balanceOf(address(default_user));
-        console2.log("userWalletStartVABBalance", userWalletStartVABBalance);
-        console2.log("userWalletEndVABBalance", userWalletEndVABBalance);
+    function test_activatingSubscriptionWithVab_GAS() public {
+        vm.prank(default_user);
+        vm.startSnapshotGas("activeSubscription");
+        subscription.activeSubscription(address(vab), 1);
+        uint256 gasUsed = vm.stopSnapshotGas();
+        console2.log("activeSubscriptionGas", gasUsed);
     }
 
     function test_activatingSubscriptionWithVab() public {
         uint256 period = 1;
         address token = address(vab);
 
-        deal(address(usdc), vabWallet, 0);
+        uint256 subscriptionContractStartingVabBalance = vab.balanceOf(address(subscription));
+        assertEq(subscription.isActivedSubscription(default_user), false);
 
         vm.prank(default_user);
         vm.startSnapshotGas("activeSubscription");
         subscription.activeSubscription(token, period);
         uint256 gasUsed = vm.stopSnapshotGas();
+        console2.log("activeSubscriptionGas", gasUsed); // 598_564 => 150_319
 
-        console2.log("activeSubscriptionGas", gasUsed); // 598_564 // 587_071 // 586_964
+        uint256 expectedAmount = subscription.getExpectedSubscriptionAmount(token, period);
+        uint256 subscriptionContractEndingVabBalance = vab.balanceOf(address(subscription));
 
-        uint256 usdcWalletEndingBalance = usdc.balanceOf(address(vabWallet));
-        uint256 expectedEndingBalance = (basisSubscriptionAmount * (40 * PERCENT_SCALING_FACTOR)) / PERCENT_BASIS_FACTOR;
+        assertEq(subscriptionContractEndingVabBalance - subscriptionContractStartingVabBalance, expectedAmount);
+        assertEq(subscription.isActivedSubscription(default_user), true);
+    }
 
-        // 15 % Tolerance because testnet liquidity is super bad
-        assertApproxEqRel(expectedEndingBalance, usdcWalletEndingBalance, 1e16 * 15);
+    function test_activatingSubscriptionWithEth() public {
+        uint256 period = 1;
+        uint256 startingAmountEth = 1 ether;
+        address eth = address(0);
+
+        deal(default_user, startingAmountEth);
+        deal(address(vab), vabWallet, 0);
+        deal(address(subscription), 0);
+
+        uint256 vabWalletVabstartingBalance = vab.balanceOf(vabWallet);
+        uint256 subscriptionContractEthStartingBalance = address(subscription).balance;
+
+        assertEq(vabWalletVabstartingBalance, 0);
+        assertEq(subscriptionContractEthStartingBalance, 0);
+        assertEq(subscription.isActivedSubscription(default_user), false);
+
+        uint256 expectedAmountEthToBeTransfered = subscription.getExpectedSubscriptionAmount(eth, period);
+
+        vm.startPrank(default_user);
+        vm.startSnapshotGas("activeSubscription");
+        subscription.activeSubscription{ value: expectedAmountEthToBeTransfered }(eth, period);
+        uint256 gasUsed = vm.stopSnapshotGas();
+        console2.log("activeSubscriptionGas", gasUsed); // 261_722
+        vm.stopPrank();
+
+        uint256 vabWalletVabEndingBalance = vab.balanceOf(vabWallet);
+        uint256 subscriptionContractEthEndingBalance = address(subscription).balance;
+
+        // 40 % in ETH should stay in the contract
+        assertGt(subscriptionContractEthEndingBalance, subscriptionContractEthStartingBalance);
+        // 60 % should be converted into VAB and go to the VAB Wallet
+        assertGt(vabWalletVabEndingBalance, vabWalletVabstartingBalance);
+        assertEq(subscription.isActivedSubscription(default_user), true);
+    }
+
+    function test_activatingSubscriptionWithUsdc() public {
+        uint256 period = 1;
+
+        deal(address(vab), vabWallet, 0);
+        deal(address(usdc), vabWallet, 0);
+
+        uint256 vabWalletVabstartingBalance = vab.balanceOf(vabWallet);
+        uint256 vabWalletUsdcStartingBalance = usdc.balanceOf(vabWallet);
+
+        assertEq(vabWalletVabstartingBalance, 0);
+        assertEq(vabWalletUsdcStartingBalance, 0);
+        assertEq(subscription.isActivedSubscription(default_user), false);
+
+        subscription.getExpectedSubscriptionAmount(address(usdc), period);
+
+        vm.startPrank(default_user);
+        vm.startSnapshotGas("activeSubscription");
+        subscription.activeSubscription(address(usdc), period);
+        uint256 gasUsed = vm.stopSnapshotGas();
+        console2.log("activeSubscriptionGas", gasUsed); // 475_159
+        vm.stopPrank();
+
+        uint256 vabWalletVabEndingBalance = vab.balanceOf(vabWallet);
+        uint256 vabWalletUsdcEndingBalance = usdc.balanceOf(vabWallet);
+
+        // 40 % in USDC should go to the VAB Wallet
+        assertGt(vabWalletUsdcEndingBalance, vabWalletUsdcStartingBalance);
+        // 60 % should be converted into VAB and go to the VAB Wallet
+        assertGt(vabWalletVabEndingBalance, vabWalletVabstartingBalance);
+        assertEq(subscription.isActivedSubscription(default_user), true);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -310,8 +401,9 @@ contract SubscriptionTest is BaseTest {
         vm.stopPrank();
         assertEq(subscription.isActivedSubscription(address(default_user)), true);
 
-        // now wait till the subscription should be expired
-        skip(SUBSCRIPTION_PERIOD);
+        skip(SUBSCRIPTION_PERIOD - 10);
+        assertEq(subscription.isActivedSubscription(address(default_user)), true);
+        skip(10);
         assertEq(subscription.isActivedSubscription(address(default_user)), false);
     }
 
@@ -358,5 +450,352 @@ contract SubscriptionTest is BaseTest {
         assertEq(new_expireTime, expectedExpireTime);
 
         vm.stopPrank();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             WITHDRAWASSET
+    //////////////////////////////////////////////////////////////*/
+
+    function test_withdrawAssetShouldRevertIfCallerIsNotTheVabWallet() public {
+        vm.startPrank(default_user);
+        vm.expectRevert("Unauthorized Access");
+        subscription.withdrawAsset(address(vab));
+        vm.stopPrank();
+    }
+
+    function test_withdrawAssetShouldRevertIfEthBalanceIsZero() public {
+        vm.startPrank(vabWallet);
+        vm.expectRevert("Insufficient ETH balance");
+        subscription.withdrawAsset(address(0));
+        vm.stopPrank();
+    }
+
+    function test_withdrawAssetShouldRevertIfUsdcBalanceIsZero() public {
+        vm.startPrank(vabWallet);
+        vm.expectRevert("Insufficient token balance");
+        subscription.withdrawAsset(address(usdc));
+        vm.stopPrank();
+    }
+
+    function test_withdrawAssetShouldRevertIfVabBalanceIsZero() public {
+        vm.startPrank(vabWallet);
+        vm.expectRevert("Insufficient token balance");
+        subscription.withdrawAsset(address(vab));
+        vm.stopPrank();
+    }
+
+    function test_withdrawAssetShouldTransferTotalEthAndEmitEvent() public {
+        uint256 contractEthBalance = 1 ether;
+        deal(address(subscription), contractEthBalance);
+        uint256 subscriptionStartingBalance = address(subscription).balance;
+        uint256 vabWalletStartingBalance = vabWallet.balance;
+
+        assertEq(contractEthBalance, subscriptionStartingBalance);
+
+        vm.startPrank(vabWallet);
+        vm.expectEmit(address(subscription));
+        emit AssetWithdrawn(address(0), vabWallet, contractEthBalance);
+        subscription.withdrawAsset(address(0));
+        vm.stopPrank();
+
+        uint256 vabWalletEndingBalance = vabWallet.balance;
+        uint256 subscriptionEndingBalance = address(subscription).balance;
+
+        assertEq(vabWalletEndingBalance, vabWalletStartingBalance + contractEthBalance);
+        assertEq(subscriptionEndingBalance, subscriptionStartingBalance - contractEthBalance);
+    }
+
+    function test_withdrawAssetShouldTransferTotalUsdcAndEmitEvent() public {
+        uint256 contractBalance = 100e6;
+        address token = address(usdc);
+        deal(token, address(subscription), contractBalance);
+        uint256 subscriptionStartingBalance = usdc.balanceOf(address(subscription));
+        uint256 vabWalletStartingBalance = usdc.balanceOf(vabWallet);
+
+        assertEq(contractBalance, subscriptionStartingBalance);
+
+        vm.startPrank(vabWallet);
+        vm.expectEmit(address(subscription));
+        emit AssetWithdrawn(token, vabWallet, contractBalance);
+        subscription.withdrawAsset(token);
+        vm.stopPrank();
+
+        uint256 vabWalletEndingBalance = usdc.balanceOf(vabWallet);
+        uint256 subscriptionEndingBalance = usdc.balanceOf(address(subscription));
+
+        assertEq(vabWalletEndingBalance, vabWalletStartingBalance + contractBalance);
+        assertEq(subscriptionEndingBalance, subscriptionStartingBalance - contractBalance);
+    }
+
+    function test_withdrawAssetShouldTransferTotalVabAndEmitEvent() public {
+        uint256 contractBalance = 100e6;
+        address token = address(vab);
+        deal(token, address(subscription), contractBalance);
+        uint256 subscriptionStartingBalance = vab.balanceOf(address(subscription));
+        uint256 vabWalletStartingBalance = vab.balanceOf(vabWallet);
+
+        assertEq(contractBalance, subscriptionStartingBalance);
+
+        vm.startPrank(vabWallet);
+        vm.expectEmit(address(subscription));
+        emit AssetWithdrawn(token, vabWallet, contractBalance);
+        subscription.withdrawAsset(token);
+        vm.stopPrank();
+
+        uint256 vabWalletEndingBalance = vab.balanceOf(vabWallet);
+        uint256 subscriptionEndingBalance = vab.balanceOf(address(subscription));
+
+        assertEq(vabWalletEndingBalance, vabWalletStartingBalance + contractBalance);
+        assertEq(subscriptionEndingBalance, subscriptionStartingBalance - contractBalance);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           WITHDRAWALLASSETS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_withdrawAllAssetsShouldRevertIfCallerIsNotTheVabWallet() public {
+        vm.startPrank(default_user);
+        vm.expectRevert("Unauthorized Access");
+        subscription.withdrawAllAssets();
+        vm.stopPrank();
+    }
+
+    function test_withdrawAllAssetsShouldRevertIfThereIsNothingToWithdraw() public {
+        vm.startPrank(vabWallet);
+        vm.expectRevert("Nothing to withdraw");
+        subscription.withdrawAllAssets();
+        vm.stopPrank();
+    }
+
+    function test_withdrawAllAssetsShouldWithdrawAllAssets() public {
+        // Setup initial balances
+        uint256 ethBalance = 1 ether;
+        uint256 vabBalance = 100e18;
+        uint256 usdcBalance = 200e6;
+
+        _setupInitialBalances(ethBalance, vabBalance, usdcBalance);
+
+        // Capture starting balances
+        BalanceSnapshot memory startingBalances = _getBalanceSnapshot();
+
+        // Verify initial state
+        _verifyInitialBalances(startingBalances, ethBalance, vabBalance, usdcBalance);
+
+        // Setup event expectations
+        _setupWithdrawEvents(ethBalance, usdcBalance, vabBalance);
+
+        // Execute withdrawal
+        vm.startPrank(vabWallet);
+        vm.startSnapshotGas("withdrawAllAssets");
+        subscription.withdrawAllAssets();
+        uint256 gasUsed = vm.stopSnapshotGas();
+        console2.log("withdrawAllAssets", gasUsed); // 34_837
+        vm.stopPrank();
+
+        // Verify final state
+        _verifyFinalBalances(startingBalances);
+    }
+
+    function _setupInitialBalances(uint256 ethBalance, uint256 vabBalance, uint256 usdcBalance) private {
+        deal(address(subscription), ethBalance);
+        deal(address(vab), address(subscription), vabBalance);
+        deal(address(usdc), address(subscription), usdcBalance);
+    }
+
+    function _getBalanceSnapshot() private view returns (BalanceSnapshot memory) {
+        return BalanceSnapshot({
+            subscriptionEth: address(subscription).balance,
+            subscriptionVab: vab.balanceOf(address(subscription)),
+            subscriptionUsdc: usdc.balanceOf(address(subscription)),
+            walletEth: vabWallet.balance,
+            walletVab: vab.balanceOf(vabWallet),
+            walletUsdc: usdc.balanceOf(vabWallet)
+        });
+    }
+
+    function _verifyInitialBalances(
+        BalanceSnapshot memory balances,
+        uint256 ethBalance,
+        uint256 vabBalance,
+        uint256 usdcBalance
+    )
+        private
+        pure
+    {
+        assertEq(balances.subscriptionEth, ethBalance);
+        assertEq(balances.subscriptionVab, vabBalance);
+        assertEq(balances.subscriptionUsdc, usdcBalance);
+    }
+
+    function _setupWithdrawEvents(uint256 ethBalance, uint256 usdcBalance, uint256 vabBalance) private {
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(0), vabWallet, ethBalance);
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(usdc), vabWallet, usdcBalance);
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(vab), vabWallet, vabBalance);
+    }
+
+    function _verifyFinalBalances(BalanceSnapshot memory startingBalances) private view {
+        // Check subscription balances are zero
+        assertEq(address(subscription).balance, 0);
+        assertEq(vab.balanceOf(address(subscription)), 0);
+        assertEq(usdc.balanceOf(address(subscription)), 0);
+
+        // Check wallet received all assets
+        assertEq(vabWallet.balance, startingBalances.walletEth + startingBalances.subscriptionEth);
+        assertEq(vab.balanceOf(vabWallet), startingBalances.walletVab + startingBalances.subscriptionVab);
+        assertEq(usdc.balanceOf(vabWallet), startingBalances.walletUsdc + startingBalances.subscriptionUsdc);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                      SWAPASSETANDSENDTOVABWALLET
+    //////////////////////////////////////////////////////////////*/
+
+    function test_swapAssetAndSendToVabWalletShouldRevertIfZeroBalance() public {
+        address token = address(0);
+        vm.startPrank(default_user);
+        vm.expectRevert("Insufficient balance");
+        subscription.swapAssetAndSendToVabWallet(token);
+        vm.stopPrank();
+    }
+
+    function test_swapAssetAndSendToVabWalletShouldSwapEthToUsdcAndSendToVabWallet() public {
+        address token = address(0);
+        uint256 contractEthBalance = 1 ether;
+
+        deal(address(subscription), contractEthBalance);
+        uint256 subscriptionStartingEthBalance = address(subscription).balance;
+        assertEq(contractEthBalance, subscriptionStartingEthBalance);
+
+        uint256 vabWalletStartingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        uint256 expectedUsdcAmount = uniHelper.expectedAmount({
+            _depositAmount: contractEthBalance,
+            _depositAsset: address(0),
+            _incomingAsset: address(usdc)
+        });
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(usdc), vabWallet, expectedUsdcAmount);
+
+        vm.startPrank(default_user);
+        vm.startSnapshotGas("swapAssetAndSendToVabWallet");
+        subscription.swapAssetAndSendToVabWallet(token);
+        uint256 gasUsed = vm.stopSnapshotGas();
+        vm.stopPrank();
+
+        console2.log("swapAssetAndSendToVabWallet gas", gasUsed); // 176_973
+
+        uint256 subscriptionEndingEthBalance = address(subscription).balance;
+        uint256 vabWalletEndingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        assertEq(subscriptionEndingEthBalance, 0);
+        assertEq(vabWalletEndingUsdcBalance, vabWalletStartingUsdcBalance + expectedUsdcAmount);
+    }
+
+    function test_swapAssetAndSendToVabWalletShouldSwapVabToUsdcAndSendToVabWallet() public {
+        address token = address(vab);
+        uint256 contractVabBalance = 1000e18;
+
+        deal(token, address(subscription), contractVabBalance);
+        uint256 subscriptionStartingVabBalance = vab.balanceOf(address(subscription));
+        assertEq(contractVabBalance, subscriptionStartingVabBalance);
+
+        uint256 vabWalletStartingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        uint256 expectedUsdcAmount = uniHelper.expectedAmount({
+            _depositAmount: contractVabBalance,
+            _depositAsset: token,
+            _incomingAsset: address(usdc)
+        });
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(usdc), vabWallet, expectedUsdcAmount);
+
+        vm.startPrank(default_user);
+        vm.startSnapshotGas("swapAssetAndSendToVabWallet");
+        subscription.swapAssetAndSendToVabWallet(token);
+        uint256 gasUsed = vm.stopSnapshotGas();
+        vm.stopPrank();
+
+        console2.log("swapAssetAndSendToVabWallet gas", gasUsed); // 351_175
+
+        uint256 subscriptionEndingVabBalance = vab.balanceOf(address(subscription));
+        uint256 vabWalletEndingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        assertEq(subscriptionEndingVabBalance, 0);
+        assertEq(vabWalletEndingUsdcBalance, vabWalletStartingUsdcBalance + expectedUsdcAmount);
+    }
+
+    function test_swapAssetAndSendToVabWalletShouldSwapAndSendUsdcBalanceToVabWallet() public {
+        address token = address(vab);
+        uint256 contractVabBalance = 1000e18;
+        uint256 contractUsdcBalance = 2000e6;
+
+        deal(token, address(subscription), contractVabBalance);
+        deal(address(usdc), address(subscription), contractUsdcBalance);
+
+        uint256 subscriptionStartingVabBalance = vab.balanceOf(address(subscription));
+        uint256 subscriptionStartingUsdcBalance = usdc.balanceOf(address(subscription));
+
+        assertEq(contractVabBalance, subscriptionStartingVabBalance);
+        assertEq(contractUsdcBalance, subscriptionStartingUsdcBalance);
+
+        uint256 vabWalletStartingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        uint256 expectedUsdcAmount = uniHelper.expectedAmount({
+            _depositAmount: contractVabBalance,
+            _depositAsset: token,
+            _incomingAsset: address(usdc)
+        });
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(usdc), vabWallet, expectedUsdcAmount + contractUsdcBalance);
+
+        vm.startPrank(default_user);
+        vm.startSnapshotGas("swapAssetAndSendToVabWallet");
+        subscription.swapAssetAndSendToVabWallet(token);
+        uint256 gasUsed = vm.stopSnapshotGas();
+        vm.stopPrank();
+
+        console2.log("swapAssetAndSendToVabWallet gas", gasUsed); // 330_207
+
+        uint256 subscriptionEndingVabBalance = vab.balanceOf(address(subscription));
+        uint256 subscriptionEndingUsdcBalance = usdc.balanceOf(address(subscription));
+        uint256 vabWalletEndingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        assertEq(subscriptionEndingVabBalance, 0, "Subscription contract still has VAB");
+        assertEq(subscriptionEndingUsdcBalance, 0, "Subscription contract still has USDC");
+        assertEq(vabWalletEndingUsdcBalance, vabWalletStartingUsdcBalance + expectedUsdcAmount + contractUsdcBalance);
+    }
+
+    function test_swapAssetAndSendToVabWalletShouldSendUsdcBalanceToVabWallet() public {
+        address token = address(usdc);
+        uint256 contractUsdcBalance = 2000e6;
+
+        deal(address(usdc), address(subscription), contractUsdcBalance);
+        uint256 subscriptionStartingUsdcBalance = usdc.balanceOf(address(subscription));
+        assertEq(contractUsdcBalance, subscriptionStartingUsdcBalance);
+        uint256 vabWalletStartingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(usdc), vabWallet, contractUsdcBalance);
+
+        vm.startPrank(default_user);
+        vm.startSnapshotGas("swapAssetAndSendToVabWallet");
+        subscription.swapAssetAndSendToVabWallet(token);
+        uint256 gasUsed = vm.stopSnapshotGas();
+        vm.stopPrank();
+
+        console2.log("swapAssetAndSendToVabWallet gas", gasUsed); // 46_411
+
+        uint256 subscriptionEndingUsdcBalance = usdc.balanceOf(address(subscription));
+        uint256 vabWalletEndingUsdcBalance = usdc.balanceOf(vabWallet);
+
+        assertEq(subscriptionEndingUsdcBalance, 0, "Subscription contract still has USDC");
+        assertEq(vabWalletEndingUsdcBalance, vabWalletStartingUsdcBalance + contractUsdcBalance);
     }
 }

@@ -20,9 +20,9 @@ import { UniHelper } from "../../../contracts/dao/UniHelper.sol";
 import { VabbleFund } from "../../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../../contracts/dao/Vote.sol";
-import { IUniswapV2Pair } from "../../../contracts/interfaces/uniswap-v2/IUniswapV2Pair.sol";
-import { IUniswapV2Factory } from "../../../contracts/interfaces/uniswap-v2/IUniswapV2Factory.sol";
-import { IUniswapV2Router02 } from "../../../contracts/interfaces/uniswap-v2/IUniswapV2Router02.sol";
+import { IUniswapV2Pair } from "../interfaces/uniswap-v2/IUniswapV2Pair.sol";
+import { IUniswapV2Factory } from "../interfaces/uniswap-v2/IUniswapV2Factory.sol";
+import { IUniswapV2Router02 } from "../interfaces/uniswap-v2/IUniswapV2Router02.sol";
 
 contract BaseTest is Test {
     Utilities private utilities;
@@ -176,11 +176,16 @@ contract BaseTest is Test {
 
     function _addInitialLiquidity() internal {
         uint256 vabAmount = 1_000_000e18;
+        uint256 usdcAmount = 100_000e6;
         uint256 ethAmount = 1000 ether;
         address uniswapRouter = address(uniHelper.getUniswapRouter());
 
+        deal(address(usdc), liquidity_provider, usdcAmount);
+
         vm.startPrank(liquidity_provider);
+
         vab.approve(uniswapRouter, vabAmount);
+        usdc.approve(uniswapRouter, usdcAmount);
 
         IUniswapV2Router02(uniswapRouter).addLiquidityETH{ value: ethAmount }(
             address(vab),
@@ -190,9 +195,20 @@ contract BaseTest is Test {
             liquidity_provider,
             block.timestamp + 1
         );
+
+        IUniswapV2Router02(uniswapRouter).addLiquidityETH{ value: ethAmount }(
+            address(usdc),
+            usdcAmount,
+            0, // slippage is unavoidable
+            0, // slippage is unavoidable
+            liquidity_provider,
+            block.timestamp + 1
+        );
+
         vm.stopPrank();
 
         deal(address(vab), liquidity_provider, userInitialVabFunds);
+        deal(address(usdc), liquidity_provider, userInitialUsdcFunds);
         deal(liquidity_provider, userInitialEtherFunds);
     }
 
