@@ -6,15 +6,15 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interfaces/IOwnablee.sol";
 import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVabbleFund.sol";
-import "./VabbleNFT.sol";
+import "./VabbleNFT_.sol";
 
 /**
  * @title FactoryTierNFT Contract
  * @notice This contract manages the deployment and minting of tier-specific NFTs
  * for films. It interacts with VabbleDAO for film ownership and fund management,
- * VabbleFund for investment tracking, and deploys VabbleNFT contracts for each tier.
+ * VabbleFund for investment tracking, and deploys VabbleNFT_ contracts for each tier.
  */
-contract FactoryTierNFT is ReentrancyGuard {
+contract FactoryTierNFT_ is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/
@@ -66,9 +66,9 @@ contract FactoryTierNFT is ReentrancyGuard {
     /// @notice Mapping to store investment tiers for each film ID.
     mapping(uint256 => mapping(uint256 => Tier)) public tierInfo;
 
-    /// @notice Mapping to store deployed VabbleNFT contracts for each film's tier.
+    /// @notice Mapping to store deployed VabbleNFT_ contracts for each film's tier.
     /// (filmId => (tier number => nftcontract))
-    mapping(uint256 => mapping(uint256 => VabbleNFT)) public tierNFTContract;
+    mapping(uint256 => mapping(uint256 => VabbleNFT_)) public tierNFTContract;
 
     /// @notice Mapping to store a list of token IDs minted for each film's tier.
     // (filmId => (tier number => minted tokenId list))
@@ -222,7 +222,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         require(_tier != 0, "deployTier: zero tier");
         require(tierInfo[_filmId][_tier].minAmount != 0, "deployTier: not set tier");
 
-        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
+        VabbleNFT_ t = new VabbleNFT_(baseUri, collectionUri, _name, _symbol, address(this));
         tierNFTContract[_filmId][_tier] = t;
 
         userTierNFTs[msg.sender].push(address(t));
@@ -263,7 +263,7 @@ contract FactoryTierNFT is ReentrancyGuard {
         uint256[] memory list = getUserTokenIdList(_filmId, msg.sender, tier);
         require(list.length == 0, "mintTier: already minted");
 
-        VabbleNFT t = tierNFTContract[_filmId][tier];
+        VabbleNFT_ t = tierNFTContract[_filmId][tier];
         uint256 tokenId = t.mintTo(msg.sender);
         tierNFTTokenList[_filmId][tier].push(tokenId);
 

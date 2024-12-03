@@ -34,7 +34,7 @@ import "../libraries/Helper.sol";
  * decision-making processes. It enforces governance rules defined in the `Property` contract and interacts with the
  * `VabbleDAO` for film-related decisions and status updates.
  */
-contract Vote is IVote, ReentrancyGuard {
+contract Vote_ is IVote, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/

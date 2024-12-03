@@ -14,6 +14,7 @@ yarn.lock
 gnosis
 
 out
+reports
 report
 cache_forge
 coverage

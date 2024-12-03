@@ -14,7 +14,7 @@ import "../interfaces/IOwnablee.sol";
  *
  * @dev This contract must be deployed first.
  */
-contract Ownablee is IOwnablee {
+contract Ownablee_ is IOwnablee {
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
