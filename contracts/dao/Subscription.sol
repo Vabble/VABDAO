@@ -10,8 +10,19 @@ import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
 
 contract Subscription is ReentrancyGuard {
-    event SubscriptionActivated(address indexed customer, address token, uint256 period);
-    event AssetWithdrawn(address indexed token, address indexed recipient, uint256 amount);
+    /*//////////////////////////////////////////////////////////////
+                           TYPE DECLARATIONS
+    //////////////////////////////////////////////////////////////*/
+
+    struct UserSubscription {
+        uint256 activeTime;
+        uint256 period;
+        uint256 expireTime;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
 
     address private immutable OWNABLE; // Ownablee contract address
     address private immutable UNI_HELPER; // UniHelper contract
@@ -29,13 +40,18 @@ contract Subscription is ReentrancyGuard {
 
     uint256[] private discountList;
 
-    struct UserSubscription {
-        uint256 activeTime; // active time
-        uint256 period; // period of subscription(ex: 1 => 1 month, 3 => 3 month)
-        uint256 expireTime; // expire time
-    }
-
     mapping(address => UserSubscription) public subscriptionInfo; // (user => UserSubscription)
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event SubscriptionActivated(address indexed customer, address token, uint256 period);
+    event AssetWithdrawn(address indexed token, address indexed recipient, uint256 amount);
+
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
     modifier onlyAuditor() {
         require(msg.sender == IOwnablee(OWNABLE).auditor(), "caller is not the auditor");
@@ -47,7 +63,13 @@ contract Subscription is ReentrancyGuard {
         _;
     }
 
-    receive() external payable { }
+    /*//////////////////////////////////////////////////////////////
+                               FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     constructor(address _ownable, address _uniHelper, address _property, uint256[] memory _discountPercents) {
         require(_ownable != address(0), "ownableContract: zero address");
@@ -64,6 +86,12 @@ contract Subscription is ReentrancyGuard {
         VAB_TOKEN = IOwnablee(_ownable).PAYOUT_TOKEN();
         VAB_WALLET = IOwnablee(_ownable).VAB_WALLET();
     }
+
+    receive() external payable { }
+
+    /*//////////////////////////////////////////////////////////////
+                                EXTERNAL
+    //////////////////////////////////////////////////////////////*/
 
     function withdrawAsset(address token) external nonReentrant onlyVabWallet {
         uint256 amount;
@@ -108,6 +136,8 @@ contract Subscription is ReentrancyGuard {
     }
 
     function swapAssetAndSendToVabWallet(address token) external nonReentrant {
+        require(token == USDC_TOKEN || token == address(0) || token == VAB_TOKEN, "Token is not allowed");
+
         uint256 amount;
 
         if (token == address(0)) {
@@ -133,6 +163,30 @@ contract Subscription is ReentrancyGuard {
         emit AssetWithdrawn(USDC_TOKEN, VAB_WALLET, totalUsdcBalance);
     }
 
+    function swapAllAssetsAndSendToVabWallet() external nonReentrant {
+        uint256 ethAmount = address(this).balance;
+        if (ethAmount > 0) {
+            Helper.safeTransferETH(UNI_HELPER, ethAmount);
+            IUniHelper(UNI_HELPER).swapAsset(abi.encode(ethAmount, address(0), USDC_TOKEN));
+        }
+
+        uint256 vabAmount = IERC20(VAB_TOKEN).balanceOf(address(this));
+        if (vabAmount > 0) {
+            if (IERC20(VAB_TOKEN).allowance(address(this), UNI_HELPER) < vabAmount) {
+                Helper.safeApprove(VAB_TOKEN, UNI_HELPER, vabAmount);
+            }
+            IUniHelper(UNI_HELPER).swapAsset(abi.encode(vabAmount, VAB_TOKEN, USDC_TOKEN));
+        }
+
+        // Transfer all USDC to VAB wallet
+        uint256 totalUsdcBalance = IERC20(USDC_TOKEN).balanceOf(address(this));
+        require(totalUsdcBalance > 0, "No USDC balance after swaps");
+
+        Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, totalUsdcBalance);
+
+        emit AssetWithdrawn(USDC_TOKEN, VAB_WALLET, totalUsdcBalance);
+    }
+
     function activeSubscription(address _token, uint256 _period) external payable nonReentrant {
         uint256 expectedAmount = _validateAndGetAmount(_token, _period);
 
@@ -146,6 +200,64 @@ contract Subscription is ReentrancyGuard {
 
         emit SubscriptionActivated(msg.sender, _token, _period);
     }
+
+    function isActivedSubscription(address _customer) external view returns (bool active_) {
+        if (subscriptionInfo[_customer].expireTime > block.timestamp) active_ = true;
+        else active_ = false;
+    }
+
+    function addDiscountPercent(uint256[] calldata _discountPercents) external onlyAuditor {
+        require(_discountPercents.length == 3, "discountList: bad length");
+        discountList = _discountPercents;
+    }
+
+    function getDiscountPercentList() external view returns (uint256[] memory list_) {
+        list_ = discountList;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 PUBLIC
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Expected token amount that user should pay for activing the subscription
+    function getExpectedSubscriptionAmount(
+        address _token,
+        uint256 _period
+    )
+        public
+        view
+        returns (uint256 expectedAmount_)
+    {
+        require(_period != 0, "getExpectedSubscriptionAmount: Zero period");
+
+        uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
+
+        uint256 discount;
+        if (_period >= 12) {
+            discount = discountList[2];
+        } else if (_period >= 6) {
+            discount = discountList[1];
+        } else if (_period >= 3) {
+            discount = discountList[0];
+        }
+
+        if (discount > 0) {
+            scriptAmount = scriptAmount * (100 - discount) * PERCENT_SCALING_FACTOR / PRECISION_FACTOR;
+        }
+
+        if (_token == VAB_TOKEN) {
+            expectedAmount_ =
+                IUniHelper(UNI_HELPER).expectedAmount((scriptAmount * PERCENT40) / PRECISION_FACTOR, USDC_TOKEN, _token);
+        } else if (_token == USDC_TOKEN) {
+            expectedAmount_ = scriptAmount;
+        } else {
+            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PRIVATE
+    //////////////////////////////////////////////////////////////*/
 
     function _validateAndGetAmount(address _token, uint256 _period) private view returns (uint256) {
         if (_token != VAB_TOKEN && _token != address(0)) {
@@ -201,58 +313,5 @@ contract Subscription is ReentrancyGuard {
             subscription.period = _period;
             subscription.expireTime = currentTime + PERIOD_UNIT * _period;
         }
-    }
-
-    /// @notice Expected token amount that user should pay for activing the subscription
-    function getExpectedSubscriptionAmount(
-        address _token,
-        uint256 _period
-    )
-        public
-        view
-        returns (uint256 expectedAmount_)
-    {
-        require(_period != 0, "getExpectedSubscriptionAmount: Zero period");
-
-        uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
-
-        uint256 discount;
-        if (_period >= 12) {
-            discount = discountList[2];
-        } else if (_period >= 6) {
-            discount = discountList[1];
-        } else if (_period >= 3) {
-            discount = discountList[0];
-        }
-
-        if (discount > 0) {
-            scriptAmount = scriptAmount * (100 - discount) * PERCENT_SCALING_FACTOR / PRECISION_FACTOR;
-        }
-
-        if (_token == VAB_TOKEN) {
-            expectedAmount_ =
-                IUniHelper(UNI_HELPER).expectedAmount((scriptAmount * PERCENT40) / PRECISION_FACTOR, USDC_TOKEN, _token);
-        } else if (_token == USDC_TOKEN) {
-            expectedAmount_ = scriptAmount;
-        } else {
-            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
-        }
-    }
-
-    /// @notice Check if subscription period
-    function isActivedSubscription(address _customer) external view returns (bool active_) {
-        if (subscriptionInfo[_customer].expireTime > block.timestamp) active_ = true;
-        else active_ = false;
-    }
-
-    /// @notice Add discount percents(3 months, 6 months, 12 months) from Auditor
-    function addDiscountPercent(uint256[] calldata _discountPercents) external onlyAuditor {
-        require(_discountPercents.length == 3, "discountList: bad length");
-        discountList = _discountPercents;
-    }
-
-    /// @notice get discount percent list
-    function getDiscountPercentList() external view returns (uint256[] memory list_) {
-        list_ = discountList;
     }
 }

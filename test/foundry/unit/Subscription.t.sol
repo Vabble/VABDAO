@@ -83,10 +83,37 @@ contract SubscriptionTest is BaseTest {
         uint256 amount = 1 ether;
         deal(default_user, amount);
         vm.prank(default_user);
-        (bool success,) = address(payable(subscription)).call{ value: amount }("");
+        (bool success,) = address(subscription).call{ value: amount }("");
         assertEq(success, true);
         assertEq(default_user.balance, 0);
         assertEq(address(subscription).balance, amount);
+    }
+
+    function test_ReceiveMultipleEtherTransactions() public {
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 0.5 ether;
+        amounts[1] = 1 ether;
+        amounts[2] = 2 ether;
+
+        uint256 totalAmount = 0;
+        vm.deal(address(this), 5 ether); // Fund test contract with enough ETH
+
+        for (uint256 i = 0; i < amounts.length; i++) {
+            (bool success,) = address(subscription).call{ value: amounts[i] }("");
+            assertTrue(success, "ETH transfer failed");
+            totalAmount += amounts[i];
+
+            // Verify running balance
+            assertEq(address(subscription).balance, totalAmount, "Contract balance should match cumulative sent amount");
+        }
+    }
+
+    function test_ReceiveZeroEther() public {
+        // Try to send 0 ETH
+        (bool success,) = address(subscription).call{ value: 0 }("");
+        assertTrue(success, "Zero ETH transfer should succeed");
+
+        assertEq(address(subscription).balance, 0, "Contract balance should remain zero");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -596,63 +623,17 @@ contract SubscriptionTest is BaseTest {
         _verifyFinalBalances(startingBalances);
     }
 
-    function _setupInitialBalances(uint256 ethBalance, uint256 vabBalance, uint256 usdcBalance) private {
-        deal(address(subscription), ethBalance);
-        deal(address(vab), address(subscription), vabBalance);
-        deal(address(usdc), address(subscription), usdcBalance);
-    }
-
-    function _getBalanceSnapshot() private view returns (BalanceSnapshot memory) {
-        return BalanceSnapshot({
-            subscriptionEth: address(subscription).balance,
-            subscriptionVab: vab.balanceOf(address(subscription)),
-            subscriptionUsdc: usdc.balanceOf(address(subscription)),
-            walletEth: vabWallet.balance,
-            walletVab: vab.balanceOf(vabWallet),
-            walletUsdc: usdc.balanceOf(vabWallet)
-        });
-    }
-
-    function _verifyInitialBalances(
-        BalanceSnapshot memory balances,
-        uint256 ethBalance,
-        uint256 vabBalance,
-        uint256 usdcBalance
-    )
-        private
-        pure
-    {
-        assertEq(balances.subscriptionEth, ethBalance);
-        assertEq(balances.subscriptionVab, vabBalance);
-        assertEq(balances.subscriptionUsdc, usdcBalance);
-    }
-
-    function _setupWithdrawEvents(uint256 ethBalance, uint256 usdcBalance, uint256 vabBalance) private {
-        vm.expectEmit(true, true, false, true);
-        emit AssetWithdrawn(address(0), vabWallet, ethBalance);
-
-        vm.expectEmit(true, true, false, true);
-        emit AssetWithdrawn(address(usdc), vabWallet, usdcBalance);
-
-        vm.expectEmit(true, true, false, true);
-        emit AssetWithdrawn(address(vab), vabWallet, vabBalance);
-    }
-
-    function _verifyFinalBalances(BalanceSnapshot memory startingBalances) private view {
-        // Check subscription balances are zero
-        assertEq(address(subscription).balance, 0);
-        assertEq(vab.balanceOf(address(subscription)), 0);
-        assertEq(usdc.balanceOf(address(subscription)), 0);
-
-        // Check wallet received all assets
-        assertEq(vabWallet.balance, startingBalances.walletEth + startingBalances.subscriptionEth);
-        assertEq(vab.balanceOf(vabWallet), startingBalances.walletVab + startingBalances.subscriptionVab);
-        assertEq(usdc.balanceOf(vabWallet), startingBalances.walletUsdc + startingBalances.subscriptionUsdc);
-    }
-
     /*//////////////////////////////////////////////////////////////
                       SWAPASSETANDSENDTOVABWALLET
     //////////////////////////////////////////////////////////////*/
+
+    function test_swapAssetAndSendToVabWalletShouldRevertIfTokenIsNotAllowed() public {
+        address token = address(0x1);
+        vm.startPrank(default_user);
+        vm.expectRevert("Token is not allowed");
+        subscription.swapAssetAndSendToVabWallet(token);
+        vm.stopPrank();
+    }
 
     function test_swapAssetAndSendToVabWalletShouldRevertIfZeroBalance() public {
         address token = address(0);
@@ -797,5 +778,107 @@ contract SubscriptionTest is BaseTest {
 
         assertEq(subscriptionEndingUsdcBalance, 0, "Subscription contract still has USDC");
         assertEq(vabWalletEndingUsdcBalance, vabWalletStartingUsdcBalance + contractUsdcBalance);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    SWAPALLASSETSANDSENDTOVABWALLET
+    //////////////////////////////////////////////////////////////*/
+
+    function test_swapAllAssetsAndSendToVabWalletShouldRevertIfNoUsdcBalance() public {
+        vm.startPrank(default_user);
+        vm.expectRevert("No USDC balance after swaps");
+        subscription.swapAllAssetsAndSendToVabWallet();
+        vm.stopPrank();
+    }
+
+    function test_swapAllAssetsAndSendToVabWalletShouldSwapAllAssetsAndSendToWallet() public {
+        // Setup initial balances
+        uint256 ethBalance = 10 ether;
+        uint256 vabBalance = 100_000e18;
+        uint256 usdcBalance = 20_000e6;
+
+        _setupInitialBalances(ethBalance, vabBalance, usdcBalance);
+
+        // Capture starting balances
+        BalanceSnapshot memory startingBalances = _getBalanceSnapshot();
+
+        // Verify initial state
+        _verifyInitialBalances(startingBalances, ethBalance, vabBalance, usdcBalance);
+
+        vm.startPrank(default_user);
+        vm.startSnapshotGas("swapAllAssetsAndSendToVabWallet_gas");
+        subscription.swapAllAssetsAndSendToVabWallet();
+        uint256 gasUsed = vm.stopSnapshotGas();
+        console2.log("swapAllAssetsAndSendToVabWallet_gas", gasUsed); // 459_031
+        vm.stopPrank();
+
+        console2.log("startingBalance Usdc vabWallet", startingBalances.walletUsdc);
+        console2.log("usdc vabWallet", usdc.balanceOf(vabWallet));
+
+        // Check subscription balances are zero
+        assertEq(address(subscription).balance, 0);
+        assertEq(vab.balanceOf(address(subscription)), 0);
+        assertEq(usdc.balanceOf(address(subscription)), 0);
+
+        // Check wallet received all USDC
+        assertGt(usdc.balanceOf(vabWallet), startingBalances.walletUsdc);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         PRIVATE TEST FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    function _setupInitialBalances(uint256 ethBalance, uint256 vabBalance, uint256 usdcBalance) private {
+        deal(address(subscription), ethBalance);
+        deal(address(vab), address(subscription), vabBalance);
+        deal(address(usdc), address(subscription), usdcBalance);
+    }
+
+    function _getBalanceSnapshot() private view returns (BalanceSnapshot memory) {
+        return BalanceSnapshot({
+            subscriptionEth: address(subscription).balance,
+            subscriptionVab: vab.balanceOf(address(subscription)),
+            subscriptionUsdc: usdc.balanceOf(address(subscription)),
+            walletEth: vabWallet.balance,
+            walletVab: vab.balanceOf(vabWallet),
+            walletUsdc: usdc.balanceOf(vabWallet)
+        });
+    }
+
+    function _verifyInitialBalances(
+        BalanceSnapshot memory balances,
+        uint256 ethBalance,
+        uint256 vabBalance,
+        uint256 usdcBalance
+    )
+        private
+        pure
+    {
+        assertEq(balances.subscriptionEth, ethBalance);
+        assertEq(balances.subscriptionVab, vabBalance);
+        assertEq(balances.subscriptionUsdc, usdcBalance);
+    }
+
+    function _setupWithdrawEvents(uint256 ethBalance, uint256 usdcBalance, uint256 vabBalance) private {
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(0), vabWallet, ethBalance);
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(usdc), vabWallet, usdcBalance);
+
+        vm.expectEmit(true, true, false, true);
+        emit AssetWithdrawn(address(vab), vabWallet, vabBalance);
+    }
+
+    function _verifyFinalBalances(BalanceSnapshot memory startingBalances) private view {
+        // Check subscription balances are zero
+        assertEq(address(subscription).balance, 0);
+        assertEq(vab.balanceOf(address(subscription)), 0);
+        assertEq(usdc.balanceOf(address(subscription)), 0);
+
+        // Check wallet received all assets
+        assertEq(vabWallet.balance, startingBalances.walletEth + startingBalances.subscriptionEth);
+        assertEq(vab.balanceOf(vabWallet), startingBalances.walletVab + startingBalances.subscriptionVab);
+        assertEq(usdc.balanceOf(vabWallet), startingBalances.walletUsdc + startingBalances.subscriptionUsdc);
     }
 }
