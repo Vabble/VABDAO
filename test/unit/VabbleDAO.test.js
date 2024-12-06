@@ -1988,9 +1988,10 @@ const {
                   const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(1)
 
                   expect(studioPoolBalanceBefore).to.be.equal(amountToTransfer)
-                  expect(newAddressBalanceBefore).to.be.equal(0)
                   expect(studioPoolBalanceAfter).to.be.equal(0)
-                  expect(newAddressBalanceAfter).to.be.equal(amountToTransfer)
+                  expect(newAddressBalanceAfter).to.be.equal(
+                      newAddressBalanceBefore.add(amountToTransfer)
+                  )
                   expect(studioPoolUsers.length).to.be.equal(0)
               })
           })

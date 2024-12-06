@@ -1,4 +1,5 @@
 node_modules
+.yarn
 
 #Hardhat files
 cache
@@ -10,3 +11,13 @@ deployments
 .vscode
 yarn.lock
 gnosis
+
+out
+report
+cache_forge
+coverage
+broadcast
+deployed_contracts.json
+_audit
+coverage_foundry
+lcov.info
