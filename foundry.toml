@@ -14,8 +14,8 @@ ffi = true
 # via-ir = true
 fs_permissions = [
   { access = "read", path = "./broadcast" },
-  { access = "write", path = "film_data.json" },
-  { access = "read", path = "film_data.json" },
+  { access = "write", path = "./data" },                     # Create a data directory
+  { access = "read", path = "./data/film_data.json" },
 ]
 
 [profile.lite]

@@ -11,12 +11,15 @@ import "lib/forge-std/src/StdJson.sol";
 contract FilmMigration is Script {
     using stdJson for string;
 
-    address constant contractAddress = address(0xBF6fd4b7876036E12d79A502f07c0e451f2e264a);
+    address constant contractAddress = address(0x0e8a8B0b4DaA10d9FfB2D9D5089d08341bEC2d1E);
     VabbleDAO vabbleDAO = VabbleDAO(payable(contractAddress));
 
     function run() public {
-        string memory root = vm.readFile("film_data.json");
-        uint256 length = 33;
+        string memory root = vm.readFile("./data/film_data.json");
+        revert("SET THE LENGTH CORRECTLY AND REMOVE THIS LINE");
+        //TODO: make this dynamic
+        //!!! this must match the number of films in the film_data.json file !!!
+        uint256 length = 47;
 
         IVabbleDAO.Film[] memory films = new IVabbleDAO.Film[](length);
 
