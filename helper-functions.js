@@ -225,6 +225,7 @@ const deployAndInitAllContracts = async () => {
             ownable.address,
             uniHelper.address,
             property.address,
+            stakingPool.address,
             [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
         )
 
