@@ -8,6 +8,7 @@ import "../libraries/Helper.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IProperty.sol";
 import "../interfaces/IOwnablee.sol";
+import "../interfaces/IStakingPool.sol";
 
 contract Subscription is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
@@ -27,6 +28,7 @@ contract Subscription is ReentrancyGuard {
     address private immutable OWNABLE; // Ownablee contract address
     address private immutable UNI_HELPER; // UniHelper contract
     address private immutable DAO_PROPERTY; // Property contract
+    address private immutable STAKING_POOL; // StakingPool contract
 
     address private immutable USDC_TOKEN;
     address private immutable VAB_TOKEN;
@@ -71,15 +73,23 @@ contract Subscription is ReentrancyGuard {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _ownable, address _uniHelper, address _property, uint256[] memory _discountPercents) {
+    constructor(
+        address _ownable,
+        address _uniHelper,
+        address _property,
+        address _stakingPool,
+        uint256[] memory _discountPercents
+    ) {
         require(_ownable != address(0), "ownableContract: zero address");
         require(_uniHelper != address(0), "uniHelperContract: zero address");
         require(_property != address(0), "daoProperty: zero address");
         require(_discountPercents.length == 3, "discountList: bad length");
+        require(_stakingPool != address(0), "stakingPool: zero address");
 
         OWNABLE = _ownable;
         UNI_HELPER = _uniHelper;
         DAO_PROPERTY = _property;
+        STAKING_POOL = _stakingPool;
         discountList = _discountPercents;
 
         USDC_TOKEN = IOwnablee(_ownable).USDC_TOKEN();
@@ -87,7 +97,7 @@ contract Subscription is ReentrancyGuard {
         VAB_WALLET = IOwnablee(_ownable).VAB_WALLET();
     }
 
-    receive() external payable { }
+    receive() external payable {}
 
     /*//////////////////////////////////////////////////////////////
                                 EXTERNAL
@@ -117,7 +127,10 @@ contract Subscription is ReentrancyGuard {
         uint256 totalUsdcBalance = IERC20(USDC_TOKEN).balanceOf(address(this));
         uint256 totalVabBalance = IERC20(VAB_TOKEN).balanceOf(address(this));
 
-        require(totalEthBalance > 0 || totalUsdcBalance > 0 || totalVabBalance > 0, "Nothing to withdraw");
+        require(
+            totalEthBalance > 0 || totalUsdcBalance > 0 || totalVabBalance > 0,
+            "Nothing to withdraw"
+        );
 
         if (totalEthBalance > 0) {
             Helper.safeTransferETH(VAB_WALLET, totalEthBalance);
@@ -136,7 +149,10 @@ contract Subscription is ReentrancyGuard {
     }
 
     function swapAssetAndSendToVabWallet(address token) external nonReentrant {
-        require(token == USDC_TOKEN || token == address(0) || token == VAB_TOKEN, "Token is not allowed");
+        require(
+            token == USDC_TOKEN || token == address(0) || token == VAB_TOKEN,
+            "Token is not allowed"
+        );
 
         uint256 amount;
 
@@ -223,11 +239,7 @@ contract Subscription is ReentrancyGuard {
     function getExpectedSubscriptionAmount(
         address _token,
         uint256 _period
-    )
-        public
-        view
-        returns (uint256 expectedAmount_)
-    {
+    ) public view returns (uint256 expectedAmount_) {
         require(_period != 0, "getExpectedSubscriptionAmount: Zero period");
 
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
@@ -242,16 +254,25 @@ contract Subscription is ReentrancyGuard {
         }
 
         if (discount > 0) {
-            scriptAmount = scriptAmount * (100 - discount) * PERCENT_SCALING_FACTOR / PRECISION_FACTOR;
+            scriptAmount =
+                (scriptAmount * (100 - discount) * PERCENT_SCALING_FACTOR) /
+                PRECISION_FACTOR;
         }
 
         if (_token == VAB_TOKEN) {
-            expectedAmount_ =
-                IUniHelper(UNI_HELPER).expectedAmount((scriptAmount * PERCENT40) / PRECISION_FACTOR, USDC_TOKEN, _token);
+            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(
+                (scriptAmount * PERCENT40) / PRECISION_FACTOR,
+                USDC_TOKEN,
+                _token
+            );
         } else if (_token == USDC_TOKEN) {
             expectedAmount_ = scriptAmount;
         } else {
-            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
+            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(
+                scriptAmount,
+                USDC_TOKEN,
+                _token
+            );
         }
     }
 
@@ -261,7 +282,10 @@ contract Subscription is ReentrancyGuard {
 
     function _validateAndGetAmount(address _token, uint256 _period) private view returns (uint256) {
         if (_token != VAB_TOKEN && _token != address(0)) {
-            require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset");
+            require(
+                IOwnablee(OWNABLE).isDepositAsset(_token),
+                "activeSubscription: not allowed asset"
+            );
         }
         return getExpectedSubscriptionAmount(_token, _period);
     }
@@ -273,12 +297,14 @@ contract Subscription is ReentrancyGuard {
                 Helper.safeTransferETH(msg.sender, msg.value - expectedAmount);
             }
         } else {
-            Helper.safeTransferFrom(_token, msg.sender, address(this), expectedAmount);
+            // Deposit VAB to StakingPool for the subscriber
+            Helper.safeApprove(_token, STAKING_POOL, expectedAmount);
+            IStakingPool(STAKING_POOL).depositVABTo(msg.sender, expectedAmount);
         }
     }
 
     function _handleSwapsAndTransfers(address _token, uint256 expectedAmount) private {
-        uint256 amount60 = expectedAmount * PERCENT60 / PRECISION_FACTOR;
+        uint256 amount60 = (expectedAmount * PERCENT60) / PRECISION_FACTOR;
 
         if (_token == address(0)) {
             Helper.safeTransferETH(UNI_HELPER, amount60);
@@ -289,7 +315,9 @@ contract Subscription is ReentrancyGuard {
         }
 
         // Swap 60 % ETH / USDC => VAB and send it to the user
-        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(abi.encode(amount60, _token, VAB_TOKEN));
+        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(
+            abi.encode(amount60, _token, VAB_TOKEN)
+        );
         // TODO: This should go to the streaming balance of the user
         Helper.safeTransfer(VAB_TOKEN, VAB_WALLET, vabAmount);
 
