@@ -318,8 +318,9 @@ contract Subscription is ReentrancyGuard {
         uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(
             abi.encode(amount60, _token, VAB_TOKEN)
         );
-        // TODO: This should go to the streaming balance of the user
-        Helper.safeTransfer(VAB_TOKEN, VAB_WALLET, vabAmount);
+        // Deposit VAB to StakingPool for the subscriber
+        Helper.safeApprove(_token, STAKING_POOL, vabAmount);
+        IStakingPool(STAKING_POOL).depositVABTo(msg.sender, vabAmount);
 
         if (_token == USDC_TOKEN) {
             // @follow-up : should we send the total usdc balance of the contract ?
