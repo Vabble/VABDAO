@@ -27,5 +27,5 @@ interface IStakingPool {
 
     function depositVAB(uint256 amount) external;
 
-    function depositVAB(address subscriber, uint256 amount) external;
+    function depositVABTo(address subscriber, uint256 amount) external;
 }

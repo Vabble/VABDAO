@@ -506,11 +506,11 @@ contract StakingPool is ReentrancyGuard {
     // =================== Customer deposit/withdraw VAB START =================
     /// @notice Deposit VAB token from customer for renting the films
     function depositVAB(uint256 _amount) external onlyNormal nonReentrant {
-        depositVAB(msg.sender, _amount);
+        depositVABTo(msg.sender, _amount);
     }
 
     // Main implementation with subscriber parameter
-    function depositVAB(address subscriber, uint256 _amount) public onlyNormal nonReentrant {
+    function depositVABTo(address subscriber, uint256 _amount) public onlyNormal nonReentrant {
         require(subscriber != address(0), "dVAB: zero address");
         require(_amount > 0, "dVAB: zero amount");
 

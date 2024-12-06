@@ -91,7 +91,7 @@ contract Subscription is ReentrancyGuard {
 
             // Deposit VAB to StakingPool for the subscriber
             Helper.safeApprove(vabToken, STAKING_POOL, expectAmount);
-            IStakingPool(STAKING_POOL).depositVAB(msg.sender, expectAmount);
+            IStakingPool(STAKING_POOL).depositVABTo(msg.sender, expectAmount);
         }
         // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC)
         else {
@@ -103,7 +103,7 @@ contract Subscription is ReentrancyGuard {
             uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             // Deposit VAB to StakingPool for the subscriber
             Helper.safeApprove(vabToken, STAKING_POOL, vabAmount);
-            IStakingPool(STAKING_POOL).depositVAB(msg.sender, vabAmount);
+            IStakingPool(STAKING_POOL).depositVABTo(msg.sender, vabAmount);
 
             if (_token == usdcToken) {
                 usdcAmount = expectAmount - amount60;
