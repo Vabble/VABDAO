@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../interfaces/IUniHelper.sol";
 import "../interfaces/IOwnablee.sol";
 import "../libraries/Helper.sol";
-import "./VabbleNFT.sol";
+import "./VabbleNFT_.sol";
 
 /**
  * @title FactorySubNFT Contract
@@ -19,7 +19,7 @@ import "./VabbleNFT.sol";
  *      and asset management.
  *
  */
-contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
+contract FactorySubNFT_ is IERC721Receiver, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/
@@ -65,8 +65,8 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     /// @notice Address of the deployed subscription NFT contract
     address public subNFTAddress;
 
-    /// @dev Instance of the VabbleNFT contract used for subscription NFTs
-    VabbleNFT private subNFTContract;
+    /// @dev Instance of the VabbleNFT_ contract used for subscription NFTs
+    VabbleNFT_ private subNFTContract;
 
     /// @notice Base URI for the subscription NFTs
     string public baseUri;
@@ -220,7 +220,7 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
      * @param _symbol Symbol of the new NFT contract.
      */
     function deploySubNFTContract(string memory _name, string memory _symbol) external onlyAuditor nonReentrant {
-        subNFTContract = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
+        subNFTContract = new VabbleNFT_(baseUri, collectionUri, _name, _symbol, address(this));
 
         subNFTAddress = address(subNFTContract);
 

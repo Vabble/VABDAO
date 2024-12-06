@@ -44,7 +44,7 @@ import "../libraries/Helper.sol";
  */
 
 //@audit q: Why is this not inheriting from it's interface ?
-contract VabbleDAO is ReentrancyGuard {
+contract VabbleDAO_ is ReentrancyGuard {
     using Counters for Counters.Counter;
 
     /*//////////////////////////////////////////////////////////////

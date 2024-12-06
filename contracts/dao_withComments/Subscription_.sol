@@ -16,7 +16,7 @@ import "../interfaces/IOwnablee.sol";
  * The Auditor can add discount percentage for different subscription periods.
  * We allow subscriptions for (1, 3, 6, 12 months).
  */
-contract Subscription is ReentrancyGuard {
+contract Subscription_ is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/

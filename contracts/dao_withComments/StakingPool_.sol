@@ -44,7 +44,7 @@ import "../libraries/Arrays.sol";
  */
 
 //@audit q: Why is this not inheriting from it's interface ?
-contract StakingPool is ReentrancyGuard {
+contract StakingPool_ is ReentrancyGuard {
     using Counters for Counters.Counter;
     using Arrays for uint256[];
 

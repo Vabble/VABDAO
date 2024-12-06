@@ -76,13 +76,26 @@ const fundAndApproveAccounts = async ({
 }) => {
     try {
         console.log("Funding and Approving accounts...")
-        // if (accounts.length > 0) {
-        //     for (const account of accounts) {
-        //         await vabTokenContract.connect(accounts[0]).faucet(VAB_FAUCET_AMOUNT);
-        //         await usdcTokenContract.connect(accounts[0]).faucet(USDC_FAUCET_AMOUNT);
-        //     }
-        // }
+
         for (let i = 1; i < accounts.length; i++) {
+            // Reset balance to ensure consistent state
+            await vabTokenContract
+                .connect(accounts[i])
+                .transfer(
+                    accounts[0].address,
+                    await vabTokenContract.balanceOf(accounts[i].address),
+                    { from: accounts[i].address }
+                )
+
+            await usdcTokenContract
+                .connect(accounts[i])
+                .transfer(
+                    accounts[0].address,
+                    await usdcTokenContract.balanceOf(accounts[i].address),
+                    { from: accounts[i].address }
+                )
+
+            // Transfer the required faucet amount
             await vabTokenContract
                 .connect(accounts[0])
                 .transfer(accounts[i].address, VAB_FAUCET_AMOUNT, { from: accounts[0].address })
@@ -113,17 +126,37 @@ const fundAndApproveAccounts = async ({
 const deployAndInitAllContracts = async () => {
     try {
         //? contract factories
-        const vabbleDAOFactory = await ethers.getContractFactory("VabbleDAO")
-        const vabbleFundFactory = await ethers.getContractFactory("VabbleFund")
-        const uniHelperFactory = await ethers.getContractFactory("UniHelper")
-        const voteFactory = await ethers.getContractFactory("Vote")
-        const propertyFactory = await ethers.getContractFactory("Property")
-        const factoryFilmNFTFactory = await ethers.getContractFactory("FactoryFilmNFT")
-        const factoryTierNFTFactory = await ethers.getContractFactory("FactoryTierNFT")
-        const factorySubNFTFactory = await ethers.getContractFactory("FactorySubNFT")
-        const ownableFactory = await ethers.getContractFactory("Ownablee")
-        const subscriptionFactory = await ethers.getContractFactory("Subscription")
-        const stakingPoolFactory = await ethers.getContractFactory("StakingPool")
+        const vabbleDAOFactory = await ethers.getContractFactory(
+            "contracts/dao/VabbleDAO.sol:VabbleDAO"
+        )
+        const vabbleFundFactory = await ethers.getContractFactory(
+            "contracts/dao/VabbleFund.sol:VabbleFund"
+        )
+        const uniHelperFactory = await ethers.getContractFactory(
+            "contracts/dao/UniHelper.sol:UniHelper"
+        )
+        const voteFactory = await ethers.getContractFactory("contracts/dao/Vote.sol:Vote")
+        const propertyFactory = await ethers.getContractFactory(
+            "contracts/dao/Property.sol:Property"
+        )
+        const factoryFilmNFTFactory = await ethers.getContractFactory(
+            "contracts/dao/FactoryFilmNFT.sol:FactoryFilmNFT"
+        )
+        const factoryTierNFTFactory = await ethers.getContractFactory(
+            "contracts/dao/FactoryTierNFT.sol:FactoryTierNFT"
+        )
+        const factorySubNFTFactory = await ethers.getContractFactory(
+            "contracts/dao/FactorySubNFT.sol:FactorySubNFT"
+        )
+        const ownableFactory = await ethers.getContractFactory(
+            "contracts/dao/Ownablee.sol:Ownablee"
+        )
+        const subscriptionFactory = await ethers.getContractFactory(
+            "contracts/dao/Subscription.sol:Subscription"
+        )
+        const stakingPoolFactory = await ethers.getContractFactory(
+            "contracts/dao/StakingPool.sol:StakingPool"
+        )
 
         //? get accounts
         const [deployer, dev, auditor, staker1, staker2] = await ethers.getSigners()
@@ -156,8 +189,8 @@ const deployAndInitAllContracts = async () => {
         const uniHelper = await uniHelperFactory.deploy(
             UNISWAP_FACTORY_ADDRESS,
             UNISWAP_ROUTER_ADDRESS,
-            // SUSHISWAP_FACTORY_ADDRESS,
-            // SUSHISWAP_ROUTER_ADDRESS,
+            SUSHISWAP_FACTORY_ADDRESS,
+            SUSHISWAP_ROUTER_ADDRESS,
             ownable.address
         )
 
@@ -203,6 +236,7 @@ const deployAndInitAllContracts = async () => {
             ownable.address,
             uniHelper.address,
             property.address,
+            stakingPool.address,
             [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
         )
 

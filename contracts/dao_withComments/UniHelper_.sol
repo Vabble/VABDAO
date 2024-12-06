@@ -32,7 +32,7 @@ import "../libraries/Helper.sol";
  * @dev The contract is designed to be non-upgradable with fixed addresses for routers and factories,
  * ensuring predictable behavior and security of asset swaps.
  */
-contract UniHelper is IUniHelper, ReentrancyGuard {
+contract UniHelper_ is IUniHelper, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/

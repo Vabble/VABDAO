@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  * This contract manages the minting, transferring, and metadata retrieval of Vabble NFTs (Non-Fungible Tokens).
  * It supports a base URI for token metadata and a collection URI for overall contract metadata.
  */
-contract VabbleNFT is ERC2981, ERC721Enumerable, ReentrancyGuard {
+contract VabbleNFT_ is ERC2981, ERC721Enumerable, ReentrancyGuard {
     using Counters for Counters.Counter;
     using Strings for uint256;
 

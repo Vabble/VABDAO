@@ -8,7 +8,7 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVabbleFund.sol";
 import "../interfaces/IFactoryFilmNFT.sol";
 import "../libraries/Helper.sol";
-import "./VabbleNFT.sol";
+import "./VabbleNFT_.sol";
 
 /**
  * @title FactoryFilmNFT
@@ -18,7 +18,7 @@ import "./VabbleNFT.sol";
  * funding for a film is fully raised. The contract integrates with VabbleDAO and
  * VabbleFund contracts to validate ownership, funding status, and other parameters.
  */
-contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
+contract FactoryFilmNFT_ is IFactoryFilmNFT, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/
@@ -75,7 +75,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
     mapping(address => address[]) public studioNFTAddressList;
 
     /// @notice Mapping to store deployed VabbleNFT contracts for each film ID.
-    mapping(uint256 => VabbleNFT) public filmNFTContract;
+    mapping(uint256 => VabbleNFT_) public filmNFTContract;
 
     /// @dev Mapping to store a list of token IDs minted for each film ID.
     mapping(uint256 => uint256[]) private filmNFTTokenList;
@@ -240,7 +240,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
         require(mintInfo[_filmId].nft == address(0), "deployNFT: already deployed for film");
 
         //@audit-issue -low who tf names his variable "t" ????
-        VabbleNFT t = new VabbleNFT(baseUri, collectionUri, _name, _symbol, address(this));
+        VabbleNFT_ t = new VabbleNFT_(baseUri, collectionUri, _name, _symbol, address(this));
         filmNFTContract[_filmId] = t;
 
         Mint storage mInfo = mintInfo[_filmId];
@@ -385,7 +385,7 @@ contract FactoryFilmNFT is IFactoryFilmNFT, ReentrancyGuard {
      * @param _filmId ID of the film for which the NFT is being minted.
      */
     function __mint(uint256 _filmId) private {
-        VabbleNFT t = filmNFTContract[_filmId];
+        VabbleNFT_ t = filmNFTContract[_filmId];
         uint256 tokenId = t.mintTo(msg.sender);
 
         filmNFTTokenList[_filmId].push(tokenId);

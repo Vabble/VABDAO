@@ -28,7 +28,7 @@ import "../libraries/Helper.sol";
  * @dev It includes features for checking film funding status, managing investor lists, handling asset transfers,
  * and ensuring compliance with film-specific funding conditions such as minimum and maximum deposit amounts.
  */
-contract VabbleFund is IVabbleFund, ReentrancyGuard {
+contract VabbleFund_ is IVabbleFund, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/

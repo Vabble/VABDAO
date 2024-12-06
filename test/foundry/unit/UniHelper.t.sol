@@ -4,9 +4,9 @@ pragma solidity ^0.8.4;
 import { BaseTest, console2 } from "../utils/BaseTest.sol";
 import { UniHelper } from "../../../contracts/dao/UniHelper.sol";
 import { HelperConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
-import "../../../contracts/interfaces/uniswap-v2/IUniswapV2Router02.sol";
-import "../../../contracts/interfaces/uniswap-v2/IUniswapV2Pair.sol";
-import "../../../contracts/interfaces/uniswap-v2/IUniswapV2Factory.sol";
+import "../interfaces/uniswap-v2/IUniswapV2Router02.sol";
+import "../interfaces/uniswap-v2/IUniswapV2Pair.sol";
+import "../interfaces/uniswap-v2/IUniswapV2Factory.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract UniHelperTest is BaseTest {
@@ -187,74 +187,73 @@ contract UniHelperTest is BaseTest {
     }
 
     function test_compareETHtoTokenSwap() public {
-        uint256 depositAmount = 0.1 ether;
         NetworkConfig memory config = getActiveConfig();
         IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
+        vm.startPrank(address(vabbleDAO));
+        vm.deal(address(vabbleDAO), 0.2 ether); // Providing ETH for both swaps
 
-        // Setup paths for ETH -> VAB and VAB -> ETH
+        // First perform and validate the router swap
+        (uint256 routerOutput, uint256 ethSpentRouter, uint256 vabGainedRouter) = _performRouterSwap(router, 0.1 ether);
+
+        // Then perform and validate the helper swap
+        (uint256 helperOutput, uint256 ethSpentHelper, uint256 vabGainedHelper) = _performHelperSwap(0.1 ether);
+
+        // console2.log("routerOutput", routerOutput);
+        // console2.log("ethSpentRouter", ethSpentRouter);
+        // console2.log("vabGainedRouter", vabGainedRouter);
+
+        // console2.log("helperOutput", helperOutput);
+        // console2.log("ethSpentHelper", ethSpentHelper);
+        // console2.log("vabGainedHelper", vabGainedHelper);
+
+        // Compare results
+        assertApproxEqRel(helperOutput, routerOutput, 0.01e18, "Swap outputs should be within 1%");
+        assertApproxEqRel(ethSpentRouter, ethSpentHelper, 0.01e18, "ETH spent should match");
+        assertApproxEqRel(vabGainedRouter, vabGainedHelper, 0.01e18, "VAB gained should match");
+
+        vm.stopPrank();
+    }
+
+    function _performRouterSwap(
+        IUniswapV2Router02 router,
+        uint256 amount
+    )
+        internal
+        returns (uint256 output, uint256 ethSpent, uint256 vabGained)
+    {
         address[] memory path = new address[](2);
         path[0] = router.WETH();
         path[1] = address(vab);
-        uint256 minOutput = router.getAmountsOut(depositAmount, path)[1];
 
-        address[] memory reversePath = new address[](2);
-        reversePath[0] = address(vab);
-        reversePath[1] = router.WETH();
-
-        // Execute swaps
-        vm.startPrank(address(vabbleDAO));
-        vm.deal(address(vabbleDAO), depositAmount * 2); // Double for both swaps
-
-        // Track initial balances
         uint256 initialETH = address(vabbleDAO).balance;
         uint256 initialVAB = vab.balanceOf(address(vabbleDAO));
 
-        // *** Direct Router Swap (ETH -> VAB) ***
-        uint256 routerOutput = router.swapExactETHForTokens{ value: depositAmount }(
-            minOutput, path, address(vabbleDAO), block.timestamp + 1
+        output = router.swapExactETHForTokens{ value: amount }(
+            0, // Accept any amount of tokens
+            path,
+            address(vabbleDAO),
+            block.timestamp + 1
         )[1];
 
-        uint256 ethAfterFirstSwap = address(vabbleDAO).balance;
-        uint256 vabAfterFirstSwap = vab.balanceOf(address(vabbleDAO));
+        ethSpent = initialETH - address(vabbleDAO).balance;
+        vabGained = vab.balanceOf(address(vabbleDAO)) - initialVAB;
+    }
 
-        // Validate balance changes after the first swap
-        uint256 ethSpentRouterSwap = initialETH - ethAfterFirstSwap;
-        uint256 vabGainedRouterSwap = vabAfterFirstSwap - initialVAB;
+    function _performHelperSwap(uint256 amount)
+        internal
+        returns (uint256 output, uint256 ethSpent, uint256 vabGained)
+    {
+        uint256 initialETH = address(vabbleDAO).balance;
+        uint256 initialVAB = vab.balanceOf(address(vabbleDAO));
 
-        // // *** Reverse Swap (VAB -> ETH) ***
-        // vab.approve(address(router), routerOutput);
-        // uint256 minEthOutput = router.getAmountsOut(routerOutput, reversePath)[1];
-        // router.swapExactTokensForETH(routerOutput, minEthOutput, reversePath, address(vabbleDAO), block.timestamp +
-        // 1);
-
-        // *** Helper Swap ***
-        uint256 initialEthHelperSwap = address(vabbleDAO).balance;
-        uint256 initialVabHelperSwap = vab.balanceOf(address(vabbleDAO));
-
-        (bool sent,) = address(uniHelper).call{ value: depositAmount }("");
+        (bool sent,) = address(uniHelper).call{ value: amount }("");
         require(sent, "Transfer to uniHelper failed");
 
-        bytes memory swapArgs = abi.encode(depositAmount, address(0), address(vab));
-        uint256 helperOutput = uniHelper.swapAsset(swapArgs);
+        bytes memory swapArgs = abi.encode(amount, address(0), address(vab));
+        output = uniHelper.swapAsset(swapArgs);
 
-        uint256 finalEthHelperSwap = address(vabbleDAO).balance;
-        uint256 finalVabHelperSwap = vab.balanceOf(address(vabbleDAO));
-
-        // Validate balance changes after the helper swap
-        uint256 ethSpentHelperSwap = initialEthHelperSwap - finalEthHelperSwap;
-        uint256 vabGainedHelperSwap = finalVabHelperSwap - initialVabHelperSwap;
-
-        // Compare results with small tolerance for price impact
-        // Because:
-        // Pool ratio changes
-        // Trading fees (0.3% per swap)
-        // Price impact (larger for smaller liquidity pools)
-        assertApproxEqRel(helperOutput, routerOutput, 0.01e18, "Swap outputs should be within 1%");
-
-        // Compare ETH and VAB balances
-        assertApproxEqRel(ethSpentRouterSwap, ethSpentHelperSwap, 0.01e18, "ETH spent should match");
-        assertApproxEqRel(vabGainedRouterSwap, vabGainedHelperSwap, 0.01e18, "VAB gained should match");
-        vm.stopPrank();
+        ethSpent = initialETH - address(vabbleDAO).balance;
+        vabGained = vab.balanceOf(address(vabbleDAO)) - initialVAB;
     }
 
     function test_compareTokenToETHSwap() public {

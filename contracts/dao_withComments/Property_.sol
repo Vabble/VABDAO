@@ -54,7 +54,7 @@ import "../libraries/Helper.sol";
  */
 
 //@audit q: Why is this not inheriting from it's interface ?
-contract Property is ReentrancyGuard {
+contract Property_ is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/
