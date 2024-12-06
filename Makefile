@@ -57,17 +57,17 @@ NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KE
 ETHERSCAN_API_KEY := $(API_KEY_ETHERSCAN)
 CHAIN_ID := 31337
 
-ifeq ($(findstring --network base_sepolia,$(ARGS)),--network base_sepolia)
-	CHAIN_ID := 84532
-	NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_SEPOLIA_RPC_URL)
-	ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
+ifeq ($(ARGS),--network base)
+    CHAIN_ID := 8453
+    NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_RPC_URL)
+    ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
 endif
 
-# ifeq ($(findstring --network base,$(ARGS)),--network base)
-# 	CHAIN_ID := 8453
-# 	NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_RPC_URL)
-# 	ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
-# endif
+ifeq ($(ARGS),--network base_sepolia)
+    CHAIN_ID := 84532
+    NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_SEPOLIA_RPC_URL)
+    ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
+endif
 
 # run this with: make deploy ARGS="--network base_sepolia"
 deploy:
@@ -85,6 +85,7 @@ get-deployed-contracts-2:
 	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "runSecondBatch()" --chain-id $(CHAIN_ID)
 
 # Get all deployed contracts (runs both batches)
+# make get-deployed-contracts ARGS="--network base_sepolia"
 get-deployed-contracts: get-deployed-contracts-1 
 	@echo "\nFirst batch complete. Starting second batch...\n"
 	@make get-deployed-contracts-2

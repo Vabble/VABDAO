@@ -54,6 +54,7 @@ contract HelperConfig is Script {
 
         // ⚠️ Add more configs for other networks here ⚠️
         networkConfigs[BASE_SEPOLIA_CHAIN_ID] = getBaseSepoliaConfig();
+        // networkConfigs[BASE__CHAIN_ID] = getBaseConfig();
     }
 
     function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
@@ -98,6 +99,11 @@ contract HelperConfig is Script {
             depositAssets: _depositAssets
         });
     }
+
+    // function getBaseConfig() public view returns (NetworkConfig memory) {
+    //     //TODO: Add the config for the base network
+    //     revert("Not implemented");
+    // }
 
     /*//////////////////////////////////////////////////////////////
                               LOCAL CONFIG
