@@ -166,7 +166,12 @@ contract DeployerScript is Script {
             address(contracts.vabbleFund)
         );
         deployFactoryTierNFT(address(contracts.ownablee), address(contracts.vabbleDAO), address(contracts.vabbleFund));
-        deploySubscription(address(contracts.ownablee), address(contracts.uniHelper), address(contracts.property));
+        deploySubscription(
+            address(contracts.ownablee),
+            address(contracts.uniHelper),
+            address(contracts.property),
+            address(contracts.stakingPool)
+        );
     }
 
     /**
@@ -263,7 +268,14 @@ contract DeployerScript is Script {
         contracts.factoryTierNFT = new FactoryTierNFT(_ownablee, _vabbleDAO, _vabbleFund);
     }
 
-    function deploySubscription(address _ownablee, address _uniHelper, address _property) internal {
-        contracts.subscription = new Subscription(_ownablee, _uniHelper, _property, discountPercents);
+    function deploySubscription(
+        address _ownablee,
+        address _uniHelper,
+        address _property,
+        address stakingPool
+    )
+        internal
+    {
+        contracts.subscription = new Subscription(_ownablee, _uniHelper, _property, stakingPool, discountPercents);
     }
 }
