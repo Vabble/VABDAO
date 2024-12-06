@@ -297,9 +297,7 @@ contract Subscription is ReentrancyGuard {
                 Helper.safeTransferETH(msg.sender, msg.value - expectedAmount);
             }
         } else {
-            // Deposit VAB to StakingPool for the subscriber
-            Helper.safeApprove(_token, STAKING_POOL, expectedAmount);
-            IStakingPool(STAKING_POOL).depositVABTo(msg.sender, expectedAmount);
+            Helper.safeTransferFrom(_token, msg.sender, address(this), expectedAmount);
         }
     }
 
