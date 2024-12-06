@@ -526,8 +526,8 @@ contract StakingPool is ReentrancyGuard {
         _depositVAB(subscriber, _amount);
     }
 
-    // Internal function to handle the core deposit logic
-    function _depositVAB(address subscriber, uint256 _amount) internal {
+    // function to handle the core deposit logic
+    function _depositVAB(address subscriber, uint256 _amount) private {
         require(subscriber != address(0), "dVAB: zero address");
         require(_amount > 0, "dVAB: zero amount");
 
