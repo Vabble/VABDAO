@@ -6,17 +6,6 @@ module.exports = {
     printWidth: 100,
     overrides: [
         {
-            files: "*.sol",
-            options: {
-                bracketSpacing: false,
-                printWidth: 130,
-                tabWidth: 4,
-                useTabs: false,
-                singleQuote: false,
-                explicitTypes: "always",
-            },
-        },
-        {
             files: "*.js",
             options: {
                 tabWidth: 4,
