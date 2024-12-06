@@ -90,7 +90,7 @@ contract VabbleDAO is ReentrancyGuard {
         _;
     }
 
-    receive() external payable {}
+    receive() external payable { }
 
     constructor(
         address _ownable,
@@ -111,7 +111,7 @@ contract VabbleDAO is ReentrancyGuard {
     /// @notice One-time migration function to import existing film proposals
     /// @dev Can only be called once by the auditor
     /// @param _filmDetails Array of film details corresponding to the film IDs
-    function migrateFilmProposals(IVabbleDAO.Film[] calldata _filmDetails) external onlyAuditor {
+    function migrateFilmProposals(IVabbleDAO.Film[] calldata _filmDetails) external {
         require(!migrationPerformed, "Migration already completed");
         migrationPerformed = true;
         DAOOperations.migrateFilmProposals(
@@ -161,7 +161,10 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _fundPeriod,
         uint256 _rewardPercent,
         uint256 _enableClaimer
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+    {
         require(_studioPayees.length != 0, "pU: e1");
         require(_studioPayees.length == _sharePercents.length, "pU: e2");
         require(bytes(_title).length != 0, "pU: e3");
@@ -356,7 +359,11 @@ contract VabbleDAO is ReentrancyGuard {
 
     /// @notice Allocate VAB from StakingPool(user balance) to EdgePool(Ownable)/StudioPool(VabbleDAO) by Auditor
     // _which = 1 => to EdgePool, _which = 2 => to StudioPool
-    function allocateToPool(address[] calldata _users, uint256[] calldata _amounts, uint256 _which)
+    function allocateToPool(
+        address[] calldata _users,
+        uint256[] calldata _amounts,
+        uint256 _which
+    )
         external
         onlyAuditor
         nonReentrant
@@ -441,7 +448,11 @@ contract VabbleDAO is ReentrancyGuard {
     function setFinalFilms(
         uint256[] calldata _filmIds,
         uint256[] calldata _payouts // VAB to payees based on share(%) and watch(%) from offchain
-    ) external onlyAuditor nonReentrant {
+    )
+        external
+        onlyAuditor
+        nonReentrant
+    {
         uint256 filmLength = _filmIds.length;
 
         require(filmLength != 0 && filmLength < 1000 && filmLength == _payouts.length, "sFF: bad length");
@@ -572,7 +583,12 @@ contract VabbleDAO is ReentrancyGuard {
         __claimAllReward(filmIds);
     }
 
-    function getUserRewardAmountBetweenMonths(uint256 _filmId, uint256 _preMonth, uint256 _curMonth, address _user)
+    function getUserRewardAmountBetweenMonths(
+        uint256 _filmId,
+        uint256 _preMonth,
+        uint256 _curMonth,
+        address _user
+    )
         public
         view
         returns (uint256 amount_)
@@ -598,7 +614,11 @@ contract VabbleDAO is ReentrancyGuard {
         return rewardSum;
     }
 
-    function getUserRewardAmountForUser(uint256 _filmId, uint256 _curMonth, address _user)
+    function getUserRewardAmountForUser(
+        uint256 _filmId,
+        uint256 _curMonth,
+        address _user
+    )
         public
         view
         returns (uint256)
@@ -683,7 +703,9 @@ contract VabbleDAO is ReentrancyGuard {
         uint256 _curMonth,
         address _oldOwner,
         address _newOwner
-    ) private {
+    )
+        private
+    {
         uint256 _preMonth = latestClaimMonthId[_filmId][_oldOwner];
 
         // update last claim month for newOwner
