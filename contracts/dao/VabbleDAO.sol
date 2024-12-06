@@ -26,7 +26,6 @@ import "../interfaces/IVabbleDAO.sol";
 import "../interfaces/IVote.sol";
 import "../libraries/DAOOperations.sol";
 
-
 contract VabbleDAO is ReentrancyGuard {
     using Counters for Counters.Counter;
 
