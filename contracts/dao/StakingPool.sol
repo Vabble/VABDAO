@@ -29,7 +29,7 @@ contract StakingPool is ReentrancyGuard {
 
     struct Staker {
         address[] keys;
-        mapping(address => uint256) indexOf;        
+        mapping(address => uint256) indexOf;
     }
 
     struct Stake {
@@ -324,11 +324,12 @@ contract StakingPool is ReentrancyGuard {
     //     count_ = count;
     // }
 
-    function __getProposalVoteCount(address _user, uint256 minIndex, uint256 _start, uint256 _end)
-        public
-        view
-        returns (uint256, uint256, uint256)
-    {
+    function __getProposalVoteCount(
+        address _user,
+        uint256 minIndex,
+        uint256 _start,
+        uint256 _end
+    ) public view returns (uint256, uint256, uint256) {
         uint256 pCount = 0;
         uint256 vCount = 0;
         uint256 pendingVoteCount = 0;
@@ -346,9 +347,9 @@ contract StakingPool is ReentrancyGuard {
                         vCount += 1;
                     } else {
                         // interval is before stake
-                        if (pData.creator == _user || votedTime[_user][pData.proposalID] <= stakeInfo[_user].stakeTime)
-                        { // already vote in previous peorid
-                                // ignore
+                        if (pData.creator == _user || votedTime[_user][pData.proposalID] <= stakeInfo[_user].stakeTime) {
+                            // already vote in previous period
+                            // ignore
                         } else {
                             vCount += 1;
                         }
@@ -395,7 +396,7 @@ contract StakingPool is ReentrancyGuard {
 
             // count all proposals which contains interval [t(i), t(i + 1))]
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
-            (uint256 pCount, uint256 vCount,) = __getProposalVoteCount(_user, minIndex, start, end);
+            (uint256 pCount, uint256 vCount, ) = __getProposalVoteCount(_user, minIndex, start, end);
             amount = __calcRewards(_user, start, end);
 
             if (pCount > 0) {
@@ -427,7 +428,7 @@ contract StakingPool is ReentrancyGuard {
 
             // count all proposals which contains interval [t(i), t(i + 1))]
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
-            (uint256 pCount,, uint256 pendingVoteCount) = __getProposalVoteCount(_user, minIndex, start, end);
+            (uint256 pCount, , uint256 pendingVoteCount) = __getProposalVoteCount(_user, minIndex, start, end);
             amount = __calcRewards(_user, start, end);
 
             if (pCount > 0) {
@@ -451,20 +452,20 @@ contract StakingPool is ReentrancyGuard {
         uint256 rewardPercent = __rewardPercent(si.stakeAmount); // 0.0125*1e8 = 0.0125%
 
         // Get time with accuracy(10**4) from after lockPeriod
-        uint256 period = (endTime - startTime) * 1e4 / 1 days;
-        amount_ = totalRewardAmount * rewardPercent * period / 1e10 / 1e4;
+        uint256 period = ((endTime - startTime) * 1e4) / 1 days;
+        amount_ = (totalRewardAmount * rewardPercent * period) / 1e10 / 1e4;
 
         // If user is film board member, more rewards(25%)
         if (IProperty(DAO_PROPERTY).checkGovWhitelist(2, _user) == 2) {
-            amount_ += amount_ * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+            amount_ += (amount_ * IProperty(DAO_PROPERTY).boardRewardRate()) / 1e10;
         }
     }
 
     // 500 * 1e10 / 1000 = 50*1e8 = 50%
     // 0.025*1e8 * 50*1e8 / 1e10 = 0.0125*1e8 = 0.0125%
     function __rewardPercent(uint256 _stakingAmount) private view returns (uint256 percent_) {
-        uint256 poolPercent = _stakingAmount * 1e10 / totalStakingAmount;
-        percent_ = IProperty(DAO_PROPERTY).rewardRate() * poolPercent / 1e10;
+        uint256 poolPercent = (_stakingAmount * 1e10) / totalStakingAmount;
+        percent_ = (IProperty(DAO_PROPERTY).rewardRate() * poolPercent) / 1e10;
     }
 
     /// @notice Calculate APR(Annual Percentage Rate) for staking/pending rewards
@@ -481,11 +482,11 @@ contract StakingPool is ReentrancyGuard {
 
         // Annual rate = daily rate x period(ex: 365)
         uint256 rewardPercent = __rewardPercent(_stakeAmount); // 0.0125*1e8 = 0.0125%
-        uint256 stakingRewards = totalRewardAmount * rewardPercent * _period / 1e10;
+        uint256 stakingRewards = (totalRewardAmount * rewardPercent * _period) / 1e10;
 
         // If customer is film board member, more rewards(25%)
         if (isBoardMember) {
-            stakingRewards += stakingRewards * IProperty(DAO_PROPERTY).boardRewardRate() / 1e10;
+            stakingRewards += (stakingRewards * IProperty(DAO_PROPERTY).boardRewardRate()) / 1e10;
         }
 
         // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
@@ -495,7 +496,7 @@ contract StakingPool is ReentrancyGuard {
                 pendingRewards = 0;
             } else {
                 uint256 countVal = (_voteCount * 1e4) / _proposalCount;
-                pendingRewards = stakingRewards * countVal / 1e4;
+                pendingRewards = (stakingRewards * countVal) / 1e4;
             }
         }
 
@@ -505,13 +506,18 @@ contract StakingPool is ReentrancyGuard {
     // =================== Customer deposit/withdraw VAB START =================
     /// @notice Deposit VAB token from customer for renting the films
     function depositVAB(uint256 _amount) external onlyNormal nonReentrant {
-        require(msg.sender != address(0), "dVAB: zero address");
+        depositVAB(msg.sender, _amount);
+    }
+
+    // Main implementation with subscriber parameter
+    function depositVAB(address subscriber, uint256 _amount) public onlyNormal nonReentrant {
+        require(subscriber != address(0), "dVAB: zero address");
         require(_amount > 0, "dVAB: zero amount");
 
         Helper.safeTransferFrom(IOwnablee(OWNABLE).PAYOUT_TOKEN(), msg.sender, address(this), _amount);
-        userRentInfo[msg.sender].vabAmount += _amount;
+        userRentInfo[subscriber].vabAmount += _amount;
 
-        emit VABDeposited(msg.sender, _amount);
+        emit VABDeposited(subscriber, _amount);
     }
 
     /// @notice Pending Withdraw VAB token by customer
@@ -624,11 +630,7 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice onlyDAO transfer VAB token to user
-    function sendVAB(address[] calldata _users, address _to, uint256[] calldata _amounts)
-        external
-        onlyDAO
-        returns (uint256)
-    {
+    function sendVAB(address[] calldata _users, address _to, uint256[] calldata _amounts) external onlyDAO returns (uint256) {
         require(_users.length == _amounts.length && _users.length < 1000, "sendVAB: bad array");
         uint256 sum;
         uint256 userLength = _users.length;
@@ -749,7 +751,7 @@ contract StakingPool is ReentrancyGuard {
         uint256 limitPercent = IProperty(DAO_PROPERTY).minStakerCountPercent();
         uint256 minVoteCount = IProperty(DAO_PROPERTY).minVoteCount();
 
-        uint256 limitStakerCount = stakerCount() * limitPercent * 1e4 / 1e10;
+        uint256 limitStakerCount = (stakerCount() * limitPercent * 1e4) / 1e10;
         if (limitStakerCount <= minVoteCount * 1e4) {
             count_ = minVoteCount;
         } else {
@@ -789,16 +791,14 @@ contract StakingPool is ReentrancyGuard {
     }
 
     function __stakerSet(address key) private {
-        if (stakerMap.indexOf[key] > 0) 
-            return;
-            
+        if (stakerMap.indexOf[key] > 0) return;
+
         stakerMap.indexOf[key] = stakerMap.keys.length + 1;
         stakerMap.keys.push(key);
     }
 
     function __stakerRemove(address key) private {
-        if (stakerMap.indexOf[key] == 0) 
-            return;
+        if (stakerMap.indexOf[key] == 0) return;
 
         uint256 index = stakerMap.indexOf[key];
         address lastKey = stakerMap.keys[stakerMap.keys.length - 1];

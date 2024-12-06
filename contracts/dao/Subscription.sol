@@ -88,6 +88,10 @@ contract Subscription is ReentrancyGuard {
             bytes memory swapArgs = abi.encode(expectAmount, _token, usdcToken);
             usdcAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             Helper.safeTransfer(usdcToken, IOwnablee(OWNABLE).VAB_WALLET(), usdcAmount);
+
+            // Deposit VAB to StakingPool for the subscriber
+            Helper.safeApprove(vabToken, STAKING_POOL, expectAmount);
+            IStakingPool(STAKING_POOL).depositVAB(msg.sender, expectAmount);
         }
         // if token != VAB, send VAB(convert token(60%) to VAB) and USDC(convert token(40%) to USDC)
         else {
@@ -99,7 +103,7 @@ contract Subscription is ReentrancyGuard {
             uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(swapArgs);
             // Deposit VAB to StakingPool for the subscriber
             Helper.safeApprove(vabToken, STAKING_POOL, vabAmount);
-            IStakingPool(STAKING_POOL).depositVAB(vabAmount);
+            IStakingPool(STAKING_POOL).depositVAB(msg.sender, vabAmount);
 
             if (_token == usdcToken) {
                 usdcAmount = expectAmount - amount60;
