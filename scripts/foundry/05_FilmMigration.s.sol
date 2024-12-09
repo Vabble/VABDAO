@@ -52,14 +52,7 @@ contract FilmMigration is Script {
         vm.stopBroadcast();
     }
 
-    function parseFilm(
-        string memory root,
-        string memory basePath
-    )
-        internal
-        pure
-        returns (IVabbleDAO.Film memory film)
-    {
+    function parseFilm(string memory root, string memory basePath) public pure returns (IVabbleDAO.Film memory film) {
         film.title = abi.decode(vm.parseJson(root, string(abi.encodePacked(basePath, ".title"))), (string));
         film.description = abi.decode(vm.parseJson(root, string(abi.encodePacked(basePath, ".description"))), (string));
         film.raiseAmount = abi.decode(vm.parseJson(root, string(abi.encodePacked(basePath, ".raiseAmount"))), (uint256));
