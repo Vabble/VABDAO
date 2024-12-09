@@ -93,18 +93,18 @@ contract HelperConfigFork is Script {
         });
 
         ContractConfigFork memory contractConfig = ContractConfigFork({
-            ownablee: 0x10D3a8cFedC6548cB79e67f5b78FD55FbCa88c3F,
-            uniHelper: 0xF78983903aF150E418386A30B73be39807cd08A2,
-            stakingPool: 0x365F1c3334Cb1ae65bF3b80c9Aa7e7daB109286b,
-            vote: 0x465c49Dd2ca7a7E91073FF52073d367bAF4cadc7,
-            property: 0xeB0b8237E4aC910Bd7F7e963c9ABDc7e22818dcd,
-            factoryFilmNFT: 0x05A643A709B239D21899f2b3C2CB580412c6eEdC,
-            factorySubNFT: 0x354F094E07e93459fF8B65c6261Ad9DD3098D9Cb,
-            vabbleFund: 0xE5784e0aD46A68991302E3FB204bDd623CCd6022,
-            vabbleDAO: 0xDE420d5b4e0D7bDDC5c2B20A96318E566AA238Ce,
-            factoryTierNFT: 0x7D287D4280AC484419b1942375bf1E6bBdbC27b9,
-            subscription: 0xBB54c5F4D8b97385552AB9f57d092Eb0B9ED1E1c,
-            helperConfig: 0xE18a016246E1aBaF338908B94961C9f13142612c
+            ownablee: 0xc3a61e5D09aa302c1DE75682DCaC979E01C4eb70,
+            uniHelper: 0xc19D6b2FB3401fa5a8b71c542B1e49936E00E73d,
+            stakingPool: 0x63A2fCF810dDFA705738c677949cB1DDa41E7d7C,
+            vote: 0x3EA874337532D0af1B0A8e7E0192DAd4FB2b5Cf3,
+            property: 0xb0a3CF07A89A38a67bAE9e69fAFD301E6c4B2E4D,
+            factoryFilmNFT: 0x955f0045af5635349297AC87F8B35c01aB67500F,
+            factorySubNFT: 0x3622E5eF88f5f9A3cB6f88A477a68e26219d34EB,
+            vabbleFund: 0xbA77EBA05c6C1a18e657f3ac9caC089D9B8884E7,
+            vabbleDAO: 0x0e8a8B0b4DaA10d9FfB2D9D5089d08341bEC2d1E,
+            factoryTierNFT: 0x8f6BC67d57679E72385b5EA048C8CF4656c7e6A7,
+            subscription: 0x534f0450Ad28bfF12213d84c941e9F3725E0f048,
+            helperConfig: 0x4943e7A10F2F3E92776f61bcF2586B4Fb5675b4F
         });
 
         return FullConfigFork({ networkConfig: networkConfig, contractConfig: contractConfig });

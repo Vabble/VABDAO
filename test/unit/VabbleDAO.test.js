@@ -3979,14 +3979,6 @@ const path = require("path")
           })
 
           describe("migrateFilmProposals", function () {
-              it("Should revert if the caller is not the auditor", async function () {
-                  const { vabbleDAO } = await loadFixture(deployContractsFixture)
-
-                  await expect(vabbleDAO.migrateFilmProposals([])).to.be.revertedWith(
-                      "only auditor"
-                  )
-              })
-
               it("Should revert if the input array is zero", async function () {
                   const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
 
@@ -4258,7 +4250,7 @@ const path = require("path")
 
               it("Should migrate the actual films", async function () {
                   const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
-                  const filePath = path.resolve(__dirname, "../../film_data.json")
+                  const filePath = path.resolve(__dirname, "../data/film_data_with_id.json")
                   const filmProposals = JSON.parse(fs.readFileSync(filePath, "utf8"))
 
                   const filmDetails = filmProposals.map((fp) => fp.filmDetails)

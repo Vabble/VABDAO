@@ -47,7 +47,7 @@ anvil :; anvil -m 'test test test test test test test test test test test junk' 
 
 slither :; slither . --config-file slither.config.json --checklist > ./reports/slither.md
 
-aderyn :; aderyn --src contracts/dao/Subscription.sol --output  ./reports/aderyn.md
+aderyn :; aderyn --src contracts --output  ./reports/aderyn.md
 
 scopefile :; @tree ./contracts/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/ { path[int((length($$0) - length($$2))/2)] = $$2; next } { p = "src"; for(i=2; i<=int((length($$0) - length($$2))/2); i++) if (path[i] != "") p = p "/" path[i]; print p "/" $$2; }' > scope.txt
 
@@ -57,17 +57,17 @@ NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KE
 ETHERSCAN_API_KEY := $(API_KEY_ETHERSCAN)
 CHAIN_ID := 31337
 
-ifeq ($(findstring --network base_sepolia,$(ARGS)),--network base_sepolia)
-	CHAIN_ID := 84532
-	NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_SEPOLIA_RPC_URL)
-	ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
+ifeq ($(ARGS),--network base)
+    CHAIN_ID := 8453
+    NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_RPC_URL)
+    ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
 endif
 
-# ifeq ($(findstring --network base,$(ARGS)),--network base)
-# 	CHAIN_ID := 8453
-# 	NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_RPC_URL)
-# 	ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
-# endif
+ifeq ($(ARGS),--network base_sepolia)
+    CHAIN_ID := 84532
+    NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_SEPOLIA_RPC_URL)
+    ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
+endif
 
 # run this with: make deploy ARGS="--network base_sepolia"
 deploy:
@@ -85,12 +85,17 @@ get-deployed-contracts-2:
 	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "runSecondBatch()" --chain-id $(CHAIN_ID)
 
 # Get all deployed contracts (runs both batches)
+# make get-deployed-contracts ARGS="--network base_sepolia"
 get-deployed-contracts: get-deployed-contracts-1 
 	@echo "\nFirst batch complete. Starting second batch...\n"
 	@make get-deployed-contracts-2
 
 fund-all:
 	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
+
+# make fetch-film-data ARGS="--network base_sepolia"
+fetch-film-data:
+	forge script scripts/foundry/04_FilmProposalDetailsFetcher.s.sol $(NETWORK_ARGS)  --via-ir
 
 # make migrate-films ARGS="--network base_sepolia"
 migrate-films:

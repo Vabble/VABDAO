@@ -59,7 +59,7 @@ contract BaseForkTest is Test {
         createForks();
 
         // Change this if you want to test on other chains
-        vm.selectFork(baseFork);
+        vm.selectFork(baseSepoliaFork);
 
         console2.log(unicode"⚠️You are running tests on live on-chain contracts!");
         console2.log("Chain Id:", block.chainid);
