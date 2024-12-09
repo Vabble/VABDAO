@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/Test.sol";
 import { VabbleDAO } from "../../contracts/dao/VabbleDAO.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../contracts/interfaces/IVabbleDAO.sol";
 import "../../contracts/libraries/Helper.sol";
 import "lib/forge-std/src/StdJson.sol";
@@ -19,18 +20,21 @@ contract FilmMigration is Script {
         string memory inputPath = string.concat("./data/film_data_", blockChainId, ".json");
         string memory root = vm.readFile(inputPath);
 
+        // Try to get the entire array first
+        bytes memory rawArray = vm.parseJson(root, "$");
+        // Then decode it as a dynamic array
+        bytes[] memory array = abi.decode(rawArray, (bytes[]));
+        uint256 length = array.length;
+
         string memory contractAddress = vm.prompt(
             string.concat(
-                "Enter the VabbleDAO contract address you want to migrate films to (Chain ID: ", blockChainId, ")"
+                "Enter the VabbleDAO contract address you want to migrate ",
+                Strings.toString(length),
+                " films to (Chain ID: ",
+                blockChainId,
+                ")"
             )
         );
-
-        //TODO: This should be based on the number of films in the JSON file
-        string memory lengthString =
-            vm.prompt("Enter the number of films to migrate. This must match the number of films in the JSON file!");
-        uint256 length = vm.parseUint(lengthString);
-
-        console2.log("Number of films to migrate:", length);
 
         vabbleDAO = VabbleDAO(payable(vm.parseAddress(contractAddress)));
 
