@@ -93,6 +93,10 @@ get-deployed-contracts: get-deployed-contracts-1
 fund-all:
 	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
 
+# make fetch-film-data ARGS="--network base_sepolia"
+fetch-film-data:
+	forge script scripts/foundry/04_FilmProposalDetailsFetcher.s.sol $(NETWORK_ARGS)  --via-ir
+
 # make migrate-films ARGS="--network base_sepolia"
 migrate-films:
 	@forge script scripts/foundry/05_FilmMigration.s.sol $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast

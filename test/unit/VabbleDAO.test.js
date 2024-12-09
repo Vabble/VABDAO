@@ -4250,7 +4250,7 @@ const path = require("path")
 
               it("Should migrate the actual films", async function () {
                   const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
-                  const filePath = path.resolve(__dirname, "../../film_data_id.json")
+                  const filePath = path.resolve(__dirname, "../data/film_data_with_id.json")
                   const filmProposals = JSON.parse(fs.readFileSync(filePath, "utf8"))
 
                   const filmDetails = filmProposals.map((fp) => fp.filmDetails)

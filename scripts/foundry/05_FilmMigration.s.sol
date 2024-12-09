@@ -11,23 +11,34 @@ import "lib/forge-std/src/StdJson.sol";
 contract FilmMigration is Script {
     using stdJson for string;
 
-    address constant contractAddress = address(0x0e8a8B0b4DaA10d9FfB2D9D5089d08341bEC2d1E);
-    VabbleDAO vabbleDAO = VabbleDAO(payable(contractAddress));
+    VabbleDAO vabbleDAO;
+    string blockChainId;
 
     function run() public {
-        string memory root = vm.readFile("./data/film_data.json");
-        revert("SET THE LENGTH CORRECTLY AND REMOVE THIS LINE");
-        //TODO: make this dynamic
-        //!!! this must match the number of films in the film_data.json file !!!
-        uint256 length = 47;
+        blockChainId = vm.toString(block.chainid);
+        string memory inputPath = string.concat("./data/film_data_", blockChainId, ".json");
+        string memory root = vm.readFile(inputPath);
+
+        string memory contractAddress = vm.prompt(
+            string.concat(
+                "Enter the VabbleDAO contract address you want to migrate films to (Chain ID: ", blockChainId, ")"
+            )
+        );
+
+        //TODO: This should be based on the number of films in the JSON file
+        string memory lengthString =
+            vm.prompt("Enter the number of films to migrate. This must match the number of films in the JSON file!");
+        uint256 length = vm.parseUint(lengthString);
+
+        console2.log("Number of films to migrate:", length);
+
+        vabbleDAO = VabbleDAO(payable(vm.parseAddress(contractAddress)));
 
         IVabbleDAO.Film[] memory films = new IVabbleDAO.Film[](length);
 
         for (uint256 i = 0; i < length; i++) {
             string memory basePath = string(abi.encodePacked("[", vm.toString(i), "]"));
             films[i] = parseFilm(root, basePath);
-            console2.log("Parsed film", i);
-            console2.log("Studio:", films[i].studio);
         }
 
         console2.log("Total Films parsed:", films.length);

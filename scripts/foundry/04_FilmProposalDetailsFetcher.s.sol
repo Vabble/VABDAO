@@ -13,8 +13,7 @@ import "../../contracts/interfaces/IVabbleDAO.sol";
 contract FilmProposalDetailsFetcher is Script {
     using stdJson for string;
 
-    address contractAddress = address(0x368980Cc885DF672A168bDF873B19c1eEB10D5c2);
-    VabbleDAO vabbleDAO = VabbleDAO(payable(contractAddress));
+    VabbleDAO vabbleDAO;
     string private root;
 
     function setUp() public {
@@ -24,6 +23,16 @@ contract FilmProposalDetailsFetcher is Script {
     function run() public {
         console2.log("Chain Id:", block.chainid);
         vm.startBroadcast();
+
+        string memory contractAddress = vm.prompt(
+            string.concat(
+                "Enter the VabbleDAO contract address you want to fetch film data from (Chain ID: ",
+                Strings.toString(block.chainid),
+                ")"
+            )
+        );
+
+        vabbleDAO = VabbleDAO(payable(vm.parseAddress(contractAddress)));
 
         // Get total film count
         uint256 filmCount = vabbleDAO.filmCount();
@@ -71,16 +80,14 @@ contract FilmProposalDetailsFetcher is Script {
             });
 
             // Build the JSON object for each film with filmId
-            string memory filmJson = buildFilmJson(i, film);
+            string memory filmJson = buildFilmJson(film);
             finalJson = string.concat(finalJson, i > 1 ? "," : "", filmJson);
-
-            console2.log("Fetched film:", i);
         }
 
         finalJson = string.concat(finalJson, "]");
 
-        // Write the final JSON to file
-        string memory outputPath = string.concat(root, "/data/film_data.json");
+        // Write the final JSON to file with date
+        string memory outputPath = string.concat(root, "/data/film_data_", Strings.toString(block.chainid), ".json");
         vm.writeFile(outputPath, finalJson);
         console2.log("Data saved to:", outputPath);
 
@@ -88,7 +95,7 @@ contract FilmProposalDetailsFetcher is Script {
     }
 
     // Helper function to generate the JSON structure for each film
-    function buildFilmJson(uint256 filmId, IVabbleDAO.Film memory film) internal pure returns (string memory) {
+    function buildFilmJson(IVabbleDAO.Film memory film) internal pure returns (string memory) {
         // Convert arrays to strings
         string memory sharePercentsStr = "[";
         string memory studioPayeesStr = "[";
