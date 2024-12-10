@@ -405,7 +405,7 @@ contract Property is ReentrancyGuard {
         onlyStaker
         nonReentrant
     {
-        require(_property != 0 && _flag >= 0 && _flag < maxPropertyList.length, "pP: bad value");
+        require(_property != 0 && _flag < maxPropertyList.length, "pP: bad value");
         require(isPropertyWhitelist[_flag][_property] == 0, "pP: already candidate");
         require(minPropertyList[_flag] <= _property && _property <= maxPropertyList[_flag], "pP: invalid");
 
