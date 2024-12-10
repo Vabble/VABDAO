@@ -54,6 +54,11 @@ contract ForkSetUp is BaseForkTest {
         assertEq(ownablee.VAB_WALLET(), 0xD71D56BF0761537B69436D8D16381d78f90B827e);
     }
 
+    function testFork_getStakingPoolAndEdgePoolAmounts() public view {
+        assertEq(stakingPool.totalRewardAmount(), 500_000_000_000_000_000_000_000);
+        assertEq(vab.balanceOf(address(ownablee)), 100_000_000_000_000_000_000_000);
+    }
+
     function test_deployPropertyValuesAgainstFixedValues() public view {
         // Time periods
         assertEq(property.filmVotePeriod(), 600, "filmVotePeriod doesn't match");
