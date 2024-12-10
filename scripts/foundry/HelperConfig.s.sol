@@ -14,8 +14,6 @@ struct NetworkConfig {
     address vabbleWallet;
     address uniswapFactory;
     address uniswapRouter;
-    address sushiSwapFactory;
-    address sushiSwapRouter;
     uint256[] discountPercents;
     address[] depositAssets;
 }
@@ -130,8 +128,6 @@ contract HelperConfig is Script {
             vabbleWallet: address(0),
             uniswapFactory: address(0),
             uniswapRouter: address(0),
-            sushiSwapFactory: address(0),
-            sushiSwapRouter: address(0),
             discountPercents: discountPercents,
             depositAssets: _depositAssets
         });

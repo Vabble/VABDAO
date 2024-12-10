@@ -47,8 +47,6 @@ contract BaseForkTest is Test {
     address internal vabbleWallet;
     address internal uniswapFactory;
     address internal uniswapRouter;
-    address internal sushiSwapFactory;
-    address internal sushiSwapRouter;
 
     uint256 private baseSepoliaFork;
     uint256 private baseFork;
@@ -80,8 +78,6 @@ contract BaseForkTest is Test {
         vabbleWallet = activeNetworkConfig.vabbleWallet;
         uniswapFactory = activeNetworkConfig.uniswapFactory;
         uniswapRouter = activeNetworkConfig.uniswapRouter;
-        sushiSwapFactory = activeNetworkConfig.sushiSwapFactory;
-        sushiSwapRouter = activeNetworkConfig.sushiSwapRouter;
 
         castAddressToContract(activeContractConfig);
     }
