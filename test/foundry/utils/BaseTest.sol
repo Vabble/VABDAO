@@ -30,7 +30,7 @@ contract BaseTest is Test {
 
     bool public isForkTestEnabled;
     uint256 private baseSepoliaFork;
-    uint256 private startingBlockNumber = 9_306_318;
+    uint256 private startingBlockNumber = 18_863_130;
     string private BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
 
     address payable[] internal users;
