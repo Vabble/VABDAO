@@ -82,25 +82,25 @@ contract HelperConfigFork is Script {
             usdc: 0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1,
             vab: 0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda,
             usdt: 0x58f777963F5c805D82E9Ff50c137fd3D58bD525C,
-            auditor: 0xC8e39373B96a90AFf4b07DA0e431F670f73f8941,
-            vabbleWallet: 0xC8e39373B96a90AFf4b07DA0e431F670f73f8941,
+            auditor: 0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12,
+            vabbleWallet: 0xD71D56BF0761537B69436D8D16381d78f90B827e,
             uniswapFactory: 0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e,
             uniswapRouter: 0x1689E7B1F10000AE47eBfE339a4f69dECd19F602
         });
 
         ContractConfigFork memory contractConfig = ContractConfigFork({
-            ownablee: 0xc3a61e5D09aa302c1DE75682DCaC979E01C4eb70,
-            uniHelper: 0xc19D6b2FB3401fa5a8b71c542B1e49936E00E73d,
-            stakingPool: 0x63A2fCF810dDFA705738c677949cB1DDa41E7d7C,
-            vote: 0x3EA874337532D0af1B0A8e7E0192DAd4FB2b5Cf3,
-            property: 0xb0a3CF07A89A38a67bAE9e69fAFD301E6c4B2E4D,
-            factoryFilmNFT: 0x955f0045af5635349297AC87F8B35c01aB67500F,
-            factorySubNFT: 0x3622E5eF88f5f9A3cB6f88A477a68e26219d34EB,
-            vabbleFund: 0xbA77EBA05c6C1a18e657f3ac9caC089D9B8884E7,
-            vabbleDAO: 0x0e8a8B0b4DaA10d9FfB2D9D5089d08341bEC2d1E,
-            factoryTierNFT: 0x8f6BC67d57679E72385b5EA048C8CF4656c7e6A7,
-            subscription: 0x534f0450Ad28bfF12213d84c941e9F3725E0f048,
-            helperConfig: 0x4943e7A10F2F3E92776f61bcF2586B4Fb5675b4F
+            ownablee: 0x1FF6B3a5F81Edefde8FC0651eA9e113d4064C96E,
+            uniHelper: 0x045A786dbc5A7406CC9411Bd4F9E0F49425c20a4,
+            stakingPool: 0xB928e9F4aaf34eA951a07bb35396dae1c4bD5B71,
+            vote: 0xd9EdB2fe8660f4be79dD1d4fF390Fd1c4683C25b,
+            property: 0xD8be74b521cAFA220C28594C05C7dadD6eCfD9Ae,
+            factoryFilmNFT: 0x847e5e2E0a0cBa9CD271098D82357F04d633490C,
+            factorySubNFT: 0x1b7fcf332F0231E1b1Bf7DfDDC9f4173E5E5A809,
+            vabbleFund: 0x1c064497BAa01e321251bED74Aa2b5a0acb103f9,
+            vabbleDAO: 0x79f92Fe4119aD169834b47df22714358C19c1Fc9,
+            factoryTierNFT: 0xff7099c7F141Ad5A63F630B0202Bfe4d81d4DB80,
+            subscription: 0xCd52a018f0558bC0ddD2fe42Ed3a6F1E04227CBD,
+            helperConfig: 0xe532939BCeE745DD3031652d8225838C24Bb2a93
         });
 
         return FullConfigFork({ networkConfig: networkConfig, contractConfig: contractConfig });

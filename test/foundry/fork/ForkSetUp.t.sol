@@ -36,6 +36,55 @@ contract ForkSetUp is BaseForkTest {
         assertEq(address(property), DAO_PROPERTY);
     }
 
+    function testFork_deployOwnableSetup() public view {
+        assertEq(address(auditor), ownablee.auditor());
+        assertEq(address(vabbleWallet), ownablee.VAB_WALLET());
+        assertEq(address(vab), ownablee.PAYOUT_TOKEN());
+        assertEq(address(usdc), ownablee.USDC_TOKEN());
+        assertEq(address(vabbleDAO), ownablee.getVabbleDAO());
+        assertEq(address(vote), ownablee.getVoteAddress());
+        assertEq(address(stakingPool), ownablee.getStakingPoolAddress());
+        assertEq(true, ownablee.isDepositAsset(address(usdc)));
+        assertEq(true, ownablee.isDepositAsset(address(0)));
+        assertEq(true, ownablee.isDepositAsset(address(vab)));
+    }
+
+    function testFork_forkDeployOwnableeSetupAgainstFixedValues() public view {
+        assertEq(ownablee.auditor(), 0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12);
+        assertEq(ownablee.VAB_WALLET(), 0xD71D56BF0761537B69436D8D16381d78f90B827e);
+    }
+
+    function test_deployPropertyValuesAgainstFixedValues() public view {
+        // Time periods
+        assertEq(property.filmVotePeriod(), 600, "filmVotePeriod doesn't match");
+        assertEq(property.agentVotePeriod(), 600, "agentVotePeriod doesn't match");
+        assertEq(property.disputeGracePeriod(), 600, "disputeGracePeriod doesn't match");
+        assertEq(property.propertyVotePeriod(), 600, "propertyVotePeriod doesn't match");
+        assertEq(property.lockPeriod(), 600, "lockPeriod doesn't match");
+        assertEq(property.filmRewardClaimPeriod(), 600, "filmRewardClaimPeriod doesn't match");
+        assertEq(property.boardVotePeriod(), 600, "boardVotePeriod doesn't match");
+        assertEq(property.rewardVotePeriod(), 600, "rewardVotePeriod doesn't match");
+        assertEq(property.maxAllowPeriod(), 600, "maxAllowPeriod doesn't match");
+
+        // Rates and percentages
+        assertEq(property.rewardRate(), 2_500_000, "rewardRate doesn't match");
+        assertEq(property.fundFeePercent(), 200_000_000, "fundFeePercent doesn't match");
+        assertEq(property.maxMintFeePercent(), 1_000_000_000, "maxMintFeePercent doesn't match");
+        assertEq(property.minStakerCountPercent(), 500_000_000, "minStakerCountPercent doesn't match");
+        assertEq(property.boardVoteWeight(), 3_000_000_000, "boardVoteWeight doesn't match");
+        assertEq(property.boardRewardRate(), 2_500_000_000, "boardRewardRate doesn't match");
+
+        // Amounts
+        assertEq(property.proposalFeeAmount(), 20_000_000, "proposalFeeAmount doesn't match");
+        assertEq(property.minDepositAmount(), 50_000_000, "minDepositAmount doesn't match");
+        assertEq(property.maxDepositAmount(), 5_000_000_000, "maxDepositAmount doesn't match");
+        assertEq(property.availableVABAmount(), 1_000_000_000_000_000_000, "availableVABAmount doesn't match");
+        assertEq(property.subscriptionAmount(), 2_990_000, "subscriptionAmount doesn't match");
+
+        // Other values
+        assertEq(property.minVoteCount(), 1, "minVoteCount doesn't match");
+    }
+
     function testFork_VoteCorrectSetup() public view {
         bytes32 VABBLE_DAO_slot = bytes32(uint256(1));
         bytes32 STAKING_POOL_slot = bytes32(uint256(2));
