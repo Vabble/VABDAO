@@ -47,7 +47,7 @@ anvil :; anvil -m 'test test test test test test test test test test test junk' 
 
 slither :; slither . --config-file slither.config.json --checklist > ./reports/slither.md
 
-aderyn :; aderyn --src contracts --output  ./reports/aderyn.md
+aderyn :; aderyn --src contracts/dao --output  ./reports/aderyn.md
 
 scopefile :; @tree ./contracts/ | sed 's/└/#/g' | awk -F '── ' '!/\.sol$$/ { path[int((length($$0) - length($$2))/2)] = $$2; next } { p = "src"; for(i=2; i<=int((length($$0) - length($$2))/2); i++) if (path[i] != "") p = p "/" path[i]; print p "/" $$2; }' > scope.txt
 
@@ -73,22 +73,50 @@ endif
 deploy:
 	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) --account Deployer --broadcast --force --slow --optimize --optimizer-runs 200 --verify  --etherscan-api-key $(ETHERSCAN_API_KEY)
 
-# make get-deployed-contracts ARGS="--network base_sepolia"
-# Get deployed contract addresses - first batch
-get-deployed-contracts-1: 
-	@echo "Fetching first batch of deployed contracts..."
-	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --chain-id $(CHAIN_ID)
+# Get individual contract addresses
+get-helper-config:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getHelperConfig()" --chain-id $(CHAIN_ID)
 
-# Get deployed contract addresses - second batch
-get-deployed-contracts-2:
-	@echo "Fetching second batch of deployed contracts..."
-	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "runSecondBatch()" --chain-id $(CHAIN_ID)
+get-ownablee:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getOwnablee()" --chain-id $(CHAIN_ID)
 
-# Get all deployed contracts (runs both batches)
+get-uni-helper:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getUniHelper()" --chain-id $(CHAIN_ID)
+
+get-staking-pool:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getStakingPool()" --chain-id $(CHAIN_ID)
+
+get-vote:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getVote()" --chain-id $(CHAIN_ID)
+
+get-property:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getProperty()" --chain-id $(CHAIN_ID)
+
+get-factory-film-nft:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getFactoryFilmNFT()" --chain-id $(CHAIN_ID)
+
+get-factory-sub-nft:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getFactorySubNFT()" --chain-id $(CHAIN_ID)
+
+get-vabble-fund:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getVabbleFund()" --chain-id $(CHAIN_ID)
+
+get-vabble-dao:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getVabbleDAO()" --chain-id $(CHAIN_ID)
+
+get-factory-tier-nft:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getFactoryTierNFT()" --chain-id $(CHAIN_ID)
+
+get-subscription:
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getSubscription()" --chain-id $(CHAIN_ID)
+
+# Get all deployed contracts in batches
 # make get-deployed-contracts ARGS="--network base_sepolia"
-get-deployed-contracts: get-deployed-contracts-1 
-	@echo "\nFirst batch complete. Starting second batch...\n"
-	@make get-deployed-contracts-2
+get-deployed-contracts:
+	@echo "Fetching all contract addresses in batches..."
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getFirstBatch()" --chain-id $(CHAIN_ID)
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getSecondBatch()" --chain-id $(CHAIN_ID)
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getThirdBatch()" --chain-id $(CHAIN_ID)
 
 fund-all:
 	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast

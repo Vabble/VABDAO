@@ -6,136 +6,86 @@ import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/Test.sol";
 
 contract GetDeployedContracts is Script {
-    // Storage for first batch
-    address public helperConfig;
-    address public ownablee;
-    address public uniHelper;
-    address public stakingPool;
-    address public vote;
-    address public property;
-
-    // Storage for second batch
-    address public factoryFilmNFT;
-    address public factorySubNFT;
-    address public vabbleFund;
-    address public vabbleDAO;
-    address public factoryTierNFT;
-    address public subscription;
-
-    string constant DEPLOYMENT_FILE = "deployed_contracts.json";
-
     function run() public {
-        console2.log("Starting first batch of contract fetching...");
-        getFirstBatchContracts();
-        console2.log("\nFirst batch completed. To fetch the second batch, run the 'runSecondBatch' function.");
+        console2.log("Getting HelperConfig address...");
+        getHelperConfig();
     }
 
-    function getFirstBatchContracts() public {
-        vm.startBroadcast();
-
-        fetchFirstBatchAddresses();
-        // writeFirstBatchFile();
-
-        vm.stopBroadcast();
+    function getHelperConfig() public view {
+        fetchContract("HelperConfig");
     }
 
-    function fetchFirstBatchAddresses() internal {
-        string[6] memory contractNames = ["HelperConfig", "Ownablee", "UniHelper", "StakingPool", "Vote", "Property"];
-
-        for (uint256 i = 0; i < contractNames.length; i++) {
-            address contractAddress = DevOpsTools.get_most_recent_deployment(contractNames[i], block.chainid);
-            require(contractAddress != address(0), string(abi.encodePacked(contractNames[i], " not deployed")));
-            console2.log(contractNames[i], contractAddress);
-
-            if (i == 0) helperConfig = contractAddress;
-            else if (i == 1) ownablee = contractAddress;
-            else if (i == 2) uniHelper = contractAddress;
-            else if (i == 3) stakingPool = contractAddress;
-            else if (i == 4) vote = contractAddress;
-            else if (i == 5) property = contractAddress;
-        }
+    function getOwnablee() public view {
+        fetchContract("Ownablee");
     }
 
-    function runSecondBatch() public {
-        vm.startBroadcast();
-        console2.log("Starting second batch of contract fetching...");
-
-        fetchSecondBatchAddresses();
-        // writeSecondBatchFile();
-
-        vm.stopBroadcast();
+    function getUniHelper() public view {
+        fetchContract("UniHelper");
     }
 
-    function fetchSecondBatchAddresses() internal {
-        string[6] memory contractNames =
-            ["FactoryFilmNFT", "FactorySubNFT", "VabbleFund", "VabbleDAO", "FactoryTierNFT", "Subscription"];
-
-        for (uint256 i = 0; i < contractNames.length; i++) {
-            address contractAddress = DevOpsTools.get_most_recent_deployment(contractNames[i], block.chainid);
-            require(contractAddress != address(0), string(abi.encodePacked(contractNames[i], " not deployed")));
-            console2.log(contractNames[i], contractAddress);
-
-            if (i == 0) factoryFilmNFT = contractAddress;
-            else if (i == 1) factorySubNFT = contractAddress;
-            else if (i == 2) vabbleFund = contractAddress;
-            else if (i == 3) vabbleDAO = contractAddress;
-            else if (i == 4) factoryTierNFT = contractAddress;
-            else if (i == 5) subscription = contractAddress;
-        }
+    function getStakingPool() public view {
+        fetchContract("StakingPool");
     }
 
-    // function writeFirstBatchFile() internal {
-    //     string memory part1 = string(
-    //         abi.encodePacked(
-    //             '{\n',
-    //             '    "helperConfig": "', vm.toString(helperConfig), '",\n',
-    //             '    "ownablee": "', vm.toString(ownablee), '",\n',
-    //             '    "uniHelper": "', vm.toString(uniHelper), '",\n'
-    //         )
-    //     );
+    function getVote() public view {
+        fetchContract("Vote");
+    }
 
-    //     string memory part2 = string(
-    //         abi.encodePacked(
-    //             '    "stakingPool": "', vm.toString(stakingPool), '",\n',
-    //             '    "vote": "', vm.toString(vote), '",\n',
-    //             '    "property": "', vm.toString(property), '"\n}'
-    //         )
-    //     );
+    function getProperty() public view {
+        fetchContract("Property");
+    }
 
-    //     vm.writeFile(DEPLOYMENT_FILE, string(abi.encodePacked(part1, part2)));
-    //     console2.log("First batch written to deployed_contracts.json");
-    // }
+    function getFactoryFilmNFT() public view {
+        fetchContract("FactoryFilmNFT");
+    }
 
-    // function writeSecondBatchFile() internal {
-    //     string memory part1 = string(
-    //         abi.encodePacked(
-    //             '{\n',
-    //             '    "helperConfig": "', vm.toString(helperConfig), '",\n',
-    //             '    "ownablee": "', vm.toString(ownablee), '",\n',
-    //             '    "uniHelper": "', vm.toString(uniHelper), '",\n',
-    //             '    "stakingPool": "', vm.toString(stakingPool), '",\n'
-    //         )
-    //     );
+    function getFactorySubNFT() public view {
+        fetchContract("FactorySubNFT");
+    }
 
-    //     string memory part2 = string(
-    //         abi.encodePacked(
-    //             '    "vote": "', vm.toString(vote), '",\n',
-    //             '    "property": "', vm.toString(property), '",\n',
-    //             '    "factoryFilmNFT": "', vm.toString(factoryFilmNFT), '",\n',
-    //             '    "factorySubNFT": "', vm.toString(factorySubNFT), '",\n'
-    //         )
-    //     );
+    function getVabbleFund() public view {
+        fetchContract("VabbleFund");
+    }
 
-    //     string memory part3 = string(
-    //         abi.encodePacked(
-    //             '    "vabbleFund": "', vm.toString(vabbleFund), '",\n',
-    //             '    "vabbleDAO": "', vm.toString(vabbleDAO), '",\n',
-    //             '    "factoryTierNFT": "', vm.toString(factoryTierNFT), '",\n',
-    //             '    "subscription": "', vm.toString(subscription), '"\n}'
-    //         )
-    //     );
+    function getVabbleDAO() public view {
+        fetchContract("VabbleDAO");
+    }
 
-    //     vm.writeFile(DEPLOYMENT_FILE, string(abi.encodePacked(part1, part2, part3)));
-    //     console2.log("All contracts written to deployed_contracts.json");
-    // }
+    function getFactoryTierNFT() public view {
+        fetchContract("FactoryTierNFT");
+    }
+
+    function getSubscription() public view {
+        fetchContract("Subscription");
+    }
+
+    function fetchContract(string memory contractName) internal view {
+        address contractAddress = DevOpsTools.get_most_recent_deployment(contractName, block.chainid);
+        require(contractAddress != address(0), string(abi.encodePacked(contractName, " not deployed")));
+        console2.log(contractName, contractAddress);
+    }
+
+    function getFirstBatch() public view {
+        console2.log("\n=== Fetching first batch of contracts ===\n");
+        getHelperConfig();
+        getOwnablee();
+        getUniHelper();
+        getStakingPool();
+    }
+
+    function getSecondBatch() public view {
+        console2.log("\n=== Fetching second batch of contracts ===\n");
+        getVote();
+        getProperty();
+        getFactoryFilmNFT();
+        getFactorySubNFT();
+    }
+
+    function getThirdBatch() public view {
+        console2.log("\n=== Fetching third batch of contracts ===\n");
+        getVabbleFund();
+        getVabbleDAO();
+        getFactoryTierNFT();
+        getSubscription();
+    }
 }
