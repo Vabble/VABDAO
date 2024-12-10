@@ -24,7 +24,7 @@ import { IUniswapV2Pair } from "../interfaces/uniswap-v2/IUniswapV2Pair.sol";
 import { IUniswapV2Factory } from "../interfaces/uniswap-v2/IUniswapV2Factory.sol";
 import { IUniswapV2Router02 } from "../interfaces/uniswap-v2/IUniswapV2Router02.sol";
 
-contract BaseTest is Test {
+abstract contract BaseTest is Test {
     Utilities private utilities;
     DeployerScript private deployerScript;
 

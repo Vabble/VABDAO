@@ -22,7 +22,7 @@ import { UniHelper } from "../../../contracts/dao/UniHelper.sol";
 import { VabbleFund } from "../../../contracts/dao/VabbleFund.sol";
 import { Vote } from "../../../contracts/dao/Vote.sol";
 
-contract BaseForkTest is Test {
+abstract contract BaseForkTest is Test {
     NetworkConfigFork activeNetworkConfig;
     ContractConfigFork activeContractConfig;
 
