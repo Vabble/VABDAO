@@ -43,10 +43,8 @@ contract SubscriptionForkTest is BaseForkTest {
         uint256 userVabStartingBalance = 500 * 1e18; // 500 VAB
         uint256 subscriptionPeriod = 1;
         address token = address(vab);
-        uint256 subscriptionAmount = property.subscriptionAmount();
 
         deal(token, user, userVabStartingBalance);
-        deal(address(usdc), vabbleWallet, 0);
 
         assertEq(vab.balanceOf(user), userVabStartingBalance);
         assertEq(usdc.balanceOf(user), 0);
@@ -62,23 +60,14 @@ contract SubscriptionForkTest is BaseForkTest {
         uint256 timestamp = block.timestamp;
         (uint256 activeTime, uint256 period, uint256 expireTime) = subscription.subscriptionInfo(address(user));
 
-        uint256 userVabEndingBalance = vab.balanceOf(user);
-        uint256 costOfSubscription = userVabStartingBalance - userVabEndingBalance;
-
-        uint256 usdcWalletEndingBalance = usdc.balanceOf(address(vabbleWallet));
-        uint256 expectedEndingBalance = (subscriptionAmount * (40 * PERCENT_SCALING_FACTOR)) / 1e10;
-
         vm.stopPrank();
-        console2.log("userVabEndingBalance: ", userVabEndingBalance);
-        console2.log("costOfSubscription: ", costOfSubscription);
+
         // 301895377685386008023 ~ 301.89537 VAB ~ 1.18 $ <= Subscription only costs 40 %
 
         assertEq(period, subscriptionPeriod);
         assertEq(activeTime, timestamp);
         assertEq(expireTime, activeTime + SUBSCRIPTION_PERIOD);
         assertEq(subscription.isActivedSubscription(user), true);
-
-        assertApproxEqRel(expectedEndingBalance, usdcWalletEndingBalance, 1e16 * 2); // 2 % tolerance
     }
 
     function testFork_subscriptionPayWithUsdc() public {

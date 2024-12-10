@@ -147,7 +147,7 @@ contract SubscriptionTest is BaseTest {
 
     function test_activatingSubscriptionRevertsIfAccountBalanceIsToLow() public {
         uint256 period = 1;
-        uint256 amount = 1e18;
+        uint256 amount = 10 wei;
         address token = address(vab);
 
         deal(token, default_user, amount);
