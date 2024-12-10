@@ -123,7 +123,7 @@ fund-all:
 
 # make fetch-film-data ARGS="--network base_sepolia"
 fetch-film-data:
-	forge script scripts/foundry/04_FilmProposalDetailsFetcher.s.sol $(NETWORK_ARGS)  --via-ir
+	forge script scripts/foundry/04_FilmProposalDetailsFetcher.s.sol $(NETWORK_ARGS) --via-ir
 
 # make migrate-films ARGS="--network base_sepolia"
 migrate-films:
