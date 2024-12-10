@@ -11,7 +11,13 @@ import "../interfaces/IVote.sol";
 import "../interfaces/IStakingPool.sol";
 import "../interfaces/IOwnablee.sol";
 
+import "../libraries/ConfigLibrary.sol";
+
 contract Property is ReentrancyGuard {
+    using ConfigLibrary for ConfigLibrary.PropertyTimePeriodConfig;
+    using ConfigLibrary for ConfigLibrary.PropertyRatesConfig;
+    using ConfigLibrary for ConfigLibrary.PropertyAmountsConfig;
+
     event AuditorProposalCreated(address indexed creator, address member, string title, string description);
     event RewardFundProposalCreated(address indexed creator, address member, string title, string description);
     event FilmBoardProposalCreated(address indexed creator, address member, string title, string description);
@@ -59,12 +65,15 @@ contract Property is ReentrancyGuard {
     uint256 public propertyVotePeriod; // 3 - vote period for updating properties
     uint256 public lockPeriod; // 4 - lock period for staked VAB
     uint256 public rewardRate; // 5 - day rewards rate => 0.0004%(1% = 1e8, 100% = 1e10)
-    uint256 public filmRewardClaimPeriod; // 6 - period when the auditor can submit the films reward results to be claimed
+    uint256 public filmRewardClaimPeriod; // 6 - period when the auditor can submit the films reward results to be
+        // claimed
     uint256 public maxAllowPeriod; // 7 - max allowed period for removing filmBoard member
     uint256 public proposalFeeAmount; // 8 - USDC amount($100) studio should pay when create a proposal
     uint256 public fundFeePercent; // 9 - percent(2% = 2*1e8) of fee on the amount raised
-    uint256 public minDepositAmount; // 10 - USDC min amount($50) that a customer can deposit to a film approved for funding
-    uint256 public maxDepositAmount; // 11 - USDC max amount($5000) that a customer can deposit to a film approved for funding
+    uint256 public minDepositAmount; // 10 - USDC min amount($50) that a customer can deposit to a film approved for
+        // funding
+    uint256 public maxDepositAmount; // 11 - USDC max amount($5000) that a customer can deposit to a film approved for
+        // funding
     uint256 public maxMintFeePercent; // 12 - 10%(1% = 1e8, 100% = 1e10)
     uint256 public minVoteCount; // 13 - 5 ppl(minium voter count for approving the proposal)
     uint256 public minStakerCountPercent; // 14 - percent(5% = 5*1e8)
@@ -72,9 +81,9 @@ contract Property is ReentrancyGuard {
     uint256 public boardVotePeriod; // 16 - filmBoard vote period
     uint256 public boardVoteWeight; // 17 - filmBoard member's vote weight
     uint256 public rewardVotePeriod; // 18 - withdraw address setup for moving to V2
-    uint256 public subscriptionAmount; // 19 - user need to have an active subscription(pay $1 per month) for rent films.
+    uint256 public subscriptionAmount; // 19 - user need to have an active subscription(pay $1 per month) for rent
+        // films.
     uint256 public boardRewardRate; // 20 - 25%(1% = 1e8, 100% = 1e10) more reward rate for filmboard members
-    // uint256 public disputLimitAmount;
 
     uint256[] private maxPropertyList;
     uint256[] private minPropertyList;
@@ -104,12 +113,15 @@ contract Property is ReentrancyGuard {
 
     Agent[] private agentList; // for replacing auditor
     address[] private rewardAddressList; // for adding v2 pool address
-    address[] private filmBoardCandidates; // filmBoard candidates and if isBoardWhitelist is true, become filmBoard member
+    address[] private filmBoardCandidates; // filmBoard candidates and if isBoardWhitelist is true, become filmBoard
+        // member
     address[] private filmBoardMembers; // filmBoard members
 
     // flag=1 =>agent, 2=>board, 3=>reward
-    mapping(uint256 => mapping(address => uint256)) private isGovWhitelist; // (flag => (address => 0: no, 1: candiate, 2: member))
-    mapping(uint256 => mapping(uint256 => uint256)) private isPropertyWhitelist; // (flag => (property => 0: no, 1: candiate, 2: member))
+    mapping(uint256 => mapping(address => uint256)) private isGovWhitelist; // (flag => (address => 0: no, 1: candiate,
+        // 2: member))
+    mapping(uint256 => mapping(uint256 => uint256)) private isPropertyWhitelist; // (flag => (property => 0: no, 1:
+        // candiate, 2: member))
     mapping(uint256 => mapping(uint256 => GovProposal)) private govProposalInfo; // (flag => (index => Proposal))
     mapping(uint256 => mapping(uint256 => ProProposal)) private proProposalInfo; // (flag => (index => Proposal))
     mapping(uint256 => address[]) private allGovProposalInfo; // (flag => address array))
@@ -135,95 +147,62 @@ contract Property is ReentrancyGuard {
         _;
     }
 
-    constructor(address _ownable, address _uniHelper, address _vote, address _staking) {
+    constructor(
+        address _ownable,
+        address _uniHelper,
+        address _vote,
+        address _staking,
+        ConfigLibrary.PropertyTimePeriodConfig memory _timePeriodConfig,
+        ConfigLibrary.PropertyRatesConfig memory _ratesConfig,
+        ConfigLibrary.PropertyAmountsConfig memory _amountsConfig,
+        ConfigLibrary.PropertyMinMaxListConfig memory _minMaxListConfig
+    ) {
         require(_ownable != address(0), "ownable: zero address");
-        OWNABLE = _ownable;
         require(_uniHelper != address(0), "uniHelper: zero address");
-        UNI_HELPER = _uniHelper;
         require(_vote != address(0), "vote: zero address");
-        VOTE = _vote;
         require(_staking != address(0), "staking: zero address");
+
+        OWNABLE = _ownable;
+        UNI_HELPER = _uniHelper;
+        VOTE = _vote;
         STAKING_POOL = _staking;
 
-        filmVotePeriod = 10 days;
-        boardVotePeriod = 14 days;
-        agentVotePeriod = 10 days;
-        disputeGracePeriod = 30 days;
-        propertyVotePeriod = 10 days;
-        rewardVotePeriod = 7 days;
-        lockPeriod = 30 days;
-        maxAllowPeriod = 90 days;
-        filmRewardClaimPeriod = 30 days;
+        filmVotePeriod = _timePeriodConfig.filmVotePeriod;
+        boardVotePeriod = _timePeriodConfig.boardVotePeriod;
+        agentVotePeriod = _timePeriodConfig.agentVotePeriod;
+        disputeGracePeriod = _timePeriodConfig.disputeGracePeriod;
+        propertyVotePeriod = _timePeriodConfig.propertyVotePeriod;
+        rewardVotePeriod = _timePeriodConfig.rewardVotePeriod;
+        lockPeriod = _timePeriodConfig.lockPeriod;
+        maxAllowPeriod = _timePeriodConfig.maxAllowPeriod;
+        filmRewardClaimPeriod = _timePeriodConfig.filmRewardClaimPeriod;
 
-        boardVoteWeight = 30 * 1e8; // 30% (1% = 1e8)
-        rewardRate = 25 * 1e5; //40000;   // 0.0004% (1% = 1e8, 100%=1e10) // 2500000(0.025%)
-        boardRewardRate = 25 * 1e8; // 25%
-        fundFeePercent = 2 * 1e8; // percent(2%)
-        maxMintFeePercent = 10 * 1e8; // 10%
-        minStakerCountPercent = 5 * 1e8; // 5%(1% = 1e8, 100%=1e10)
+        boardVoteWeight = _ratesConfig.boardVoteWeight;
+        rewardRate = _ratesConfig.rewardRate;
+        boardRewardRate = _ratesConfig.boardRewardRate;
+        fundFeePercent = _ratesConfig.fundFeePercent;
+        maxMintFeePercent = _ratesConfig.maxMintFeePercent;
+        minStakerCountPercent = _ratesConfig.minStakerCountPercent;
 
-        address usdcToken = IOwnablee(_ownable).USDC_TOKEN();
-        address vabToken = IOwnablee(_ownable).PAYOUT_TOKEN();
-        proposalFeeAmount = 20 * (10 ** IERC20Metadata(usdcToken).decimals()); // amount in cash(usd dollar - $20)
-        minDepositAmount = 50 * (10 ** IERC20Metadata(usdcToken).decimals()); // amount in cash(usd dollar - $50)
-        maxDepositAmount = 5000 * (10 ** IERC20Metadata(usdcToken).decimals()); // amount in cash(usd dollar - $5000)
-        availableVABAmount = 50 * 1e6 * (10 ** IERC20Metadata(vabToken).decimals()); // 50M
-        // disputLimitAmount = 75 * 1e6 * (10**IERC20Metadata(vabToken).decimals());    // 75M
-        subscriptionAmount = 299 * (10 ** IERC20Metadata(usdcToken).decimals()) / 100; // amount in cash(usd dollar - $2.99)
-        minVoteCount = 1; //5;
+        proposalFeeAmount = _amountsConfig.proposalFeeAmount;
+        minDepositAmount = _amountsConfig.minDepositAmount;
+        maxDepositAmount = _amountsConfig.maxDepositAmount;
+        availableVABAmount = _amountsConfig.availableVABAmount;
+        subscriptionAmount = _amountsConfig.subscriptionAmount;
 
-        minPropertyList = [
-            7 days, // 0:
-            7 days, // 1:
-            7 days, // 2:
-            7 days, // 3:
-            7 days, // 4:
-            2 * 1e5, // 5: 0.002%
-            1 days, // 6:
-            7 days, // 7:
-            20 * (10 ** IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $20)
-            2 * 1e8, // 9: percent(2%)
-            5 * (10 ** IERC20Metadata(usdcToken).decimals()), // 10: amount in cash(usd dollar - $5)
-            5 * (10 ** IERC20Metadata(usdcToken).decimals()), // 11: amount in cash(usd dollar - $5)
-            1 * 1e8, // 12: 1%
-            1, // 13:
-            3 * 1e8, // 14: 3%
-            50 * 1e6 * (10 ** IERC20Metadata(vabToken).decimals()), // 15: 50M
-            7 days, // 16:
-            5 * 1e8, // 17: 5% (1% = 1e8)
-            7 days, // 18:
-            299 * (10 ** IERC20Metadata(usdcToken).decimals()) / 100, // 19: amount in cash(usd dollar - $2.99)
-            1 * 1e8 // 20: 1%
-        ];
+        minVoteCount = _amountsConfig.minVoteCount;
 
-        maxPropertyList = [
-            90 days, // 0:
-            90 days, // 1:
-            90 days, // 2:
-            90 days, // 3:
-            90 days, // 4:
-            58 * 1e5, // 5: 0.058%
-            90 days, // 6:
-            90 days, // 7:
-            500 * (10 ** IERC20Metadata(usdcToken).decimals()), //8: amount in cash(usd dollar - $500)
-            10 * 1e8, // 9: percent(10%)
-            10 * 1e6 * (10 ** IERC20Metadata(usdcToken).decimals()), // 10: amount in cash(usd dollar - $10,000,000)
-            10 * 1e6 * (10 ** IERC20Metadata(usdcToken).decimals()), // 11: amount in cash(usd dollar - $10,000,000)
-            10 * 1e8, // 12: 10%
-            10, // 13:
-            10 * 1e8, // 14: 10%
-            200 * 1e6 * (10 ** IERC20Metadata(vabToken).decimals()), // 15: 200M
-            90 days, // 16:
-            30 * 1e8, // 17: 30% (1% = 1e8)
-            90 days, // 18:
-            9999 * (10 ** IERC20Metadata(usdcToken).decimals()) / 100, // 19: amount in cash(usd dollar - $99.99)
-            20 * 1e8 // 20: 20%
-        ];
+        minPropertyList = _minMaxListConfig.minPropertyList;
+        maxPropertyList = _minMaxListConfig.maxPropertyList;
     }
 
     /// =================== proposals for replacing auditor ==============
     /// @notice Anyone($100 fee in VAB) create a proposal for replacing Auditor
-    function proposalAuditor(address _agent, string memory _title, string memory _description)
+    function proposalAuditor(
+        address _agent,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyMajor
         nonReentrant
@@ -270,7 +249,11 @@ contract Property is ReentrancyGuard {
     }
 
     // =================== DAO fund rewards proposal ====================
-    function proposalRewardFund(address _rewardAddress, string memory _title, string memory _description)
+    function proposalRewardFund(
+        address _rewardAddress,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyMajor
         nonReentrant
@@ -301,7 +284,11 @@ contract Property is ReentrancyGuard {
 
     // =================== FilmBoard proposal ====================
     /// @notice Anyone($100 fee of VAB) create a proposal with the case to be added to film board
-    function proposalFilmBoard(address _member, string memory _title, string memory _description)
+    function proposalFilmBoard(
+        address _member,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyStaker
         nonReentrant
@@ -379,7 +366,10 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice Get govProposalInfo(agent=>1, board=>2, pool=>3)
-    function getGovProposalInfo(uint256 _index, uint256 _flag)
+    function getGovProposalInfo(
+        uint256 _index,
+        uint256 _flag
+    )
         external
         view
         returns (uint256, uint256, uint256, address, address, Helper.Status)
@@ -405,7 +395,12 @@ contract Property is ReentrancyGuard {
 
     // ===================properties proposal ====================
     /// @notice proposals for properties
-    function proposalProperty(uint256 _property, uint256 _flag, string memory _title, string memory _description)
+    function proposalProperty(
+        uint256 _property,
+        uint256 _flag,
+        string memory _title,
+        string memory _description
+    )
         external
         onlyStaker
         nonReentrant
@@ -546,7 +541,10 @@ contract Property is ReentrancyGuard {
     }
 
     /// @notice Get property proposal created time
-    function getPropertyProposalInfo(uint256 _index, uint256 _flag)
+    function getPropertyProposalInfo(
+        uint256 _index,
+        uint256 _flag
+    )
         external
         view
         returns (uint256, uint256, uint256, uint256, address, Helper.Status)
@@ -562,7 +560,10 @@ contract Property is ReentrancyGuard {
         return (cTime_, aTime_, pID_, value_, creator_, status_);
     }
 
-    function getPropertyProposalStr(uint256 _index, uint256 _flag)
+    function getPropertyProposalStr(
+        uint256 _index,
+        uint256 _flag
+    )
         external
         view
         returns (string memory, string memory)
@@ -641,7 +642,10 @@ contract Property is ReentrancyGuard {
         uint256 _index,
         uint256 _flag, // 1=>agent, 2=>board, 3=>pool
         uint256 _approveStatus // 1/0
-    ) external onlyVote {
+    )
+        external
+        onlyVote
+    {
         address member = govProposalInfo[_flag][_index].value;
 
         // update approve time
@@ -681,5 +685,13 @@ contract Property is ReentrancyGuard {
 
     function getAllGovProposalInfo(uint256 _flag) external view returns (address[] memory) {
         return allGovProposalInfo[_flag];
+    }
+
+    function getMinPropertyList(uint256 _index) external view returns (uint256) {
+        return minPropertyList[_index];
+    }
+
+    function getMaxPropertyList(uint256 _index) external view returns (uint256) {
+        return maxPropertyList[_index];
     }
 }

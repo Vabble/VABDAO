@@ -127,6 +127,6 @@ contract FundContracts is Script {
     function getHelperConfig() internal {
         address contractAddress = DevOpsTools.get_most_recent_deployment("HelperConfig", block.chainid);
         HelperConfig helperConfig = HelperConfig(contractAddress);
-        activeNetworkConfig = helperConfig.getActiveNetworkConfig();
+        activeNetworkConfig = helperConfig.getActiveNetworkConfig().networkConfig;
     }
 }

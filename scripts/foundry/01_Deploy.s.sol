@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 import { Script } from "lib/forge-std/src/Script.sol";
-import { HelperConfig, NetworkConfig } from "./HelperConfig.s.sol";
+import { HelperConfig, NetworkConfig, FullConfig } from "./HelperConfig.s.sol";
 import { VabbleDAO } from "../../contracts/dao/VabbleDAO.sol";
 import { FactoryFilmNFT } from "../../contracts/dao/FactoryFilmNFT.sol";
 import { FactorySubNFT } from "../../contracts/dao/FactorySubNFT.sol";
@@ -16,11 +16,16 @@ import { VabbleFund } from "../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../contracts/dao/Vote.sol";
 import { console2 } from "lib/forge-std/src/console2.sol";
-
+import { ConfigLibrary } from "../../contracts/libraries/ConfigLibrary.sol";
 /**
  * @title A Foundry script to fund the StakingPool and VabbleDAO contract with necessary VAB tokens
  */
+
 contract DeployerScript is Script {
+    using ConfigLibrary for ConfigLibrary.PropertyTimePeriodConfig;
+    using ConfigLibrary for ConfigLibrary.PropertyRatesConfig;
+    using ConfigLibrary for ConfigLibrary.PropertyAmountsConfig;
+
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
@@ -38,6 +43,11 @@ contract DeployerScript is Script {
         Subscription subscription;
         VabbleNFT vabbleNFT;
     }
+
+    ConfigLibrary.PropertyTimePeriodConfig public propertyTimePeriodConfig;
+    ConfigLibrary.PropertyRatesConfig public propertyRatesConfig;
+    ConfigLibrary.PropertyAmountsConfig public propertyAmountsConfig;
+    ConfigLibrary.PropertyMinMaxListConfig internal propertyMinMaxListConfig;
 
     Contracts public contracts;
     address public deployer;
@@ -117,19 +127,22 @@ contract DeployerScript is Script {
      */
     function _getConfig() internal {
         HelperConfig helperConfig = new HelperConfig();
-        NetworkConfig memory activeConfig = helperConfig.getActiveNetworkConfig();
+        FullConfig memory activeConfig = helperConfig.getActiveNetworkConfig();
 
-        usdc = activeConfig.usdc;
-        vab = activeConfig.vab;
-        usdt = activeConfig.usdt;
-        auditor = activeConfig.auditor;
-        vabbleWallet = activeConfig.vabbleWallet;
-        uniswapFactory = activeConfig.uniswapFactory;
-        uniswapRouter = activeConfig.uniswapRouter;
-        sushiSwapFactory = activeConfig.sushiSwapFactory;
-        sushiSwapRouter = activeConfig.sushiSwapRouter;
-        discountPercents = activeConfig.discountPercents;
-        depositAssets = activeConfig.depositAssets;
+        usdc = activeConfig.networkConfig.usdc;
+        vab = activeConfig.networkConfig.vab;
+        usdt = activeConfig.networkConfig.usdt;
+        auditor = activeConfig.networkConfig.auditor;
+        vabbleWallet = activeConfig.networkConfig.vabbleWallet;
+        uniswapFactory = activeConfig.networkConfig.uniswapFactory;
+        uniswapRouter = activeConfig.networkConfig.uniswapRouter;
+        discountPercents = activeConfig.networkConfig.discountPercents;
+        depositAssets = activeConfig.networkConfig.depositAssets;
+
+        propertyTimePeriodConfig = activeConfig.propertyTimePeriodConfig;
+        propertyRatesConfig = activeConfig.propertyRatesConfig;
+        propertyAmountsConfig = activeConfig.propertyAmountsConfig;
+        propertyMinMaxListConfig = activeConfig.propertyMinMaxListConfig;
     }
 
     /**
@@ -228,7 +241,16 @@ contract DeployerScript is Script {
     }
 
     function deployProperty(address _ownablee, address _uniHelper, address _vote, address _stakingPool) internal {
-        contracts.property = new Property(_ownablee, _uniHelper, _vote, _stakingPool);
+        contracts.property = new Property(
+            _ownablee,
+            _uniHelper,
+            _vote,
+            _stakingPool,
+            propertyTimePeriodConfig,
+            propertyRatesConfig,
+            propertyAmountsConfig,
+            propertyMinMaxListConfig
+        );
     }
 
     function deployFactoryFilmNFT(address _ownablee) internal {

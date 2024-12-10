@@ -467,7 +467,7 @@ contract UniHelperTest is BaseTest {
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     function getActiveConfig() internal returns (NetworkConfig memory) {
-        return helperConfig.getActiveNetworkConfig();
+        return helperConfig.getActiveNetworkConfig().networkConfig;
     }
 
     function needsLiquidity() internal returns (bool) {

@@ -2,9 +2,10 @@
 pragma solidity ^0.8.4;
 
 import { BaseTest, console } from "../utils/BaseTest.sol";
-import { HelperConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
+import { HelperConfig, FullConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { ConfigLibrary } from "../../../contracts/libraries/ConfigLibrary.sol";
 
 contract DeployTest is BaseTest {
     HelperConfig helperConfig;
@@ -12,27 +13,6 @@ contract DeployTest is BaseTest {
     uint256 usdcDecimals = 6;
     uint256 vabDecimals = 18;
     uint256 usdtDecimals = 6;
-    uint256 filmVotePeriod = 10 days;
-    uint256 agentVotePeriod = 10 days;
-    uint256 disputeGracePeriod = 30 days;
-    uint256 propertyVotePeriod = 10 days;
-    uint256 lockPeriod = 30 days;
-    uint256 rewardRate = 25 * 1e5;
-    uint256 filmRewardClaimPeriod = 30 days;
-    uint256 maxAllowPeriod = 90 days;
-    uint256 proposalFeeAmount = 20 * 10 ** usdcDecimals;
-    uint256 fundFeePercent = 2 * 1e8;
-    uint256 minDepositAmount = 50 * 10 ** usdcDecimals;
-    uint256 maxDepositAmount = 5000 * 10 ** usdcDecimals;
-    uint256 maxMintFeePercent = 10 * 1e8;
-    uint256 minVoteCount = 1;
-    uint256 minStakerCountPercent = 5 * 1e8;
-    uint256 availableVABAmount = 50 * 1e6 * 10 ** vabDecimals;
-    uint256 boardVotePeriod = 14 days;
-    uint256 boardVoteWeight = 30 * 1e8;
-    uint256 rewardVotePeriod = 7 days;
-    uint256 subscriptionAmount = 299 * 10 ** usdcDecimals / 100;
-    uint256 boardRewardRate = 25 * 1e8;
 
     function setUp() public override {
         super.setUp();
@@ -42,19 +22,19 @@ contract DeployTest is BaseTest {
     //TODO: test the setup functions more but for now this is ok to get started
 
     function test_deployUsdcSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
         assertEq(IERC20Metadata(address(usdc)).decimals(), usdcDecimals);
         assertEq(address(usdc), activeConfig.usdc);
     }
 
     function test_deployVabSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
         assertEq(IERC20Metadata(address(vab)).decimals(), vabDecimals);
         assertEq(address(vab), activeConfig.vab);
     }
 
     function test_deployUsdtSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
         assertEq(IERC20Metadata(address(usdt)).decimals(), usdtDecimals);
         assertEq(address(usdt), activeConfig.usdt);
     }
@@ -73,7 +53,7 @@ contract DeployTest is BaseTest {
     }
 
     function test_deployUniHelperSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
 
         address uniswapFactory = activeConfig.uniswapFactory;
         address uniswapRouter = activeConfig.uniswapRouter;
@@ -89,28 +69,57 @@ contract DeployTest is BaseTest {
         assertEq(address(property), stakingPool.getPropertyAddress());
     }
 
-    function test_deployPropertySetup() public view {
-        assertEq(property.filmVotePeriod(), filmVotePeriod);
-        assertEq(property.agentVotePeriod(), agentVotePeriod);
-        assertEq(property.disputeGracePeriod(), disputeGracePeriod);
-        assertEq(property.propertyVotePeriod(), propertyVotePeriod);
-        assertEq(property.lockPeriod(), lockPeriod);
-        assertEq(property.rewardRate(), rewardRate);
-        assertEq(property.filmRewardClaimPeriod(), filmRewardClaimPeriod);
-        assertEq(property.maxAllowPeriod(), maxAllowPeriod);
-        assertEq(property.proposalFeeAmount(), proposalFeeAmount);
-        assertEq(property.fundFeePercent(), fundFeePercent);
-        assertEq(property.minDepositAmount(), minDepositAmount);
-        assertEq(property.maxDepositAmount(), maxDepositAmount);
-        assertEq(property.maxMintFeePercent(), maxMintFeePercent);
-        assertEq(property.minVoteCount(), minVoteCount);
-        assertEq(property.minStakerCountPercent(), minStakerCountPercent);
-        assertEq(property.availableVABAmount(), availableVABAmount);
-        assertEq(property.boardVotePeriod(), boardVotePeriod);
-        assertEq(property.boardVoteWeight(), boardVoteWeight);
-        assertEq(property.rewardVotePeriod(), rewardVotePeriod);
-        assertEq(property.subscriptionAmount(), subscriptionAmount);
-        assertEq(property.boardRewardRate(), boardRewardRate);
+    function test_deployPropertySetup() public  {
+        FullConfig memory activeConfig = getActiveConfig();
+        ConfigLibrary.PropertyTimePeriodConfig memory propertyTimePeriodConfig = activeConfig.propertyTimePeriodConfig;
+        ConfigLibrary.PropertyRatesConfig memory propertyRatesConfig = activeConfig.propertyRatesConfig;
+        ConfigLibrary.PropertyAmountsConfig memory propertyAmountsConfig = activeConfig.propertyAmountsConfig;
+
+        assertEq(property.filmVotePeriod(), propertyTimePeriodConfig.filmVotePeriod, "filmVotePeriod doesn't match");
+        assertEq(property.agentVotePeriod(), propertyTimePeriodConfig.agentVotePeriod, "agentVotePeriod doesn't match");
+        assertEq(
+            property.disputeGracePeriod(),
+            propertyTimePeriodConfig.disputeGracePeriod,
+            "disputeGracePeriod doesn't match"
+        );
+        assertEq(
+            property.propertyVotePeriod(),
+            propertyTimePeriodConfig.propertyVotePeriod,
+            "propertyVotePeriod doesn't match"
+        );
+        assertEq(property.lockPeriod(), propertyTimePeriodConfig.lockPeriod, "lockPeriod doesn't match");
+        assertEq(property.rewardRate(), propertyRatesConfig.rewardRate, "rewardRate doesn't match");
+        assertEq(
+            property.filmRewardClaimPeriod(),
+            propertyTimePeriodConfig.filmRewardClaimPeriod,
+            "filmRewardClaimPeriod doesn't match"
+        );
+        assertEq(property.maxAllowPeriod(), propertyTimePeriodConfig.maxAllowPeriod, "maxAllowPeriod doesn't match");
+        assertEq(
+            property.proposalFeeAmount(), propertyAmountsConfig.proposalFeeAmount, "proposalFeeAmount doesn't match"
+        );
+        assertEq(property.fundFeePercent(), propertyRatesConfig.fundFeePercent, "fundFeePercent doesn't match");
+        assertEq(property.minDepositAmount(), propertyAmountsConfig.minDepositAmount, "minDepositAmount doesn't match");
+        assertEq(property.maxDepositAmount(), propertyAmountsConfig.maxDepositAmount, "maxDepositAmount doesn't match");
+        assertEq(property.maxMintFeePercent(), propertyRatesConfig.maxMintFeePercent, "maxMintFeePercent doesn't match");
+        assertEq(property.minVoteCount(), propertyAmountsConfig.minVoteCount, "minVoteCount doesn't match");
+        assertEq(
+            property.minStakerCountPercent(),
+            propertyRatesConfig.minStakerCountPercent,
+            "minStakerCountPercent doesn't match"
+        );
+        assertEq(
+            property.availableVABAmount(), propertyAmountsConfig.availableVABAmount, "availableVABAmount doesn't match"
+        );
+        assertEq(property.boardVotePeriod(), propertyTimePeriodConfig.boardVotePeriod, "boardVotePeriod doesn't match");
+        assertEq(property.boardVoteWeight(), propertyRatesConfig.boardVoteWeight, "boardVoteWeight doesn't match");
+        assertEq(
+            property.rewardVotePeriod(), propertyTimePeriodConfig.rewardVotePeriod, "rewardVotePeriod doesn't match"
+        );
+        assertEq(
+            property.subscriptionAmount(), propertyAmountsConfig.subscriptionAmount, "subscriptionAmount doesn't match"
+        );
+        assertEq(property.boardRewardRate(), propertyRatesConfig.boardRewardRate, "boardRewardRate doesn't match");
     }
 
     function test_deployVabbleDaoSetup() public view {
@@ -122,8 +131,10 @@ contract DeployTest is BaseTest {
         assertEq(address(vabbleFund), vabbleDAO.VABBLE_FUND());
     }
 
+    
+
     function test_deploySubscriptionSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
         uint256[] memory _discountList = subscription.getDiscountPercentList();
         assertEq(activeConfig.discountPercents[0], _discountList[0]);
         assertEq(activeConfig.discountPercents[1], _discountList[1]);
@@ -165,10 +176,34 @@ contract DeployTest is BaseTest {
         }
     }
 
+    function test_deployPropertyMinMaxSetup() public {
+        FullConfig memory activeConfig = getActiveConfig();
+        uint256[] memory minPropertyList = activeConfig.propertyMinMaxListConfig.minPropertyList;
+        uint256[] memory maxPropertyList = activeConfig.propertyMinMaxListConfig.maxPropertyList;
+
+        // Check all min values match
+        for (uint256 i = 0; i < minPropertyList.length; i++) {
+            assertEq(
+                property.getMinPropertyList(i),
+                minPropertyList[i],
+                string.concat("Min property list mismatch at index ", vm.toString(i))
+            );
+        }
+
+        // Check all max values match  
+        for (uint256 i = 0; i < maxPropertyList.length; i++) {
+            assertEq(
+                property.getMaxPropertyList(i),
+                maxPropertyList[i],
+                string.concat("Max property list mismatch at index ", vm.toString(i))
+            );
+        }
+    }
+
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function getActiveConfig() internal returns (NetworkConfig memory) {
+    function getActiveConfig() internal returns (FullConfig memory) {
         return helperConfig.getActiveNetworkConfig();
     }
 }

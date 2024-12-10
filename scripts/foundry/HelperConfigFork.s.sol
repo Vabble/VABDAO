@@ -31,8 +31,6 @@ struct NetworkConfigFork {
     address vabbleWallet;
     address uniswapFactory;
     address uniswapRouter;
-    address sushiSwapFactory;
-    address sushiSwapRouter;
 }
 
 struct FullConfigFork {
@@ -87,9 +85,7 @@ contract HelperConfigFork is Script {
             auditor: 0xC8e39373B96a90AFf4b07DA0e431F670f73f8941,
             vabbleWallet: 0xC8e39373B96a90AFf4b07DA0e431F670f73f8941,
             uniswapFactory: 0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e,
-            uniswapRouter: 0x1689E7B1F10000AE47eBfE339a4f69dECd19F602,
-            sushiSwapFactory: 0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e,
-            sushiSwapRouter: 0x1689E7B1F10000AE47eBfE339a4f69dECd19F602
+            uniswapRouter: 0x1689E7B1F10000AE47eBfE339a4f69dECd19F602
         });
 
         ContractConfigFork memory contractConfig = ContractConfigFork({
@@ -118,9 +114,7 @@ contract HelperConfigFork is Script {
             auditor: 0x170341dfFAD907f9695Dc1C17De622A5A2F28259,
             vabbleWallet: 0xE13Cf9Ff533268F3a98961995Ce7681440204361,
             uniswapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
-            uniswapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24,
-            sushiSwapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
-            sushiSwapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24
+            uniswapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24
         });
 
         ContractConfigFork memory contractConfig = ContractConfigFork({

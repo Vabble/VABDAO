@@ -2,8 +2,6 @@
 pragma solidity ^0.8.4;
 
 import { DevOpsTools } from "lib/foundry-devops/src/DevOpsTools.sol";
-import { StakingPool } from "../../contracts/dao/StakingPool.sol";
-import { HelperConfig, NetworkConfig } from "./HelperConfig.s.sol";
 import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/Test.sol";
 
@@ -15,7 +13,7 @@ contract GetDeployedContracts is Script {
     address public stakingPool;
     address public vote;
     address public property;
-    
+
     // Storage for second batch
     address public factoryFilmNFT;
     address public factorySubNFT;
@@ -34,22 +32,15 @@ contract GetDeployedContracts is Script {
 
     function getFirstBatchContracts() public {
         vm.startBroadcast();
-        
+
         fetchFirstBatchAddresses();
         // writeFirstBatchFile();
-        
+
         vm.stopBroadcast();
     }
 
     function fetchFirstBatchAddresses() internal {
-        string[6] memory contractNames = [
-            "HelperConfig",
-            "Ownablee",
-            "UniHelper",
-            "StakingPool",
-            "Vote",
-            "Property"
-        ];
+        string[6] memory contractNames = ["HelperConfig", "Ownablee", "UniHelper", "StakingPool", "Vote", "Property"];
 
         for (uint256 i = 0; i < contractNames.length; i++) {
             address contractAddress = DevOpsTools.get_most_recent_deployment(contractNames[i], block.chainid);
@@ -68,22 +59,16 @@ contract GetDeployedContracts is Script {
     function runSecondBatch() public {
         vm.startBroadcast();
         console2.log("Starting second batch of contract fetching...");
-        
+
         fetchSecondBatchAddresses();
         // writeSecondBatchFile();
-        
+
         vm.stopBroadcast();
     }
 
     function fetchSecondBatchAddresses() internal {
-        string[6] memory contractNames = [
-            "FactoryFilmNFT",
-            "FactorySubNFT",
-            "VabbleFund",
-            "VabbleDAO",
-            "FactoryTierNFT",
-            "Subscription"
-        ];
+        string[6] memory contractNames =
+            ["FactoryFilmNFT", "FactorySubNFT", "VabbleFund", "VabbleDAO", "FactoryTierNFT", "Subscription"];
 
         for (uint256 i = 0; i < contractNames.length; i++) {
             address contractAddress = DevOpsTools.get_most_recent_deployment(contractNames[i], block.chainid);
@@ -108,7 +93,7 @@ contract GetDeployedContracts is Script {
     //             '    "uniHelper": "', vm.toString(uniHelper), '",\n'
     //         )
     //     );
-        
+
     //     string memory part2 = string(
     //         abi.encodePacked(
     //             '    "stakingPool": "', vm.toString(stakingPool), '",\n',
@@ -131,7 +116,7 @@ contract GetDeployedContracts is Script {
     //             '    "stakingPool": "', vm.toString(stakingPool), '",\n'
     //         )
     //     );
-        
+
     //     string memory part2 = string(
     //         abi.encodePacked(
     //             '    "vote": "', vm.toString(vote), '",\n',
@@ -140,7 +125,7 @@ contract GetDeployedContracts is Script {
     //             '    "factorySubNFT": "', vm.toString(factorySubNFT), '",\n'
     //         )
     //     );
-        
+
     //     string memory part3 = string(
     //         abi.encodePacked(
     //             '    "vabbleFund": "', vm.toString(vabbleFund), '",\n',
