@@ -95,11 +95,10 @@ contract HelperConfig is Script {
         uint256 _vabDecimals = (10 ** IERC20Metadata(_vab).decimals());
         uint256 _usdcDecimals = (10 ** IERC20Metadata(_usdc).decimals());
 
-        address[] memory _depositAssets = new address[](4);
+        address[] memory _depositAssets = new address[](3);
         _depositAssets[0] = _vab;
         _depositAssets[1] = _usdc;
-        _depositAssets[2] = _usdt;
-        _depositAssets[3] = _mainnetToken;
+        _depositAssets[2] = _mainnetToken;
 
         (uint256[] memory _minPropertyList, uint256[] memory _maxPropertyList) =
             _getMinMaxPropertyLists(_vabDecimals, _usdcDecimals);
