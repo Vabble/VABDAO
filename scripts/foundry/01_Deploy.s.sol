@@ -83,21 +83,22 @@ contract DeployerScript is Script {
 
     /**
      * @dev Deploys all the necessary contracts for local testing.
-     * @param _vabWallet The address of the Vab Wallet.
-     * @param _auditor The address of the auditor.
      * @param _isForkTestEnabled Whether or not the fork test is enabled.
      * @return _contracts The deployed contracts.
      * @return _usdc The address of the USDC token.
      * @return _vab The address of the VAB token.
      * @return _usdt The address of the USDT token.
      */
-    function deployForLocalTesting(
-        address _vabWallet,
-        address _auditor,
-        bool _isForkTestEnabled
-    )
+    function deployForLocalTesting(bool _isForkTestEnabled)
         public
-        returns (Contracts memory _contracts, address _usdc, address _vab, address _usdt)
+        returns (
+            Contracts memory _contracts,
+            address _usdc,
+            address _vab,
+            address _usdt,
+            address _auditor,
+            address _vabbleWallet
+        )
     {
         require(
             block.chainid == 31_337 || _isForkTestEnabled,
@@ -108,13 +109,11 @@ contract DeployerScript is Script {
 
         vm.startPrank(deployer);
         _getConfig();
-        _deployAllContracts(_vabWallet, _auditor);
+        _deployAllContracts(vabbleWallet, auditor);
         _initializeAndSetupContracts();
         vm.stopPrank();
 
-        auditor = _auditor;
-        vabbleWallet = _vabWallet;
-        return (contracts, usdc, vab, usdt);
+        return (contracts, usdc, vab, usdt, auditor, vabbleWallet);
     }
 
     /*//////////////////////////////////////////////////////////////

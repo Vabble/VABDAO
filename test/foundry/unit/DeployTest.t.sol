@@ -52,6 +52,25 @@ contract DeployTest is BaseTest {
         assertEq(true, ownablee.isDepositAsset(address(vab)));
     }
 
+    function test_forkDeployOwnableeSetupAgainstFixedValues() public view {
+        assertEq(ownablee.auditor(), 0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12);
+        assertEq(ownablee.VAB_WALLET(), 0xD71D56BF0761537B69436D8D16381d78f90B827e);
+    }
+
+    function test_deployOwnableeSetupAgainstHelperConfig() public {
+        FullConfig memory activeConfig = getActiveConfig();
+        NetworkConfig memory networkConfig = activeConfig.networkConfig;
+        
+        assertEq(ownablee.auditor(), networkConfig.auditor);
+        assertEq(ownablee.VAB_WALLET(), networkConfig.vabbleWallet);
+        assertEq(ownablee.PAYOUT_TOKEN(), networkConfig.vab);
+        assertEq(ownablee.USDC_TOKEN(), networkConfig.usdc);
+        
+        for (uint256 i = 0; i < networkConfig.depositAssets.length; i++) {
+            assertEq(true, ownablee.isDepositAsset(networkConfig.depositAssets[i]));
+        }
+    }
+
     function test_deployUniHelperSetup() public {
         NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
 
@@ -69,7 +88,10 @@ contract DeployTest is BaseTest {
         assertEq(address(property), stakingPool.getPropertyAddress());
     }
 
-    function test_deployPropertySetup() public  {
+    /*//////////////////////////////////////////////////////////////
+                           PROPERTY CONTRACT
+    //////////////////////////////////////////////////////////////*/
+    function test_deployPropertySetup() public {
         FullConfig memory activeConfig = getActiveConfig();
         ConfigLibrary.PropertyTimePeriodConfig memory propertyTimePeriodConfig = activeConfig.propertyTimePeriodConfig;
         ConfigLibrary.PropertyRatesConfig memory propertyRatesConfig = activeConfig.propertyRatesConfig;
@@ -122,6 +144,61 @@ contract DeployTest is BaseTest {
         assertEq(property.boardRewardRate(), propertyRatesConfig.boardRewardRate, "boardRewardRate doesn't match");
     }
 
+    function test_deployPropertyMinMaxSetup() public {
+        FullConfig memory activeConfig = getActiveConfig();
+        uint256[] memory minPropertyList = activeConfig.propertyMinMaxListConfig.minPropertyList;
+        uint256[] memory maxPropertyList = activeConfig.propertyMinMaxListConfig.maxPropertyList;
+
+        // Check all min values match
+        for (uint256 i = 0; i < minPropertyList.length; i++) {
+            assertEq(
+                property.getMinPropertyList(i),
+                minPropertyList[i],
+                string.concat("Min property list mismatch at index ", vm.toString(i))
+            );
+        }
+
+        // Check all max values match
+        for (uint256 i = 0; i < maxPropertyList.length; i++) {
+            assertEq(
+                property.getMaxPropertyList(i),
+                maxPropertyList[i],
+                string.concat("Max property list mismatch at index ", vm.toString(i))
+            );
+        }
+    }
+
+    function test_deployPropertyValuesAgainstFixedValues() public view {
+        // Time periods
+        assertEq(property.filmVotePeriod(), 600, "filmVotePeriod doesn't match");
+        assertEq(property.agentVotePeriod(), 600, "agentVotePeriod doesn't match");
+        assertEq(property.disputeGracePeriod(), 600, "disputeGracePeriod doesn't match");
+        assertEq(property.propertyVotePeriod(), 600, "propertyVotePeriod doesn't match");
+        assertEq(property.lockPeriod(), 600, "lockPeriod doesn't match");
+        assertEq(property.filmRewardClaimPeriod(), 600, "filmRewardClaimPeriod doesn't match");
+        assertEq(property.boardVotePeriod(), 600, "boardVotePeriod doesn't match");
+        assertEq(property.rewardVotePeriod(), 600, "rewardVotePeriod doesn't match");
+        assertEq(property.maxAllowPeriod(), 600, "maxAllowPeriod doesn't match");
+
+        // Rates and percentages
+        assertEq(property.rewardRate(), 2_500_000, "rewardRate doesn't match");
+        assertEq(property.fundFeePercent(), 200_000_000, "fundFeePercent doesn't match");
+        assertEq(property.maxMintFeePercent(), 1_000_000_000, "maxMintFeePercent doesn't match");
+        assertEq(property.minStakerCountPercent(), 500_000_000, "minStakerCountPercent doesn't match");
+        assertEq(property.boardVoteWeight(), 3_000_000_000, "boardVoteWeight doesn't match");
+        assertEq(property.boardRewardRate(), 2_500_000_000, "boardRewardRate doesn't match");
+
+        // Amounts
+        assertEq(property.proposalFeeAmount(), 20_000_000, "proposalFeeAmount doesn't match");
+        assertEq(property.minDepositAmount(), 50_000_000, "minDepositAmount doesn't match");
+        assertEq(property.maxDepositAmount(), 5_000_000_000, "maxDepositAmount doesn't match");
+        assertEq(property.availableVABAmount(), 1_000_000_000_000_000_000, "availableVABAmount doesn't match");
+        assertEq(property.subscriptionAmount(), 2_990_000, "subscriptionAmount doesn't match");
+
+        // Other values
+        assertEq(property.minVoteCount(), 1, "minVoteCount doesn't match");
+    }
+
     function test_deployVabbleDaoSetup() public view {
         assertEq(address(ownablee), vabbleDAO.OWNABLE());
         assertEq(address(vote), vabbleDAO.VOTE());
@@ -130,8 +207,6 @@ contract DeployTest is BaseTest {
         assertEq(address(property), vabbleDAO.DAO_PROPERTY());
         assertEq(address(vabbleFund), vabbleDAO.VABBLE_FUND());
     }
-
-    
 
     function test_deploySubscriptionSetup() public {
         NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
@@ -173,30 +248,6 @@ contract DeployTest is BaseTest {
                 assertEq(usdc.allowance(user, contractAddress), type(uint256).max);
                 assertEq(usdt.allowance(user, contractAddress), type(uint256).max);
             }
-        }
-    }
-
-    function test_deployPropertyMinMaxSetup() public {
-        FullConfig memory activeConfig = getActiveConfig();
-        uint256[] memory minPropertyList = activeConfig.propertyMinMaxListConfig.minPropertyList;
-        uint256[] memory maxPropertyList = activeConfig.propertyMinMaxListConfig.maxPropertyList;
-
-        // Check all min values match
-        for (uint256 i = 0; i < minPropertyList.length; i++) {
-            assertEq(
-                property.getMinPropertyList(i),
-                minPropertyList[i],
-                string.concat("Min property list mismatch at index ", vm.toString(i))
-            );
-        }
-
-        // Check all max values match  
-        for (uint256 i = 0; i < maxPropertyList.length; i++) {
-            assertEq(
-                property.getMaxPropertyList(i),
-                maxPropertyList[i],
-                string.concat("Max property list mismatch at index ", vm.toString(i))
-            );
         }
     }
 

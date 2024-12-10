@@ -99,22 +99,38 @@ abstract contract BaseTest is Test {
 
         if (userCount > 0) {
             // check which one we need to call
-            users = utilities.createUsers(userCount, userInitialEtherFunds, userLabels);
+            users = utilities.createUsers(userCount - 2, userInitialEtherFunds, userLabels);
             deployer = users[0];
-            auditor = users[1];
-            vabWallet = users[2];
-            staker_one = users[3];
-            staker_two = users[4];
-            studio_one = users[5];
-            studio_two = users[6];
-            default_user = users[7];
-            liquidity_provider = users[8];
+            staker_one = users[1];
+            staker_two = users[2];
+            studio_one = users[3];
+            studio_two = users[4];
+            default_user = users[5];
+            liquidity_provider = users[6];
         }
 
         vm.startPrank(deployer);
-        (DeployerScript.Contracts memory deployedContracts, address _usdc, address _vab, address _usdt) =
-            deployerScript.deployForLocalTesting(vabWallet, auditor, isForkTestEnabled);
+        (
+            DeployerScript.Contracts memory deployedContracts,
+            address _usdc,
+            address _vab,
+            address _usdt,
+            address _auditor,
+            address _vabbleWallet
+        ) = deployerScript.deployForLocalTesting(isForkTestEnabled);
         vm.stopPrank();
+
+        auditor = payable(_auditor);
+        vabWallet = payable(_vabbleWallet);
+
+        vm.label(auditor, "Auditor");
+        vm.label(vabWallet, "Vab_Wallet");
+
+        users.push(payable(auditor));
+        users.push(payable(vabWallet));
+
+        vm.deal(auditor, userInitialEtherFunds);
+        vm.deal(vabWallet, userInitialEtherFunds);
 
         ownablee = deployedContracts.ownablee;
         uniHelper = deployedContracts.uniHelper;
