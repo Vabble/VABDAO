@@ -107,7 +107,6 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Initialize Pool
     function initialize(address _vabbleDAO, address _property, address _vote) external onlyDeployer {
-        // TODO - N3-3 updated(add below line)
         require(VABBLE_DAO == address(0), "init: initialized");
 
         require(_vabbleDAO != address(0), "init: zero dao");
