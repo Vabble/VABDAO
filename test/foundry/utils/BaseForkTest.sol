@@ -48,22 +48,24 @@ abstract contract BaseForkTest is Test {
     IERC20 internal usdt;
     address internal auditor;
     address internal vabbleWallet;
+    address internal deployer;
     address internal uniswapFactory;
     address internal uniswapRouter;
 
-    uint256 private baseSepoliaFork;
-    uint256 private baseFork;
+    // uint256 private baseSepoliaFork;
+    // uint256 private baseFork;
     string private BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
     string private BASE_RPC_URL = vm.envString("BASE_RPC_URL");
 
     function setUp() public virtual {
-        createForks();
         // Get the CHAIN_ID from command line or default to Base Sepolia
         // run it like this: CHAIN_ID=84532 forge test
-        uint256 chainId = vm.envOr("CHAIN_ID", uint256(84_532)); // 84532 is Base Sepolia, 8453 is Base
-        uint256 selectedFork = chainId == 84_532 ? baseSepoliaFork : baseFork;
+        uint256 chainId = vm.envOr("CHAIN_ID", uint256(84_532));
         string memory rpcUrl = chainId == 84_532 ? BASE_SEPOLIA_RPC_URL : BASE_RPC_URL;
-        vm.selectFork(selectedFork);
+        // uint256 startingBlockNumber = chainId == 84_532 ? 18_863_130 : 23_566_462;
+        vm.createSelectFork(rpcUrl);
+
+        vm.pauseGasMetering(); // disable gas metering for testing  
 
         console2.log(unicode"⚠️You are running tests on live on-chain contracts!");
         console2.log("Chain Id:", block.chainid);
@@ -71,21 +73,20 @@ abstract contract BaseForkTest is Test {
         console2.log("RPC URL:", rpcUrl);
         console2.log("Make sure this was intentional");
 
-        // get the latest deployed contracts
-        GetDeployedContracts deployedContracts = new GetDeployedContracts();
-
-        address _helperConfig = deployedContracts.getHelperConfig(true);
-        address _ownablee = deployedContracts.getOwnablee(true);
-        address _uniHelper = deployedContracts.getUniHelper(true);
-        address _stakingPool = deployedContracts.getStakingPool(true);
-        address _vote = deployedContracts.getVote(true);
-        address _property = deployedContracts.getProperty(true);
-        address _factoryFilmNFT = deployedContracts.getFactoryFilmNFT(true);
-        address _factorySubNFT = deployedContracts.getFactorySubNFT(true);
-        address _vabbleFund = deployedContracts.getVabbleFund(true);
-        address _vabbleDAO = deployedContracts.getVabbleDAO(true);
-        address _factoryTierNFT = deployedContracts.getFactoryTierNFT(true);
-        address _subscription = deployedContracts.getSubscription(true);
+        (
+            address _helperConfig,
+            address _ownablee,
+            address _uniHelper,
+            address _stakingPool,
+            address _vote,
+            address _property,
+            address _factoryFilmNFT,
+            address _factorySubNFT,
+            address _vabbleFund,
+            address _vabbleDAO,
+            address _factoryTierNFT,
+            address _subscription
+        ) = getDeployedContracts();
 
         // Cast all contract addresses to their respective contract types
         castAddressToContract(
@@ -116,14 +117,64 @@ abstract contract BaseForkTest is Test {
         vab = IERC20(activeNetworkConfig.vab);
         usdt = IERC20(activeNetworkConfig.usdt);
         auditor = activeNetworkConfig.auditor;
+        deployer = ownablee.deployer();
         vabbleWallet = activeNetworkConfig.vabbleWallet;
         uniswapFactory = activeNetworkConfig.uniswapFactory;
         uniswapRouter = activeNetworkConfig.uniswapRouter;
     }
 
-    function createForks() internal {
-        baseSepoliaFork = vm.createFork(BASE_SEPOLIA_RPC_URL);
-        baseFork = vm.createFork(BASE_RPC_URL);
+    // function createForks() internal {
+    //     baseSepoliaFork = vm.createFork(BASE_SEPOLIA_RPC_URL);
+    //     baseFork = vm.createFork(BASE_RPC_URL);
+    // }
+
+    function getDeployedContracts()
+        internal
+        returns (
+            address _helperConfig,
+            address _ownablee,
+            address _uniHelper,
+            address _stakingPool,
+            address _vote,
+            address _property,
+            address _factoryFilmNFT,
+            address _factorySubNFT,
+            address _vabbleFund,
+            address _vabbleDAO,
+            address _factoryTierNFT,
+            address _subscription
+        )
+    {
+        // get the latest deployed contracts
+        GetDeployedContracts deployedContracts = new GetDeployedContracts();
+
+        _helperConfig = deployedContracts.getHelperConfig(true);
+        _ownablee = deployedContracts.getOwnablee(true);
+        _uniHelper = deployedContracts.getUniHelper(true);
+        _stakingPool = deployedContracts.getStakingPool(true);
+        _vote = deployedContracts.getVote(true);
+        _property = deployedContracts.getProperty(true);
+        _factoryFilmNFT = deployedContracts.getFactoryFilmNFT(true);
+        _factorySubNFT = deployedContracts.getFactorySubNFT(true);
+        _vabbleFund = deployedContracts.getVabbleFund(true);
+        _vabbleDAO = deployedContracts.getVabbleDAO(true);
+        _factoryTierNFT = deployedContracts.getFactoryTierNFT(true);
+        _subscription = deployedContracts.getSubscription(true);
+
+        return (
+            _helperConfig,
+            _ownablee,
+            _uniHelper,
+            _stakingPool,
+            _vote,
+            _property,
+            _factoryFilmNFT,
+            _factorySubNFT,
+            _vabbleFund,
+            _vabbleDAO,
+            _factoryTierNFT,
+            _subscription
+        );
     }
 
     function castAddressToContract(
