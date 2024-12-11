@@ -58,14 +58,20 @@ abstract contract BaseForkTest is Test {
 
     function setUp() public virtual {
         createForks();
-        vm.selectFork(baseSepoliaFork);
+        // Get the CHAIN_ID from command line or default to Base Sepolia
+        // run it like this: CHAIN_ID=84532 forge test
+        uint256 chainId = vm.envOr("CHAIN_ID", uint256(84_532)); // 84532 is Base Sepolia, 8453 is Base
+        uint256 selectedFork = chainId == 84_532 ? baseSepoliaFork : baseFork;
+        string memory rpcUrl = chainId == 84_532 ? BASE_SEPOLIA_RPC_URL : BASE_RPC_URL;
+        vm.selectFork(selectedFork);
 
         console2.log(unicode"⚠️You are running tests on live on-chain contracts!");
         console2.log("Chain Id:", block.chainid);
         console2.log("Current timestamp:", block.timestamp);
-        console2.log("RPC URL:", BASE_SEPOLIA_RPC_URL);
+        console2.log("RPC URL:", rpcUrl);
         console2.log("Make sure this was intentional");
 
+        // get the latest deployed contracts
         GetDeployedContracts deployedContracts = new GetDeployedContracts();
 
         address _helperConfig = deployedContracts.getHelperConfig(true);
