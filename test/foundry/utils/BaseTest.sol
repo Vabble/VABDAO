@@ -33,8 +33,9 @@ abstract contract BaseTest is Test {
 
     bool public isForkTestEnabled;
     uint256 private baseSepoliaFork;
-    uint256 private startingBlockNumber = 18_863_130;
+    uint256 private startingBlockNumberBaseSepolia = 18_863_130;
     string private BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
+    string private BASE_RPC_URL = vm.envString("BASE_RPC_URL");
 
     address payable[] internal users;
     uint256 private userCount;
@@ -94,13 +95,21 @@ abstract contract BaseTest is Test {
     }
 
     function setUp() public virtual {
-        baseSepoliaFork = vm.createSelectFork(BASE_SEPOLIA_RPC_URL, startingBlockNumber);
+        uint256 chainId = vm.envOr("CHAIN_ID", uint256(84_532));
+        string memory rpcUrl = chainId == 84_532 ? BASE_SEPOLIA_RPC_URL : BASE_RPC_URL;
+
+        if (chainId == 8453) {
+            vm.createSelectFork(BASE_RPC_URL);
+        } else {
+            vm.createSelectFork(BASE_SEPOLIA_RPC_URL, startingBlockNumberBaseSepolia);
+        }
+
         isForkTestEnabled = true;
 
         if (isForkTestEnabled) {
             console2.log(unicode"⚠️You are running tests on a Fork!");
             console2.log("Chain Id:", block.chainid);
-            console2.log("RPC URL:", BASE_SEPOLIA_RPC_URL);
+            console2.log("RPC URL:", rpcUrl);
             console2.log("Make sure this was intentional");
         }
 
