@@ -6,86 +6,89 @@ import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/Test.sol";
 
 contract GetDeployedContracts is Script {
-    function run() public {
-        console2.log("Getting HelperConfig address...");
-        getHelperConfig();
+    function run() public { }
+
+    function getHelperConfig(bool suppressLogs) public view returns (address) {
+        return fetchContract("HelperConfig", suppressLogs);
     }
 
-    function getHelperConfig() public view {
-        fetchContract("HelperConfig");
+    function getOwnablee(bool suppressLogs) public view returns (address) {
+        return fetchContract("Ownablee", suppressLogs);
     }
 
-    function getOwnablee() public view {
-        fetchContract("Ownablee");
+    function getUniHelper(bool suppressLogs) public view returns (address) {
+        return fetchContract("UniHelper", suppressLogs);
     }
 
-    function getUniHelper() public view {
-        fetchContract("UniHelper");
+    function getStakingPool(bool suppressLogs) public view returns (address) {
+        return fetchContract("StakingPool", suppressLogs);
     }
 
-    function getStakingPool() public view {
-        fetchContract("StakingPool");
+    function getVote(bool suppressLogs) public view returns (address) {
+        return fetchContract("Vote", suppressLogs);
     }
 
-    function getVote() public view {
-        fetchContract("Vote");
+    function getProperty(bool suppressLogs) public view returns (address) {
+        return fetchContract("Property", suppressLogs);
     }
 
-    function getProperty() public view {
-        fetchContract("Property");
+    function getFactoryFilmNFT(bool suppressLogs) public view returns (address) {
+        return fetchContract("FactoryFilmNFT", suppressLogs);
     }
 
-    function getFactoryFilmNFT() public view {
-        fetchContract("FactoryFilmNFT");
+    function getFactorySubNFT(bool suppressLogs) public view returns (address) {
+        return fetchContract("FactorySubNFT", suppressLogs);
     }
 
-    function getFactorySubNFT() public view {
-        fetchContract("FactorySubNFT");
+    function getVabbleFund(bool suppressLogs) public view returns (address) {
+        return fetchContract("VabbleFund", suppressLogs);
     }
 
-    function getVabbleFund() public view {
-        fetchContract("VabbleFund");
+    function getVabbleDAO(bool suppressLogs) public view returns (address) {
+        return fetchContract("VabbleDAO", suppressLogs);
     }
 
-    function getVabbleDAO() public view {
-        fetchContract("VabbleDAO");
+    function getFactoryTierNFT(bool suppressLogs) public view returns (address) {
+        return fetchContract("FactoryTierNFT", suppressLogs);
     }
 
-    function getFactoryTierNFT() public view {
-        fetchContract("FactoryTierNFT");
+    function getSubscription(bool suppressLogs) public view returns (address) {
+        return fetchContract("Subscription", suppressLogs);
     }
 
-    function getSubscription() public view {
-        fetchContract("Subscription");
-    }
-
-    function fetchContract(string memory contractName) internal view {
+    function fetchContract(string memory contractName, bool suppressLogs) internal view returns (address) {
         address contractAddress = DevOpsTools.get_most_recent_deployment(contractName, block.chainid);
         require(contractAddress != address(0), string(abi.encodePacked(contractName, " not deployed")));
-        console2.log(contractName, contractAddress);
+        if (!suppressLogs) {
+            console2.log(contractName, contractAddress);
+        }
+        return contractAddress;
     }
 
-    function getFirstBatch() public view {
+    function getFirstBatch() public view returns (address, address, address, address) {
         console2.log("\n=== Fetching first batch of contracts ===\n");
-        getHelperConfig();
-        getOwnablee();
-        getUniHelper();
-        getStakingPool();
+        address helperConfig = getHelperConfig(false);
+        address ownablee = getOwnablee(false);
+        address uniHelper = getUniHelper(false);
+        address stakingPool = getStakingPool(false);
+        return (helperConfig, ownablee, uniHelper, stakingPool);
     }
 
-    function getSecondBatch() public view {
+    function getSecondBatch() public view returns (address, address, address, address) {
         console2.log("\n=== Fetching second batch of contracts ===\n");
-        getVote();
-        getProperty();
-        getFactoryFilmNFT();
-        getFactorySubNFT();
+        address vote = getVote(false);
+        address property = getProperty(false);
+        address factoryFilmNFT = getFactoryFilmNFT(false);
+        address factorySubNFT = getFactorySubNFT(false);
+        return (vote, property, factoryFilmNFT, factorySubNFT);
     }
 
-    function getThirdBatch() public view {
+    function getThirdBatch() public view returns (address, address, address, address) {
         console2.log("\n=== Fetching third batch of contracts ===\n");
-        getVabbleFund();
-        getVabbleDAO();
-        getFactoryTierNFT();
-        getSubscription();
+        address vabbleFund = getVabbleFund(false);
+        address vabbleDAO = getVabbleDAO(false);
+        address factoryTierNFT = getFactoryTierNFT(false);
+        address subscription = getSubscription(false);
+        return (vabbleFund, vabbleDAO, factoryTierNFT, subscription);
     }
 }

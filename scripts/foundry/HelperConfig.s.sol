@@ -69,7 +69,7 @@ contract HelperConfig is Script {
         // networkConfigs[BASE__CHAIN_ID] = getBaseConfig();
     }
 
-    function getConfigByChainId(uint256 chainId) public returns (FullConfig memory) {
+    function getConfigByChainId(uint256 chainId) public view returns (FullConfig memory) {
         if (chainId == 31_337) {
             revert("Local network not implemented");
             // return getOrCreateAnvilEthConfig();
@@ -78,7 +78,7 @@ contract HelperConfig is Script {
         }
     }
 
-    function getActiveNetworkConfig() public returns (FullConfig memory) {
+    function getActiveNetworkConfig() public view returns (FullConfig memory) {
         return getConfigByChainId(block.chainid);
     }
 
