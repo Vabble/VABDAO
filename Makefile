@@ -129,4 +129,8 @@ fetch-film-data:
 migrate-films:
 	@forge script scripts/foundry/05_FilmMigration.s.sol $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
 
+# make get-vote-info-for-film-proposals ARGS="--network base_sepolia"
+get-vote-info-for-film-proposals:
+	@forge script scripts/foundry/06_GetVoteInfoForFilmProposals.s.sol $(NETWORK_ARGS) --via-ir
+
 SHELL := /bin/bash
