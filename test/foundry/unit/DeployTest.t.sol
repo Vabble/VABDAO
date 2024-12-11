@@ -2,41 +2,27 @@
 pragma solidity ^0.8.4;
 
 import { BaseTest, console } from "../utils/BaseTest.sol";
-import { HelperConfig, FullConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { ConfigLibrary } from "../../../contracts/libraries/ConfigLibrary.sol";
 
 contract DeployTest is BaseTest {
-    HelperConfig helperConfig;
-
     uint256 usdcDecimals = 6;
     uint256 vabDecimals = 18;
     uint256 usdtDecimals = 6;
 
-    function setUp() public override {
-        super.setUp();
-        helperConfig = new HelperConfig();
-    }
-
-    //TODO: test the setup functions more but for now this is ok to get started
-
-    function test_deployUsdcSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
+    function test_deployUsdcSetup() public view {
         assertEq(IERC20Metadata(address(usdc)).decimals(), usdcDecimals);
-        assertEq(address(usdc), activeConfig.usdc);
+        assertEq(address(usdc), activeNetworkConfig.usdc);
     }
 
-    function test_deployVabSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
+    function test_deployVabSetup() public view {
         assertEq(IERC20Metadata(address(vab)).decimals(), vabDecimals);
-        assertEq(address(vab), activeConfig.vab);
+        assertEq(address(vab), activeNetworkConfig.vab);
     }
 
-    function test_deployUsdtSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
+    function test_deployUsdtSetup() public view {
         assertEq(IERC20Metadata(address(usdt)).decimals(), usdtDecimals);
-        assertEq(address(usdt), activeConfig.usdt);
+        assertEq(address(usdt), activeNetworkConfig.usdt);
     }
 
     function test_deployOwnableSetup() public view {
@@ -52,30 +38,20 @@ contract DeployTest is BaseTest {
         assertEq(true, ownablee.isDepositAsset(address(vab)));
     }
 
-    function test_forkDeployOwnableeSetupAgainstFixedValues() public view {
-        assertEq(ownablee.auditor(), 0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12);
-        assertEq(ownablee.VAB_WALLET(), 0xD71D56BF0761537B69436D8D16381d78f90B827e);
-    }
+    function test_deployOwnableeSetupAgainstHelperConfig() public view {
+        assertEq(ownablee.auditor(), activeNetworkConfig.auditor);
+        assertEq(ownablee.VAB_WALLET(), activeNetworkConfig.vabbleWallet);
+        assertEq(ownablee.PAYOUT_TOKEN(), activeNetworkConfig.vab);
+        assertEq(ownablee.USDC_TOKEN(), activeNetworkConfig.usdc);
 
-    function test_deployOwnableeSetupAgainstHelperConfig() public {
-        FullConfig memory activeConfig = getActiveConfig();
-        NetworkConfig memory networkConfig = activeConfig.networkConfig;
-        
-        assertEq(ownablee.auditor(), networkConfig.auditor);
-        assertEq(ownablee.VAB_WALLET(), networkConfig.vabbleWallet);
-        assertEq(ownablee.PAYOUT_TOKEN(), networkConfig.vab);
-        assertEq(ownablee.USDC_TOKEN(), networkConfig.usdc);
-        
-        for (uint256 i = 0; i < networkConfig.depositAssets.length; i++) {
-            assertEq(true, ownablee.isDepositAsset(networkConfig.depositAssets[i]));
+        for (uint256 i = 0; i < activeNetworkConfig.depositAssets.length; i++) {
+            assertEq(true, ownablee.isDepositAsset(activeNetworkConfig.depositAssets[i]));
         }
     }
 
-    function test_deployUniHelperSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
-
-        address uniswapFactory = activeConfig.uniswapFactory;
-        address uniswapRouter = activeConfig.uniswapRouter;
+    function test_deployUniHelperSetup() public view {
+        address uniswapFactory = activeNetworkConfig.uniswapFactory;
+        address uniswapRouter = activeNetworkConfig.uniswapRouter;
 
         assertEq(uniswapRouter, uniHelper.getUniswapRouter());
         assertEq(uniswapFactory, uniHelper.getUniswapFactory());
@@ -91,12 +67,7 @@ contract DeployTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                            PROPERTY CONTRACT
     //////////////////////////////////////////////////////////////*/
-    function test_deployPropertySetup() public {
-        FullConfig memory activeConfig = getActiveConfig();
-        ConfigLibrary.PropertyTimePeriodConfig memory propertyTimePeriodConfig = activeConfig.propertyTimePeriodConfig;
-        ConfigLibrary.PropertyRatesConfig memory propertyRatesConfig = activeConfig.propertyRatesConfig;
-        ConfigLibrary.PropertyAmountsConfig memory propertyAmountsConfig = activeConfig.propertyAmountsConfig;
-
+    function test_deployPropertySetup() public view {
         assertEq(property.filmVotePeriod(), propertyTimePeriodConfig.filmVotePeriod, "filmVotePeriod doesn't match");
         assertEq(property.agentVotePeriod(), propertyTimePeriodConfig.agentVotePeriod, "agentVotePeriod doesn't match");
         assertEq(
@@ -144,10 +115,9 @@ contract DeployTest is BaseTest {
         assertEq(property.boardRewardRate(), propertyRatesConfig.boardRewardRate, "boardRewardRate doesn't match");
     }
 
-    function test_deployPropertyMinMaxSetup() public {
-        FullConfig memory activeConfig = getActiveConfig();
-        uint256[] memory minPropertyList = activeConfig.propertyMinMaxListConfig.minPropertyList;
-        uint256[] memory maxPropertyList = activeConfig.propertyMinMaxListConfig.maxPropertyList;
+    function test_deployPropertyMinMaxSetup() public view {
+        uint256[] memory minPropertyList = activeHelperConfig.propertyMinMaxListConfig.minPropertyList;
+        uint256[] memory maxPropertyList = activeHelperConfig.propertyMinMaxListConfig.maxPropertyList;
 
         // Check all min values match
         for (uint256 i = 0; i < minPropertyList.length; i++) {
@@ -208,12 +178,11 @@ contract DeployTest is BaseTest {
         assertEq(address(vabbleFund), vabbleDAO.VABBLE_FUND());
     }
 
-    function test_deploySubscriptionSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig().networkConfig;
+    function test_deploySubscriptionSetup() public view {
         uint256[] memory _discountList = subscription.getDiscountPercentList();
-        assertEq(activeConfig.discountPercents[0], _discountList[0]);
-        assertEq(activeConfig.discountPercents[1], _discountList[1]);
-        assertEq(activeConfig.discountPercents[2], _discountList[2]);
+        assertEq(activeNetworkConfig.discountPercents[0], _discountList[0]);
+        assertEq(activeNetworkConfig.discountPercents[1], _discountList[1]);
+        assertEq(activeNetworkConfig.discountPercents[2], _discountList[2]);
     }
 
     function test_usersTokenBalance() public view {
@@ -249,12 +218,5 @@ contract DeployTest is BaseTest {
                 assertEq(usdt.allowance(user, contractAddress), type(uint256).max);
             }
         }
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                           INTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-    function getActiveConfig() internal returns (FullConfig memory) {
-        return helperConfig.getActiveNetworkConfig();
     }
 }

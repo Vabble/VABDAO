@@ -85,20 +85,11 @@ contract DeployerScript is Script {
      * @dev Deploys all the necessary contracts for local testing.
      * @param _isForkTestEnabled Whether or not the fork test is enabled.
      * @return _contracts The deployed contracts.
-     * @return _usdc The address of the USDC token.
-     * @return _vab The address of the VAB token.
-     * @return _usdt The address of the USDT token.
+     * @return _activeHelperConfig The active network configuration.
      */
     function deployForLocalTesting(bool _isForkTestEnabled)
         public
-        returns (
-            Contracts memory _contracts,
-            address _usdc,
-            address _vab,
-            address _usdt,
-            address _auditor,
-            address _vabbleWallet
-        )
+        returns (Contracts memory _contracts, FullConfig memory _activeHelperConfig)
     {
         require(
             block.chainid == 31_337 || _isForkTestEnabled,
@@ -108,12 +99,12 @@ contract DeployerScript is Script {
         deployer = msg.sender;
 
         vm.startPrank(deployer);
-        _getConfig();
+        FullConfig memory activeHelperConfig = _getConfig();
         _deployAllContracts(vabbleWallet, auditor);
         _initializeAndSetupContracts();
         vm.stopPrank();
 
-        return (contracts, usdc, vab, usdt, auditor, vabbleWallet);
+        return (contracts, activeHelperConfig);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -124,7 +115,7 @@ contract DeployerScript is Script {
      * @dev Retrieves the active network configuration from the helper contract and assigns the values to the local
      * variables.
      */
-    function _getConfig() internal {
+    function _getConfig() internal returns (FullConfig memory) {
         HelperConfig helperConfig = new HelperConfig();
         FullConfig memory activeConfig = helperConfig.getActiveNetworkConfig();
 
@@ -142,6 +133,8 @@ contract DeployerScript is Script {
         propertyRatesConfig = activeConfig.propertyRatesConfig;
         propertyAmountsConfig = activeConfig.propertyAmountsConfig;
         propertyMinMaxListConfig = activeConfig.propertyMinMaxListConfig;
+
+        return activeConfig;
     }
 
     /**

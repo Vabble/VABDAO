@@ -23,6 +23,9 @@ import { Vote } from "../../../contracts/dao/Vote.sol";
 import { IUniswapV2Pair } from "../interfaces/uniswap-v2/IUniswapV2Pair.sol";
 import { IUniswapV2Factory } from "../interfaces/uniswap-v2/IUniswapV2Factory.sol";
 import { IUniswapV2Router02 } from "../interfaces/uniswap-v2/IUniswapV2Router02.sol";
+import { HelperConfig, FullConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
+
+import { ConfigLibrary } from "../../../contracts/libraries/ConfigLibrary.sol";
 
 abstract contract BaseTest is Test {
     Utilities private utilities;
@@ -68,6 +71,13 @@ abstract contract BaseTest is Test {
     Subscription subscription;
     // VabbleNFT vabbleNFT;
 
+    FullConfig internal activeHelperConfig;
+    NetworkConfig internal activeNetworkConfig;
+
+    ConfigLibrary.PropertyTimePeriodConfig internal propertyTimePeriodConfig;
+    ConfigLibrary.PropertyRatesConfig internal propertyRatesConfig;
+    ConfigLibrary.PropertyAmountsConfig internal propertyAmountsConfig;
+
     constructor() {
         userCount = 9;
 
@@ -110,18 +120,18 @@ abstract contract BaseTest is Test {
         }
 
         vm.startPrank(deployer);
-        (
-            DeployerScript.Contracts memory deployedContracts,
-            address _usdc,
-            address _vab,
-            address _usdt,
-            address _auditor,
-            address _vabbleWallet
-        ) = deployerScript.deployForLocalTesting(isForkTestEnabled);
+        (DeployerScript.Contracts memory deployedContracts, FullConfig memory _activeHelperConfig) =
+            deployerScript.deployForLocalTesting(isForkTestEnabled);
         vm.stopPrank();
 
-        auditor = payable(_auditor);
-        vabWallet = payable(_vabbleWallet);
+        activeHelperConfig = _activeHelperConfig;
+        activeNetworkConfig = activeHelperConfig.networkConfig;
+        propertyTimePeriodConfig = activeHelperConfig.propertyTimePeriodConfig;
+        propertyRatesConfig = activeHelperConfig.propertyRatesConfig;
+        propertyAmountsConfig = activeHelperConfig.propertyAmountsConfig;
+
+        auditor = payable(_activeHelperConfig.networkConfig.auditor);
+        vabWallet = payable(_activeHelperConfig.networkConfig.vabbleWallet);
 
         vm.label(auditor, "Auditor");
         vm.label(vabWallet, "Vab_Wallet");
@@ -143,9 +153,9 @@ abstract contract BaseTest is Test {
         vabbleDAO = deployedContracts.vabbleDAO;
         factoryTierNFT = deployedContracts.factoryTierNFT;
         subscription = deployedContracts.subscription;
-        usdc = IERC20(_usdc);
-        vab = IERC20(_vab);
-        usdt = IERC20(_usdt);
+        usdc = IERC20(_activeHelperConfig.networkConfig.usdc);
+        vab = IERC20(_activeHelperConfig.networkConfig.vab);
+        usdt = IERC20(_activeHelperConfig.networkConfig.usdt);
 
         if (userCount > 0) {
             _fundUsersWithTestnetToken(users);
