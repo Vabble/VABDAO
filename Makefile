@@ -125,7 +125,7 @@ get-deployed-contracts:
 
 
 fund-all:
-	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
+	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) $(ACCOUNT_OPTION) --sender $(DEPLOYER_ADDRESS) --broadcast
 
 # make fetch-film-data ARGS="--network base_sepolia"
 fetch-film-data:
@@ -133,7 +133,7 @@ fetch-film-data:
 
 # make migrate-films ARGS="--network base_sepolia"
 migrate-films:
-	@forge script scripts/foundry/05_FilmMigration.s.sol $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
+	@forge script scripts/foundry/05_FilmMigration.s.sol $(NETWORK_ARGS) $(ACCOUNT_OPTION) --sender $(DEPLOYER_ADDRESS) --broadcast
 
 # make get-vote-info-for-film-proposals ARGS="--network base_sepolia"
 get-vote-info-for-film-proposals:
