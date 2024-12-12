@@ -6,7 +6,10 @@ import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/Test.sol";
 
 contract GetDeployedContracts is Script {
-    function run() public { }
+    function run() public {
+        vm.pauseGasMetering();
+        getAllContracts();
+    }
 
     function getHelperConfig(bool suppressLogs) public view returns (address) {
         return fetchContract("HelperConfig", suppressLogs);
@@ -65,30 +68,19 @@ contract GetDeployedContracts is Script {
         return contractAddress;
     }
 
-    function getFirstBatch() public view returns (address, address, address, address) {
-        console2.log("\n=== Fetching first batch of contracts ===\n");
-        address helperConfig = getHelperConfig(false);
-        address ownablee = getOwnablee(false);
-        address uniHelper = getUniHelper(false);
-        address stakingPool = getStakingPool(false);
-        return (helperConfig, ownablee, uniHelper, stakingPool);
-    }
-
-    function getSecondBatch() public view returns (address, address, address, address) {
-        console2.log("\n=== Fetching second batch of contracts ===\n");
-        address vote = getVote(false);
-        address property = getProperty(false);
-        address factoryFilmNFT = getFactoryFilmNFT(false);
-        address factorySubNFT = getFactorySubNFT(false);
-        return (vote, property, factoryFilmNFT, factorySubNFT);
-    }
-
-    function getThirdBatch() public view returns (address, address, address, address) {
-        console2.log("\n=== Fetching third batch of contracts ===\n");
-        address vabbleFund = getVabbleFund(false);
-        address vabbleDAO = getVabbleDAO(false);
-        address factoryTierNFT = getFactoryTierNFT(false);
-        address subscription = getSubscription(false);
-        return (vabbleFund, vabbleDAO, factoryTierNFT, subscription);
+    function getAllContracts() public view {
+        console2.log("\n=== Fetching all contracts ===\n");
+        getHelperConfig(false);
+        getOwnablee(false);
+        getUniHelper(false);
+        getStakingPool(false);
+        getVote(false);
+        getProperty(false);
+        getFactoryFilmNFT(false);
+        getFactorySubNFT(false);
+        getVabbleFund(false);
+        getVabbleDAO(false);
+        getFactoryTierNFT(false);
+        getSubscription(false);
     }
 }
