@@ -17,15 +17,15 @@
 
 ## Requirements
 
--   [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-    -   You'll know you did it right if you can run `git --version` and you see a response like `git version x.x.x`
--   [foundry](https://getfoundry.sh/)
-    -   You'll know you did it right if you can run `forge --version` and you see a response like `forge 0.2.0 (816e00b 2023-03-16T00:05:26.396218Z)`
+- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+  - You'll know you did it right if you can run `git --version` and you see a response like `git version x.x.x`
+- [foundry](https://getfoundry.sh/)
+  - You'll know you did it right if you can run `forge --version` and you see a response like `forge 0.2.0 (816e00b 2023-03-16T00:05:26.396218Z)`
 
 ## Installation
 
 ```bash
-git clone git@github.com:Mill1995/VABDAO.git
+git clone git@github.com:Vabble/VABDAO.git
 cd VABDAO
 git checkout foundry_setup
 npm install
@@ -33,6 +33,8 @@ make
 ```
 
 ### Create a Deployer wallet
+
+Note:You can skip this if using a ledger.
 
 This will Import a private key into an encrypted keystore.
 
@@ -42,7 +44,7 @@ cast wallet import Deployer --interactive
 
 #### Environment
 
--   Create a .env and paste in these values, so hardhat doesn't freak out:
+- Create a .env and paste in these values, so hardhat doesn't freak out:
 
 ```javascript
     BASE_SEPOLIA_RPC_URL="https://sepolia.base.org/"
@@ -66,6 +68,9 @@ make build
 
 ```
 make deploy ARGS="--network base_sepolia"
+
+For ledger:
+make deploy ARGS="--network base_sepolia --ledger"
 ```
 
 ## Testing
@@ -108,6 +113,6 @@ make slither
 
 # Good To Know
 
--   Checkout foundry.toml
--   Checkout Makefile for commands and more
--   Deploy Scripts are inside ./scripts/foundry
+- Checkout foundry.toml
+- Checkout Makefile for commands and more
+- Deploy Scripts are inside ./scripts/foundry

@@ -56,22 +56,27 @@ scope :; tree ./contracts/ | sed 's/└/#/g; s/──/--/g; s/├/#/g; s/│ /|/
 NETWORK_ARGS := --rpc-url http://localhost:8545 --private-key $(DEFAULT_ANVIL_KEY) -vvvvv
 ETHERSCAN_API_KEY := $(API_KEY_ETHERSCAN)
 CHAIN_ID := 31337
+ACCOUNT_OPTION := --account Deployer # Default to Deployer account
 
-ifeq ($(ARGS),--network base)
+ifeq ($(findstring --network base,$(ARGS)),--network base)
     CHAIN_ID := 8453
     NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_RPC_URL)
     ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
 endif
 
-ifeq ($(ARGS),--network base_sepolia)
+ifeq ($(findstring --network base_sepolia,$(ARGS)),--network base_sepolia)
     CHAIN_ID := 84532
     NETWORK_ARGS := --chain-id $(CHAIN_ID) --rpc-url $(BASE_SEPOLIA_RPC_URL)
     ETHERSCAN_API_KEY := $(API_KEY_BASESCAN)
 endif
 
+ifneq ($(findstring --ledger,$(ARGS)),)
+    ACCOUNT_OPTION := --ledger
+endif
+
 # run this with: make deploy ARGS="--network base_sepolia"
 deploy:
-	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) --account Deployer --broadcast --force --slow --optimize --optimizer-runs 200 --verify  --etherscan-api-key $(ETHERSCAN_API_KEY)
+	@forge script scripts/foundry/01_Deploy.s.sol:DeployerScript $(NETWORK_ARGS) $(ACCOUNT_OPTION) --broadcast --force --slow --optimize --optimizer-runs 200 --verify --etherscan-api-key $(ETHERSCAN_API_KEY)
 
 # Get individual contract addresses
 get-helper-config:
