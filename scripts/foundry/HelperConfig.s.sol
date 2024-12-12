@@ -292,7 +292,7 @@ contract HelperConfig is CodeConstants, Script {
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.DISPUTE_GRACE_PERIOD)] = 7 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPERTY_VOTE_PERIOD)] = 7 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.LOCK_PERIOD)] = 7 days;
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] = 2 * RATE_PRECISION; // 0.002%
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] = 6 * RATE_PRECISION; // 0.006%
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.FILM_REWARD_CLAIM_PERIOD)] = 1 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_ALLOW_PERIOD)] = 7 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPOSAL_FEE_AMOUNT)] = 20 * USDC_DECIMAL_MULTIPLIER; // $20
@@ -316,7 +316,7 @@ contract HelperConfig is CodeConstants, Script {
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.DISPUTE_GRACE_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPERTY_VOTE_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.LOCK_PERIOD)] = 90 days;
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] = 58 * RATE_PRECISION; // 0.058%
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] = 130 * RATE_PRECISION; // 0.13%
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.FILM_REWARD_CLAIM_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_ALLOW_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPOSAL_FEE_AMOUNT)] = 500 * USDC_DECIMAL_MULTIPLIER; // $500
