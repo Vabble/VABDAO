@@ -23,15 +23,19 @@ import { Vote } from "../../../contracts/dao/Vote.sol";
 import { IUniswapV2Pair } from "../interfaces/uniswap-v2/IUniswapV2Pair.sol";
 import { IUniswapV2Factory } from "../interfaces/uniswap-v2/IUniswapV2Factory.sol";
 import { IUniswapV2Router02 } from "../interfaces/uniswap-v2/IUniswapV2Router02.sol";
+import { HelperConfig, FullConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
 
-contract BaseTest is Test {
+import { ConfigLibrary } from "../../../contracts/libraries/ConfigLibrary.sol";
+
+abstract contract BaseTest is Test {
     Utilities private utilities;
     DeployerScript private deployerScript;
 
     bool public isForkTestEnabled;
     uint256 private baseSepoliaFork;
-    uint256 private startingBlockNumber = 9_306_318;
+    uint256 private startingBlockNumberBaseSepolia = 18_863_130;
     string private BASE_SEPOLIA_RPC_URL = vm.envString("BASE_SEPOLIA_RPC_URL");
+    string private BASE_RPC_URL = vm.envString("BASE_RPC_URL");
 
     address payable[] internal users;
     uint256 private userCount;
@@ -68,6 +72,13 @@ contract BaseTest is Test {
     Subscription subscription;
     // VabbleNFT vabbleNFT;
 
+    FullConfig internal activeHelperConfig;
+    NetworkConfig internal activeNetworkConfig;
+
+    ConfigLibrary.PropertyTimePeriodConfig internal propertyTimePeriodConfig;
+    ConfigLibrary.PropertyRatesConfig internal propertyRatesConfig;
+    ConfigLibrary.PropertyAmountsConfig internal propertyAmountsConfig;
+
     constructor() {
         userCount = 9;
 
@@ -84,13 +95,21 @@ contract BaseTest is Test {
     }
 
     function setUp() public virtual {
-        baseSepoliaFork = vm.createSelectFork(BASE_SEPOLIA_RPC_URL, startingBlockNumber);
+        uint256 chainId = vm.envOr("CHAIN_ID", uint256(84_532));
+        string memory rpcUrl = chainId == 84_532 ? BASE_SEPOLIA_RPC_URL : BASE_RPC_URL;
+
+        if (chainId == 8453) {
+            vm.createSelectFork(BASE_RPC_URL);
+        } else {
+            vm.createSelectFork(BASE_SEPOLIA_RPC_URL, startingBlockNumberBaseSepolia);
+        }
+
         isForkTestEnabled = true;
 
         if (isForkTestEnabled) {
             console2.log(unicode"⚠️You are running tests on a Fork!");
             console2.log("Chain Id:", block.chainid);
-            console2.log("RPC URL:", BASE_SEPOLIA_RPC_URL);
+            console2.log("RPC URL:", rpcUrl);
             console2.log("Make sure this was intentional");
         }
 
@@ -99,22 +118,38 @@ contract BaseTest is Test {
 
         if (userCount > 0) {
             // check which one we need to call
-            users = utilities.createUsers(userCount, userInitialEtherFunds, userLabels);
+            users = utilities.createUsers(userCount - 2, userInitialEtherFunds, userLabels);
             deployer = users[0];
-            auditor = users[1];
-            vabWallet = users[2];
-            staker_one = users[3];
-            staker_two = users[4];
-            studio_one = users[5];
-            studio_two = users[6];
-            default_user = users[7];
-            liquidity_provider = users[8];
+            staker_one = users[1];
+            staker_two = users[2];
+            studio_one = users[3];
+            studio_two = users[4];
+            default_user = users[5];
+            liquidity_provider = users[6];
         }
 
         vm.startPrank(deployer);
-        (DeployerScript.Contracts memory deployedContracts, address _usdc, address _vab, address _usdt) =
-            deployerScript.deployForLocalTesting(vabWallet, auditor, isForkTestEnabled);
+        (DeployerScript.Contracts memory deployedContracts, FullConfig memory _activeHelperConfig) =
+            deployerScript.deployForLocalTesting(isForkTestEnabled);
         vm.stopPrank();
+
+        activeHelperConfig = _activeHelperConfig;
+        activeNetworkConfig = activeHelperConfig.networkConfig;
+        propertyTimePeriodConfig = activeHelperConfig.propertyTimePeriodConfig;
+        propertyRatesConfig = activeHelperConfig.propertyRatesConfig;
+        propertyAmountsConfig = activeHelperConfig.propertyAmountsConfig;
+
+        auditor = payable(_activeHelperConfig.networkConfig.auditor);
+        vabWallet = payable(_activeHelperConfig.networkConfig.vabbleWallet);
+
+        vm.label(auditor, "Auditor");
+        vm.label(vabWallet, "Vab_Wallet");
+
+        users.push(payable(auditor));
+        users.push(payable(vabWallet));
+
+        vm.deal(auditor, userInitialEtherFunds);
+        vm.deal(vabWallet, userInitialEtherFunds);
 
         ownablee = deployedContracts.ownablee;
         uniHelper = deployedContracts.uniHelper;
@@ -127,9 +162,9 @@ contract BaseTest is Test {
         vabbleDAO = deployedContracts.vabbleDAO;
         factoryTierNFT = deployedContracts.factoryTierNFT;
         subscription = deployedContracts.subscription;
-        usdc = IERC20(_usdc);
-        vab = IERC20(_vab);
-        usdt = IERC20(_usdt);
+        usdc = IERC20(_activeHelperConfig.networkConfig.usdc);
+        vab = IERC20(_activeHelperConfig.networkConfig.vab);
+        usdt = IERC20(_activeHelperConfig.networkConfig.usdt);
 
         if (userCount > 0) {
             _fundUsersWithTestnetToken(users);

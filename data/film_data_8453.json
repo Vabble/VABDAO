@@ -476,9 +476,9 @@
         "noVote": 0,
         "enableClaimer": 0,
         "pCreateTime": 1731758217,
-        "pApproveTime": 0,
+        "pApproveTime": 1733901279,
         "studio": "0xa6d9f34d3206edd6a55f295d248cf7b4fdf8840d",
-        "status": 1,
+        "status": 2,
         "sharePercents": [10000000000],
         "studioPayees": ["0xa6d9f34d3206edd6a55f295d248cf7b4fdf8840d"]
     },

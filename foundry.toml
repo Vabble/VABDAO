@@ -10,13 +10,15 @@ gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 200
 auto_detect_solc = true
-ffi = true
-# via-ir = true
+no_match_test = "Fuzz"
+memory_limit = 2147483648
 fs_permissions = [
   { access = "read", path = "./broadcast" },
-  { access = "write", path = "film_data.json" },
-  { access = "read", path = "film_data.json" },
+  { access = "read-write", path = "./data" },
 ]
+# gas_limit = 2147483648
+# ffi = true
+# via-ir = true
 
 [profile.lite]
 optimizer = false

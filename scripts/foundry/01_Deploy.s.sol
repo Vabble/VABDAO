@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 import { Script } from "lib/forge-std/src/Script.sol";
-import { HelperConfig, NetworkConfig } from "./HelperConfig.s.sol";
+import { HelperConfig, NetworkConfig, FullConfig } from "./HelperConfig.s.sol";
 import { VabbleDAO } from "../../contracts/dao/VabbleDAO.sol";
 import { FactoryFilmNFT } from "../../contracts/dao/FactoryFilmNFT.sol";
 import { FactorySubNFT } from "../../contracts/dao/FactorySubNFT.sol";
@@ -16,11 +16,16 @@ import { VabbleFund } from "../../contracts/dao/VabbleFund.sol";
 import { VabbleNFT } from "../../contracts/dao/VabbleNFT.sol";
 import { Vote } from "../../contracts/dao/Vote.sol";
 import { console2 } from "lib/forge-std/src/console2.sol";
-
+import { ConfigLibrary } from "../../contracts/libraries/ConfigLibrary.sol";
 /**
  * @title A Foundry script to fund the StakingPool and VabbleDAO contract with necessary VAB tokens
  */
+
 contract DeployerScript is Script {
+    using ConfigLibrary for ConfigLibrary.PropertyTimePeriodConfig;
+    using ConfigLibrary for ConfigLibrary.PropertyRatesConfig;
+    using ConfigLibrary for ConfigLibrary.PropertyAmountsConfig;
+
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
@@ -38,6 +43,11 @@ contract DeployerScript is Script {
         Subscription subscription;
         VabbleNFT vabbleNFT;
     }
+
+    ConfigLibrary.PropertyTimePeriodConfig public propertyTimePeriodConfig;
+    ConfigLibrary.PropertyRatesConfig public propertyRatesConfig;
+    ConfigLibrary.PropertyAmountsConfig public propertyAmountsConfig;
+    ConfigLibrary.PropertyMinMaxListConfig internal propertyMinMaxListConfig;
 
     Contracts public contracts;
     address public deployer;
@@ -73,21 +83,13 @@ contract DeployerScript is Script {
 
     /**
      * @dev Deploys all the necessary contracts for local testing.
-     * @param _vabWallet The address of the Vab Wallet.
-     * @param _auditor The address of the auditor.
      * @param _isForkTestEnabled Whether or not the fork test is enabled.
      * @return _contracts The deployed contracts.
-     * @return _usdc The address of the USDC token.
-     * @return _vab The address of the VAB token.
-     * @return _usdt The address of the USDT token.
+     * @return _activeHelperConfig The active network configuration.
      */
-    function deployForLocalTesting(
-        address _vabWallet,
-        address _auditor,
-        bool _isForkTestEnabled
-    )
+    function deployForLocalTesting(bool _isForkTestEnabled)
         public
-        returns (Contracts memory _contracts, address _usdc, address _vab, address _usdt)
+        returns (Contracts memory _contracts, FullConfig memory _activeHelperConfig)
     {
         require(
             block.chainid == 31_337 || _isForkTestEnabled,
@@ -97,14 +99,12 @@ contract DeployerScript is Script {
         deployer = msg.sender;
 
         vm.startPrank(deployer);
-        _getConfig();
-        _deployAllContracts(_vabWallet, _auditor);
+        FullConfig memory activeHelperConfig = _getConfig();
+        _deployAllContracts(vabbleWallet, auditor);
         _initializeAndSetupContracts();
         vm.stopPrank();
 
-        auditor = _auditor;
-        vabbleWallet = _vabWallet;
-        return (contracts, usdc, vab, usdt);
+        return (contracts, activeHelperConfig);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -115,21 +115,26 @@ contract DeployerScript is Script {
      * @dev Retrieves the active network configuration from the helper contract and assigns the values to the local
      * variables.
      */
-    function _getConfig() internal {
+    function _getConfig() internal returns (FullConfig memory) {
         HelperConfig helperConfig = new HelperConfig();
-        NetworkConfig memory activeConfig = helperConfig.getActiveNetworkConfig();
+        FullConfig memory activeConfig = helperConfig.getActiveNetworkConfig();
 
-        usdc = activeConfig.usdc;
-        vab = activeConfig.vab;
-        usdt = activeConfig.usdt;
-        auditor = activeConfig.auditor;
-        vabbleWallet = activeConfig.vabbleWallet;
-        uniswapFactory = activeConfig.uniswapFactory;
-        uniswapRouter = activeConfig.uniswapRouter;
-        sushiSwapFactory = activeConfig.sushiSwapFactory;
-        sushiSwapRouter = activeConfig.sushiSwapRouter;
-        discountPercents = activeConfig.discountPercents;
-        depositAssets = activeConfig.depositAssets;
+        usdc = activeConfig.networkConfig.usdc;
+        vab = activeConfig.networkConfig.vab;
+        usdt = activeConfig.networkConfig.usdt;
+        auditor = activeConfig.networkConfig.auditor;
+        vabbleWallet = activeConfig.networkConfig.vabbleWallet;
+        uniswapFactory = activeConfig.networkConfig.uniswapFactory;
+        uniswapRouter = activeConfig.networkConfig.uniswapRouter;
+        discountPercents = activeConfig.networkConfig.discountPercents;
+        depositAssets = activeConfig.networkConfig.depositAssets;
+
+        propertyTimePeriodConfig = activeConfig.propertyTimePeriodConfig;
+        propertyRatesConfig = activeConfig.propertyRatesConfig;
+        propertyAmountsConfig = activeConfig.propertyAmountsConfig;
+        propertyMinMaxListConfig = activeConfig.propertyMinMaxListConfig;
+
+        return activeConfig;
     }
 
     /**
@@ -166,7 +171,12 @@ contract DeployerScript is Script {
             address(contracts.vabbleFund)
         );
         deployFactoryTierNFT(address(contracts.ownablee), address(contracts.vabbleDAO), address(contracts.vabbleFund));
-        deploySubscription(address(contracts.ownablee), address(contracts.uniHelper), address(contracts.property));
+        deploySubscription(
+            address(contracts.ownablee),
+            address(contracts.uniHelper),
+            address(contracts.property),
+            address(contracts.stakingPool)
+        );
     }
 
     /**
@@ -223,7 +233,16 @@ contract DeployerScript is Script {
     }
 
     function deployProperty(address _ownablee, address _uniHelper, address _vote, address _stakingPool) internal {
-        contracts.property = new Property(_ownablee, _uniHelper, _vote, _stakingPool);
+        contracts.property = new Property(
+            _ownablee,
+            _uniHelper,
+            _vote,
+            _stakingPool,
+            propertyTimePeriodConfig,
+            propertyRatesConfig,
+            propertyAmountsConfig,
+            propertyMinMaxListConfig
+        );
     }
 
     function deployFactoryFilmNFT(address _ownablee) internal {
@@ -263,7 +282,14 @@ contract DeployerScript is Script {
         contracts.factoryTierNFT = new FactoryTierNFT(_ownablee, _vabbleDAO, _vabbleFund);
     }
 
-    function deploySubscription(address _ownablee, address _uniHelper, address _property) internal {
-        contracts.subscription = new Subscription(_ownablee, _uniHelper, _property, discountPercents);
+    function deploySubscription(
+        address _ownablee,
+        address _uniHelper,
+        address _property,
+        address stakingPool
+    )
+        internal
+    {
+        contracts.subscription = new Subscription(_ownablee, _uniHelper, _property, stakingPool, discountPercents);
     }
 }

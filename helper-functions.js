@@ -9,6 +9,7 @@ const {
     VAB_FAUCET_AMOUNT,
     USDC_FAUCET_AMOUNT,
     ONE_DAY_IN_SECONDS,
+    propertyContractConfig,
 } = require("./helper-hardhat-config")
 const { parseUnits } = require("ethers/lib/utils")
 
@@ -178,8 +179,6 @@ const deployAndInitAllContracts = async () => {
         const uniHelper = await uniHelperFactory.deploy(
             UNISWAP_FACTORY_ADDRESS,
             UNISWAP_ROUTER_ADDRESS,
-            // SUSHISWAP_FACTORY_ADDRESS,
-            // SUSHISWAP_ROUTER_ADDRESS,
             ownable.address
         )
 
@@ -191,7 +190,11 @@ const deployAndInitAllContracts = async () => {
             ownable.address,
             uniHelper.address,
             vote.address,
-            stakingPool.address
+            stakingPool.address,
+            propertyContractConfig[chainId].timePeriods,
+            propertyContractConfig[chainId].rates,
+            propertyContractConfig[chainId].amounts,
+            propertyContractConfig[chainId].propertyMinMaxListConfig
         )
 
         const filmNFT = await factoryFilmNFTFactory.deploy(ownable.address)

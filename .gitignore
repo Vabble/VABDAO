@@ -18,6 +18,8 @@ out
 reports
 report
 cache_forge
+aderyn.md
+slither.md
 coverage
 coverage_foundry
 docs

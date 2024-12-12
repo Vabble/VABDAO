@@ -97,7 +97,7 @@ contract Subscription is ReentrancyGuard {
         VAB_WALLET = IOwnablee(_ownable).VAB_WALLET();
     }
 
-    receive() external payable {}
+    receive() external payable { }
 
     /*//////////////////////////////////////////////////////////////
                                 EXTERNAL
@@ -127,10 +127,7 @@ contract Subscription is ReentrancyGuard {
         uint256 totalUsdcBalance = IERC20(USDC_TOKEN).balanceOf(address(this));
         uint256 totalVabBalance = IERC20(VAB_TOKEN).balanceOf(address(this));
 
-        require(
-            totalEthBalance > 0 || totalUsdcBalance > 0 || totalVabBalance > 0,
-            "Nothing to withdraw"
-        );
+        require(totalEthBalance > 0 || totalUsdcBalance > 0 || totalVabBalance > 0, "Nothing to withdraw");
 
         if (totalEthBalance > 0) {
             Helper.safeTransferETH(VAB_WALLET, totalEthBalance);
@@ -149,10 +146,7 @@ contract Subscription is ReentrancyGuard {
     }
 
     function swapAssetAndSendToVabWallet(address token) external nonReentrant {
-        require(
-            token == USDC_TOKEN || token == address(0) || token == VAB_TOKEN,
-            "Token is not allowed"
-        );
+        require(token == USDC_TOKEN || token == address(0) || token == VAB_TOKEN, "Token is not allowed");
 
         uint256 amount;
 
@@ -239,7 +233,11 @@ contract Subscription is ReentrancyGuard {
     function getExpectedSubscriptionAmount(
         address _token,
         uint256 _period
-    ) public view returns (uint256 expectedAmount_) {
+    )
+        public
+        view
+        returns (uint256 expectedAmount_)
+    {
         require(_period != 0, "getExpectedSubscriptionAmount: Zero period");
 
         uint256 scriptAmount = _period * IProperty(DAO_PROPERTY).subscriptionAmount();
@@ -254,25 +252,16 @@ contract Subscription is ReentrancyGuard {
         }
 
         if (discount > 0) {
-            scriptAmount =
-                (scriptAmount * (100 - discount) * PERCENT_SCALING_FACTOR) /
-                PRECISION_FACTOR;
+            scriptAmount = (scriptAmount * (100 - discount) * PERCENT_SCALING_FACTOR) / PRECISION_FACTOR;
         }
 
         if (_token == VAB_TOKEN) {
-            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(
-                (scriptAmount * PERCENT40) / PRECISION_FACTOR,
-                USDC_TOKEN,
-                _token
-            );
+            expectedAmount_ =
+                IUniHelper(UNI_HELPER).expectedAmount((scriptAmount * PERCENT40) / PRECISION_FACTOR, USDC_TOKEN, _token);
         } else if (_token == USDC_TOKEN) {
             expectedAmount_ = scriptAmount;
         } else {
-            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(
-                scriptAmount,
-                USDC_TOKEN,
-                _token
-            );
+            expectedAmount_ = IUniHelper(UNI_HELPER).expectedAmount(scriptAmount, USDC_TOKEN, _token);
         }
     }
 
@@ -282,10 +271,7 @@ contract Subscription is ReentrancyGuard {
 
     function _validateAndGetAmount(address _token, uint256 _period) private view returns (uint256) {
         if (_token != VAB_TOKEN && _token != address(0)) {
-            require(
-                IOwnablee(OWNABLE).isDepositAsset(_token),
-                "activeSubscription: not allowed asset"
-            );
+            require(IOwnablee(OWNABLE).isDepositAsset(_token), "activeSubscription: not allowed asset");
         }
         return getExpectedSubscriptionAmount(_token, _period);
     }
@@ -312,16 +298,15 @@ contract Subscription is ReentrancyGuard {
             }
         }
 
-        // Swap 60 % ETH / USDC => VAB and send it to the user
-        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(
-            abi.encode(amount60, _token, VAB_TOKEN)
-        );
+        // Swap 60 % ETH / USDC => VAB 
+        uint256 vabAmount = IUniHelper(UNI_HELPER).swapAsset(abi.encode(amount60, _token, VAB_TOKEN));
+        if (IERC20(VAB_TOKEN).allowance(address(this), STAKING_POOL) < vabAmount) {
+            Helper.safeApprove(VAB_TOKEN, STAKING_POOL, vabAmount);
+        }
         // Deposit VAB to StakingPool for the subscriber
-        Helper.safeApprove(_token, STAKING_POOL, vabAmount);
         IStakingPool(STAKING_POOL).depositVABTo(msg.sender, vabAmount);
 
         if (_token == USDC_TOKEN) {
-            // @follow-up : should we send the total usdc balance of the contract ?
             uint256 usdcAmount = expectedAmount - amount60;
             Helper.safeTransfer(USDC_TOKEN, VAB_WALLET, usdcAmount);
         }

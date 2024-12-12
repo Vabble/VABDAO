@@ -3,15 +3,12 @@ pragma solidity ^0.8.4;
 
 import { BaseTest, console2 } from "../utils/BaseTest.sol";
 import { UniHelper } from "../../../contracts/dao/UniHelper.sol";
-import { HelperConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
 import "../interfaces/uniswap-v2/IUniswapV2Router02.sol";
 import "../interfaces/uniswap-v2/IUniswapV2Pair.sol";
 import "../interfaces/uniswap-v2/IUniswapV2Factory.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract UniHelperTest is BaseTest {
-    HelperConfig helperConfig;
-
     // Errors
     error Unauthorized();
     error AlreadyInitialized();
@@ -25,26 +22,22 @@ contract UniHelperTest is BaseTest {
 
     function setUp() public override {
         super.setUp();
-        helperConfig = new HelperConfig();
-
         _addInitialLiquidity();
     }
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
-    function test_deployUniHelperConstructor() public {
+    function test_deployUniHelperConstructor() public view {
         address UNISWAP_ROUTER = uniHelper.getUniswapRouter();
         address UNISWAP_FACTORY = uniHelper.getUniswapFactory();
         address OWNABLE = uniHelper.getOwnableAddress();
         address WETH = uniHelper.getWethAddress();
 
-        NetworkConfig memory activeConfig = getActiveConfig();
-
-        assertEq(activeConfig.uniswapRouter, UNISWAP_ROUTER);
-        assertEq(activeConfig.uniswapFactory, UNISWAP_FACTORY);
+        assertEq(activeNetworkConfig.uniswapRouter, UNISWAP_ROUTER);
+        assertEq(activeNetworkConfig.uniswapFactory, UNISWAP_FACTORY);
         assertEq(address(ownablee), OWNABLE);
-        assertEq(IUniswapV2Router02(activeConfig.uniswapRouter).WETH(), WETH);
+        assertEq(IUniswapV2Router02(activeNetworkConfig.uniswapRouter).WETH(), WETH);
     }
 
     function test_revertConstructorCannotSetZeroUniswapFactoryAddress() public {
@@ -82,11 +75,9 @@ contract UniHelperTest is BaseTest {
         address film = address(0x4);
         address factorySub = address(0x5);
 
-        NetworkConfig memory activeConfig = getActiveConfig();
-
         vm.startPrank(deployer);
         UniHelper newUnihelper =
-            new UniHelper(activeConfig.uniswapFactory, activeConfig.uniswapRouter, address(ownablee));
+            new UniHelper(activeNetworkConfig.uniswapFactory, activeNetworkConfig.uniswapRouter, address(ownablee));
         vm.expectRevert(InvalidContract.selector);
         newUnihelper.setWhiteList(dao, fund, sub, film, factorySub);
         vm.stopPrank();
@@ -115,11 +106,9 @@ contract UniHelperTest is BaseTest {
     }
 
     function test_setWhiteListShouldEmitTheWhitelistUpdatedEvent() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
-
         vm.startPrank(deployer);
         UniHelper newUnihelper =
-            new UniHelper(activeConfig.uniswapFactory, activeConfig.uniswapRouter, address(ownablee));
+            new UniHelper(activeNetworkConfig.uniswapFactory, activeNetworkConfig.uniswapRouter, address(ownablee));
 
         // Expect five events for the five whitelist addresses
         vm.expectEmit(true, true, true, true);
@@ -152,10 +141,9 @@ contract UniHelperTest is BaseTest {
                                SWAPASSET
     //////////////////////////////////////////////////////////////*/
 
-    function test_compareExpectedAmountWithUniswapRouter() public {
+    function test_compareExpectedAmountWithUniswapRouter() public view {
         uint256 depositAmount = 1 ether;
-        NetworkConfig memory config = getActiveConfig();
-        IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
+        IUniswapV2Router02 router = IUniswapV2Router02(activeNetworkConfig.uniswapRouter);
 
         // Get path for ETH -> VAB
         address[] memory path = new address[](2);
@@ -169,10 +157,9 @@ contract UniHelperTest is BaseTest {
         assertEq(helperExpectedOutput, routerExpectedOutput, "Helper output should match router output");
     }
 
-    function test_compareTokenToTokenExpectedAmount() public {
+    function test_compareTokenToTokenExpectedAmount() public view {
         uint256 depositAmount = 1000e18; // 1000 VAB
-        NetworkConfig memory config = getActiveConfig();
-        IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
+        IUniswapV2Router02 router = IUniswapV2Router02(activeNetworkConfig.uniswapRouter);
 
         // Get path for VAB -> WETH -> USDC
         address[] memory path = new address[](3);
@@ -187,8 +174,7 @@ contract UniHelperTest is BaseTest {
     }
 
     function test_compareETHtoTokenSwap() public {
-        NetworkConfig memory config = getActiveConfig();
-        IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
+        IUniswapV2Router02 router = IUniswapV2Router02(activeNetworkConfig.uniswapRouter);
         vm.startPrank(address(vabbleDAO));
         vm.deal(address(vabbleDAO), 0.2 ether); // Providing ETH for both swaps
 
@@ -258,8 +244,7 @@ contract UniHelperTest is BaseTest {
 
     function test_compareTokenToETHSwap() public {
         uint256 depositAmount = 1000e18; // 1000 VAB
-        NetworkConfig memory config = getActiveConfig();
-        IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
+        IUniswapV2Router02 router = IUniswapV2Router02(activeNetworkConfig.uniswapRouter);
 
         // Setup path and approval
         address[] memory path = new address[](2);
@@ -314,8 +299,7 @@ contract UniHelperTest is BaseTest {
 
     function test_compareTokenToTokenSwap() public {
         uint256 depositAmount = 1000e18; // 1000 VAB
-        NetworkConfig memory config = getActiveConfig();
-        IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
+        IUniswapV2Router02 router = IUniswapV2Router02(activeNetworkConfig.uniswapRouter);
 
         deal(address(vab), address(vabbleDAO), depositAmount * 2); // Double for both swaps
 
@@ -360,8 +344,7 @@ contract UniHelperTest is BaseTest {
 
     function test_gasComparisonETHToToken() public {
         uint256 depositAmount = 1 ether;
-        NetworkConfig memory config = getActiveConfig();
-        IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
+        IUniswapV2Router02 router = IUniswapV2Router02(activeNetworkConfig.uniswapRouter);
 
         address[] memory path = new address[](2);
         path[0] = router.WETH();
@@ -466,14 +449,9 @@ contract UniHelperTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function getActiveConfig() internal returns (NetworkConfig memory) {
-        return helperConfig.getActiveNetworkConfig();
-    }
-
-    function needsLiquidity() internal returns (bool) {
-        NetworkConfig memory config = getActiveConfig();
-        IUniswapV2Router02 router = IUniswapV2Router02(config.uniswapRouter);
-        IUniswapV2Factory factory = IUniswapV2Factory(config.uniswapFactory);
+    function needsLiquidity() internal view returns (bool) {
+        IUniswapV2Router02 router = IUniswapV2Router02(activeNetworkConfig.uniswapRouter);
+        IUniswapV2Factory factory = IUniswapV2Factory(activeNetworkConfig.uniswapFactory);
 
         // Get pairs
         address vabWethPair = factory.getPair(address(vab), router.WETH());

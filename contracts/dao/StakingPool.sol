@@ -63,7 +63,8 @@ contract StakingPool is ReentrancyGuard {
     uint256 public migrationStatus = 0; // 0: not started, 1: started, 2: end
     uint256 public totalMigrationVAB = 0;
 
-    mapping(address => mapping(uint256 => uint256)) private votedTime; // (user, proposalID) => voteTime need for calculating rewards
+    // (user, proposalID) => voteTime need for calculating rewards
+    mapping(address => mapping(uint256 => uint256)) private votedTime;
     mapping(address => Stake) public stakeInfo;
     mapping(address => uint256) public receivedRewardAmount; // (staker => received reward amount)
     mapping(address => UserRent) public userRentInfo;
@@ -106,7 +107,6 @@ contract StakingPool is ReentrancyGuard {
 
     /// @notice Initialize Pool
     function initialize(address _vabbleDAO, address _property, address _vote) external onlyDeployer {
-        // TODO - N3-3 updated(add below line)
         require(VABBLE_DAO == address(0), "init: initialized");
 
         require(_vabbleDAO != address(0), "init: zero dao");
@@ -288,7 +288,8 @@ contract StakingPool is ReentrancyGuard {
         times_.sort();
     }
 
-    // function __calcProposalTimeIntervalsTest(address _user) public view returns (uint256[] memory times_, uint256 count_) {
+    // function __calcProposalTimeIntervalsTest(address _user) public view returns (uint256[] memory times_, uint256
+    // count_) {
     //     uint256 pLength = propsList.length;
     //     Props memory pData;
     //     uint256 stakeTime = stakeInfo[_user].stakeTime;
@@ -329,7 +330,11 @@ contract StakingPool is ReentrancyGuard {
         uint256 minIndex,
         uint256 _start,
         uint256 _end
-    ) public view returns (uint256, uint256, uint256) {
+    )
+        public
+        view
+        returns (uint256, uint256, uint256)
+    {
         uint256 pCount = 0;
         uint256 vCount = 0;
         uint256 pendingVoteCount = 0;
@@ -347,7 +352,8 @@ contract StakingPool is ReentrancyGuard {
                         vCount += 1;
                     } else {
                         // interval is before stake
-                        if (pData.creator == _user || votedTime[_user][pData.proposalID] <= stakeInfo[_user].stakeTime) {
+                        if (pData.creator == _user || votedTime[_user][pData.proposalID] <= stakeInfo[_user].stakeTime)
+                        {
                             // already vote in previous period
                             // ignore
                         } else {
@@ -396,7 +402,7 @@ contract StakingPool is ReentrancyGuard {
 
             // count all proposals which contains interval [t(i), t(i + 1))]
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
-            (uint256 pCount, uint256 vCount, ) = __getProposalVoteCount(_user, minIndex, start, end);
+            (uint256 pCount, uint256 vCount,) = __getProposalVoteCount(_user, minIndex, start, end);
             amount = __calcRewards(_user, start, end);
 
             if (pCount > 0) {
@@ -428,7 +434,7 @@ contract StakingPool is ReentrancyGuard {
 
             // count all proposals which contains interval [t(i), t(i + 1))]
             // and also count vote proposals which contains  interval [t(i), t(i + 1))]
-            (uint256 pCount, , uint256 pendingVoteCount) = __getProposalVoteCount(_user, minIndex, start, end);
+            (uint256 pCount,, uint256 pendingVoteCount) = __getProposalVoteCount(_user, minIndex, start, end);
             amount = __calcRewards(_user, start, end);
 
             if (pCount > 0) {
@@ -475,7 +481,11 @@ contract StakingPool is ReentrancyGuard {
         uint256 _proposalCount,
         uint256 _voteCount,
         bool isBoardMember // filmboard member or not
-    ) external view returns (uint256 amount_) {
+    )
+        external
+        view
+        returns (uint256 amount_)
+    {
         require(_period > 0, "apr: zero period");
         require(_stakeAmount > 0, "apr: zero staker");
         require(_proposalCount >= _voteCount, "apr: bad vote count");
@@ -489,7 +499,8 @@ contract StakingPool is ReentrancyGuard {
             stakingRewards += (stakingRewards * IProperty(DAO_PROPERTY).boardRewardRate()) / 1e10;
         }
 
-        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then rewards*3/5
+        // if no proposal then full rewards, if no vote for 5 proposals then no rewards, if 3 votes for 5 proposals then
+        // rewards*3/5
         uint256 pendingRewards;
         if (_proposalCount > 0) {
             if (_voteCount == 0) {
@@ -506,11 +517,16 @@ contract StakingPool is ReentrancyGuard {
     // =================== Customer deposit/withdraw VAB START =================
     /// @notice Deposit VAB token from customer for renting the films
     function depositVAB(uint256 _amount) external onlyNormal nonReentrant {
-        depositVABTo(msg.sender, _amount);
+        _depositVAB(msg.sender, _amount);
     }
 
     // Main implementation with subscriber parameter
-    function depositVABTo(address subscriber, uint256 _amount) public onlyNormal nonReentrant {
+    function depositVABTo(address subscriber, uint256 _amount) external onlyNormal nonReentrant {
+        _depositVAB(subscriber, _amount);
+    }
+
+    // function to handle the core deposit logic
+    function _depositVAB(address subscriber, uint256 _amount) private {
         require(subscriber != address(0), "dVAB: zero address");
         require(_amount > 0, "dVAB: zero amount");
 
@@ -630,7 +646,15 @@ contract StakingPool is ReentrancyGuard {
     }
 
     /// @notice onlyDAO transfer VAB token to user
-    function sendVAB(address[] calldata _users, address _to, uint256[] calldata _amounts) external onlyDAO returns (uint256) {
+    function sendVAB(
+        address[] calldata _users,
+        address _to,
+        uint256[] calldata _amounts
+    )
+        external
+        onlyDAO
+        returns (uint256)
+    {
         require(_users.length == _amounts.length && _users.length < 1000, "sendVAB: bad array");
         uint256 sum;
         uint256 userLength = _users.length;

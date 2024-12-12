@@ -13,8 +13,7 @@ import "../../contracts/interfaces/IVabbleDAO.sol";
 contract FilmProposalDetailsFetcher is Script {
     using stdJson for string;
 
-    address contractAddress = address(0x570e503d3C75D92fB3A39dDE912d3f0429a10414);
-    VabbleDAO vabbleDAO = VabbleDAO(payable(contractAddress));
+    VabbleDAO vabbleDAO;
     string private root;
 
     function setUp() public {
@@ -24,6 +23,16 @@ contract FilmProposalDetailsFetcher is Script {
     function run() public {
         console2.log("Chain Id:", block.chainid);
         vm.startBroadcast();
+
+        string memory contractAddress = vm.prompt(
+            string.concat(
+                "Enter the VabbleDAO contract address you want to fetch film data from (Chain ID: ",
+                Strings.toString(block.chainid),
+                ")"
+            )
+        );
+
+        vabbleDAO = VabbleDAO(payable(vm.parseAddress(contractAddress)));
 
         // Get total film count
         uint256 filmCount = vabbleDAO.filmCount();
@@ -71,16 +80,14 @@ contract FilmProposalDetailsFetcher is Script {
             });
 
             // Build the JSON object for each film with filmId
-            string memory filmJson = buildFilmJson(i, film);
+            string memory filmJson = buildFilmJson(film);
             finalJson = string.concat(finalJson, i > 1 ? "," : "", filmJson);
-
-            console2.log("Fetched film:", i);
         }
 
         finalJson = string.concat(finalJson, "]");
-        
-        // Write the final JSON to file
-        string memory outputPath = string.concat(root, "/film_data.json");
+
+        // Write the final JSON to file with date
+        string memory outputPath = string.concat(root, "/data/film_data_", Strings.toString(block.chainid), ".json");
         vm.writeFile(outputPath, finalJson);
         console2.log("Data saved to:", outputPath);
 
@@ -88,13 +95,14 @@ contract FilmProposalDetailsFetcher is Script {
     }
 
     // Helper function to generate the JSON structure for each film
-    function buildFilmJson(uint256 filmId, IVabbleDAO.Film memory film) internal pure returns (string memory) {
+    function buildFilmJson(IVabbleDAO.Film memory film) internal pure returns (string memory) {
         // Convert arrays to strings
-        string memory sharePercentsStr = "["; 
+        string memory sharePercentsStr = "[";
         string memory studioPayeesStr = "[";
 
         for (uint256 j = 0; j < film.sharePercents.length; j++) {
-            sharePercentsStr = string.concat(sharePercentsStr, j > 0 ? "," : "", Strings.toString(film.sharePercents[j]));
+            sharePercentsStr =
+                string.concat(sharePercentsStr, j > 0 ? "," : "", Strings.toString(film.sharePercents[j]));
         }
         sharePercentsStr = string.concat(sharePercentsStr, "]");
 
@@ -115,23 +123,48 @@ contract FilmProposalDetailsFetcher is Script {
         // Create the final JSON object for the film
         string memory filmJson = string.concat(
             "{",
-            '"filmId":', Strings.toString(filmId), ",",
-            '"filmDetails":{',
-            '"title":"', escapedTitle, '",',
-            '"description":"', escapedDescription, '",',
-            '"raiseAmount":', Strings.toString(film.raiseAmount), ",",
-            '"fundPeriod":', Strings.toString(film.fundPeriod), ",",
-            '"fundType":', Strings.toString(film.fundType), ",",
-            '"rewardPercent":', Strings.toString(film.rewardPercent), ",",
-            '"noVote":', Strings.toString(film.noVote), ",",
-            '"enableClaimer":', Strings.toString(film.enableClaimer), ",",
-            '"pCreateTime":', Strings.toString(film.pCreateTime), ",",
-            '"pApproveTime":', Strings.toString(film.pApproveTime), ",",
-            '"studio":"', Strings.toHexString(uint160(film.studio), 20), '",',
-            '"status":', Strings.toString(statusValue), ",", 
-            '"sharePercents":', sharePercentsStr, ",",
-            '"studioPayees":', studioPayeesStr,
-            "}}"
+            '"title":"',
+            escapedTitle,
+            '",',
+            '"description":"',
+            escapedDescription,
+            '",',
+            '"raiseAmount":',
+            Strings.toString(film.raiseAmount),
+            ",",
+            '"fundPeriod":',
+            Strings.toString(film.fundPeriod),
+            ",",
+            '"fundType":',
+            Strings.toString(film.fundType),
+            ",",
+            '"rewardPercent":',
+            Strings.toString(film.rewardPercent),
+            ",",
+            '"noVote":',
+            Strings.toString(film.noVote),
+            ",",
+            '"enableClaimer":',
+            Strings.toString(film.enableClaimer),
+            ",",
+            '"pCreateTime":',
+            Strings.toString(film.pCreateTime),
+            ",",
+            '"pApproveTime":',
+            Strings.toString(film.pApproveTime),
+            ",",
+            '"studio":"',
+            Strings.toHexString(uint160(film.studio), 20),
+            '",',
+            '"status":',
+            Strings.toString(statusValue),
+            ",",
+            '"sharePercents":',
+            sharePercentsStr,
+            ",",
+            '"studioPayees":',
+            studioPayeesStr,
+            "}"
         );
 
         return filmJson;

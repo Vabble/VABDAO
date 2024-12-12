@@ -44,35 +44,48 @@ contract SubscriptionTest is BaseTest {
         address _ownable = address(0);
         address _uniHelper = address(0x2);
         address _property = address(0x3);
+        address _stakingPool = address(0x4);
         vm.expectRevert("ownableContract: zero address");
-        new Subscription(_ownable, _uniHelper, _property, expectedDiscountList);
+        new Subscription(_ownable, _uniHelper, _property, _stakingPool, expectedDiscountList);
     }
 
     function test_revertConstructorCannotSetZeroUniHelperAddress() public {
         address _ownable = address(0x1);
         address _uniHelper = address(0);
         address _property = address(0x3);
+        address _stakingPool = address(0x4);
         vm.expectRevert("uniHelperContract: zero address");
-        new Subscription(_ownable, _uniHelper, _property, expectedDiscountList);
+        new Subscription(_ownable, _uniHelper, _property, _stakingPool, expectedDiscountList);
     }
 
     function test_revertConstructorCannotSetZeroPropertyAddress() public {
         address _ownable = address(0x1);
         address _uniHelper = address(0x2);
         address _property = address(0);
+        address _stakingPool = address(0x4);
         vm.expectRevert("daoProperty: zero address");
-        new Subscription(_ownable, _uniHelper, _property, expectedDiscountList);
+        new Subscription(_ownable, _uniHelper, _property, _stakingPool, expectedDiscountList);
+    }
+
+    function test_revertConstructorCannotSetZeroStakingPoolAddress() public {
+        address _ownable = address(0x1);
+        address _uniHelper = address(0x2);
+        address _property = address(0x3);
+        address _stakingPool = address(0);
+        vm.expectRevert("stakingPool: zero address");
+        new Subscription(_ownable, _uniHelper, _property, _stakingPool, expectedDiscountList);
     }
 
     function test_revertConstructorCannotSetBadDiscountLength() public {
         address _ownable = address(0x1);
         address _uniHelper = address(0x2);
         address _property = address(0x3);
+        address _stakingPool = address(0x4);
         uint256[] memory _discountPercents = new uint256[](2); // Invalid length
         _discountPercents[0] = 10;
         _discountPercents[1] = 20;
         vm.expectRevert("discountList: bad length");
-        new Subscription(_ownable, _uniHelper, _property, _discountPercents);
+        new Subscription(_ownable, _uniHelper, _property, _stakingPool, _discountPercents);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -134,7 +147,7 @@ contract SubscriptionTest is BaseTest {
 
     function test_activatingSubscriptionRevertsIfAccountBalanceIsToLow() public {
         uint256 period = 1;
-        uint256 amount = 1e18;
+        uint256 amount = 10 wei;
         address token = address(vab);
 
         deal(token, default_user, amount);
@@ -215,7 +228,9 @@ contract SubscriptionTest is BaseTest {
 
         uint256 vabWalletVabstartingBalance = vab.balanceOf(vabWallet);
         uint256 subscriptionContractEthStartingBalance = address(subscription).balance;
+        uint256 userRentInfoVabAmountStartingBalance = stakingPool.getRentVABAmount(default_user);
 
+        assertEq(userRentInfoVabAmountStartingBalance, 0);
         assertEq(vabWalletVabstartingBalance, 0);
         assertEq(subscriptionContractEthStartingBalance, 0);
         assertEq(subscription.isActivedSubscription(default_user), false);
@@ -229,13 +244,17 @@ contract SubscriptionTest is BaseTest {
         console2.log("activeSubscriptionGas", gasUsed); // 261_722
         vm.stopPrank();
 
-        uint256 vabWalletVabEndingBalance = vab.balanceOf(vabWallet);
         uint256 subscriptionContractEthEndingBalance = address(subscription).balance;
 
+        uint256 userRentInfoVabAmountEndingBalance = stakingPool.getRentVABAmount(default_user);
+        console2.log("userRentInfoVabAmount", userRentInfoVabAmountEndingBalance);
+
+        // VAB Wallet should be empty
+        assertEq(vabWalletVabstartingBalance, 0);
         // 40 % in ETH should stay in the contract
         assertGt(subscriptionContractEthEndingBalance, subscriptionContractEthStartingBalance);
-        // 60 % should be converted into VAB and go to the VAB Wallet
-        assertGt(vabWalletVabEndingBalance, vabWalletVabstartingBalance);
+        // 60 % should be converted into VAB and go to the Staking Pool user rent info
+        assertGt(userRentInfoVabAmountEndingBalance, 0);
         assertEq(subscription.isActivedSubscription(default_user), true);
     }
 
@@ -247,7 +266,9 @@ contract SubscriptionTest is BaseTest {
 
         uint256 vabWalletVabstartingBalance = vab.balanceOf(vabWallet);
         uint256 vabWalletUsdcStartingBalance = usdc.balanceOf(vabWallet);
+        uint256 userRentInfoVabAmountStartingBalance = stakingPool.getRentVABAmount(default_user);
 
+        assertEq(userRentInfoVabAmountStartingBalance, 0);
         assertEq(vabWalletVabstartingBalance, 0);
         assertEq(vabWalletUsdcStartingBalance, 0);
         assertEq(subscription.isActivedSubscription(default_user), false);
@@ -264,10 +285,14 @@ contract SubscriptionTest is BaseTest {
         uint256 vabWalletVabEndingBalance = vab.balanceOf(vabWallet);
         uint256 vabWalletUsdcEndingBalance = usdc.balanceOf(vabWallet);
 
+        uint256 userRentInfoVabAmountEndingBalance = stakingPool.getRentVABAmount(default_user);
+
+        // VAB Wallet should be empty
+        assertEq(vabWalletVabEndingBalance, 0);
         // 40 % in USDC should go to the VAB Wallet
         assertGt(vabWalletUsdcEndingBalance, vabWalletUsdcStartingBalance);
-        // 60 % should be converted into VAB and go to the VAB Wallet
-        assertGt(vabWalletVabEndingBalance, vabWalletVabstartingBalance);
+        // 60 % should be converted into VAB and go to the Staking Pool user rent info
+        assertGt(userRentInfoVabAmountEndingBalance, userRentInfoVabAmountStartingBalance);
         assertEq(subscription.isActivedSubscription(default_user), true);
     }
 

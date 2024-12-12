@@ -50,9 +50,7 @@ contract Ownablee is IOwnablee {
     constructor(address _vabbleWallet, address _payoutToken, address _usdcToken, address _multiSigWallet) {
         deployer = msg.sender;
 
-        // TODO - PVE007 updated(add multiSigWallet)
         require(_multiSigWallet != address(0), "multiSigWallet: Zero address");
-        // auditor = msg.sender; // _multiSigWallet;
         auditor = _multiSigWallet;
 
         require(_vabbleWallet != address(0), "vabbleWallet: Zero address");
