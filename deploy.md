@@ -103,7 +103,25 @@
 
 ## Mainnet Deployments
 
-_No mainnet deployments yet_
+<details>
+<summary>December 12, 2024</summary>
+
+| Contract       | Address                                      |
+| -------------- | -------------------------------------------- |
+| HelperConfig   | `0xBE52556DCA62ad6F26D7d19f8B091Da792256C3B` |
+| Ownablee       | `0xAFf91eac0dC5A61ee98F44B7F98462bE3bAA0DB9` |
+| UniHelper      | `0x6295a2b3132BAe69150E28ba936A803dBB6F91c8` |
+| StakingPool    | `0x5c21Fc5068535CD37a389EDB82BdF1f7d86C6fcc` |
+| Vote           | `0x9db40327fc18d9C896721F3f64DaF27dCdf19479` |
+| Property       | `0x90f42aa4B38397FB386176E7c268A773345158dA` |
+| FactoryFilmNFT | `0x7E6509Bc389b2751a3Bdcea2d48e03FaBcEdBA0d` |
+| FactorySubNFT  | `0xB6EB50a7bF7c38B89e59cc20ef9399971B6e299F` |
+| VabbleFund     | `0x405ADd774C15B3d2a7AcBCEb670e3d8c6c0c3751` |
+| VabbleDAO      | `0xEb07dc373f95546B6299db252423ca48D7C210dD` |
+| FactoryTierNFT | `0xB70F3291DA5b1d73BfC1C4b29521515CE5d642C0` |
+| Subscription   | `0x71567a41346b8D42f1edA001A97f024141d28b2f` |
+
+</details>
 
 ---
 
