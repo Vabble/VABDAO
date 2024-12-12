@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import { Script } from "lib/forge-std/src/Script.sol";
-import { console2 } from "lib/forge-std/src/console2.sol";
-import { MockUSDC } from "../../test/foundry/mocks/MockUSDC.sol";
-import { ERC20Mock } from "../../test/foundry/mocks/ERC20Mock.sol";
-import { ConfigLibrary } from "../../contracts/libraries/ConfigLibrary.sol";
+import {Script} from "lib/forge-std/src/Script.sol";
+import {console2} from "lib/forge-std/src/console2.sol";
+import {MockUSDC} from "../../test/foundry/mocks/MockUSDC.sol";
+import {ERC20Mock} from "../../test/foundry/mocks/ERC20Mock.sol";
+import {ConfigLibrary} from "../../contracts/libraries/ConfigLibrary.sol";
 
 struct NetworkConfig {
     address usdc;
@@ -103,54 +103,58 @@ contract HelperConfig is CodeConstants, Script {
 
         address[] memory _depositAssets = _createDepositAssets(_vab, _usdc, _mainnetToken);
 
-        (uint256[] memory _minPropertyList, uint256[] memory _maxPropertyList) = _getMinMaxPropertyLists();
+        (
+            uint256[] memory _minPropertyList,
+            uint256[] memory _maxPropertyList
+        ) = _getMinMaxPropertyLists();
 
-        return FullConfig({
-            networkConfig: NetworkConfig({
-                usdc: _usdc,
-                vab: _vab,
-                usdt: _usdt,
-                auditor: 0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12,
-                vabbleWallet: 0xD71D56BF0761537B69436D8D16381d78f90B827e,
-                uniswapFactory: 0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e,
-                uniswapRouter: 0x1689E7B1F10000AE47eBfE339a4f69dECd19F602,
-                discountPercents: discountPercents,
-                depositAssets: _depositAssets,
-                stakingPoolFundAmount: 500_000 * VAB_DECIMAL_MULTIPLIER,
-                edgePoolFundAmount: 100_000 * VAB_DECIMAL_MULTIPLIER
-            }),
-            propertyTimePeriodConfig: ConfigLibrary.PropertyTimePeriodConfig({
-                filmVotePeriod: 10 minutes,
-                agentVotePeriod: 10 minutes,
-                disputeGracePeriod: 10 minutes,
-                propertyVotePeriod: 10 minutes,
-                lockPeriod: 10 minutes,
-                maxAllowPeriod: 10 minutes,
-                filmRewardClaimPeriod: 10 minutes,
-                boardVotePeriod: 10 minutes,
-                rewardVotePeriod: 10 minutes
-            }),
-            propertyRatesConfig: ConfigLibrary.PropertyRatesConfig({
-                rewardRate: 25 * RATE_PRECISION,
-                fundFeePercent: 2 * PERCENT_PRECISION,
-                maxMintFeePercent: 10 * PERCENT_PRECISION,
-                minStakerCountPercent: 5 * PERCENT_PRECISION,
-                boardVoteWeight: 30 * PERCENT_PRECISION,
-                boardRewardRate: 25 * PERCENT_PRECISION
-            }),
-            propertyAmountsConfig: ConfigLibrary.PropertyAmountsConfig({
-                proposalFeeAmount: 20 * USDC_DECIMAL_MULTIPLIER,
-                minDepositAmount: 50 * USDC_DECIMAL_MULTIPLIER,
-                maxDepositAmount: 5000 * USDC_DECIMAL_MULTIPLIER,
-                availableVABAmount: 1 * VAB_DECIMAL_MULTIPLIER,
-                subscriptionAmount: (299 * USDC_DECIMAL_MULTIPLIER) / 100,
-                minVoteCount: 1
-            }),
-            propertyMinMaxListConfig: ConfigLibrary.PropertyMinMaxListConfig({
-                minPropertyList: _minPropertyList,
-                maxPropertyList: _maxPropertyList
-            })
-        });
+        return
+            FullConfig({
+                networkConfig: NetworkConfig({
+                    usdc: _usdc,
+                    vab: _vab,
+                    usdt: _usdt,
+                    auditor: 0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12,
+                    vabbleWallet: 0xD71D56BF0761537B69436D8D16381d78f90B827e,
+                    uniswapFactory: 0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e,
+                    uniswapRouter: 0x1689E7B1F10000AE47eBfE339a4f69dECd19F602,
+                    discountPercents: discountPercents,
+                    depositAssets: _depositAssets,
+                    stakingPoolFundAmount: 500_000 * VAB_DECIMAL_MULTIPLIER,
+                    edgePoolFundAmount: 100_000 * VAB_DECIMAL_MULTIPLIER
+                }),
+                propertyTimePeriodConfig: ConfigLibrary.PropertyTimePeriodConfig({
+                    filmVotePeriod: 10 minutes,
+                    agentVotePeriod: 10 minutes,
+                    disputeGracePeriod: 10 minutes,
+                    propertyVotePeriod: 10 minutes,
+                    lockPeriod: 10 minutes,
+                    maxAllowPeriod: 10 minutes,
+                    filmRewardClaimPeriod: 10 minutes,
+                    boardVotePeriod: 10 minutes,
+                    rewardVotePeriod: 10 minutes
+                }),
+                propertyRatesConfig: ConfigLibrary.PropertyRatesConfig({
+                    rewardRate: 25 * RATE_PRECISION,
+                    fundFeePercent: 2 * PERCENT_PRECISION,
+                    maxMintFeePercent: 10 * PERCENT_PRECISION,
+                    minStakerCountPercent: 5 * PERCENT_PRECISION,
+                    boardVoteWeight: 30 * PERCENT_PRECISION,
+                    boardRewardRate: 25 * PERCENT_PRECISION
+                }),
+                propertyAmountsConfig: ConfigLibrary.PropertyAmountsConfig({
+                    proposalFeeAmount: 20 * USDC_DECIMAL_MULTIPLIER,
+                    minDepositAmount: 50 * USDC_DECIMAL_MULTIPLIER,
+                    maxDepositAmount: 5000 * USDC_DECIMAL_MULTIPLIER,
+                    availableVABAmount: 1 * VAB_DECIMAL_MULTIPLIER,
+                    subscriptionAmount: (299 * USDC_DECIMAL_MULTIPLIER) / 100,
+                    minVoteCount: 1
+                }),
+                propertyMinMaxListConfig: ConfigLibrary.PropertyMinMaxListConfig({
+                    minPropertyList: _minPropertyList,
+                    maxPropertyList: _maxPropertyList
+                })
+            });
     }
 
     function getBaseConfig() public view returns (FullConfig memory) {
@@ -161,54 +165,58 @@ contract HelperConfig is CodeConstants, Script {
 
         address[] memory _depositAssets = _createDepositAssets(_vab, _usdc, _mainnetToken);
 
-        (uint256[] memory _minPropertyList, uint256[] memory _maxPropertyList) = _getMinMaxPropertyLists();
+        (
+            uint256[] memory _minPropertyList,
+            uint256[] memory _maxPropertyList
+        ) = _getMinMaxPropertyLists();
 
-        return FullConfig({
-            networkConfig: NetworkConfig({
-                usdc: _usdc,
-                vab: _vab,
-                usdt: _usdt,
-                auditor: 0x170341dfFAD907f9695Dc1C17De622A5A2F28259,
-                vabbleWallet: 0xE13Cf9Ff533268F3a98961995Ce7681440204361,
-                uniswapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
-                uniswapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24,
-                discountPercents: discountPercents,
-                depositAssets: _depositAssets,
-                stakingPoolFundAmount: 5_000_000 * VAB_DECIMAL_MULTIPLIER,
-                edgePoolFundAmount: 1_000_000 * VAB_DECIMAL_MULTIPLIER
-            }),
-            propertyTimePeriodConfig: ConfigLibrary.PropertyTimePeriodConfig({
-                filmVotePeriod: 7 days,
-                boardVotePeriod: 14 days,
-                agentVotePeriod: 10 days,
-                disputeGracePeriod: 30 days,
-                propertyVotePeriod: 10 days,
-                rewardVotePeriod: 7 days,
-                lockPeriod: 30 days,
-                maxAllowPeriod: 90 days,
-                filmRewardClaimPeriod: 30 days
-            }),
-            propertyRatesConfig: ConfigLibrary.PropertyRatesConfig({
-                rewardRate: 50 * RATE_PRECISION,
-                boardRewardRate: 25 * PERCENT_PRECISION,
-                fundFeePercent: 2 * PERCENT_PRECISION,
-                boardVoteWeight: 30 * PERCENT_PRECISION,
-                minStakerCountPercent: 5 * PERCENT_PRECISION,
-                maxMintFeePercent: 10 * PERCENT_PRECISION
-            }),
-            propertyAmountsConfig: ConfigLibrary.PropertyAmountsConfig({
-                proposalFeeAmount: 20 * USDC_DECIMAL_MULTIPLIER,
-                minDepositAmount: 50 * USDC_DECIMAL_MULTIPLIER,
-                maxDepositAmount: 5000 * USDC_DECIMAL_MULTIPLIER,
-                availableVABAmount: 5 * 1e6 * VAB_DECIMAL_MULTIPLIER,
-                subscriptionAmount: (699 * USDC_DECIMAL_MULTIPLIER) / 100,
-                minVoteCount: 1
-            }),
-            propertyMinMaxListConfig: ConfigLibrary.PropertyMinMaxListConfig({
-                minPropertyList: _minPropertyList,
-                maxPropertyList: _maxPropertyList
-            })
-        });
+        return
+            FullConfig({
+                networkConfig: NetworkConfig({
+                    usdc: _usdc,
+                    vab: _vab,
+                    usdt: _usdt,
+                    auditor: 0x170341dfFAD907f9695Dc1C17De622A5A2F28259,
+                    vabbleWallet: 0xE13Cf9Ff533268F3a98961995Ce7681440204361,
+                    uniswapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
+                    uniswapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24,
+                    discountPercents: discountPercents,
+                    depositAssets: _depositAssets,
+                    stakingPoolFundAmount: 5_000_000 * VAB_DECIMAL_MULTIPLIER,
+                    edgePoolFundAmount: 1_000_000 * VAB_DECIMAL_MULTIPLIER
+                }),
+                propertyTimePeriodConfig: ConfigLibrary.PropertyTimePeriodConfig({
+                    filmVotePeriod: 7 days,
+                    boardVotePeriod: 14 days,
+                    agentVotePeriod: 10 days,
+                    disputeGracePeriod: 30 days,
+                    propertyVotePeriod: 10 days,
+                    rewardVotePeriod: 7 days,
+                    lockPeriod: 30 days,
+                    maxAllowPeriod: 90 days,
+                    filmRewardClaimPeriod: 30 days
+                }),
+                propertyRatesConfig: ConfigLibrary.PropertyRatesConfig({
+                    rewardRate: 50 * RATE_PRECISION,
+                    boardRewardRate: 25 * PERCENT_PRECISION,
+                    fundFeePercent: 2 * PERCENT_PRECISION,
+                    boardVoteWeight: 30 * PERCENT_PRECISION,
+                    minStakerCountPercent: 5 * PERCENT_PRECISION,
+                    maxMintFeePercent: 10 * PERCENT_PRECISION
+                }),
+                propertyAmountsConfig: ConfigLibrary.PropertyAmountsConfig({
+                    proposalFeeAmount: 20 * USDC_DECIMAL_MULTIPLIER,
+                    minDepositAmount: 50 * USDC_DECIMAL_MULTIPLIER,
+                    maxDepositAmount: 5000 * USDC_DECIMAL_MULTIPLIER,
+                    availableVABAmount: 5 * 1e6 * VAB_DECIMAL_MULTIPLIER,
+                    subscriptionAmount: (699 * USDC_DECIMAL_MULTIPLIER) / 100,
+                    minVoteCount: 1
+                }),
+                propertyMinMaxListConfig: ConfigLibrary.PropertyMinMaxListConfig({
+                    minPropertyList: _minPropertyList,
+                    maxPropertyList: _maxPropertyList
+                })
+            });
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -265,11 +273,7 @@ contract HelperConfig is CodeConstants, Script {
         address _vab,
         address _usdc,
         address _mainnetToken
-    )
-        internal
-        pure
-        returns (address[] memory)
-    {
+    ) internal pure returns (address[] memory) {
         address[] memory _depositAssets = new address[](3);
         _depositAssets[0] = _vab;
         _depositAssets[1] = _usdc;
@@ -290,50 +294,94 @@ contract HelperConfig is CodeConstants, Script {
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.DISPUTE_GRACE_PERIOD)] = 7 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPERTY_VOTE_PERIOD)] = 7 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.LOCK_PERIOD)] = 7 days;
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] = 6 * RATE_PRECISION; // 0.006%
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.FILM_REWARD_CLAIM_PERIOD)] = 1 days;
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] = 2 * RATE_PRECISION; // 0.002%
+        _minPropertyList[
+            uint256(ConfigLibrary.PropertyListIndex.FILM_REWARD_CLAIM_PERIOD)
+        ] = 1 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_ALLOW_PERIOD)] = 7 days;
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPOSAL_FEE_AMOUNT)] = 20 * USDC_DECIMAL_MULTIPLIER; // $20
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.FUND_FEE_PERCENT)] = 2 * PERCENT_PRECISION; // 2%
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_DEPOSIT_AMOUNT)] = 5 * USDC_DECIMAL_MULTIPLIER; // $5
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_DEPOSIT_AMOUNT)] = 5 * USDC_DECIMAL_MULTIPLIER; // $5
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_MINT_FEE_PERCENT)] = 1 * PERCENT_PRECISION; // 1%
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPOSAL_FEE_AMOUNT)] =
+            20 *
+            USDC_DECIMAL_MULTIPLIER; // $20
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.FUND_FEE_PERCENT)] =
+            2 *
+            PERCENT_PRECISION; // 2%
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_DEPOSIT_AMOUNT)] =
+            5 *
+            USDC_DECIMAL_MULTIPLIER; // $5
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_DEPOSIT_AMOUNT)] =
+            5 *
+            USDC_DECIMAL_MULTIPLIER; // $5
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_MINT_FEE_PERCENT)] =
+            1 *
+            PERCENT_PRECISION; // 1%
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_VOTE_COUNT)] = 1;
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_STAKER_COUNT_PERCENT)] = 3 * PERCENT_PRECISION; // 3%
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_STAKER_COUNT_PERCENT)] =
+            3 *
+            PERCENT_PRECISION; // 3%
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.AVAILABLE_VAB_AMOUNT)] =
-            50 * 1e6 * VAB_DECIMAL_MULTIPLIER; // 50M
+            50 *
+            1e6 *
+            VAB_DECIMAL_MULTIPLIER; // 50M
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_VOTE_PERIOD)] = 7 days;
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_VOTE_WEIGHT)] = 5 * PERCENT_PRECISION; // 5%
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_VOTE_WEIGHT)] =
+            5 *
+            PERCENT_PRECISION; // 5%
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_VOTE_PERIOD)] = 7 days;
         _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.SUBSCRIPTION_AMOUNT)] =
-            (299 * USDC_DECIMAL_MULTIPLIER) / 100; // $2.99
-        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_REWARD_RATE)] = 1 * PERCENT_PRECISION; // 1%
+            (299 * USDC_DECIMAL_MULTIPLIER) /
+            100; // $2.99
+        _minPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_REWARD_RATE)] =
+            1 *
+            PERCENT_PRECISION; // 1%
 
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.FILM_VOTE_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.AGENT_VOTE_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.DISPUTE_GRACE_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPERTY_VOTE_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.LOCK_PERIOD)] = 90 days;
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] = 130 * RATE_PRECISION; // 0.13%
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.FILM_REWARD_CLAIM_PERIOD)] = 90 days;
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_RATE)] =
+            130 *
+            RATE_PRECISION; // 0.13%
+        _maxPropertyList[
+            uint256(ConfigLibrary.PropertyListIndex.FILM_REWARD_CLAIM_PERIOD)
+        ] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_ALLOW_PERIOD)] = 90 days;
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPOSAL_FEE_AMOUNT)] = 500 * USDC_DECIMAL_MULTIPLIER; // $500
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.FUND_FEE_PERCENT)] = 10 * PERCENT_PRECISION; // 10%
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.PROPOSAL_FEE_AMOUNT)] =
+            500 *
+            USDC_DECIMAL_MULTIPLIER; // $500
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.FUND_FEE_PERCENT)] =
+            10 *
+            PERCENT_PRECISION; // 10%
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_DEPOSIT_AMOUNT)] =
-            10 * 1e6 * USDC_DECIMAL_MULTIPLIER; // $10,000,000
+            10 *
+            1e6 *
+            USDC_DECIMAL_MULTIPLIER; // $10,000,000
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_DEPOSIT_AMOUNT)] =
-            10 * 1e6 * USDC_DECIMAL_MULTIPLIER; // $10,000,000
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_MINT_FEE_PERCENT)] = 10 * PERCENT_PRECISION; // 10%
+            10 *
+            1e6 *
+            USDC_DECIMAL_MULTIPLIER; // $10,000,000
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MAX_MINT_FEE_PERCENT)] =
+            10 *
+            PERCENT_PRECISION; // 10%
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_VOTE_COUNT)] = 10;
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_STAKER_COUNT_PERCENT)] = 10 * PERCENT_PRECISION; // 10%
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.MIN_STAKER_COUNT_PERCENT)] =
+            10 *
+            PERCENT_PRECISION; // 10%
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.AVAILABLE_VAB_AMOUNT)] =
-            200 * 1e6 * VAB_DECIMAL_MULTIPLIER; // 200M
+            200 *
+            1e6 *
+            VAB_DECIMAL_MULTIPLIER; // 200M
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_VOTE_PERIOD)] = 90 days;
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_VOTE_WEIGHT)] = 30 * PERCENT_PRECISION; // 30%
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_VOTE_WEIGHT)] =
+            30 *
+            PERCENT_PRECISION; // 30%
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.REWARD_VOTE_PERIOD)] = 90 days;
         _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.SUBSCRIPTION_AMOUNT)] =
-            (9999 * USDC_DECIMAL_MULTIPLIER) / 100; // $99.99
-        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_REWARD_RATE)] = 20 * PERCENT_PRECISION; // 20%
+            (9999 * USDC_DECIMAL_MULTIPLIER) /
+            100; // $99.99
+        _maxPropertyList[uint256(ConfigLibrary.PropertyListIndex.BOARD_REWARD_RATE)] =
+            20 *
+            PERCENT_PRECISION; // 20%
 
         return (_minPropertyList, _maxPropertyList);
     }
