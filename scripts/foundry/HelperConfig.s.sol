@@ -5,8 +5,6 @@ import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/console2.sol";
 import { MockUSDC } from "../../test/foundry/mocks/MockUSDC.sol";
 import { ERC20Mock } from "../../test/foundry/mocks/ERC20Mock.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-
 import { ConfigLibrary } from "../../contracts/libraries/ConfigLibrary.sol";
 
 struct NetworkConfig {
