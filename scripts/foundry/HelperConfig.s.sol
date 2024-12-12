@@ -19,6 +19,8 @@ struct NetworkConfig {
     address uniswapRouter;
     uint256[] discountPercents;
     address[] depositAssets;
+    uint256 stakingPoolFundAmount;
+    uint256 edgePoolFundAmount;
 }
 
 struct FullConfig {
@@ -29,7 +31,24 @@ struct FullConfig {
     ConfigLibrary.PropertyMinMaxListConfig propertyMinMaxListConfig;
 }
 
-contract HelperConfig is Script {
+abstract contract CodeConstants {
+    uint256 public constant RATE_PRECISION = 1e5; // 5 decimals: 1 = 0.00001
+    uint256 public constant PERCENT_PRECISION = 1e8; // 8 decimals: 1 = 0.00000001
+    uint256 public constant VAB_DECIMALS = 18;
+    uint256 public constant USDC_DECIMALS = 6;
+    uint256 public constant VAB_DECIMAL_MULTIPLIER = (10 ** VAB_DECIMALS);
+    uint256 public constant USDC_DECIMAL_MULTIPLIER = (10 ** USDC_DECIMALS);
+
+    /*//////////////////////////////////////////////////////////////
+                               CHAIN IDS
+    //////////////////////////////////////////////////////////////*/
+    uint256 public constant ETH_MAINNET_CHAIN_ID = 1;
+
+    uint256 public constant BASE__CHAIN_ID = 8453;
+    uint256 public constant BASE_SEPOLIA_CHAIN_ID = 84_532;
+}
+
+contract HelperConfig is CodeConstants, Script {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -43,18 +62,6 @@ contract HelperConfig is Script {
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
     uint256[] discountPercents = new uint256[](3);
-
-    uint256 constant RATE_PRECISION = 1e5; // 5 decimals: 1 = 0.00001
-    uint256 constant PERCENT_PRECISION = 1e8; // 8 decimals: 1 = 0.00000001
-    uint256 constant VAB_DECIMALS = 18;
-    uint256 constant USDC_DECIMALS = 6;
-    uint256 constant VAB_DECIMAL_MULTIPLIER = (10 ** VAB_DECIMALS);
-    uint256 constant USDC_DECIMAL_MULTIPLIER = (10 ** USDC_DECIMALS);
-
-    uint256 constant ETH_MAINNET_CHAIN_ID = 1;
-
-    uint256 constant BASE__CHAIN_ID = 8453;
-    uint256 constant BASE_SEPOLIA_CHAIN_ID = 84_532;
 
     // Local network state variables
     NetworkConfig public localNetworkConfig;
@@ -96,10 +103,7 @@ contract HelperConfig is Script {
         address _usdt = 0x58f777963F5c805D82E9Ff50c137fd3D58bD525C;
         address _mainnetToken = 0x0000000000000000000000000000000000000000;
 
-        address[] memory _depositAssets = new address[](3);
-        _depositAssets[0] = _vab;
-        _depositAssets[1] = _usdc;
-        _depositAssets[2] = _mainnetToken;
+        address[] memory _depositAssets = _createDepositAssets(_vab, _usdc, _mainnetToken);
 
         (uint256[] memory _minPropertyList, uint256[] memory _maxPropertyList) = _getMinMaxPropertyLists();
 
@@ -113,7 +117,9 @@ contract HelperConfig is Script {
                 uniswapFactory: 0x7Ae58f10f7849cA6F5fB71b7f45CB416c9204b1e,
                 uniswapRouter: 0x1689E7B1F10000AE47eBfE339a4f69dECd19F602,
                 discountPercents: discountPercents,
-                depositAssets: _depositAssets
+                depositAssets: _depositAssets,
+                stakingPoolFundAmount: 500_000 * VAB_DECIMAL_MULTIPLIER,
+                edgePoolFundAmount: 100_000 * VAB_DECIMAL_MULTIPLIER
             }),
             propertyTimePeriodConfig: ConfigLibrary.PropertyTimePeriodConfig({
                 filmVotePeriod: 10 minutes,
@@ -155,10 +161,7 @@ contract HelperConfig is Script {
         address _usdt = 0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2;
         address _mainnetToken = 0x0000000000000000000000000000000000000000;
 
-        address[] memory _depositAssets = new address[](3);
-        _depositAssets[0] = _vab;
-        _depositAssets[1] = _usdc;
-        _depositAssets[2] = _mainnetToken;
+        address[] memory _depositAssets = _createDepositAssets(_vab, _usdc, _mainnetToken);
 
         (uint256[] memory _minPropertyList, uint256[] memory _maxPropertyList) = _getMinMaxPropertyLists();
 
@@ -172,7 +175,9 @@ contract HelperConfig is Script {
                 uniswapFactory: 0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6,
                 uniswapRouter: 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24,
                 discountPercents: discountPercents,
-                depositAssets: _depositAssets
+                depositAssets: _depositAssets,
+                stakingPoolFundAmount: 5_000_000 * VAB_DECIMAL_MULTIPLIER,
+                edgePoolFundAmount: 1_000_000 * VAB_DECIMAL_MULTIPLIER
             }),
             propertyTimePeriodConfig: ConfigLibrary.PropertyTimePeriodConfig({
                 filmVotePeriod: 7 days,
@@ -234,7 +239,9 @@ contract HelperConfig is Script {
             uniswapFactory: address(0),
             uniswapRouter: address(0),
             discountPercents: discountPercents,
-            depositAssets: _depositAssets
+            depositAssets: _depositAssets,
+            stakingPoolFundAmount: 5_000_000 * VAB_DECIMAL_MULTIPLIER,
+            edgePoolFundAmount: 1_000_000 * VAB_DECIMAL_MULTIPLIER
         });
         return localNetworkConfig;
     }
@@ -255,6 +262,22 @@ contract HelperConfig is Script {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    function _createDepositAssets(
+        address _vab,
+        address _usdc,
+        address _mainnetToken
+    )
+        internal
+        pure
+        returns (address[] memory)
+    {
+        address[] memory _depositAssets = new address[](3);
+        _depositAssets[0] = _vab;
+        _depositAssets[1] = _usdc;
+        _depositAssets[2] = _mainnetToken;
+        return _depositAssets;
+    }
 
     function _getMinMaxPropertyLists()
         internal
