@@ -29,6 +29,8 @@ test-fuzz :; forge test --summary --detailed --match-path "./test/foundry/fuzz/*
 
 test-fork :; forge test --summary --detailed --match-path "./test/foundry/fork/*.sol"
 
+test-scripts :; forge test --summary --detailed --match-path "./test/foundry/scripts/*.sol"
+
 snapshot :; forge snapshot
 
 coverage:; forge coverage --report summary
@@ -118,10 +120,9 @@ get-subscription:
 # Get all deployed contracts in batches
 # make get-deployed-contracts ARGS="--network base_sepolia"
 get-deployed-contracts:
-	@echo "Fetching all contract addresses in batches..."
-	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getFirstBatch()" --chain-id $(CHAIN_ID)
-	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getSecondBatch()" --chain-id $(CHAIN_ID)
-	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --sig "getThirdBatch()" --chain-id $(CHAIN_ID)
+	@echo "Fetching all contract addresses..."
+	@forge script scripts/foundry/02_GetDeployedContracts.s.sol:GetDeployedContracts --chain-id $(CHAIN_ID)
+
 
 fund-all:
 	@forge script scripts/foundry/03_FundContracts.s.sol:FundContracts $(NETWORK_ARGS) --account Deployer --sender $(DEPLOYER_ADDRESS) --broadcast
