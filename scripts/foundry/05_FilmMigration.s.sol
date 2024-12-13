@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import { Script } from "lib/forge-std/src/Script.sol";
 import { console2 } from "lib/forge-std/src/Test.sol";
 import { VabbleDAO } from "../../contracts/dao/VabbleDAO.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../contracts/interfaces/IVabbleDAO.sol";
 import "../../contracts/libraries/Helper.sol";
 import "lib/forge-std/src/StdJson.sol";
@@ -11,20 +12,37 @@ import "lib/forge-std/src/StdJson.sol";
 contract FilmMigration is Script {
     using stdJson for string;
 
-    address constant contractAddress = address(0xBF6fd4b7876036E12d79A502f07c0e451f2e264a);
-    VabbleDAO vabbleDAO = VabbleDAO(payable(contractAddress));
+    VabbleDAO vabbleDAO;
+    string blockChainId;
 
     function run() public {
-        string memory root = vm.readFile("film_data.json");
-        uint256 length = 33;
+        blockChainId = vm.toString(block.chainid);
+        string memory inputPath = string.concat("./data/film_data_", blockChainId, ".json");
+        string memory root = vm.readFile(inputPath);
+
+        // Try to get the entire array first
+        bytes memory rawArray = vm.parseJson(root, "$");
+        // Then decode it as a dynamic array
+        bytes[] memory array = abi.decode(rawArray, (bytes[]));
+        uint256 length = array.length;
+
+        string memory contractAddress = vm.prompt(
+            string.concat(
+                "Enter the VabbleDAO contract address you want to migrate ",
+                Strings.toString(length),
+                " films to (Chain ID: ",
+                blockChainId,
+                ")"
+            )
+        );
+
+        vabbleDAO = VabbleDAO(payable(vm.parseAddress(contractAddress)));
 
         IVabbleDAO.Film[] memory films = new IVabbleDAO.Film[](length);
 
         for (uint256 i = 0; i < length; i++) {
             string memory basePath = string(abi.encodePacked("[", vm.toString(i), "]"));
             films[i] = parseFilm(root, basePath);
-            console2.log("Parsed film", i);
-            console2.log("Studio:", films[i].studio);
         }
 
         console2.log("Total Films parsed:", films.length);
@@ -34,14 +52,7 @@ contract FilmMigration is Script {
         vm.stopBroadcast();
     }
 
-    function parseFilm(
-        string memory root,
-        string memory basePath
-    )
-        internal
-        pure
-        returns (IVabbleDAO.Film memory film)
-    {
+    function parseFilm(string memory root, string memory basePath) public pure returns (IVabbleDAO.Film memory film) {
         film.title = abi.decode(vm.parseJson(root, string(abi.encodePacked(basePath, ".title"))), (string));
         film.description = abi.decode(vm.parseJson(root, string(abi.encodePacked(basePath, ".description"))), (string));
         film.raiseAmount = abi.decode(vm.parseJson(root, string(abi.encodePacked(basePath, ".raiseAmount"))), (uint256));

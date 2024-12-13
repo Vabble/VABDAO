@@ -18,10 +18,11 @@ out
 reports
 report
 cache_forge
+aderyn.md
+slither.md
 coverage
 coverage_foundry
 docs
-broadcast
 deployed_contracts.json
 _audit
 lcov.info

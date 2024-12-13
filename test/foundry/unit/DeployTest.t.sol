@@ -2,61 +2,27 @@
 pragma solidity ^0.8.4;
 
 import { BaseTest, console } from "../utils/BaseTest.sol";
-import { HelperConfig, NetworkConfig } from "../../../scripts/foundry/HelperConfig.s.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract DeployTest is BaseTest {
-    HelperConfig helperConfig;
-
     uint256 usdcDecimals = 6;
     uint256 vabDecimals = 18;
     uint256 usdtDecimals = 6;
-    uint256 filmVotePeriod = 10 days;
-    uint256 agentVotePeriod = 10 days;
-    uint256 disputeGracePeriod = 30 days;
-    uint256 propertyVotePeriod = 10 days;
-    uint256 lockPeriod = 30 days;
-    uint256 rewardRate = 25 * 1e5;
-    uint256 filmRewardClaimPeriod = 30 days;
-    uint256 maxAllowPeriod = 90 days;
-    uint256 proposalFeeAmount = 20 * 10 ** usdcDecimals;
-    uint256 fundFeePercent = 2 * 1e8;
-    uint256 minDepositAmount = 50 * 10 ** usdcDecimals;
-    uint256 maxDepositAmount = 5000 * 10 ** usdcDecimals;
-    uint256 maxMintFeePercent = 10 * 1e8;
-    uint256 minVoteCount = 1;
-    uint256 minStakerCountPercent = 5 * 1e8;
-    uint256 availableVABAmount = 50 * 1e6 * 10 ** vabDecimals;
-    uint256 boardVotePeriod = 14 days;
-    uint256 boardVoteWeight = 30 * 1e8;
-    uint256 rewardVotePeriod = 7 days;
-    uint256 subscriptionAmount = 299 * 10 ** usdcDecimals / 100;
-    uint256 boardRewardRate = 25 * 1e8;
 
-    function setUp() public override {
-        super.setUp();
-        helperConfig = new HelperConfig();
-    }
-
-    //TODO: test the setup functions more but for now this is ok to get started
-
-    function test_deployUsdcSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+    function test_deployUsdcSetup() public view {
         assertEq(IERC20Metadata(address(usdc)).decimals(), usdcDecimals);
-        assertEq(address(usdc), activeConfig.usdc);
+        assertEq(address(usdc), activeNetworkConfig.usdc);
     }
 
-    function test_deployVabSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+    function test_deployVabSetup() public view {
         assertEq(IERC20Metadata(address(vab)).decimals(), vabDecimals);
-        assertEq(address(vab), activeConfig.vab);
+        assertEq(address(vab), activeNetworkConfig.vab);
     }
 
-    function test_deployUsdtSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+    function test_deployUsdtSetup() public view {
         assertEq(IERC20Metadata(address(usdt)).decimals(), usdtDecimals);
-        assertEq(address(usdt), activeConfig.usdt);
+        assertEq(address(usdt), activeNetworkConfig.usdt);
     }
 
     function test_deployOwnableSetup() public view {
@@ -72,11 +38,20 @@ contract DeployTest is BaseTest {
         assertEq(true, ownablee.isDepositAsset(address(vab)));
     }
 
-    function test_deployUniHelperSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+    function test_deployOwnableeSetupAgainstHelperConfig() public view {
+        assertEq(ownablee.auditor(), activeNetworkConfig.auditor);
+        assertEq(ownablee.VAB_WALLET(), activeNetworkConfig.vabbleWallet);
+        assertEq(ownablee.PAYOUT_TOKEN(), activeNetworkConfig.vab);
+        assertEq(ownablee.USDC_TOKEN(), activeNetworkConfig.usdc);
 
-        address uniswapFactory = activeConfig.uniswapFactory;
-        address uniswapRouter = activeConfig.uniswapRouter;
+        for (uint256 i = 0; i < activeNetworkConfig.depositAssets.length; i++) {
+            assertEq(true, ownablee.isDepositAsset(activeNetworkConfig.depositAssets[i]));
+        }
+    }
+
+    function test_deployUniHelperSetup() public view {
+        address uniswapFactory = activeNetworkConfig.uniswapFactory;
+        address uniswapRouter = activeNetworkConfig.uniswapRouter;
 
         assertEq(uniswapRouter, uniHelper.getUniswapRouter());
         assertEq(uniswapFactory, uniHelper.getUniswapFactory());
@@ -89,28 +64,78 @@ contract DeployTest is BaseTest {
         assertEq(address(property), stakingPool.getPropertyAddress());
     }
 
+    /*//////////////////////////////////////////////////////////////
+                           PROPERTY CONTRACT
+    //////////////////////////////////////////////////////////////*/
     function test_deployPropertySetup() public view {
-        assertEq(property.filmVotePeriod(), filmVotePeriod);
-        assertEq(property.agentVotePeriod(), agentVotePeriod);
-        assertEq(property.disputeGracePeriod(), disputeGracePeriod);
-        assertEq(property.propertyVotePeriod(), propertyVotePeriod);
-        assertEq(property.lockPeriod(), lockPeriod);
-        assertEq(property.rewardRate(), rewardRate);
-        assertEq(property.filmRewardClaimPeriod(), filmRewardClaimPeriod);
-        assertEq(property.maxAllowPeriod(), maxAllowPeriod);
-        assertEq(property.proposalFeeAmount(), proposalFeeAmount);
-        assertEq(property.fundFeePercent(), fundFeePercent);
-        assertEq(property.minDepositAmount(), minDepositAmount);
-        assertEq(property.maxDepositAmount(), maxDepositAmount);
-        assertEq(property.maxMintFeePercent(), maxMintFeePercent);
-        assertEq(property.minVoteCount(), minVoteCount);
-        assertEq(property.minStakerCountPercent(), minStakerCountPercent);
-        assertEq(property.availableVABAmount(), availableVABAmount);
-        assertEq(property.boardVotePeriod(), boardVotePeriod);
-        assertEq(property.boardVoteWeight(), boardVoteWeight);
-        assertEq(property.rewardVotePeriod(), rewardVotePeriod);
-        assertEq(property.subscriptionAmount(), subscriptionAmount);
-        assertEq(property.boardRewardRate(), boardRewardRate);
+        assertEq(property.filmVotePeriod(), propertyTimePeriodConfig.filmVotePeriod, "filmVotePeriod doesn't match");
+        assertEq(property.agentVotePeriod(), propertyTimePeriodConfig.agentVotePeriod, "agentVotePeriod doesn't match");
+        assertEq(
+            property.disputeGracePeriod(),
+            propertyTimePeriodConfig.disputeGracePeriod,
+            "disputeGracePeriod doesn't match"
+        );
+        assertEq(
+            property.propertyVotePeriod(),
+            propertyTimePeriodConfig.propertyVotePeriod,
+            "propertyVotePeriod doesn't match"
+        );
+        assertEq(property.lockPeriod(), propertyTimePeriodConfig.lockPeriod, "lockPeriod doesn't match");
+        assertEq(property.rewardRate(), propertyRatesConfig.rewardRate, "rewardRate doesn't match");
+        assertEq(
+            property.filmRewardClaimPeriod(),
+            propertyTimePeriodConfig.filmRewardClaimPeriod,
+            "filmRewardClaimPeriod doesn't match"
+        );
+        assertEq(property.maxAllowPeriod(), propertyTimePeriodConfig.maxAllowPeriod, "maxAllowPeriod doesn't match");
+        assertEq(
+            property.proposalFeeAmount(), propertyAmountsConfig.proposalFeeAmount, "proposalFeeAmount doesn't match"
+        );
+        assertEq(property.fundFeePercent(), propertyRatesConfig.fundFeePercent, "fundFeePercent doesn't match");
+        assertEq(property.minDepositAmount(), propertyAmountsConfig.minDepositAmount, "minDepositAmount doesn't match");
+        assertEq(property.maxDepositAmount(), propertyAmountsConfig.maxDepositAmount, "maxDepositAmount doesn't match");
+        assertEq(property.maxMintFeePercent(), propertyRatesConfig.maxMintFeePercent, "maxMintFeePercent doesn't match");
+        assertEq(property.minVoteCount(), propertyAmountsConfig.minVoteCount, "minVoteCount doesn't match");
+        assertEq(
+            property.minStakerCountPercent(),
+            propertyRatesConfig.minStakerCountPercent,
+            "minStakerCountPercent doesn't match"
+        );
+        assertEq(
+            property.availableVABAmount(), propertyAmountsConfig.availableVABAmount, "availableVABAmount doesn't match"
+        );
+        assertEq(property.boardVotePeriod(), propertyTimePeriodConfig.boardVotePeriod, "boardVotePeriod doesn't match");
+        assertEq(property.boardVoteWeight(), propertyRatesConfig.boardVoteWeight, "boardVoteWeight doesn't match");
+        assertEq(
+            property.rewardVotePeriod(), propertyTimePeriodConfig.rewardVotePeriod, "rewardVotePeriod doesn't match"
+        );
+        assertEq(
+            property.subscriptionAmount(), propertyAmountsConfig.subscriptionAmount, "subscriptionAmount doesn't match"
+        );
+        assertEq(property.boardRewardRate(), propertyRatesConfig.boardRewardRate, "boardRewardRate doesn't match");
+    }
+
+    function test_deployPropertyMinMaxSetup() public view {
+        uint256[] memory minPropertyList = activeHelperConfig.propertyMinMaxListConfig.minPropertyList;
+        uint256[] memory maxPropertyList = activeHelperConfig.propertyMinMaxListConfig.maxPropertyList;
+
+        // Check all min values match
+        for (uint256 i = 0; i < minPropertyList.length; i++) {
+            assertEq(
+                property.getMinPropertyList(i),
+                minPropertyList[i],
+                string.concat("Min property list mismatch at index ", vm.toString(i))
+            );
+        }
+
+        // Check all max values match
+        for (uint256 i = 0; i < maxPropertyList.length; i++) {
+            assertEq(
+                property.getMaxPropertyList(i),
+                maxPropertyList[i],
+                string.concat("Max property list mismatch at index ", vm.toString(i))
+            );
+        }
     }
 
     function test_deployVabbleDaoSetup() public view {
@@ -122,12 +147,11 @@ contract DeployTest is BaseTest {
         assertEq(address(vabbleFund), vabbleDAO.VABBLE_FUND());
     }
 
-    function test_deploySubscriptionSetup() public {
-        NetworkConfig memory activeConfig = getActiveConfig();
+    function test_deploySubscriptionSetup() public view {
         uint256[] memory _discountList = subscription.getDiscountPercentList();
-        assertEq(activeConfig.discountPercents[0], _discountList[0]);
-        assertEq(activeConfig.discountPercents[1], _discountList[1]);
-        assertEq(activeConfig.discountPercents[2], _discountList[2]);
+        assertEq(activeNetworkConfig.discountPercents[0], _discountList[0]);
+        assertEq(activeNetworkConfig.discountPercents[1], _discountList[1]);
+        assertEq(activeNetworkConfig.discountPercents[2], _discountList[2]);
     }
 
     function test_usersTokenBalance() public view {
@@ -166,9 +190,93 @@ contract DeployTest is BaseTest {
     }
 
     /*//////////////////////////////////////////////////////////////
-                           INTERNAL FUNCTIONS
+                       TESTS FOR HARDCODED VALUES
     //////////////////////////////////////////////////////////////*/
-    function getActiveConfig() internal returns (NetworkConfig memory) {
-        return helperConfig.getActiveNetworkConfig();
+    function test_deployedPropertyValuesAgainstFixedValuesBaseSepolia() public view {
+        if (block.chainid != 84_532) {
+            return;
+        }
+        // Time periods
+        assertEq(property.filmVotePeriod(), 600, "filmVotePeriod doesn't match");
+        assertEq(property.agentVotePeriod(), 600, "agentVotePeriod doesn't match");
+        assertEq(property.disputeGracePeriod(), 600, "disputeGracePeriod doesn't match");
+        assertEq(property.propertyVotePeriod(), 600, "propertyVotePeriod doesn't match");
+        assertEq(property.lockPeriod(), 600, "lockPeriod doesn't match");
+        assertEq(property.filmRewardClaimPeriod(), 600, "filmRewardClaimPeriod doesn't match");
+        assertEq(property.boardVotePeriod(), 600, "boardVotePeriod doesn't match");
+        assertEq(property.rewardVotePeriod(), 600, "rewardVotePeriod doesn't match");
+        assertEq(property.maxAllowPeriod(), 600, "maxAllowPeriod doesn't match");
+
+        // Rates and percentages
+        assertEq(property.rewardRate(), 2_500_000, "rewardRate doesn't match");
+        assertEq(property.fundFeePercent(), 200_000_000, "fundFeePercent doesn't match");
+        assertEq(property.maxMintFeePercent(), 1_000_000_000, "maxMintFeePercent doesn't match");
+        assertEq(property.minStakerCountPercent(), 500_000_000, "minStakerCountPercent doesn't match");
+        assertEq(property.boardVoteWeight(), 3_000_000_000, "boardVoteWeight doesn't match");
+        assertEq(property.boardRewardRate(), 2_500_000_000, "boardRewardRate doesn't match");
+
+        // Amounts
+        assertEq(property.proposalFeeAmount(), 20_000_000, "proposalFeeAmount doesn't match");
+        assertEq(property.minDepositAmount(), 50_000_000, "minDepositAmount doesn't match");
+        assertEq(property.maxDepositAmount(), 5_000_000_000, "maxDepositAmount doesn't match");
+        assertEq(property.availableVABAmount(), 1_000_000_000_000_000_000, "availableVABAmount doesn't match");
+        assertEq(property.subscriptionAmount(), 2_990_000, "subscriptionAmount doesn't match");
+
+        // Other values
+        assertEq(property.minVoteCount(), 1, "minVoteCount doesn't match");
+    }
+
+    function test_deployedPropertyValuesAgainstFixedValuesBase() public view {
+        if (block.chainid != 8453) {
+            return;
+        }
+        // Time periods
+        assertEq(property.filmVotePeriod(), 604_800, "filmVotePeriod doesn't match");
+        assertEq(property.agentVotePeriod(), 864_000, "agentVotePeriod doesn't match");
+        assertEq(property.disputeGracePeriod(), 2_592_000, "disputeGracePeriod doesn't match");
+        assertEq(property.propertyVotePeriod(), 864_000, "propertyVotePeriod doesn't match");
+        assertEq(property.lockPeriod(), 2_592_000, "lockPeriod doesn't match");
+        assertEq(property.filmRewardClaimPeriod(), 2_592_000, "filmRewardClaimPeriod doesn't match");
+        assertEq(property.boardVotePeriod(), 1_209_600, "boardVotePeriod doesn't match");
+        assertEq(property.rewardVotePeriod(), 604_800, "rewardVotePeriod doesn't match");
+        assertEq(property.maxAllowPeriod(), 7_776_000, "maxAllowPeriod doesn't match");
+
+        // Rates and percentages
+        assertEq(property.rewardRate(), 5_000_000, "rewardRate doesn't match");
+        assertEq(property.fundFeePercent(), 200_000_000, "fundFeePercent doesn't match");
+        assertEq(property.maxMintFeePercent(), 1_000_000_000, "maxMintFeePercent doesn't match");
+        assertEq(property.minStakerCountPercent(), 500_000_000, "minStakerCountPercent doesn't match");
+        assertEq(property.boardVoteWeight(), 3_000_000_000, "boardVoteWeight doesn't match");
+        assertEq(property.boardRewardRate(), 2_500_000_000, "boardRewardRate doesn't match");
+
+        // Amounts
+        assertEq(property.proposalFeeAmount(), 20_000_000, "proposalFeeAmount doesn't match");
+        assertEq(property.minDepositAmount(), 50_000_000, "minDepositAmount doesn't match");
+        assertEq(property.maxDepositAmount(), 5_000_000_000, "maxDepositAmount doesn't match");
+        assertEq(property.availableVABAmount(), 5_000_000_000_000_000_000_000_000, "availableVABAmount doesn't match");
+        assertEq(property.subscriptionAmount(), 6_990_000, "subscriptionAmount doesn't match");
+
+        // Other values
+        assertEq(property.minVoteCount(), 1, "minVoteCount doesn't match");
+    }
+
+    function test_deployOwnableeSetupAgainstFixedValuesBase() public view {
+        if (block.chainid != 8453) {
+            return;
+        }
+        assertEq(ownablee.auditor(), 0x170341dfFAD907f9695Dc1C17De622A5A2F28259);
+        assertEq(ownablee.VAB_WALLET(), 0xE13Cf9Ff533268F3a98961995Ce7681440204361);
+        assertEq(ownablee.PAYOUT_TOKEN(), 0xBE58fdA3Bcf03B6bbc821D1f0E6b764C86709227);
+        assertEq(ownablee.USDC_TOKEN(), 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
+    }
+
+    function test_deployOwnableeSetupAgainstFixedValuesBaseSepolia() public view {
+        if (block.chainid != 84_532) {
+            return;
+        }
+        assertEq(ownablee.auditor(), 0xa18DcEd8a77553a06C7AEf1aB1d37D004df0fD12);
+        assertEq(ownablee.VAB_WALLET(), 0xD71D56BF0761537B69436D8D16381d78f90B827e);
+        assertEq(ownablee.PAYOUT_TOKEN(), 0x811401d4b7d8EAa0333Ada5c955cbA1fd8B09eda);
+        assertEq(ownablee.USDC_TOKEN(), 0x19bDfECdf99E489Bb4DC2C3dC04bDf443cc2a7f1);
     }
 }
