@@ -37,6 +37,14 @@ async function main() {
     console.log(`Account balance: ${(await deployer.getBalance()).toString()}`);
 
     try {
+        // Get current gas price and calculate optimized gas price
+        const gasPrice = await ethers.provider.getGasPrice();
+        console.log("Current gas price:", ethers.utils.formatUnits(gasPrice, "gwei"), "gwei");
+
+        // Use 80% of current gas price
+        const optimizedGasPrice = gasPrice.mul(80).div(100);
+        console.log("Using optimized gas price:", ethers.utils.formatUnits(optimizedGasPrice, "gwei"), "gwei");
+
         console.log("Deploying VabbleKeyzAuction...");
         const VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction");
         const auction = await VabbleKeyzAuction.deploy(
@@ -45,9 +53,11 @@ async function main() {
             config.daoAddress,
             config.uniHelper,
             config.staking,
-            config.uniswapRouter
+            config.uniswapRouter,
+            { gasPrice: optimizedGasPrice }
         );
 
+        console.log("Deployment transaction hash:", auction.deployTransaction.hash);
         await auction.deployed();
         console.log("VabbleKeyzAuction deployed to:", auction.address);
 
@@ -108,6 +118,11 @@ async function main() {
 
     } catch (error) {
         console.error("Deployment failed:", error);
+        if (error.transaction) {
+            console.error("Transaction hash:", error.transaction.hash);
+            console.error("Gas used:", error.transaction.gasLimit?.toString());
+            console.error("Gas price:", error.transaction.gasPrice?.toString());
+        }
         process.exit(1);
     }
 }
