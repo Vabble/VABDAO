@@ -48,6 +48,9 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     uint256 public saleCounter;
     mapping(uint256 => Sale) public sales;
 
+    // Mapping to track pending returns after bid
+    mapping(address => uint256) public pendingReturns;
+
     // Mapping to track available keys in each sale
     mapping(uint256 => mapping(uint256 => bool)) public isKeyAvailable;
 
@@ -58,15 +61,17 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     address payable public daoAddress;
 
     // Variables for revenue percentages
-    uint256 public vabbleShare; // e.g., 15 represents 1.5%
-    uint256 public daoShare; // e.g., 10 represents 1%
-    uint256 public minIpOwnerShare; // e.g., 30 represents 3%
-    uint256 public percentagePrecision; // Represents 100%, e.g., 1000
+    uint256 public vabbleShare; // e.g., 150 represents 1.5%
+    uint256 public daoShare; // e.g., 100 represents 1%
+    uint256 public minIpOwnerShare; // e.g., 300 represents 3%
+    uint256 public percentagePrecision; // Represents 100%, e.g., 10000
 
     // Variables for configurable parameters
     uint256 public maxDurationInMinutes;
     uint256 public minBidIncrementAllowed;
     uint256 public maxBidIncrementAllowed;
+
+    uint256 public maxRoomKeys;
 
     address public immutable STAKING_POOL; // StakingPool contract address
     address public immutable UNI_HELPER; // UniHelper contract address
@@ -77,9 +82,9 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // --------------------
 
     event SaleCreated(
-        uint256 saleId,
-        uint256 roomId,
-        address roomOwner,
+        uint256 indexed saleId,
+        uint256 indexed roomId,
+        address indexed roomOwner,
         SaleType saleType,
         uint256 startTime,
         uint256 endTime,
@@ -89,11 +94,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         uint256 ipOwnerShare
     );
 
-    event BidPlaced(uint256 saleId, uint256 keyId, address bidder, uint256 amount);
-    event InstantBuy(uint256 saleId, uint256 keyId, address buyer, uint256 amount);
-    event SaleSettled(uint256 saleId, uint256 totalAmount);
-    event KeyClaimed(uint256 saleId, uint256 keyId, address winner);
-    event RefundClaimed(uint256 saleId, uint256 keyId, address claimant, uint256 amount);
+    event BidPlaced(uint256 indexed saleId, uint256 indexed keyId, address indexed bidder, uint256 amount);
+    event InstantBuy(uint256 indexed saleId, uint256 indexed keyId, address indexed buyer, uint256 amount);
+    event SaleSettled(uint256 indexed saleId, uint256 totalAmount);
+    event KeyClaimed(uint256 indexed saleId, uint256 indexed keyId, address indexed winner);
+    event RefundClaimed(uint256 indexed saleId, uint256 indexed keyId, address indexed claimant, uint256 amount);
 
     event VabbleShareUpdated(uint256 newShare);
     event DaoShareUpdated(uint256 newShare);
@@ -107,14 +112,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     event MinBidIncrementAllowedUpdated(uint256 newMinBidIncrement);
     event MaxBidIncrementAllowedUpdated(uint256 newMaxBidIncrement);
 
+    event MaxRoomKeysUpdated(uint256 newMaxRoomKeys);
+
     // --------------------
     // Modifiers
     // --------------------
-
-    modifier onlyRoomOwner(uint256 saleId) {
-        require(msg.sender == sales[saleId].roomOwner, "Not room owner");
-        _;
-    }
 
     modifier saleExists(uint256 saleId) {
         require(sales[saleId].roomOwner != address(0), "Sale does not exist");
@@ -144,15 +146,17 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         daoAddress = _daoAddress;
 
         // Initialize default shares and precision
-        vabbleShare = 15; // 1.5%
-        daoShare = 10; // 1%
-        minIpOwnerShare = 30; // 3%
-        percentagePrecision = 1000; // 100%
+        vabbleShare = 150; // 1.5%
+        daoShare = 100; // 1%
+        minIpOwnerShare = 300; // 3%
+        percentagePrecision = 10000; // 100%
 
         // Initialize configurable parameters
         maxDurationInMinutes = 2880; // 48 hours * 60 minutes
         minBidIncrementAllowed = 1; // 0.01%
-        maxBidIncrementAllowed = 50000; // 5000%
+        maxBidIncrementAllowed = 500000; // 5000%
+
+        maxRoomKeys = 5;
 
         UNI_HELPER = _uniHelper;
         STAKING_POOL = _staking;
@@ -176,6 +180,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(_durationInMinutes <= maxDurationInMinutes, "Duration exceeds max limit");
         require(_ipOwnerShare >= minIpOwnerShare, "IP Owner share too low");
         require(_totalKeys > 0, "Must sell at least one key");
+        require(_totalKeys <= maxRoomKeys, "Total keys exceed max limit");
         require(_ipOwnerAddress != address(0), "Invalid IP owner address");
 
         if (_saleType == SaleType.Auction) {
@@ -187,7 +192,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         saleCounter++;
         uint256 saleId = saleCounter;
-        uint256 durationInSeconds = _durationInMinutes * 1 minutes;
+        uint256 durationInSeconds = _durationInMinutes * 1 seconds;
 
         Sale storage newSale = sales[saleId];
         newSale.roomOwner = payable(msg.sender);
@@ -221,10 +226,14 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         );
     }
 
-    function placeBid(
-        uint256 saleId,
-        uint256 keyId
-    ) external payable saleExists(saleId) saleActive(saleId) whenNotPaused nonReentrant {
+    function placeBid(uint256 saleId, uint256 keyId)
+        external
+        payable
+        saleExists(saleId)
+        saleActive(saleId)
+        whenNotPaused
+        nonReentrant
+    {
         Sale storage sale = sales[saleId];
         require(sale.saleType == SaleType.Auction, "Not an auction");
         require(keyId < sale.totalKeys, "Invalid key ID");
@@ -246,12 +255,12 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
             uint256 refundAmount = currentBid.amount;
             address payable previousBidder = currentBid.bidder;
 
-            // Update state before external call
+            pendingReturns[previousBidder] += refundAmount;
+
+            // Update state 
             currentBid.amount = msg.value;
             currentBid.bidder = payable(msg.sender);
 
-            (bool success, ) = previousBidder.call{value: refundAmount}("");
-            require(success, "Refund failed");
         } else {
             currentBid.amount = msg.value;
             currentBid.bidder = payable(msg.sender);
@@ -260,10 +269,14 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         emit BidPlaced(saleId, keyId, msg.sender, msg.value);
     }
 
-    function buyNow(
-        uint256 saleId,
-        uint256 keyId
-    ) external payable saleExists(saleId) saleActive(saleId) whenNotPaused nonReentrant {
+    function buyNow(uint256 saleId, uint256 keyId)
+        external
+        payable
+        saleExists(saleId)
+        saleActive(saleId)
+        whenNotPaused
+        nonReentrant
+    {
         Sale storage sale = sales[saleId];
         require(sale.saleType == SaleType.InstantBuy, "Not an instant buy sale");
         require(keyId < sale.totalKeys, "Invalid key ID");
@@ -328,10 +341,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         // Swap ETH to VAB tokens
         uint256[] memory amountsReceived = IUniswapV2Router02(UNISWAP_ROUTER).swapExactETHForTokens{value: amountToPool}(
-            slippageTolerance,
-            path,
-            address(this),
-            block.timestamp + 5
+            slippageTolerance, path, address(this), block.timestamp + 5
         );
 
         uint256 vabAmount = amountsReceived[1];
@@ -359,10 +369,18 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         keyBid.amount = 0;
         keyBid.claimed = true;
 
-        (bool success, ) = msg.sender.call{value: refundAmount}("");
+        (bool success,) = msg.sender.call{value: refundAmount}("");
         require(success, "Refund failed");
 
         emit RefundClaimed(saleId, keyId, msg.sender, refundAmount);
+    }
+
+    function withdrawPendingReturns() external nonReentrant {
+        uint256 amount = pendingReturns[msg.sender];
+        require(amount > 0, "No funds to withdraw");
+        pendingReturns[msg.sender] = 0;
+        (bool success, ) = msg.sender.call{ value: amount }(""); 
+        require(success, "Withdrawal failed");
     }
 
     // --------------------
@@ -378,7 +396,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     }
 
     // Getter functions for variables
-    function getKeyBid(uint256 saleId, uint256 keyId) external view returns (uint256 amount, address bidder, bool claimed) {
+    function getKeyBid(uint256 saleId, uint256 keyId)
+        external
+        view
+        returns (uint256 amount, address bidder, bool claimed)
+    {
         KeyBid storage bid = sales[saleId].keyBids[keyId];
         return (bid.amount, bid.bidder, bid.claimed);
     }
@@ -392,6 +414,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     function setVabbleShare(uint256 _vabbleShare) external onlyOwner {
         vabbleShare = _vabbleShare;
         emit VabbleShareUpdated(_vabbleShare);
+    }
+
+    function setMaxRoomKeys(uint256 _maxRoomKeys) external onlyOwner {
+        maxRoomKeys = _maxRoomKeys;
+        emit MaxRoomKeysUpdated(_maxRoomKeys);
     }
 
     function setDaoShare(uint256 _daoShare) external onlyOwner {
@@ -442,7 +469,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // --------------------
 
     function _safeTransfer(address payable recipient, uint256 amount, string memory errorMessage) internal {
-        (bool success, ) = recipient.call{value: amount}("");
+        (bool success,) = recipient.call{value: amount}("");
         require(success, errorMessage);
     }
 
