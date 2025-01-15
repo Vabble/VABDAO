@@ -37,7 +37,6 @@ contract FactorySubNFT is IERC721Receiver, ReentrancyGuard {
     mapping(uint256 => Mint) private mintInfo;              // (category => AdminMint)
     mapping(uint256 => Lock) private lockInfo;        // (tokenId => SubLock)
     mapping(address => uint256[]) public subNFTTokenList;   // (user => minted tokenId list)
-    // TODO - N2-2 updated(remove userNFTContractList)
     uint256[] public categoryList;
     VabbleNFT private subNFTContract;
 

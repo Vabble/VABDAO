@@ -6,7 +6,7 @@ const ERC721 = require('../data/ERC721.json');
 const { BigNumber } = require('ethers');
 
 describe('FactorySubscriptionNFT', function () {
-  before(async function () {        
+  before(async function () {
     this.VabbleDAOFactory = await ethers.getContractFactory('VabbleDAO');
     this.UniHelperFactory = await ethers.getContractFactory('UniHelper');
     this.StakingPoolFactory = await ethers.getContractFactory('StakingPool');
@@ -20,10 +20,10 @@ describe('FactorySubscriptionNFT', function () {
 
     this.signers = await ethers.getSigners();
     this.auditor = this.signers[0];
-    this.newAuditor = this.signers[1];    
-    this.studio1 = this.signers[2];    
-    this.studio2 = this.signers[3];       
-    this.studio3 = this.signers[4]; 
+    this.newAuditor = this.signers[1];
+    this.studio1 = this.signers[2];
+    this.studio2 = this.signers[3];
+    this.studio3 = this.signers[4];
     this.customer1 = this.signers[5];
     this.customer2 = this.signers[6];
     this.customer3 = this.signers[7];
@@ -37,16 +37,16 @@ describe('FactorySubscriptionNFT', function () {
 
     this.Ownablee = await (await this.OwnableFactory.deploy(
       CONFIG.daoWalletAddress, this.vabToken.address, this.USDC.address
-    )).deployed(); 
+    )).deployed();
 
     this.UniHelper = await (await this.UniHelperFactory.deploy(
       CONFIG.mumbai.uniswap.factory, CONFIG.mumbai.uniswap.router, CONFIG.mumbai.sushiswap.factory, CONFIG.mumbai.sushiswap.router
     )).deployed();
 
-    this.StakingPool = await (await this.StakingPoolFactory.deploy(this.Ownablee.address)).deployed(); 
+    this.StakingPool = await (await this.StakingPoolFactory.deploy(this.Ownablee.address)).deployed();
 
     this.Vote = await (await this.VoteFactory.deploy(this.Ownablee.address)).deployed();
-      
+
     this.Property = await (
       await this.PropertyFactory.deploy(
         this.Ownablee.address,
@@ -55,14 +55,14 @@ describe('FactorySubscriptionNFT', function () {
         this.StakingPool.address
       )
     ).deployed();
-    
+
     this.FilmNFT = await (
       await this.FactoryFilmNFTFactory.deploy(this.Ownablee.address, this.UniHelper.address)
-    ).deployed();   
+    ).deployed();
 
     this.SubNFT = await (
       await this.FactorySubNFTFactory.deploy(this.Ownablee.address, this.UniHelper.address)
-    ).deployed();   
+    ).deployed();
 
     this.VabbleDAO = await (
       await this.VabbleDAOFactory.deploy(
@@ -73,50 +73,51 @@ describe('FactorySubscriptionNFT', function () {
         this.Property.address,
         this.FilmNFT.address
       )
-    ).deployed();     
-    
+    ).deployed();
+
     this.TierNFT = await (
       await this.FactoryTierNFTFactory.deploy(
         this.Ownablee.address,      // Ownablee contract
         this.VabbleDAO.address
       )
-    ).deployed(); 
+    ).deployed();
 
     this.Subscription = await (
       await this.SubscriptionFactory.deploy(
         this.Ownablee.address,
         this.UniHelper.address,
         this.Property.address,
+        this.StakingPool.address,
         [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
       )
-    ).deployed();  
-    
+    ).deployed();
+
     await this.FilmNFT.connect(this.auditor).initializeFactory(
-      this.VabbleDAO.address, 
+      this.VabbleDAO.address,
       this.StakingPool.address,
       this.Property.address,
-      {from: this.auditor.address}
-    );    
-    
+      { from: this.auditor.address }
+    );
+
 
     // ====== VAB
     // Transfering VAB token to user1, 2, 3
-    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(50000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(50000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(500000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.customer1.address, getBigNumber(50000000), { from: this.auditor.address });
+    await this.vabToken.connect(this.auditor).transfer(this.customer2.address, getBigNumber(50000000), { from: this.auditor.address });
+    await this.vabToken.connect(this.auditor).transfer(this.customer3.address, getBigNumber(500000), { from: this.auditor.address });
     // Transfering VAB token to studio1, 2, 3
-    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(5000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(5000000), {from: this.auditor.address});
-    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(5000000), {from: this.auditor.address});
+    await this.vabToken.connect(this.auditor).transfer(this.studio1.address, getBigNumber(5000000), { from: this.auditor.address });
+    await this.vabToken.connect(this.auditor).transfer(this.studio2.address, getBigNumber(5000000), { from: this.auditor.address });
+    await this.vabToken.connect(this.auditor).transfer(this.studio3.address, getBigNumber(5000000), { from: this.auditor.address });
 
     // Approve to transfer VAB token for each user, studio to DAO, StakingPool
     await this.vabToken.connect(this.customer1).approve(this.VabbleDAO.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer2).approve(this.VabbleDAO.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000000));   
-    
+    await this.vabToken.connect(this.customer3).approve(this.VabbleDAO.address, getBigNumber(100000000));
+
     await this.vabToken.connect(this.customer1).approve(this.SubNFT.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer2).approve(this.SubNFT.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.customer3).approve(this.SubNFT.address, getBigNumber(100000000));   
+    await this.vabToken.connect(this.customer3).approve(this.SubNFT.address, getBigNumber(100000000));
 
     await this.vabToken.connect(this.customer1).approve(this.StakingPool.address, getBigNumber(100000000));
     await this.vabToken.connect(this.customer2).approve(this.StakingPool.address, getBigNumber(100000000));
@@ -130,7 +131,7 @@ describe('FactorySubscriptionNFT', function () {
 
     await this.vabToken.connect(this.studio1).approve(this.VabbleDAO.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio2).approve(this.VabbleDAO.address, getBigNumber(100000000));
-    await this.vabToken.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000000));    
+    await this.vabToken.connect(this.studio3).approve(this.VabbleDAO.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio1).approve(this.SubNFT.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio2).approve(this.SubNFT.address, getBigNumber(100000000));
     await this.vabToken.connect(this.studio3).approve(this.SubNFT.address, getBigNumber(100000000));
@@ -150,38 +151,38 @@ describe('FactorySubscriptionNFT', function () {
       this.VabbleDAO.address,
       this.Property.address,
       this.Vote.address,
-      {from: this.auditor.address}
-    )  
+      { from: this.auditor.address }
+    )
     // Staking VAB token
-    await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(40000000), {from: this.customer1.address})
-    await this.StakingPool.connect(this.customer2).stakeVAB(getBigNumber(40000000), {from: this.customer2.address})
-    await this.StakingPool.connect(this.customer3).stakeVAB(getBigNumber(300), {from: this.customer3.address})    
-    await this.StakingPool.connect(this.studio1).stakeVAB(getBigNumber(300), {from: this.studio1.address})
-    await this.StakingPool.connect(this.studio2).stakeVAB(getBigNumber(300), {from: this.studio2.address})
-    await this.StakingPool.connect(this.studio3).stakeVAB(getBigNumber(300), {from: this.studio3.address})
+    await this.StakingPool.connect(this.customer1).stakeVAB(getBigNumber(40000000), { from: this.customer1.address })
+    await this.StakingPool.connect(this.customer2).stakeVAB(getBigNumber(40000000), { from: this.customer2.address })
+    await this.StakingPool.connect(this.customer3).stakeVAB(getBigNumber(300), { from: this.customer3.address })
+    await this.StakingPool.connect(this.studio1).stakeVAB(getBigNumber(300), { from: this.studio1.address })
+    await this.StakingPool.connect(this.studio2).stakeVAB(getBigNumber(300), { from: this.studio2.address })
+    await this.StakingPool.connect(this.studio3).stakeVAB(getBigNumber(300), { from: this.studio3.address })
     // Confirm auditor
-    expect(await this.Ownablee.auditor()).to.be.equal(this.auditor.address);    
-    
+    expect(await this.Ownablee.auditor()).to.be.equal(this.auditor.address);
+
     this.events = [];
-    
+
     this.bUri = 'https://ipfs.io/ipfs/'
     this.cUri = 'https://commanda.xyz/api/collection-metadata'
   });
 
   it('nft deploy and mint ', async function () {
-    await this.SubNFT.connect(this.auditor).setBaseURI(this.bUri, this.cUri, {from: this.auditor.address})
+    await this.SubNFT.connect(this.auditor).setBaseURI(this.bUri, this.cUri, { from: this.auditor.address })
     await this.Ownablee.connect(this.auditor).addDepositAsset(
-      [this.vabToken.address, CONFIG.addressZero], {from: this.auditor.address}
+      [this.vabToken.address, CONFIG.addressZero], { from: this.auditor.address }
     )
 
     // subscription NFT contract deploy
     await expect(
       this.SubNFT.connect(this.studio2).deploySubNFTContract(
-        "sub test", "s-nft", {from: this.studio2.address}
+        "sub test", "s-nft", { from: this.studio2.address }
       )
     ).to.be.revertedWith('caller is not the auditor');
 
-    const trx = await this.SubNFT.connect(this.auditor).deploySubNFTContract("sub test", "s-nft", {from: this.auditor.address})
+    const trx = await this.SubNFT.connect(this.auditor).deploySubNFTContract("sub test", "s-nft", { from: this.auditor.address })
     this.events = (await trx.wait()).events
     const ars = this.events[0].args;
     expect(ars.nftCreator).to.be.equal(this.auditor.address)
@@ -191,16 +192,16 @@ describe('FactorySubscriptionNFT', function () {
     // subscription NFT mint
     await expect(
       this.SubNFT.connect(this.customer1).mint(
-        this.vabToken.address, this.customer1.address, getBigNumber(2,0), getBigNumber(1,0), {from: this.customer1.address}
+        this.vabToken.address, this.customer1.address, getBigNumber(2, 0), getBigNumber(1, 0), { from: this.customer1.address }
       )
     ).to.be.revertedWith('mint: no admin mint info');
 
     // set admin mint info for each category => (mintAmount, mintPrice, lockPeriod, category)
     await this.SubNFT.connect(this.auditor).setMintInfo(
-      getBigNumber(100, 0), getBigNumber(2, 0), getBigNumber(15*86400, 0), getBigNumber(1, 0), {from: this.auditor.address}
+      getBigNumber(100, 0), getBigNumber(2, 0), getBigNumber(15 * 86400, 0), getBigNumber(1, 0), { from: this.auditor.address }
     )
 
-    const mintInfo = await this.SubNFT.getMintInfo(getBigNumber(1,0));
+    const mintInfo = await this.SubNFT.getMintInfo(getBigNumber(1, 0));
     console.log('=====mint info::', mintInfo.mintAmount_, mintInfo.mintPrice_);
 
     // _token, _to, _period, _category
@@ -210,18 +211,18 @@ describe('FactorySubscriptionNFT', function () {
     // )   
     console.log('====minted by matic')
     const t = await this.SubNFT.connect(this.customer1).mint(
-      this.vabToken.address, this.customer1.address, getBigNumber(2,0), getBigNumber(1,0), {from: this.customer1.address}
-    )    
+      this.vabToken.address, this.customer1.address, getBigNumber(2, 0), getBigNumber(1, 0), { from: this.customer1.address }
+    )
     this.events = (await t.wait()).events
     // console.log('=====this.events::', this.events);
     const ar13 = this.events[13].args
     expect(ar13.receiver).to.be.equal(this.SubNFT.address)
-    expect(ar13.subscriptionPeriod).to.be.equal(getBigNumber(2,0))
-    expect(ar13.tokenId).to.be.equal(getBigNumber(1,0))
-    
-    let tokenIdList = await this.SubNFT.getUserTokenIdList(this.SubNFT.address)    
-    expect(tokenIdList.length).to.be.equal(getBigNumber(1,0))
-    let tokenUri = await this.SubNFT.getTokenUri(tokenIdList[0])  
+    expect(ar13.subscriptionPeriod).to.be.equal(getBigNumber(2, 0))
+    expect(ar13.tokenId).to.be.equal(getBigNumber(1, 0))
+
+    let tokenIdList = await this.SubNFT.getUserTokenIdList(this.SubNFT.address)
+    expect(tokenIdList.length).to.be.equal(getBigNumber(1, 0))
+    let tokenUri = await this.SubNFT.getTokenUri(tokenIdList[0])
     expect(tokenUri).to.be.equal(this.bUri + '1.json')
   })
 
@@ -280,7 +281,7 @@ describe('FactorySubscriptionNFT', function () {
   //   let period = 24 * 3600 // 1 days
   //   network.provider.send('evm_increaseTime', [period]);
   //   await network.provider.send('evm_mine');
-    
+
   //   await expect(
   //     this.SubNFT.connect(this.customer2).unlockNFT(tokenIdList[0], {from: this.customer2.address})
   //   ).to.be.revertedWith('unlock: not token minter');
@@ -315,5 +316,5 @@ describe('FactorySubscriptionNFT', function () {
   //     lockInfo.minter_.toString()
   //   )
   // })
-  
+
 });

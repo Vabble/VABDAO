@@ -11,6 +11,8 @@ const {
     getTimestampFromTx,
     proposalStatusMap,
 } = require("../../helper-functions")
+const fs = require("fs")
+const path = require("path")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -1988,9 +1990,10 @@ const {
                   const studioPoolUsers = await vabbleDAOAuditor.getPoolUsers(1)
 
                   expect(studioPoolBalanceBefore).to.be.equal(amountToTransfer)
-                  expect(newAddressBalanceBefore).to.be.equal(0)
                   expect(studioPoolBalanceAfter).to.be.equal(0)
-                  expect(newAddressBalanceAfter).to.be.equal(amountToTransfer)
+                  expect(newAddressBalanceAfter).to.be.equal(
+                      newAddressBalanceBefore.add(amountToTransfer)
+                  )
                   expect(studioPoolUsers.length).to.be.equal(0)
               })
           })
@@ -3972,6 +3975,408 @@ const {
                   const getFinalizedFilmIds = await vabbleDAO.getFinalizedFilmIds(currentMonth)
 
                   expect(getFinalizedFilmIds[0]).to.be.equal(filmId)
+              })
+          })
+
+          describe("migrateFilmProposals", function () {
+              it("Should revert if the input array is zero", async function () {
+                  const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
+
+                  await expect(vabbleDAOAuditor.migrateFilmProposals([])).to.be.revertedWith(
+                      "No films to migrate"
+                  )
+              })
+
+              it("Should revert if the films have already been migrated", async function () {
+                  const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
+
+                  const filmProposals = [
+                      {
+                          title: "Test video to see how the upload of videos to the platform works and how smoothly and easily you can manage your productions.",
+                          description:
+                              "Test video to see how the upload of videos to the platform works and how smoothly and easily you can manage your productions.",
+                          raiseAmount: 0,
+                          fundPeriod: 0,
+                          fundType: 0,
+                          rewardPercent: 0,
+                          noVote: 0,
+                          enableClaimer: 0,
+                          pCreateTime: 1722941213,
+                          pApproveTime: 1723552607,
+                          studio: "0xa81440d89c55b063edf808922311f5462a0e86de",
+                          status: 4,
+                          sharePercents: [10000000000],
+                          studioPayees: ["0xa81440d89c55b063edf808922311f5462a0e86de"],
+                      },
+                  ]
+
+                  // Perform the migration
+                  const tx = await vabbleDAOAuditor.migrateFilmProposals(filmProposals)
+                  const receipt = await tx.wait()
+                  console.log("Migration successful! Transaction hash:", receipt.transactionHash)
+                  await expect(
+                      vabbleDAOAuditor.migrateFilmProposals(filmProposals)
+                  ).to.be.revertedWith("Migration already completed")
+              })
+
+              it("Should migrate the films and update all state variables correct", async function () {
+                  const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
+
+                  const filmProposals = [
+                      {
+                          filmId: 1,
+                          filmDetails: {
+                              title: "",
+                              description: "",
+                              raiseAmount: 0,
+                              fundPeriod: 0,
+                              fundType: 0,
+                              rewardPercent: 0,
+                              noVote: 0,
+                              enableClaimer: 0,
+                              pCreateTime: 0,
+                              pApproveTime: 0,
+                              studio: "0xd71d56bf0761537b69436d8d16381d78f90b827e",
+                              status: 0, // Listed
+                              sharePercents: [],
+                              studioPayees: [],
+                          },
+                      },
+                      {
+                          filmId: 2,
+                          filmDetails: {
+                              title: "Test Updated",
+                              description: "Test Updated",
+                              raiseAmount: 0,
+                              fundPeriod: 0,
+                              fundType: 0,
+                              rewardPercent: 0,
+                              noVote: 0,
+                              enableClaimer: 0,
+                              pCreateTime: 1731758217,
+                              pApproveTime: 0,
+                              studio: "0x17f0e7bcbef83d547815f1cf03e247af1b0dba7b",
+                              status: 1,
+                              sharePercents: [10000000000],
+                              studioPayees: ["0xa6d9f34d3206edd6a55f295d248cf7b4fdf8840d"],
+                          },
+                      },
+                      {
+                          filmId: 3,
+                          filmDetails: {
+                              title: "Test Approved Listing",
+                              description: "Test Approved Listing",
+                              raiseAmount: 0,
+                              fundPeriod: 0,
+                              fundType: 0,
+                              rewardPercent: 0,
+                              noVote: 0,
+                              enableClaimer: 0,
+                              pCreateTime: 1731417347,
+                              pApproveTime: 1732040509,
+                              studio: "0xa6d9f34d3206edd6a55f295d248cf7b4fdf8840d",
+                              status: 2,
+                              sharePercents: [10000000000],
+                              studioPayees: ["0xa6d9f34d3206edd6a55f295d248cf7b4fdf8840d"],
+                          },
+                      },
+                      {
+                          filmId: 4,
+                          filmDetails: {
+                              title: "Test Approved Funding",
+                              description: "Test Approved Funding",
+                              raiseAmount: 1000000,
+                              fundPeriod: 30,
+                              fundType: 1,
+                              rewardPercent: 1000000000,
+                              noVote: 0,
+                              enableClaimer: 0,
+                              pCreateTime: 1722995509,
+                              pApproveTime: 1723611761,
+                              studio: "0x3635d79881d94dc119daa95c02ef659ba6a8cab7",
+                              status: 3, // Approved Funding
+                              sharePercents: [10000000000],
+                              studioPayees: ["0x3635d79881d94dc119daa95c02ef659ba6a8cab7"],
+                          },
+                      },
+                      {
+                          filmId: 5,
+                          filmDetails: {
+                              title: "Test Rejected",
+                              description: "Test Rejected",
+                              raiseAmount: 0,
+                              fundPeriod: 0,
+                              fundType: 0,
+                              rewardPercent: 0,
+                              noVote: 0,
+                              enableClaimer: 0,
+                              pCreateTime: 1722995509,
+                              pApproveTime: 1723611761,
+                              studio: "0x3635d79881d94dc119daa95c02ef659ba6a8cab7",
+                              status: 4,
+                              sharePercents: [10000000000],
+                              studioPayees: ["0x3635d79881d94dc119daa95c02ef659ba6a8cab7"],
+                          },
+                      },
+                  ]
+
+                  const filmDetails = filmProposals.map((fp) => fp.filmDetails)
+
+                  // Perform the migration
+                  const tx = await vabbleDAOAuditor.migrateFilmProposals(filmDetails)
+                  const receipt = await tx.wait()
+
+                  // 1. Check the FilmProposalsMigrated event
+                  const event = receipt.events?.find((e) => e.event === "FilmProposalsMigrated")
+                  expect(event).to.not.be.undefined
+                  expect(event.args.numberOfFilms).to.equal(filmProposals.length)
+                  expect(event.args.migrator).to.equal(await vabbleDAOAuditor.signer.getAddress())
+
+                  // 2. Check filmCount is updated correctly
+                  const filmCount = await vabbleDAOAuditor.filmCount()
+                  expect(filmCount).to.equal(filmProposals.length)
+
+                  // 3. Check filmInfo is stored correctly for each film
+                  for (let i = 0; i < filmProposals.length; i++) {
+                      const filmId = filmProposals[i].filmId
+                      const filmDetails = filmProposals[i].filmDetails
+                      const filmInfo = await vabbleDAOAuditor.filmInfo(filmId)
+                      const filmShareAndStudioPayees = await vabbleDAOAuditor.getFilmShare(filmId)
+
+                      expect(filmInfo.title).to.equal(filmDetails.title)
+                      expect(filmInfo.description).to.equal(filmDetails.description)
+                      expect(filmInfo.raiseAmount).to.equal(filmDetails.raiseAmount)
+                      expect(filmInfo.fundPeriod).to.equal(filmDetails.fundPeriod)
+                      expect(filmInfo.fundType).to.equal(filmDetails.fundType)
+                      expect(filmInfo.rewardPercent).to.equal(filmDetails.rewardPercent)
+                      expect(filmInfo.noVote).to.equal(filmDetails.noVote)
+                      expect(filmInfo.enableClaimer).to.equal(filmDetails.enableClaimer)
+                      expect(filmInfo.pCreateTime).to.equal(filmDetails.pCreateTime)
+                      expect(filmInfo.pApproveTime).to.equal(filmDetails.pApproveTime)
+                      expect(filmInfo.studio.toLowerCase()).to.equal(
+                          filmDetails.studio.toLowerCase()
+                      )
+                      expect(filmInfo.status).to.equal(filmDetails.status)
+
+                      expect(filmShareAndStudioPayees.sharePercents_.length).to.equal(
+                          filmDetails.sharePercents.length
+                      )
+                      for (let j = 0; j < filmDetails.sharePercents.length; j++) {
+                          expect(filmShareAndStudioPayees.sharePercents_[j].toString()).to.equal(
+                              filmDetails.sharePercents[j].toString()
+                          )
+                      }
+
+                      expect(filmShareAndStudioPayees.studioPayees_.length).to.equal(
+                          filmDetails.studioPayees.length
+                      )
+                      for (let j = 0; j < filmDetails.studioPayees.length; j++) {
+                          expect(filmShareAndStudioPayees.studioPayees_[j].toLowerCase()).to.equal(
+                              filmDetails.studioPayees[j].toLowerCase()
+                          )
+                      }
+                  }
+
+                  // 4. Check totalFilmIds arrays are updated correctly
+                  // flag: 1=proposal, 2=approveListing, 3=approveFunding, 4=updated
+                  const proposalFilms = await vabbleDAOAuditor.getFilmIds(1)
+                  const updatedFilms = await vabbleDAOAuditor.getFilmIds(4)
+                  const approveListingFilms = await vabbleDAOAuditor.getFilmIds(2)
+                  const approveFundingFilms = await vabbleDAOAuditor.getFilmIds(3)
+
+                  // Filter the films based on their status
+                  const updatedFilmIds = filmProposals.filter((f) => f.filmDetails.status === 1)
+                  const approvedListingFilms = filmProposals.filter(
+                      (f) => f.filmDetails.status === 2
+                  )
+                  const approvedFundingFilms = filmProposals.filter(
+                      (f) => f.filmDetails.status === 3
+                  )
+                  const rejectedFilms = filmProposals.filter((f) => f.filmDetails.status === 4)
+
+                  // Convert to filmIds
+                  const proposalFilmIds = proposalFilms.map((f) => f.toNumber())
+                  const updatedFilmIdsMapped = updatedFilms.map((f) => f.toNumber())
+                  const approveListingFilmIds = approveListingFilms.map((f) => f.toNumber())
+                  const approveFundingFilmIds = approveFundingFilms.map((f) => f.toNumber())
+
+                  const approvedListingFilmIdsList = approvedListingFilms.map((f) => f.filmId)
+                  const approvedFundingFilmIdsList = approvedFundingFilms.map((f) => f.filmId)
+
+                  // Perform the comparisons
+                  expect(proposalFilmIds.length).to.equal(filmProposals.length)
+                  expect(updatedFilmIdsMapped.length).to.equal(
+                      updatedFilmIds.length +
+                          approvedListingFilms.length +
+                          approvedFundingFilms.length +
+                          rejectedFilms.length
+                  )
+                  expect(approveListingFilmIds).to.deep.equal(approvedListingFilmIdsList)
+                  expect(approveFundingFilmIds).to.deep.equal(approvedFundingFilmIdsList)
+
+                  // 5. Check userFilmIds are updated correctly for each studio
+                  // flag: 1=create, 2=update, 3=approve
+                  for (const film of filmProposals) {
+                      const filmDetails = film.filmDetails
+                      const studioFilms = {
+                          created: await vabbleDAOAuditor.getUserFilmIds(filmDetails.studio, 1),
+                          updated: await vabbleDAOAuditor.getUserFilmIds(filmDetails.studio, 2),
+                          approved: await vabbleDAOAuditor.getUserFilmIds(filmDetails.studio, 3),
+                      }
+
+                      // If film is LISTED (status 0), it should be in created list
+                      if (filmDetails.status === 0) {
+                          expect(studioFilms.created.map((f) => f.toNumber())).to.include(
+                              film.filmId
+                          )
+                      }
+
+                      // If film is UPDATED (status 1), it should be in updated list
+                      if (filmDetails.status === 1) {
+                          expect(studioFilms.updated.map((f) => f.toNumber())).to.include(
+                              film.filmId
+                          )
+                      }
+
+                      // If film is APPROVED_LISTING (status 2) or APPROVED_FUNDING (status 3),
+                      // it should be in the approved list
+                      if (filmDetails.status === 2 || filmDetails.status === 3) {
+                          expect(studioFilms.approved.map((f) => f.toNumber())).to.include(
+                              film.filmId
+                          )
+                      }
+                  }
+              })
+
+              it("Should migrate the actual films", async function () {
+                  const { vabbleDAOAuditor } = await loadFixture(deployContractsFixture)
+                  const filePath = path.resolve(__dirname, "../data/film_data_with_id.json")
+                  const filmProposals = JSON.parse(fs.readFileSync(filePath, "utf8"))
+
+                  const filmDetails = filmProposals.map((fp) => fp.filmDetails)
+
+                  // Perform the migration
+                  const tx = await vabbleDAOAuditor.migrateFilmProposals(filmDetails)
+                  const receipt = await tx.wait()
+
+                  // 1. Check the FilmProposalsMigrated event
+                  const event = receipt.events?.find((e) => e.event === "FilmProposalsMigrated")
+                  expect(event).to.not.be.undefined
+                  expect(event.args.numberOfFilms).to.equal(filmProposals.length)
+                  expect(event.args.migrator).to.equal(await vabbleDAOAuditor.signer.getAddress())
+
+                  // 2. Check filmCount is updated correctly
+                  const filmCount = await vabbleDAOAuditor.filmCount()
+                  const updatedFilmCount = await vabbleDAOAuditor.updatedFilmCount()
+                  expect(filmCount).to.equal(filmProposals.length)
+                  expect(updatedFilmCount).to.equal(24)
+
+                  // 3. Check filmInfo is stored correctly for each film
+                  for (let i = 0; i < filmProposals.length; i++) {
+                      const filmId = filmProposals[i].filmId
+                      const filmDetails = filmProposals[i].filmDetails
+                      const filmInfo = await vabbleDAOAuditor.filmInfo(filmId)
+                      const filmShareAndStudioPayees = await vabbleDAOAuditor.getFilmShare(filmId)
+
+                      expect(filmInfo.title).to.equal(filmDetails.title)
+                      expect(filmInfo.description).to.equal(filmDetails.description)
+                      expect(filmInfo.raiseAmount).to.equal(filmDetails.raiseAmount)
+                      expect(filmInfo.fundPeriod).to.equal(filmDetails.fundPeriod)
+                      expect(filmInfo.fundType).to.equal(filmDetails.fundType)
+                      expect(filmInfo.rewardPercent).to.equal(filmDetails.rewardPercent)
+                      expect(filmInfo.noVote).to.equal(filmDetails.noVote)
+                      expect(filmInfo.enableClaimer).to.equal(filmDetails.enableClaimer)
+                      expect(filmInfo.pCreateTime).to.equal(filmDetails.pCreateTime)
+                      expect(filmInfo.pApproveTime).to.equal(filmDetails.pApproveTime)
+                      expect(filmInfo.studio.toLowerCase()).to.equal(
+                          filmDetails.studio.toLowerCase()
+                      )
+                      expect(filmInfo.status).to.equal(filmDetails.status)
+
+                      expect(filmShareAndStudioPayees.sharePercents_.length).to.equal(
+                          filmDetails.sharePercents.length
+                      )
+                      for (let j = 0; j < filmDetails.sharePercents.length; j++) {
+                          expect(filmShareAndStudioPayees.sharePercents_[j].toString()).to.equal(
+                              filmDetails.sharePercents[j].toString()
+                          )
+                      }
+
+                      expect(filmShareAndStudioPayees.studioPayees_.length).to.equal(
+                          filmDetails.studioPayees.length
+                      )
+                      for (let j = 0; j < filmDetails.studioPayees.length; j++) {
+                          expect(filmShareAndStudioPayees.studioPayees_[j].toLowerCase()).to.equal(
+                              filmDetails.studioPayees[j].toLowerCase()
+                          )
+                      }
+                  }
+
+                  // 4. Check totalFilmIds arrays are updated correctly
+                  // flag: 1=proposal, 2=approveListing, 3=approveFunding, 4=updated
+                  const proposalFilms = await vabbleDAOAuditor.getFilmIds(1)
+                  const updatedFilms = await vabbleDAOAuditor.getFilmIds(4)
+                  const approveListingFilms = await vabbleDAOAuditor.getFilmIds(2)
+                  const approveFundingFilms = await vabbleDAOAuditor.getFilmIds(3)
+
+                  const proposalFilmIds = proposalFilms.map((f) => f.toNumber())
+                  const updatedFilmIdsMapped = updatedFilms.map((f) => f.toNumber())
+                  const approveListingFilmIds = approveListingFilms.map((f) => f.toNumber())
+                  const approveFundingFilmIds = approveFundingFilms.map((f) => f.toNumber())
+
+                  const expectedProposalFilmIds = [
+                      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                      23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+                  ].sort((a, b) => a - b)
+
+                  const expectedUpdatedFilmIds = [
+                      4, 3, 7, 6, 9, 5, 10, 11, 12, 13, 15, 16, 17, 18, 19, 21, 24, 25, 22, 26, 32,
+                      29, 28, 30,
+                  ].sort((a, b) => a - b)
+
+                  const expectedApprovedListingFilmIds = [
+                      4, 7, 10, 5, 11, 12, 13, 15, 16, 17, 18, 19, 21, 24, 25, 22, 26, 32, 29, 28,
+                  ].sort((a, b) => a - b)
+
+                  const expectedApprovedFundingFilmIds = [].sort((a, b) => a - b)
+
+                  expect(proposalFilmIds).to.deep.equal(expectedProposalFilmIds)
+                  expect(updatedFilmIdsMapped).to.deep.equal(expectedUpdatedFilmIds)
+                  expect(approveListingFilmIds).to.deep.equal(expectedApprovedListingFilmIds)
+                  expect(approveFundingFilmIds).to.deep.equal(expectedApprovedFundingFilmIds)
+
+                  // 5. Check userFilmIds are updated correctly for each studio
+                  // flag: 1=create, 2=update, 3=approve
+                  for (const film of filmProposals) {
+                      const filmDetails = film.filmDetails
+                      const studioFilms = {
+                          created: await vabbleDAOAuditor.getUserFilmIds(filmDetails.studio, 1),
+                          updated: await vabbleDAOAuditor.getUserFilmIds(filmDetails.studio, 2),
+                          approved: await vabbleDAOAuditor.getUserFilmIds(filmDetails.studio, 3),
+                      }
+
+                      // If film is LISTED (status 0), it should be in created list
+                      if (filmDetails.status === 0) {
+                          expect(studioFilms.created.map((f) => f.toNumber())).to.include(
+                              film.filmId
+                          )
+                      }
+
+                      // If film is UPDATED (status 1), it should be in updated list
+                      if (filmDetails.status === 1) {
+                          expect(studioFilms.updated.map((f) => f.toNumber())).to.include(
+                              film.filmId
+                          )
+                      }
+
+                      // If film is APPROVED_LISTING (status 2) or APPROVED_FUNDING (status 3),
+                      // it should be in the approved list
+                      if (filmDetails.status === 2 || filmDetails.status === 3) {
+                          expect(studioFilms.approved.map((f) => f.toNumber())).to.include(
+                              film.filmId
+                          )
+                      }
+                  }
               })
           })
       })

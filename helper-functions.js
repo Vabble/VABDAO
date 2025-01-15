@@ -9,21 +9,25 @@ const {
     VAB_FAUCET_AMOUNT,
     USDC_FAUCET_AMOUNT,
     ONE_DAY_IN_SECONDS,
+    propertyContractConfig,
 } = require("./helper-hardhat-config")
 const { parseUnits } = require("ethers/lib/utils")
 
 //? Constants
-const chainId = 84532;  
-console.log("chainId", chainId);
 
-const config = getConfig(chainId);
-const VAB_TOKEN_ADDRESS = config.vabToken;
-const EXM_TOKEN_ADDRESS = config.exmAddress;
-const USDC_TOKEN_ADDRESS = config.usdcAdress;
-const UNISWAP_FACTORY_ADDRESS = config.uniswap.factory;
-const UNISWAP_ROUTER_ADDRESS = config.uniswap.router;
-const SUSHISWAP_FACTORY_ADDRESS = config.sushiswap.factory;
-const SUSHISWAP_ROUTER_ADDRESS = config.sushiswap.router;
+const chainId = network.config.chainId
+
+console.log("chainId ===>", chainId)
+
+const config = getConfig(chainId)
+
+const VAB_TOKEN_ADDRESS = config.vabToken
+const EXM_TOKEN_ADDRESS = config.exmAddress
+const USDC_TOKEN_ADDRESS = config.usdcAdress
+const UNISWAP_FACTORY_ADDRESS = config.uniswap.factory
+const UNISWAP_ROUTER_ADDRESS = config.uniswap.router
+const SUSHISWAP_FACTORY_ADDRESS = config.sushiswap.factory
+const SUSHISWAP_ROUTER_ADDRESS = config.sushiswap.router
 
 const proposalStatusMap = {
     0: "LISTED", //0 proposal created by studio
@@ -73,22 +77,37 @@ const fundAndApproveAccounts = async ({
 }) => {
     try {
         console.log("Funding and Approving accounts...")
-        // if (accounts.length > 0) {
-        //     for (const account of accounts) {
-        //         await vabTokenContract.connect(accounts[0]).faucet(VAB_FAUCET_AMOUNT);
-        //         await usdcTokenContract.connect(accounts[0]).faucet(USDC_FAUCET_AMOUNT);
-        //     }
-        // }
-        for (var i = 1; i < accounts.length; i++) {
-            await vabTokenContract.connect(accounts[0]).transfer(accounts[i].address, VAB_FAUCET_AMOUNT, {from: accounts[0].address});
-            await usdcTokenContract.connect(accounts[0]).transfer(accounts[i].address, USDC_FAUCET_AMOUNT, {from: accounts[0].address});
+
+        for (let i = 1; i < accounts.length; i++) {
+            // Reset balance to ensure consistent state
+            await vabTokenContract
+                .connect(accounts[i])
+                .transfer(
+                    accounts[0].address,
+                    await vabTokenContract.balanceOf(accounts[i].address),
+                    { from: accounts[i].address }
+                )
+
+            await usdcTokenContract
+                .connect(accounts[i])
+                .transfer(
+                    accounts[0].address,
+                    await usdcTokenContract.balanceOf(accounts[i].address),
+                    { from: accounts[i].address }
+                )
+
+            // Transfer the required faucet amount
+            await vabTokenContract
+                .connect(accounts[0])
+                .transfer(accounts[i].address, VAB_FAUCET_AMOUNT, { from: accounts[0].address })
+            await usdcTokenContract
+                .connect(accounts[0])
+                .transfer(accounts[i].address, USDC_FAUCET_AMOUNT, { from: accounts[0].address })
         }
-            
+
         for (const account of accounts) {
             for (const contract of contracts) {
-                await vabTokenContract
-                    .connect(account)
-                    .approve(contract.address, VAB_FAUCET_AMOUNT)
+                await vabTokenContract.connect(account).approve(contract.address, VAB_FAUCET_AMOUNT)
 
                 await usdcTokenContract
                     .connect(account)
@@ -107,8 +126,17 @@ const fundAndApproveAccounts = async ({
  */
 const deployAndInitAllContracts = async () => {
     try {
+        // Deploy the DAOOperations  contract first
+        const DAOOperations = await ethers.getContractFactory("DAOOperations")
+        const deployedLibrary = await DAOOperations.deploy()
+        await deployedLibrary.deployed()
+
         //? contract factories
-        const vabbleDAOFactory = await ethers.getContractFactory("VabbleDAO")
+        const vabbleDAOFactory = await ethers.getContractFactory("VabbleDAO", {
+            libraries: {
+                DAOOperations: deployedLibrary.address,
+            },
+        })
         const vabbleFundFactory = await ethers.getContractFactory("VabbleFund")
         const uniHelperFactory = await ethers.getContractFactory("UniHelper")
         const voteFactory = await ethers.getContractFactory("Vote")
@@ -121,13 +149,12 @@ const deployAndInitAllContracts = async () => {
         const stakingPoolFactory = await ethers.getContractFactory("StakingPool")
 
         //? get accounts
-        const [deployer, dev, auditor1, staker1, staker2] = await ethers.getSigners()
-        const auditor = deployer;
+        const [deployer, dev, auditor, staker1, staker2] = await ethers.getSigners()
 
         //? token contracts
         const vabTokenContract = new ethers.Contract(
             VAB_TOKEN_ADDRESS,
-            JSON.stringify(ERC20), // we use FxER20 to call the faucet in local network
+            JSON.stringify(ERC20),
             ethers.provider
         )
         const exmTokenContract = new ethers.Contract(
@@ -152,8 +179,6 @@ const deployAndInitAllContracts = async () => {
         const uniHelper = await uniHelperFactory.deploy(
             UNISWAP_FACTORY_ADDRESS,
             UNISWAP_ROUTER_ADDRESS,
-            SUSHISWAP_FACTORY_ADDRESS,
-            SUSHISWAP_ROUTER_ADDRESS,
             ownable.address
         )
 
@@ -165,7 +190,11 @@ const deployAndInitAllContracts = async () => {
             ownable.address,
             uniHelper.address,
             vote.address,
-            stakingPool.address
+            stakingPool.address,
+            propertyContractConfig[chainId].timePeriods,
+            propertyContractConfig[chainId].rates,
+            propertyContractConfig[chainId].amounts,
+            propertyContractConfig[chainId].propertyMinMaxListConfig
         )
 
         const filmNFT = await factoryFilmNFTFactory.deploy(ownable.address)
@@ -199,6 +228,7 @@ const deployAndInitAllContracts = async () => {
             ownable.address,
             uniHelper.address,
             property.address,
+            stakingPool.address,
             [DISCOUNT.month3, DISCOUNT.month6, DISCOUNT.month12]
         )
 
@@ -242,8 +272,6 @@ const deployAndInitAllContracts = async () => {
         const boardRewardRate = await property.boardRewardRate()
         const rewardRate = await property.rewardRate()
         const lockPeriod = await property.lockPeriod()
-
-
 
         return {
             deployer,
