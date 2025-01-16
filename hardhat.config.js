@@ -65,8 +65,6 @@ module.exports = {
       accounts: BUYER_PRIVATE_KEY ? [privateKey, BUYER_PRIVATE_KEY] : [privateKey],
       live: false,
       saveDeployments: true,
-      gasPrice: 22500000000,
-      gasMultiplier: 2,
     },
     base: {
       url: "https://mainnet.base.org",
