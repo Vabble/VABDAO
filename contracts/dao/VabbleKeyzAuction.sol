@@ -194,7 +194,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         saleCounter++;
         uint256 saleId = saleCounter;
-        uint256 durationInSeconds = _durationInMinutes * 1 seconds;
+        uint256 durationInSeconds = _durationInMinutes * 60 seconds;
 
         Sale storage newSale = sales[saleId];
         newSale.roomOwner = payable(msg.sender);
@@ -360,12 +360,16 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     function claimRefund(uint256 saleId, uint256 keyId) external saleExists(saleId) whenNotPaused nonReentrant {
         Sale storage sale = sales[saleId];
         require(block.timestamp > sale.endTime, "Sale not ended");
-        require(!sale.settled, "Sale already settled");
 
         KeyBid storage keyBid = sale.keyBids[keyId];
         require(keyBid.bidder == msg.sender, "Not the bidder");
         require(!keyBid.claimed, "Already claimed");
         require(keyBid.amount > 0, "No funds to claim");
+
+        // If sale is settled, only allow refunds for outbid participants
+        if (sale.settled) {
+            require(isKeyAvailable[saleId][keyId], "Winner cannot claim refund");
+        }
 
         uint256 refundAmount = keyBid.amount;
         keyBid.amount = 0;
