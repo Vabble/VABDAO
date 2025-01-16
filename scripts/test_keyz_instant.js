@@ -22,7 +22,7 @@ async function main() {
     // Parameters for createSale
     const roomId = parseInt(saleCounter.toString()) + 1; // Use next available ID
     const saleType = 1; // 1 for InstantBuy
-    const durationInMinutes = 1; // 1 minute
+    const durationInSeconds = 60; // Duration in seconds
     const totalKeys = 1;
     const price = ethers.utils.parseEther("0.00000001"); // Price per key
     const minBidIncrement = 0; // Not used for InstantBuy
@@ -35,7 +35,7 @@ async function main() {
         console.log({
             roomId,
             saleType,
-            durationInMinutes,
+            durationInSeconds,
             totalKeys,
             price: price.toString(),
             minBidIncrement,
@@ -47,20 +47,20 @@ async function main() {
         const gasPrice = await ethers.provider.getGasPrice();
         console.log("Current gas price:", ethers.utils.formatUnits(gasPrice, "gwei"), "gwei");
 
-        // Use a lower gas price
-        const lowerGasPrice = gasPrice.mul(80).div(100); // 80% of current gas price
-        console.log("Using gas price:", ethers.utils.formatUnits(lowerGasPrice, "gwei"), "gwei");
+        // Use a higher gas price to ensure transaction goes through
+        const adjustedGasPrice = gasPrice.mul(120).div(100); // 120% of current gas price
+        console.log("Using gas price:", ethers.utils.formatUnits(adjustedGasPrice, "gwei"), "gwei");
 
         const createSaleTx = await contract.createSale(
             roomId,
             saleType,
-            durationInMinutes,
+            durationInSeconds,
             totalKeys,
             price,
             minBidIncrement,
             ipOwnerShare,
             ipOwnerAddress,
-            { gasPrice: lowerGasPrice }
+            { gasPrice: adjustedGasPrice }
         );
         console.log("Transaction hash:", createSaleTx.hash);
         console.log("Waiting for transaction confirmation...");
@@ -73,26 +73,26 @@ async function main() {
         console.log("Sale created with ID:", saleId.toString());
 
         // Add a small delay to ensure the sale is active
-        console.log("Waiting 5 seconds before attempting purchase...");
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log("Waiting 2 seconds before attempting purchase...");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Buyer buys a key
         console.log("Buyer is buying a key...");
         const keyId = 0; // Since totalKeys is 1, keyId is 0
         const buyNowTx = await contract
             .connect(buyer)
-            .buyNow(saleId, keyId, { value: price, gasPrice: lowerGasPrice });
+            .buyNow(saleId, keyId, { value: price, gasPrice: adjustedGasPrice });
         console.log("Buy transaction hash:", buyNowTx.hash);
         await buyNowTx.wait();
         console.log("Buyer has bought the key.");
 
         // Wait for the sale to end
         console.log("Waiting for the sale to end...");
-        await new Promise((resolve) => setTimeout(resolve, durationInMinutes * 60 * 1000));
+        await new Promise((resolve) => setTimeout(resolve, durationInSeconds * 1000));
 
         // Call settleSale
         console.log("Settling the sale...");
-        const settleSaleTx = await contract.settleSale(saleId, { gasPrice: lowerGasPrice });
+        const settleSaleTx = await contract.settleSale(saleId, { gasPrice: adjustedGasPrice });
         await settleSaleTx.wait();
         console.log("Sale settled.");
 
