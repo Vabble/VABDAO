@@ -28,7 +28,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
     struct Sale {
         address payable roomOwner;
-        uint256 roomId;
+        uint256 roomNumber;
         SaleType saleType;
         uint256 startTime;
         uint256 endTime;
@@ -83,7 +83,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
     event SaleCreated(
         uint256 indexed saleId,
-        uint256 indexed roomId,
+        uint256 indexed roomNumber,
         address indexed roomOwner,
         SaleType saleType,
         uint256 startTime,
@@ -170,7 +170,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // --------------------
 
     function createSale(
-        uint256 _roomId,
+        uint256 _roomNumber,
         SaleType _saleType,
         uint256 _durationInMinutes,
         uint256 _totalKeys,
@@ -198,7 +198,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         Sale storage newSale = sales[saleId];
         newSale.roomOwner = payable(msg.sender);
-        newSale.roomId = _roomId;
+        newSale.roomNumber = _roomNumber;
         newSale.saleType = _saleType;
         newSale.startTime = block.timestamp;
         newSale.endTime = block.timestamp + durationInSeconds;
@@ -216,7 +216,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         emit SaleCreated(
             saleId,
-            _roomId,
+            _roomNumber,
             msg.sender,
             _saleType,
             block.timestamp,

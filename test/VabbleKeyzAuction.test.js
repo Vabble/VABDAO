@@ -132,7 +132,7 @@ describe("VabbleKeyzAuction", function () {
             const { auction, roomOwner, ipOwner1 } = await loadFixture(deployContractsFixture)
 
             const tx = await auction.connect(roomOwner).createSale(
-                1, // roomId
+                1, // roomNumber
                 0, // SaleType.Auction
                 durationInMinutes,
                 5, // totalKeys
@@ -148,7 +148,7 @@ describe("VabbleKeyzAuction", function () {
 
             const sale = await auction.sales(1)
             expect(sale.roomOwner).to.equal(roomOwner.address)
-            expect(sale.roomId).to.equal(1)
+            expect(sale.roomNumber).to.equal(1)
             expect(sale.saleType).to.equal(0)
             expect(sale.totalKeys).to.equal(5)
             expect(sale.price).to.equal(price)
@@ -367,13 +367,11 @@ describe("VabbleKeyzAuction", function () {
         const saleId = 1
 
         beforeEach(async function () {
-            const contracts = await loadFixture(deployContractsFixture)
-            ;({ auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner, ipOwner1 } =
-                contracts)
+            const contracts = await loadFixture(deployContractsFixture); ({ auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner, ipOwner1 } = contracts)
 
             // Create instant buy sale
             await auction.connect(roomOwner).createSale(
-                1, // roomId
+                1, // roomNumber
                 1, // SaleType.InstantBuy
                 durationInMinutes,
                 5, // totalKeys
@@ -713,7 +711,7 @@ describe("VabbleKeyzAuction", function () {
             beforeEach(async function () {
                 // Create auction sale
                 await contracts.auction.connect(contracts.roomOwner).createSale(
-                    1, // roomId
+                    1, // roomNumber
                     0, // SaleType.Auction
                     durationInMinutes,
                     2, // totalKeys
@@ -792,7 +790,7 @@ describe("VabbleKeyzAuction", function () {
             it("Should handle auction with no bids", async function () {
                 // Create new auction without bids
                 await contracts.auction.connect(contracts.roomOwner).createSale(
-                    2, // different roomId
+                    2, // different roomNumber
                     0,
                     60,
                     2,

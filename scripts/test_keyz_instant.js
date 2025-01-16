@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0xdb7A8AFFE18881687064A803Ee8DBb173EFe768B";
+    const contractAddress = "0xab797A39BbDB921BfDc5fBC81cEd02620738c365";
 
     // Get signers
     const [owner, buyer, ...others] = await ethers.getSigners();
@@ -20,7 +20,7 @@ async function main() {
     console.log("Current sale counter:", saleCounter.toString());
 
     // Parameters for createSale
-    const roomId = parseInt(saleCounter.toString()) + 1; // Use next available ID
+    const roomNumber = parseInt(saleCounter.toString()) + 1; // Use next available ID
     const saleType = 1; // 1 for InstantBuy
     const durationInSeconds = 60; // Duration in seconds
     const totalKeys = 1;
@@ -33,7 +33,7 @@ async function main() {
         // Owner creates a new sale
         console.log("Creating a new sale with parameters:");
         console.log({
-            roomId,
+            roomNumber,
             saleType,
             durationInSeconds,
             totalKeys,
@@ -52,7 +52,7 @@ async function main() {
         console.log("Using gas price:", ethers.utils.formatUnits(adjustedGasPrice, "gwei"), "gwei");
 
         const createSaleTx = await contract.createSale(
-            roomId,
+            roomNumber,
             saleType,
             durationInSeconds,
             totalKeys,
@@ -68,8 +68,8 @@ async function main() {
         const receipt = await createSaleTx.wait();
         console.log("Transaction confirmed in block:", receipt.blockNumber);
 
-        // Get the new sale ID (it should be the same as roomId)
-        const saleId = roomId;
+        // Get the new sale ID (it should be the same as roomNumber)
+        const saleId = roomNumber;
         console.log("Sale created with ID:", saleId.toString());
 
         // Add a small delay to ensure the sale is active
