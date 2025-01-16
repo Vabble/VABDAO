@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0x9B401040e045C261DA4FdEe4eaa293BeCaf25D8B";
+    const contractAddress = "0xdb7A8AFFE18881687064A803Ee8DBb173EFe768B";
 
     // Get signers
     const [owner, buyer, ...others] = await ethers.getSigners();
