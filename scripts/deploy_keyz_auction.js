@@ -41,8 +41,8 @@ async function main() {
         const gasPrice = await ethers.provider.getGasPrice();
         console.log("Current gas price:", ethers.utils.formatUnits(gasPrice, "gwei"), "gwei");
 
-        // Use 80% of current gas price
-        const optimizedGasPrice = gasPrice.mul(80).div(100);
+        // Use 120% of current gas price to ensure we're above base fee
+        const optimizedGasPrice = gasPrice.mul(120).div(100);
         console.log("Using optimized gas price:", ethers.utils.formatUnits(optimizedGasPrice, "gwei"), "gwei");
 
         console.log("Deploying VabbleKeyzAuction...");
