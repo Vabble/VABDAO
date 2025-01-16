@@ -100,6 +100,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     event KeyClaimed(uint256 indexed saleId, uint256 indexed keyId, address indexed winner);
     event RefundClaimed(uint256 indexed saleId, uint256 indexed keyId, address indexed claimant, uint256 amount);
 
+    event PendingReturnsWithdrawn(address indexed withdrawer, uint256 amount);
+
     event VabbleShareUpdated(uint256 newShare);
     event DaoShareUpdated(uint256 newShare);
     event MinIpOwnerShareUpdated(uint256 newShare);
@@ -379,8 +381,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         uint256 amount = pendingReturns[msg.sender];
         require(amount > 0, "No funds to withdraw");
         pendingReturns[msg.sender] = 0;
+
         (bool success, ) = msg.sender.call{ value: amount }(""); 
         require(success, "Withdrawal failed");
+        
+        emit PendingReturnsWithdrawn(msg.sender, amount);
     }
 
     // --------------------
