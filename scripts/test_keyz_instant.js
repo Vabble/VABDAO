@@ -22,7 +22,7 @@ async function main() {
     // Parameters for createSale
     const roomNumber = parseInt(saleCounter.toString()) + 1; // Use next available ID
     const saleType = 1; // 1 for InstantBuy
-    const durationInSeconds = 60; // Duration in seconds
+    const durationInMinutes = 1; // Duration in minutes
     const totalKeys = 1;
     const price = ethers.utils.parseEther("0.00000001"); // Price per key
     const minBidIncrement = 0; // Not used for InstantBuy
@@ -35,7 +35,7 @@ async function main() {
         console.log({
             roomNumber,
             saleType,
-            durationInSeconds,
+            durationInMinutes,
             totalKeys,
             price: price.toString(),
             minBidIncrement,
@@ -54,7 +54,7 @@ async function main() {
         const createSaleTx = await contract.createSale(
             roomNumber,
             saleType,
-            durationInSeconds,
+            durationInMinutes,
             totalKeys,
             price,
             minBidIncrement,
@@ -88,7 +88,7 @@ async function main() {
 
         // Wait for the sale to end
         console.log("Waiting for the sale to end...");
-        await new Promise((resolve) => setTimeout(resolve, durationInSeconds * 1000));
+        await new Promise((resolve) => setTimeout(resolve, durationInMinutes * 1000));
 
         // Call settleSale
         console.log("Settling the sale...");

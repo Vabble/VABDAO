@@ -38,7 +38,7 @@ async function main() {
     // Parameters for createSale
     const roomNumber = parseInt(saleCounter.toString()) + 1; // Use next available ID
     const saleType = 0; // 0 for Auction
-    const durationInSeconds = 60; // 1 minute duration
+    const durationInMinutes = 1; // 1 minute duration
     const totalKeys = 2; // Testing with 2 keys
     const startingPrice = ethers.utils.parseEther("0.0001"); // Starting price per key
     const minBidIncrement = 1000; // 10% minimum bid increment (10000 = 100%)
@@ -51,7 +51,7 @@ async function main() {
         console.log({
             roomNumber,
             saleType,
-            durationInSeconds,
+            durationInMinutes,
             totalKeys,
             price: startingPrice.toString(),
             minBidIncrement,
@@ -73,7 +73,7 @@ async function main() {
         const createSaleTx = await contract.createSale(
             roomNumber,
             saleType,
-            durationInSeconds,
+            durationInMinutes,
             totalKeys,
             startingPrice,
             minBidIncrement,
