@@ -438,6 +438,49 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         return (bid.amount, bid.bidder, bid.claimed);
     }
 
+    function getFinalKeys(uint256 saleId) 
+        external 
+        view 
+        returns (
+            uint256[] memory keyIds,
+            address[] memory winners,
+            uint256[] memory amounts,
+            bool[] memory claimedStatus
+        ) 
+    {
+        Sale storage sale = sales[saleId];
+        require(block.timestamp > sale.endTime, "Sale not ended");
+        
+        // First count valid keys to size our arrays
+        uint256 validKeyCount = 0;
+        for (uint256 i = 0; i < sale.totalKeys; i++) {
+            if (sale.keyBids[i].bidder != address(0)) {
+                validKeyCount++;
+            }
+        }
+        
+        // Initialize return arrays with the correct size
+        keyIds = new uint256[](validKeyCount);
+        winners = new address[](validKeyCount);
+        amounts = new uint256[](validKeyCount);
+        claimedStatus = new bool[](validKeyCount);
+        
+        // Fill arrays with key data
+        uint256 currentIndex = 0;
+        for (uint256 i = 0; i < sale.totalKeys; i++) {
+            KeyBid storage bid = sale.keyBids[i];
+            if (bid.bidder != address(0)) {
+                keyIds[currentIndex] = i;
+                winners[currentIndex] = bid.bidder;
+                amounts[currentIndex] = bid.amount;
+                claimedStatus[currentIndex] = bid.claimed;
+                currentIndex++;
+            }
+        }
+        
+        return (keyIds, winners, amounts, claimedStatus);
+    }
+
     function getVabTokenAddress() external view returns (address) {
         return vabTokenAddress;
     }

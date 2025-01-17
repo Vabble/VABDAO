@@ -1548,4 +1548,182 @@ describe("VabbleKeyzAuction", function () {
             })
         })
     })
+
+    describe("Final Keys Retrieval", function () {
+        let auction, roomOwner, bidder1, bidder2, bidder3, ipOwner1, auditor
+        const price = ethers.utils.parseEther("1")
+        let saleId = 1
+
+        beforeEach(async function () {
+            const contracts = await loadFixture(deployContractsFixture)
+            auction = contracts.auction
+            roomOwner = contracts.roomOwner
+            bidder1 = contracts.bidder1
+            bidder2 = contracts.bidder2
+            bidder3 = contracts.bidder3
+            ipOwner1 = contracts.ipOwner1
+            auditor = contracts.auditor
+        })
+
+        it("Should return correct final keys for auction sale", async function () {
+            // Create auction sale
+            await auction.connect(roomOwner).createSale(
+                1, // roomNumber
+                0, // SaleType.Auction
+                durationInMinutes,
+                3, // totalKeys
+                price,
+                100, // minBidIncrement
+                500, // ipOwnerShare
+                ipOwner1.address
+            )
+
+            // Place bids on different keys
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price.mul(2) })
+            await auction.connect(bidder2).placeBid(saleId, 1, { value: price.mul(3) })
+            // Leave key 2 without a bid
+
+            // Advance time past sale end
+            await time.increase(3600)
+
+            // Get final keys
+            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
+
+            // Verify arrays length
+            expect(keyIds.length).to.equal(2)
+            expect(winners.length).to.equal(2)
+            expect(amounts.length).to.equal(2)
+            expect(claimedStatus.length).to.equal(2)
+
+            // Verify key 0 data
+            expect(keyIds[0]).to.equal(0)
+            expect(winners[0]).to.equal(bidder1.address)
+            expect(amounts[0]).to.equal(price.mul(2))
+            expect(claimedStatus[0]).to.be.false
+
+            // Verify key 1 data
+            expect(keyIds[1]).to.equal(1)
+            expect(winners[1]).to.equal(bidder2.address)
+            expect(amounts[1]).to.equal(price.mul(3))
+            expect(claimedStatus[1]).to.be.false
+        })
+
+        it("Should return correct final keys for instant buy sale", async function () {
+            // Create instant buy sale
+            await auction.connect(roomOwner).createSale(
+                1,
+                1, // SaleType.InstantBuy
+                durationInMinutes,
+                3,
+                price,
+                0,
+                500,
+                ipOwner1.address
+            )
+
+            // Make purchases
+            await auction.connect(bidder1).buyNow(saleId, 0, { value: price })
+            await auction.connect(bidder2).buyNow(saleId, 2, { value: price }) // Skip key 1
+
+            // Advance time
+            await time.increase(3600)
+
+            // Get final keys
+            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
+
+            // Verify arrays length
+            expect(keyIds.length).to.equal(2)
+            expect(winners.length).to.equal(2)
+            expect(amounts.length).to.equal(2)
+            expect(claimedStatus.length).to.equal(2)
+
+            // Verify correct order and data
+            expect(keyIds[0]).to.equal(0)
+            expect(keyIds[1]).to.equal(2)
+            expect(winners[0]).to.equal(bidder1.address)
+            expect(winners[1]).to.equal(bidder2.address)
+            expect(amounts[0]).to.equal(price)
+            expect(amounts[1]).to.equal(price)
+            expect(claimedStatus[0]).to.be.false
+            expect(claimedStatus[1]).to.be.false
+        })
+
+        it("Should return empty arrays for sale with no bids", async function () {
+            // Create sale
+            await auction.connect(roomOwner).createSale(
+                1,
+                0,
+                durationInMinutes,
+                3,
+                price,
+                100,
+                500,
+                ipOwner1.address
+            )
+
+            // Advance time
+            await time.increase(3600)
+
+            // Get final keys
+            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
+
+            // Verify all arrays are empty
+            expect(keyIds.length).to.equal(0)
+            expect(winners.length).to.equal(0)
+            expect(amounts.length).to.equal(0)
+            expect(claimedStatus.length).to.equal(0)
+        })
+
+        it("Should reflect claimed status correctly", async function () {
+            // Create auction sale
+            await auction.connect(roomOwner).createSale(
+                1,
+                0,
+                durationInMinutes,
+                2,
+                price,
+                100,
+                500,
+                ipOwner1.address
+            )
+
+            // Place bids
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
+            await auction.connect(bidder2).placeBid(saleId, 1, { value: price })
+
+            // Advance time
+            await time.increase(3600)
+
+            // Verify room and fail it to allow refunds
+            await auction.connect(auditor).setRoomVerification(1, false)
+
+            // Claim refund for first key
+            await auction.connect(bidder1).claimRefund(saleId, 0)
+
+            // Get final keys
+            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
+
+            // Verify claimed status
+            expect(claimedStatus[0]).to.be.true // First key claimed
+            expect(claimedStatus[1]).to.be.false // Second key not claimed
+        })
+
+        it("Should revert when trying to get keys before sale end", async function () {
+            // Create sale
+            await auction.connect(roomOwner).createSale(
+                1,
+                0,
+                durationInMinutes,
+                2,
+                price,
+                100,
+                500,
+                ipOwner1.address
+            )
+
+            // Try to get final keys before sale ends
+            await expect(auction.getFinalKeys(saleId))
+                .to.be.revertedWith("Sale not ended")
+        })
+    })
 })
