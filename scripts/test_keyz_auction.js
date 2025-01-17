@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0x081a11346EA78CA8bEd32F49d169e10F61C87019";
+    const contractAddress = "0x320c761f0AdEEf28B00D9F664e8BdC6685dF3130";
 
     // Get private keys from environment variables
     const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
@@ -226,7 +226,7 @@ async function main() {
             maxPriorityFeePerGas
         });
         await settleSaleTx.wait();
-        console.log("Auction settled.");
+        console.log("Auction settled and funds distributed.");
 
         // Check final state
         console.log("Checking final auction state...");
@@ -234,6 +234,11 @@ async function main() {
         const key1Bid = await contract.getKeyBid(saleId, 1);
         console.log("Key 0 winning bid:", ethers.utils.formatEther(key0Bid.amount), "ETH by", key0Bid.bidder);
         console.log("Key 1 winning bid:", ethers.utils.formatEther(key1Bid.amount), "ETH by", key1Bid.bidder);
+
+        // Check final balances
+        console.log("Checking final balances...");
+        const finalOwnerBalance = await ethers.provider.getBalance(owner.address);
+        console.log("Final owner balance:", ethers.utils.formatEther(finalOwnerBalance), "ETH");
 
     } catch (error) {
         console.error("Detailed error:", {

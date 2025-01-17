@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0x081a11346EA78CA8bEd32F49d169e10F61C87019";
+    const contractAddress = "0x320c761f0AdEEf28B00D9F664e8BdC6685dF3130";
 
     // Get signers
     const [owner, buyer, ...others] = await ethers.getSigners();
@@ -144,7 +144,7 @@ async function main() {
         console.log("Settling the sale...");
         const settleSaleTx = await contract.settleSale(saleId, { gasPrice: maxFeePerGas });
         await settleSaleTx.wait();
-        console.log("Sale settled.");
+        console.log("Sale settled and funds distributed.");
 
         // Check balances
         console.log("Checking balances...");
