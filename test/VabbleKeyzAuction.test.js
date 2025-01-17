@@ -18,6 +18,7 @@ describe("VabbleKeyzAuction", function () {
             daoAddress,
             ipOwner1,
             ipOwner2,
+            auditor,
         ] = await ethers.getSigners()
 
         // Deploy ETH receiver for Vabble payments
@@ -56,7 +57,8 @@ describe("VabbleKeyzAuction", function () {
             daoAddress.address,
             mockUniHelper.address,
             mockStakingPool.address,
-            mockUniswapRouter.address
+            mockUniswapRouter.address,
+            auditor.address // Auditor address
         )
         await auction.deployed()
 
@@ -94,6 +96,7 @@ describe("VabbleKeyzAuction", function () {
             daoAddress,
             ipOwner1,
             ipOwner2,
+            auditor,
         }
     }
 
@@ -107,6 +110,7 @@ describe("VabbleKeyzAuction", function () {
                 mockUniswapRouter,
                 vabbleReceiver,
                 daoAddress,
+                auditor,
             } = await loadFixture(deployContractsFixture)
 
             expect(await auction.vabbleAddress()).to.equal(vabbleReceiver.address)
@@ -115,6 +119,7 @@ describe("VabbleKeyzAuction", function () {
             expect(await auction.UNI_HELPER()).to.equal(mockUniHelper.address)
             expect(await auction.STAKING_POOL()).to.equal(mockStakingPool.address)
             expect(await auction.UNISWAP_ROUTER()).to.equal(mockUniswapRouter.address)
+            expect(await auction.auditorAddress()).to.equal(auditor.address)
 
             expect((await auction.vabbleShare()).toNumber()).to.equal(150)
             expect((await auction.daoShare()).toNumber()).to.equal(100)
@@ -124,6 +129,122 @@ describe("VabbleKeyzAuction", function () {
             expect((await auction.minBidIncrementAllowed()).toNumber()).to.equal(1)
             expect((await auction.maxBidIncrementAllowed()).toNumber()).to.equal(500000)
             expect((await auction.maxRoomKeys()).toNumber()).to.equal(5)
+        })
+    })
+
+    describe("Room Verification", function () {
+        let auction, roomOwner, bidder1, bidder2, auditor, ipOwner1
+        let saleId = 1
+
+        beforeEach(async function () {
+            const contracts = await loadFixture(deployContractsFixture)
+            auction = contracts.auction
+            roomOwner = contracts.roomOwner
+            bidder1 = contracts.bidder1
+            bidder2 = contracts.bidder2
+            auditor = contracts.auditor
+            ipOwner1 = contracts.ipOwner1
+
+            // Create a sale
+            await auction
+                .connect(roomOwner)
+                .createSale(1, 0, durationInMinutes, 5, price, 100, 500, ipOwner1.address)
+        })
+
+        it("Should allow auditor to verify a room", async function () {
+            await auction.connect(auditor).setRoomVerification(1, true)
+            expect(await auction.roomVerification(1)).to.equal(1) // VerificationStatus.Verified
+        })
+
+        it("Should allow auditor to fail a room verification", async function () {
+            await auction.connect(auditor).setRoomVerification(1, false)
+            expect(await auction.roomVerification(1)).to.equal(2) // VerificationStatus.Failed
+        })
+
+        it("Should prevent non-auditor from verifying rooms", async function () {
+            await expect(auction.connect(roomOwner).setRoomVerification(1, true))
+                .to.be.revertedWith("Only verifier can call")
+
+            await expect(auction.connect(bidder1).setRoomVerification(1, true))
+                .to.be.revertedWith("Only verifier can call")
+        })
+
+        it("Should prevent settlement of unverified room", async function () {
+            // Place a bid
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
+
+            // Advance time
+            await time.increase(3600)
+
+            // Try to settle before verification
+            await expect(auction.settleSale(saleId))
+                .to.be.revertedWith("Room not verified")
+        })
+
+        it("Should prevent settlement of failed verification room", async function () {
+            // Place a bid
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
+
+            // Fail the room verification
+            await auction.connect(auditor).setRoomVerification(1, false)
+
+            // Advance time
+            await time.increase(3600)
+
+            // Try to settle
+            await expect(auction.settleSale(saleId))
+                .to.be.revertedWith("Room verification failed")
+        })
+
+        it("Should allow settlement after successful verification", async function () {
+            // Place a bid
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
+
+            // Verify the room
+            await auction.connect(auditor).setRoomVerification(1, true)
+
+            // Advance time
+            await time.increase(3600)
+
+            // Settlement should succeed
+            await expect(auction.settleSale(saleId))
+                .to.emit(auction, "SaleSettled")
+        })
+
+        it("Should allow refund claims for failed verification", async function () {
+            // Place bids
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
+            await auction.connect(bidder2).placeBid(saleId, 1, { value: price })
+
+            // Fail the room verification
+            await auction.connect(auditor).setRoomVerification(1, false)
+
+            // Advance time
+            await time.increase(3600)
+
+            // Bidders should be able to claim refunds
+            await expect(auction.connect(bidder1).claimRefund(saleId, 0))
+                .to.emit(auction, "RefundClaimed")
+                .withArgs(saleId, 0, bidder1.address, price)
+
+            await expect(auction.connect(bidder2).claimRefund(saleId, 1))
+                .to.emit(auction, "RefundClaimed")
+                .withArgs(saleId, 1, bidder2.address, price)
+        })
+
+        it("Should prevent refund claims for verified rooms unless outbid", async function () {
+            // Place bid
+            await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
+
+            // Verify the room
+            await auction.connect(auditor).setRoomVerification(1, true)
+
+            // Advance time
+            await time.increase(3600)
+
+            // Should not allow refund claim for winning bid
+            await expect(auction.connect(bidder1).claimRefund(saleId, 0))
+                .to.be.revertedWith("Not eligible for refund")
         })
     })
 
@@ -201,7 +322,7 @@ describe("VabbleKeyzAuction", function () {
     })
 
     describe("Bidding", function () {
-        let auction, roomOwner, bidder1, bidder2, bidder3, bidder4, ipOwner1
+        let auction, roomOwner, bidder1, bidder2, bidder3, bidder4, ipOwner1, auditor
         let saleId = 1
 
         beforeEach(async function () {
@@ -213,6 +334,7 @@ describe("VabbleKeyzAuction", function () {
             bidder3 = contracts.bidder3
             bidder4 = contracts.bidder4
             ipOwner1 = contracts.ipOwner1
+            auditor = contracts.auditor
 
             await auction
                 .connect(roomOwner)
@@ -279,6 +401,9 @@ describe("VabbleKeyzAuction", function () {
             expect(bidder0).to.equal(bidder1.address)
             expect(bidder1Address).to.equal(bidder2.address)
             expect(bidder2Address).to.equal(bidder3.address)
+
+            // Add verification before any potential settlement
+            await auction.connect(auditor).setRoomVerification(1, true)
         })
 
         it("should handle rapid sequential bids correctly", async function () {
@@ -363,11 +488,20 @@ describe("VabbleKeyzAuction", function () {
     })
 
     describe("Instant Buy Core Functionality", function () {
-        let auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner
+        let auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner, ipOwner1, auditor
         const saleId = 1
 
         beforeEach(async function () {
-            const contracts = await loadFixture(deployContractsFixture); ({ auction, roomOwner, bidder1, bidder2, bidder3, bidder4, owner, ipOwner1 } = contracts)
+            const contracts = await loadFixture(deployContractsFixture)
+            auction = contracts.auction
+            roomOwner = contracts.roomOwner
+            bidder1 = contracts.bidder1
+            bidder2 = contracts.bidder2
+            bidder3 = contracts.bidder3
+            bidder4 = contracts.bidder4
+            owner = contracts.owner
+            ipOwner1 = contracts.ipOwner1
+            auditor = contracts.auditor
 
             // Create instant buy sale
             await auction.connect(roomOwner).createSale(
@@ -679,6 +813,9 @@ describe("VabbleKeyzAuction", function () {
                 // Advance time
                 await time.increase(3601)
 
+                // Verify the room
+                await auction.connect(auditor).setRoomVerification(1, true)
+
                 // Settlement should succeed
                 await expect(auction.settleSale(saleId)).to.emit(auction, "SaleSettled")
             })
@@ -690,6 +827,9 @@ describe("VabbleKeyzAuction", function () {
 
                 // Advance time
                 await time.increase(3601)
+
+                // Verify the room
+                await auction.connect(auditor).setRoomVerification(1, true)
 
                 // Settlement should succeed
                 await expect(auction.settleSale(saleId)).to.emit(auction, "SaleSettled")
@@ -732,6 +872,9 @@ describe("VabbleKeyzAuction", function () {
 
             it("Should settle auction correctly with proper fund distribution", async function () {
                 await time.increase(3600) // Advance time past auction end
+
+                // Verify the room before settlement
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
 
                 const totalAmount = price.mul(5) // 2 ETH + 3 ETH = 5 ETH total
                 const vabbleAmount = totalAmount.mul(15).div(1000) // 1.5%
@@ -802,6 +945,9 @@ describe("VabbleKeyzAuction", function () {
 
                 await time.increase(3600)
 
+                // Verify the room
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
+
                 await expect(contracts.auction.settleSale(2)).to.be.revertedWith(
                     "No funds to distribute"
                 )
@@ -819,6 +965,9 @@ describe("VabbleKeyzAuction", function () {
                     .placeBid(2, 0, { value: price.mul(2) })
 
                 await time.increase(3600)
+
+                // Verify the room
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
 
                 // Settlement should succeed with single bid
                 await expect(contracts.auction.settleSale(2)).to.emit(
@@ -855,6 +1004,9 @@ describe("VabbleKeyzAuction", function () {
                     .placeBid(2, 3, { value: price.mul(5) })
 
                 await time.increase(3600)
+
+                // Verify the room
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
 
                 // Calculate expected amounts
                 const totalAmount = price.mul(14) // 2 + 3 + 4 + 5 = 14 ETH
@@ -928,6 +1080,9 @@ describe("VabbleKeyzAuction", function () {
             it("Should settle instant buy sale correctly", async function () {
                 await time.increase(3600)
 
+                // Verify the room
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
+
                 const totalAmount = price.mul(2) // 2 keys sold at fixed price
                 const vabbleAmount = totalAmount.mul(15).div(1000)
                 const daoAmount = totalAmount.mul(10).div(1000)
@@ -984,6 +1139,9 @@ describe("VabbleKeyzAuction", function () {
                 // Keys 2 and 3 remain unsold
 
                 await time.increase(3600)
+
+                // Verify the room
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
 
                 const totalAmount = price.mul(2) // Only 2 keys sold
                 const vabbleAmount = totalAmount.mul(15).div(1000)
@@ -1057,6 +1215,10 @@ describe("VabbleKeyzAuction", function () {
                     .placeBid(saleId, 0, { value: price })
 
                 await time.increase(3600)
+
+                // Verify the room first
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
+
                 await contracts.auction.settleSale(saleId)
 
                 await expect(contracts.auction.settleSale(saleId)).to.be.revertedWith(
@@ -1093,6 +1255,9 @@ describe("VabbleKeyzAuction", function () {
                     .placeBid(saleId, 0, { value: price.mul(2) })
 
                 await time.increase(3600)
+
+                // Verify the room
+                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
 
                 // Settlement should succeed with maximum shares
                 await expect(contracts.auction.settleSale(saleId)).to.emit(
@@ -1299,6 +1464,16 @@ describe("VabbleKeyzAuction", function () {
         })
 
         describe("Pause Functionality", function () {
+            let auction, owner, nonOwner, roomOwner
+
+            beforeEach(async function () {
+                const contracts = await loadFixture(deployContractsFixture)
+                auction = contracts.auction
+                owner = contracts.owner
+                nonOwner = contracts.bidder1
+                roomOwner = contracts.roomOwner
+            })
+
             it("Should allow owner to pause", async function () {
                 await expect(auction.connect(owner).pause())
                     .to.emit(auction, "Paused")
@@ -1318,13 +1493,26 @@ describe("VabbleKeyzAuction", function () {
                 await expect(auction.connect(nonOwner).pause()).to.be.revertedWith(
                     "Ownable: caller is not the owner"
                 )
+
+                await expect(auction.connect(roomOwner).pause()).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                )
             })
 
             it("Should prevent non-owner from unpausing", async function () {
+                // Owner pauses first
                 await auction.connect(owner).pause()
+
                 await expect(auction.connect(nonOwner).unpause()).to.be.revertedWith(
                     "Ownable: caller is not the owner"
                 )
+
+                await expect(auction.connect(roomOwner).unpause()).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                )
+
+                // Cleanup: unpause for other tests
+                await auction.connect(owner).unpause()
             })
 
             it("Should prevent pausing when already paused", async function () {

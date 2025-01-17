@@ -32,6 +32,16 @@ async function main() {
         throw new Error(`No configuration found for network: ${networkName}`);
     }
 
+    // Get auditor private key from environment variables
+    const auditorPrivateKey = process.env.AUDITOR_PRIVATE_KEY;
+    if (!auditorPrivateKey) {
+        throw new Error("Please set AUDITOR_PRIVATE_KEY in your .env file");
+    }
+
+    // Create auditor wallet instance
+    const auditor = new ethers.Wallet(auditorPrivateKey, ethers.provider);
+    console.log("Auditor address:", auditor.address);
+
     const [deployer] = await ethers.getSigners();
     console.log(`Deploying contracts with account: ${deployer.address}`);
     console.log(`Account balance: ${(await deployer.getBalance()).toString()}`);
@@ -54,6 +64,7 @@ async function main() {
             config.uniHelper,
             config.staking,
             config.uniswapRouter,
+            auditor.address,           // Auditor address
             { gasPrice: optimizedGasPrice }
         );
 
@@ -77,7 +88,8 @@ async function main() {
                         config.daoAddress,
                         config.uniHelper,
                         config.staking,
-                        config.uniswapRouter
+                        config.uniswapRouter,
+                        auditor.address
                     ],
                 });
                 console.log("Contract verified successfully");
@@ -97,6 +109,7 @@ async function main() {
         console.log("UniHelper:", config.uniHelper);
         console.log("Staking Pool:", config.staking);
         console.log("Uniswap Router:", config.uniswapRouter);
+        console.log("Auditor Address:", auditor.address);
 
         // Save deployment info
         const deploymentInfo = {
@@ -104,7 +117,8 @@ async function main() {
             contracts: {
                 VabbleKeyzAuction: auction.address,
             },
-            config: config
+            config: config,
+            auditor: auditor.address
         };
 
         const fs = require('fs');

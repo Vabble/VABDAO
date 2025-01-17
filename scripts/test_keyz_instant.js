@@ -3,13 +3,23 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0xab797A39BbDB921BfDc5fBC81cEd02620738c365";
+    const contractAddress = "0xC7654544ae346b04739dd5B9b264b14EF088b8c5";
 
     // Get signers
     const [owner, buyer, ...others] = await ethers.getSigners();
 
+    // Get auditor private key from environment variables
+    const auditorPrivateKey = process.env.AUDITOR_PRIVATE_KEY;
+    if (!auditorPrivateKey) {
+        throw new Error("Please set AUDITOR_PRIVATE_KEY in your .env file");
+    }
+
+    // Create auditor wallet instance
+    const auditor = new ethers.Wallet(auditorPrivateKey, ethers.provider);
+
     console.log("Owner address:", owner.address);
     console.log("Buyer address:", buyer.address);
+    console.log("Auditor address:", auditor.address);
 
     // Get the contract factory and ABI
     const VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction");
@@ -43,13 +53,31 @@ async function main() {
             ipOwnerAddress
         });
 
-        // Get current gas price
-        const gasPrice = await ethers.provider.getGasPrice();
-        console.log("Current gas price:", ethers.utils.formatUnits(gasPrice, "gwei"), "gwei");
+        // Get latest block
+        const block = await ethers.provider.getBlock("latest");
+        const baseFeePerGas = block.baseFeePerGas;
+        const maxPriorityFeePerGas = ethers.utils.parseUnits("1.5", "gwei");
+        const maxFeePerGas = baseFeePerGas.mul(2).add(maxPriorityFeePerGas);
 
-        // Use a higher gas price to ensure transaction goes through
-        const adjustedGasPrice = gasPrice.mul(120).div(100); // 120% of current gas price
-        console.log("Using gas price:", ethers.utils.formatUnits(adjustedGasPrice, "gwei"), "gwei");
+        console.log("Gas settings:");
+        console.log("Base fee:", ethers.utils.formatUnits(baseFeePerGas, "gwei"), "gwei");
+        console.log("Max priority fee:", ethers.utils.formatUnits(maxPriorityFeePerGas, "gwei"), "gwei");
+        console.log("Max fee:", ethers.utils.formatUnits(maxFeePerGas, "gwei"), "gwei");
+
+        // Estimate gas with a safety buffer
+        const estimatedGas = await contract.estimateGas.createSale(
+            roomNumber,
+            saleType,
+            durationInMinutes,
+            totalKeys,
+            price,
+            0, // minBidIncrement not used for instant buy
+            ipOwnerShare,
+            ipOwnerAddress
+        );
+        const gasLimit = estimatedGas.mul(120).div(100); // Add 20% buffer
+        console.log("Estimated gas:", estimatedGas.toString());
+        console.log("Gas limit with buffer:", gasLimit.toString());
 
         const createSaleTx = await contract.createSale(
             roomNumber,
@@ -60,7 +88,7 @@ async function main() {
             minBidIncrement,
             ipOwnerShare,
             ipOwnerAddress,
-            { gasPrice: adjustedGasPrice }
+            { gasPrice: maxFeePerGas }
         );
         console.log("Transaction hash:", createSaleTx.hash);
         console.log("Waiting for transaction confirmation...");
@@ -79,20 +107,42 @@ async function main() {
         // Buyer buys a key
         console.log("Buyer is buying a key...");
         const keyId = 0; // Since totalKeys is 1, keyId is 0
-        const buyNowTx = await contract
+
+        // Estimate gas for purchase with safety buffer
+        const estimatedPurchaseGas = await contract.connect(buyer).estimateGas.buyNow(saleId, 0, {
+            value: price
+        });
+        const purchaseGasLimit = estimatedPurchaseGas.mul(120).div(100); // Add 20% buffer
+        console.log("Estimated purchase gas:", estimatedPurchaseGas.toString());
+        console.log("Purchase gas limit with buffer:", purchaseGasLimit.toString());
+
+        const purchaseTx = await contract
             .connect(buyer)
-            .buyNow(saleId, keyId, { value: price, gasPrice: adjustedGasPrice });
-        console.log("Buy transaction hash:", buyNowTx.hash);
-        await buyNowTx.wait();
+            .buyNow(saleId, 0, {
+                value: price,
+                maxFeePerGas,
+                maxPriorityFeePerGas,
+                gasLimit: purchaseGasLimit
+            });
+        console.log("Buy transaction hash:", purchaseTx.hash);
+        await purchaseTx.wait();
         console.log("Buyer has bought the key.");
 
         // Wait for the sale to end
         console.log("Waiting for the sale to end...");
-        await new Promise((resolve) => setTimeout(resolve, durationInMinutes * 1000));
+        await new Promise((resolve) => setTimeout(resolve, durationInMinutes * 60 * 1000));
+
+        // Verify the room using auditor
+        console.log("Verifying the room...");
+        const verifyTx = await contract
+            .connect(auditor)
+            .setRoomVerification(roomNumber, true, { gasPrice: maxFeePerGas });
+        await verifyTx.wait();
+        console.log("Room verified successfully");
 
         // Call settleSale
         console.log("Settling the sale...");
-        const settleSaleTx = await contract.settleSale(saleId, { gasPrice: adjustedGasPrice });
+        const settleSaleTx = await contract.settleSale(saleId, { gasPrice: maxFeePerGas });
         await settleSaleTx.wait();
         console.log("Sale settled.");
 

@@ -3,16 +3,17 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0xab797A39BbDB921BfDc5fBC81cEd02620738c365";
+    const contractAddress = "0xC7654544ae346b04739dd5B9b264b14EF088b8c5";
 
     // Get private keys from environment variables
     const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
     const bidder1PrivateKey = process.env.BIDDER1_PRIVATE_KEY;
     const bidder2PrivateKey = process.env.BIDDER2_PRIVATE_KEY;
     const bidder3PrivateKey = process.env.BIDDER3_PRIVATE_KEY;
+    const auditorPrivateKey = process.env.AUDITOR_PRIVATE_KEY;
 
-    if (!ownerPrivateKey || !bidder1PrivateKey || !bidder2PrivateKey || !bidder3PrivateKey) {
-        throw new Error("Please set OWNER_PRIVATE_KEY, BIDDER1_PRIVATE_KEY, BIDDER2_PRIVATE_KEY, and BIDDER3_PRIVATE_KEY in your .env file");
+    if (!ownerPrivateKey || !bidder1PrivateKey || !bidder2PrivateKey || !bidder3PrivateKey || !auditorPrivateKey) {
+        throw new Error("Please set OWNER_PRIVATE_KEY, BIDDER1_PRIVATE_KEY, BIDDER2_PRIVATE_KEY, BIDDER3_PRIVATE_KEY, and AUDITOR_PRIVATE_KEY in your .env file");
     }
 
     // Create wallet instances
@@ -21,11 +22,13 @@ async function main() {
     const bidder1 = new ethers.Wallet(bidder1PrivateKey, provider);
     const bidder2 = new ethers.Wallet(bidder2PrivateKey, provider);
     const bidder3 = new ethers.Wallet(bidder3PrivateKey, provider);
+    const auditor = new ethers.Wallet(auditorPrivateKey, provider);
 
     console.log("Owner address:", owner.address);
     console.log("Bidder 1 address:", bidder1.address);
     console.log("Bidder 2 address:", bidder2.address);
     console.log("Bidder 3 address:", bidder3.address);
+    console.log("Auditor address:", auditor.address);
 
     // Get the contract factory and ABI
     const VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction", owner);
@@ -70,6 +73,21 @@ async function main() {
         console.log("Max priority fee:", ethers.utils.formatUnits(maxPriorityFeePerGas, "gwei"), "gwei");
         console.log("Max fee:", ethers.utils.formatUnits(maxFeePerGas, "gwei"), "gwei");
 
+        // Estimate gas with a safety buffer
+        const estimatedGas = await contract.estimateGas.createSale(
+            roomNumber,
+            saleType,
+            durationInMinutes,
+            totalKeys,
+            startingPrice,
+            minBidIncrement,
+            ipOwnerShare,
+            ipOwnerAddress
+        );
+        const gasLimit = estimatedGas.mul(120).div(100); // Add 20% buffer
+        console.log("Estimated gas:", estimatedGas.toString());
+        console.log("Gas limit with buffer:", gasLimit.toString());
+
         const createSaleTx = await contract.createSale(
             roomNumber,
             saleType,
@@ -81,7 +99,8 @@ async function main() {
             ipOwnerAddress,
             {
                 maxFeePerGas,
-                maxPriorityFeePerGas
+                maxPriorityFeePerGas,
+                gasLimit
             }
         );
         console.log("Transaction hash:", createSaleTx.hash);
@@ -111,12 +130,21 @@ async function main() {
 
         // Bidder 1 places first bid on key 0
         console.log("Bidder 1 placing first bid on key 0...");
+        // Estimate gas for bid with safety buffer
+        const estimatedBidGas = await contract.connect(bidder1).estimateGas.placeBid(saleId, 0, {
+            value: startingPrice
+        });
+        const bidGasLimit = estimatedBidGas.mul(120).div(100); // Add 20% buffer
+        console.log("Estimated bid gas:", estimatedBidGas.toString());
+        console.log("Bid gas limit with buffer:", bidGasLimit.toString());
+
         const firstBidTx = await contract
             .connect(bidder1)
             .placeBid(saleId, 0, {
                 value: startingPrice,
                 maxFeePerGas,
-                maxPriorityFeePerGas
+                maxPriorityFeePerGas,
+                gasLimit: bidGasLimit
             });
         await firstBidTx.wait();
         console.log("Bidder 1's bid confirmed");
@@ -181,6 +209,15 @@ async function main() {
         if (checkBlock.timestamp <= sale.endTime) {
             throw new Error("Sale has not ended yet. Waiting longer...");
         }
+
+        // Verify the room using auditor
+        console.log("Verifying the room...");
+        const verifyTx = await contract.connect(auditor).setRoomVerification(roomNumber, true, {
+            maxFeePerGas,
+            maxPriorityFeePerGas
+        });
+        await verifyTx.wait();
+        console.log("Room verified successfully");
 
         // Call settleSale
         console.log("Settling the auction...");
