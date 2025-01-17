@@ -20,6 +20,12 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         InstantBuy
     }
 
+    enum VerificationStatus {
+        Pending,
+        Verified,
+        Failed
+    }
+
     struct KeyBid {
         uint256 amount;
         address payable bidder;
@@ -54,7 +60,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     // Mapping to track available keys in each sale
     mapping(uint256 => mapping(uint256 => bool)) public isKeyAvailable;
 
+    // Mapping to track room verification status by room number
+    mapping(uint256 => VerificationStatus) public roomVerification;
+
     address public vabTokenAddress; // VAB token address for swaps
+    address public auditorAddress; // Auditor address authorized to verify room status
 
     // Addresses for revenue splits
     address payable public vabbleAddress;
@@ -131,6 +141,11 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         _;
     }
 
+    modifier onlyVerifier() {
+        require(msg.sender == auditorAddress, "Only verifier can call");
+        _;
+    }
+
     // --------------------
     // Constructor
     // --------------------
@@ -141,11 +156,13 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         address payable _daoAddress,
         address _uniHelper,
         address _staking,
-        address _uniswapRouter
+        address _uniswapRouter,
+        address _auditorAddress
     ) {
         vabbleAddress = _vabbleAddress;
         vabTokenAddress = _vabTokenAddress;
         daoAddress = _daoAddress;
+        auditorAddress = _auditorAddress;
 
         // Initialize default shares and precision
         vabbleShare = 150; // 1.5%
@@ -298,6 +315,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(block.timestamp > sale.endTime, "Sale not ended");
         require(!sale.settled, "Sale already settled");
         require(vabbleShare + daoShare + sale.ipOwnerShare <= percentagePrecision, "Total shares exceed 100%");
+        require(roomVerification[sale.roomNumber] != VerificationStatus.Pending, "Room not verified");
+        require(roomVerification[sale.roomNumber] == VerificationStatus.Verified, "Room verification failed");
 
         uint256 totalAmount = 0;
 
@@ -366,10 +385,15 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(!keyBid.claimed, "Already claimed");
         require(keyBid.amount > 0, "No funds to claim");
 
-        // If sale is settled, only allow refunds for outbid participants
-        if (sale.settled) {
-            require(isKeyAvailable[saleId][keyId], "Winner cannot claim refund");
-        }
+        // Require verifier to have reported status
+        require(roomVerification[sale.roomNumber] != VerificationStatus.Pending, "Room not verified");
+
+        // Allow refunds in two cases:
+        // 1. Room verification failed
+        // 2. Outbid participants in a settled sale
+        bool canClaimRefund = (roomVerification[sale.roomNumber] == VerificationStatus.Failed) || 
+            (sale.settled && isKeyAvailable[saleId][keyId]);
+        require(canClaimRefund, "Not eligible for refund");
 
         uint256 refundAmount = keyBid.amount;
         keyBid.amount = 0;
@@ -471,6 +495,15 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     function setMaxBidIncrementAllowed(uint256 _maxBidIncrementAllowed) external onlyOwner {
         maxBidIncrementAllowed = _maxBidIncrementAllowed;
         emit MaxBidIncrementAllowedUpdated(_maxBidIncrementAllowed);
+    }
+
+    function setRoomVerification(uint256 roomNumber, bool verified) external onlyVerifier {
+        roomVerification[roomNumber] = verified ? VerificationStatus.Verified : VerificationStatus.Failed;
+    }
+
+    function setauditorAddress(address _auditorAddress) external onlyOwner {
+        require(_auditorAddress != address(0), "Invalid address");
+        auditorAddress = _auditorAddress;
     }
 
     // --------------------
