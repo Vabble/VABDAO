@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0xC7654544ae346b04739dd5B9b264b14EF088b8c5";
+    const contractAddress = "0x081a11346EA78CA8bEd32F49d169e10F61C87019";
 
     // Get private keys from environment variables
     const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
