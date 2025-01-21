@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0x320c761f0AdEEf28B00D9F664e8BdC6685dF3130";
+    const contractAddress = "0x0e1712e78ab74a9AaBcAd03D3E7648ed380283BB";
 
     // Get private keys from environment variables
     const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
@@ -210,14 +210,14 @@ async function main() {
             throw new Error("Sale has not ended yet. Waiting longer...");
         }
 
-        // Verify the room using auditor
-        console.log("Verifying the room...");
-        const verifyTx = await contract.connect(auditor).setRoomVerification(roomNumber, true, {
+        // Verify the sale using auditor
+        console.log("Verifying the sale...");
+        const verifyTx = await contract.connect(auditor).setRoomVerification(saleId, true, {
             maxFeePerGas,
             maxPriorityFeePerGas
         });
         await verifyTx.wait();
-        console.log("Room verified successfully");
+        console.log("Sale verified successfully");
 
         // Call settleSale
         console.log("Settling the auction...");

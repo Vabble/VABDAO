@@ -2,104 +2,104 @@ const { expect } = require("chai")
 const { ethers } = require("hardhat")
 const { time, loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
 
-describe("VabbleKeyzAuction", function () {
-    const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    const price = ethers.utils.parseEther("1")
-    const durationInMinutes = 1
+const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+const price = ethers.utils.parseEther("1")
+const durationInMinutes = 1
 
-    async function deployContractsFixture() {
-        const [
-            owner,
-            roomOwner,
-            bidder1,
-            bidder2,
-            bidder3,
-            bidder4,
-            daoAddress,
-            ipOwner1,
-            ipOwner2,
-            auditor,
-        ] = await ethers.getSigners()
+async function deployContractsFixture() {
+    const [
+        owner,
+        roomOwner,
+        bidder1,
+        bidder2,
+        bidder3,
+        bidder4,
+        daoAddress,
+        ipOwner1,
+        ipOwner2,
+        auditor,
+    ] = await ethers.getSigners()
 
-        // Deploy ETH receiver for Vabble payments
-        const ETHReceiver = await ethers.getContractFactory("ETHReceiver")
-        const vabbleReceiver = await ETHReceiver.deploy()
-        await vabbleReceiver.deployed()
+    // Deploy ETH receiver for Vabble payments
+    const ETHReceiver = await ethers.getContractFactory("ETHReceiver")
+    const vabbleReceiver = await ETHReceiver.deploy()
+    await vabbleReceiver.deployed()
 
-        // Deploy VAB token
-        const MockVabbleToken = await ethers.getContractFactory("MockVabbleToken")
-        const mockVabToken = await MockVabbleToken.deploy()
-        await mockVabToken.deployed()
+    // Deploy VAB token
+    const MockVabbleToken = await ethers.getContractFactory("MockVabbleToken")
+    const mockVabToken = await MockVabbleToken.deploy()
+    await mockVabToken.deployed()
 
-        // Deploy UniswapRouter
-        const MockUniswapRouter = await ethers.getContractFactory("MockUniswapRouter")
-        const mockUniswapRouter = await MockUniswapRouter.deploy(
-            mockVabToken.address, // VAB token for swaps
-            WETH_ADDRESS
-        )
-        await mockUniswapRouter.deployed()
+    // Deploy UniswapRouter
+    const MockUniswapRouter = await ethers.getContractFactory("MockUniswapRouter")
+    const mockUniswapRouter = await MockUniswapRouter.deploy(
+        mockVabToken.address, // VAB token for swaps
+        WETH_ADDRESS
+    )
+    await mockUniswapRouter.deployed()
 
-        // Deploy UniHelper
-        const MockUniHelper = await ethers.getContractFactory("MockUniHelper")
-        const mockUniHelper = await MockUniHelper.deploy(mockVabToken.address, WETH_ADDRESS)
-        await mockUniHelper.deployed()
+    // Deploy UniHelper
+    const MockUniHelper = await ethers.getContractFactory("MockUniHelper")
+    const mockUniHelper = await MockUniHelper.deploy(mockVabToken.address, WETH_ADDRESS)
+    await mockUniHelper.deployed()
 
-        // Deploy staking pool
-        const MockStakingPool = await ethers.getContractFactory("MockStakingPool")
-        const mockStakingPool = await MockStakingPool.deploy(mockVabToken.address)
-        await mockStakingPool.deployed()
+    // Deploy staking pool
+    const MockStakingPool = await ethers.getContractFactory("MockStakingPool")
+    const mockStakingPool = await MockStakingPool.deploy(mockVabToken.address)
+    await mockStakingPool.deployed()
 
-        // Deploy main auction contract
-        const VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction")
-        const auction = await VabbleKeyzAuction.deploy(
-            vabbleReceiver.address, // ETH payment receiver
-            mockVabToken.address, // VAB token for swaps
-            daoAddress.address,
-            mockUniHelper.address,
-            mockStakingPool.address,
-            mockUniswapRouter.address,
-            auditor.address // Auditor address
-        )
-        await auction.deployed()
+    // Deploy main auction contract
+    const VabbleKeyzAuction = await ethers.getContractFactory("VabbleKeyzAuction")
+    const auction = await VabbleKeyzAuction.deploy(
+        vabbleReceiver.address, // ETH payment receiver
+        mockVabToken.address, // VAB token for swaps
+        daoAddress.address,
+        mockUniHelper.address,
+        mockStakingPool.address,
+        mockUniswapRouter.address,
+        auditor.address // Auditor address
+    )
+    await auction.deployed()
 
-        // Fund contracts
-        await owner.sendTransaction({
-            to: vabbleReceiver.address,
-            value: ethers.utils.parseEther("10"),
-        })
+    // Fund contracts
+    await owner.sendTransaction({
+        to: vabbleReceiver.address,
+        value: ethers.utils.parseEther("10"),
+    })
 
-        await owner.sendTransaction({
-            to: auction.address,
-            value: ethers.utils.parseEther("10"),
-        })
+    await owner.sendTransaction({
+        to: auction.address,
+        value: ethers.utils.parseEther("10"),
+    })
 
-        // Setup approvals and initial token balance
-        await mockVabToken
-            .connect(owner)
-            .approve(mockStakingPool.address, ethers.constants.MaxUint256)
-        await mockVabToken.connect(owner).approve(auction.address, ethers.constants.MaxUint256)
-        await mockVabToken.mint(mockUniswapRouter.address, ethers.utils.parseEther("1000000"))
+    // Setup approvals and initial token balance
+    await mockVabToken
+        .connect(owner)
+        .approve(mockStakingPool.address, ethers.constants.MaxUint256)
+    await mockVabToken.connect(owner).approve(auction.address, ethers.constants.MaxUint256)
+    await mockVabToken.mint(mockUniswapRouter.address, ethers.utils.parseEther("1000000"))
 
-        return {
-            auction,
-            mockVabToken,
-            mockUniHelper,
-            mockStakingPool,
-            mockUniswapRouter,
-            vabbleReceiver,
-            owner,
-            roomOwner,
-            bidder1,
-            bidder2,
-            bidder3,
-            bidder4,
-            daoAddress,
-            ipOwner1,
-            ipOwner2,
-            auditor,
-        }
+    return {
+        auction,
+        mockVabToken,
+        mockUniHelper,
+        mockStakingPool,
+        mockUniswapRouter,
+        vabbleReceiver,
+        owner,
+        roomOwner,
+        bidder1,
+        bidder2,
+        bidder3,
+        bidder4,
+        daoAddress,
+        ipOwner1,
+        ipOwner2,
+        auditor,
     }
+}
 
+describe("VabbleKeyzAuction", function () {
     describe("Deployment", function () {
         it("Should set the correct initial values", async function () {
             const {
@@ -151,25 +151,25 @@ describe("VabbleKeyzAuction", function () {
                 .createSale(1, 0, durationInMinutes, 5, price, 100, 500, ipOwner1.address)
         })
 
-        it("Should allow auditor to verify a room", async function () {
-            await auction.connect(auditor).setRoomVerification(1, true)
-            expect(await auction.roomVerification(1)).to.equal(1) // VerificationStatus.Verified
+        it("Should allow auditor to verify a sale", async function () {
+            await auction.connect(auditor).setRoomVerification(saleId, true)
+            expect(await auction.saleVerification(saleId)).to.equal(1) // VerificationStatus.Verified
         })
 
-        it("Should allow auditor to fail a room verification", async function () {
-            await auction.connect(auditor).setRoomVerification(1, false)
-            expect(await auction.roomVerification(1)).to.equal(2) // VerificationStatus.Failed
+        it("Should allow auditor to fail a sale verification", async function () {
+            await auction.connect(auditor).setRoomVerification(saleId, false)
+            expect(await auction.saleVerification(saleId)).to.equal(2) // VerificationStatus.Failed
         })
 
-        it("Should prevent non-auditor from verifying rooms", async function () {
-            await expect(auction.connect(roomOwner).setRoomVerification(1, true))
+        it("Should prevent non-auditor from verifying sales", async function () {
+            await expect(auction.connect(roomOwner).setRoomVerification(saleId, true))
                 .to.be.revertedWith("Only verifier can call")
 
-            await expect(auction.connect(bidder1).setRoomVerification(1, true))
+            await expect(auction.connect(bidder1).setRoomVerification(saleId, true))
                 .to.be.revertedWith("Only verifier can call")
         })
 
-        it("Should prevent settlement of unverified room", async function () {
+        it("Should prevent settlement of unverified sale", async function () {
             // Place a bid
             await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
 
@@ -178,30 +178,30 @@ describe("VabbleKeyzAuction", function () {
 
             // Try to settle before verification
             await expect(auction.settleSale(saleId))
-                .to.be.revertedWith("Room not verified")
+                .to.be.revertedWith("Sale not verified")
         })
 
-        it("Should prevent settlement of failed verification room", async function () {
+        it("Should prevent settlement of failed verification sale", async function () {
             // Place a bid
             await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
 
-            // Fail the room verification
-            await auction.connect(auditor).setRoomVerification(1, false)
+            // Fail the sale verification
+            await auction.connect(auditor).setRoomVerification(saleId, false)
 
             // Advance time
             await time.increase(3600)
 
             // Try to settle
             await expect(auction.settleSale(saleId))
-                .to.be.revertedWith("Room verification failed")
+                .to.be.revertedWith("Sale verification failed")
         })
 
         it("Should allow settlement after successful verification", async function () {
             // Place a bid
             await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
 
-            // Verify the room
-            await auction.connect(auditor).setRoomVerification(1, true)
+            // Verify the sale
+            await auction.connect(auditor).setRoomVerification(saleId, true)
 
             // Advance time
             await time.increase(3600)
@@ -216,8 +216,8 @@ describe("VabbleKeyzAuction", function () {
             await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
             await auction.connect(bidder2).placeBid(saleId, 1, { value: price })
 
-            // Fail the room verification
-            await auction.connect(auditor).setRoomVerification(1, false)
+            // Fail the sale verification
+            await auction.connect(auditor).setRoomVerification(saleId, false)
 
             // Advance time
             await time.increase(3600)
@@ -232,12 +232,12 @@ describe("VabbleKeyzAuction", function () {
                 .withArgs(saleId, 1, bidder2.address, price)
         })
 
-        it("Should prevent refund claims for verified rooms unless outbid", async function () {
+        it("Should prevent refund claims for verified sales unless outbid", async function () {
             // Place bid
             await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
 
-            // Verify the room
-            await auction.connect(auditor).setRoomVerification(1, true)
+            // Verify the sale
+            await auction.connect(auditor).setRoomVerification(saleId, true)
 
             // Advance time
             await time.increase(3600)
@@ -403,7 +403,7 @@ describe("VabbleKeyzAuction", function () {
             expect(bidder2Address).to.equal(bidder3.address)
 
             // Add verification before any potential settlement
-            await auction.connect(auditor).setRoomVerification(1, true)
+            await auction.connect(auditor).setRoomVerification(saleId, true)
         })
 
         it("should handle rapid sequential bids correctly", async function () {
@@ -743,6 +743,38 @@ describe("VabbleKeyzAuction", function () {
                 await auction.connect(owner).unpause()
             })
 
+            it("should prevent pausing when already paused", async function () {
+                await auction.connect(owner).pause()
+                await expect(auction.connect(owner).pause()).to.be.revertedWith("Pausable: paused")
+            })
+
+            it("should prevent unpausing when not paused", async function () {
+                await expect(auction.connect(owner).unpause()).to.be.revertedWith(
+                    "Pausable: not paused"
+                )
+            })
+
+            it("should prevent actions when paused", async function () {
+                const { ipOwner1 } = await loadFixture(deployContractsFixture)
+                await auction.connect(owner).pause()
+
+                // Try to create a sale while paused
+                await expect(
+                    auction
+                        .connect(owner)
+                        .createSale(
+                            1,
+                            0,
+                            durationInMinutes,
+                            5,
+                            ethers.utils.parseEther("1"),
+                            100,
+                            50,
+                            ipOwner1.address
+                        )
+                ).to.be.revertedWith("Pausable: paused")
+            })
+
             it("should maintain key state correctly through pause/unpause cycles", async function () {
                 // Make initial purchase
                 await auction.connect(bidder1).buyNow(saleId, 0, { value: price })
@@ -766,964 +798,614 @@ describe("VabbleKeyzAuction", function () {
                 expect(buyerAfter).to.equal(bidder1.address)
             })
         })
-
-        describe("Sale State Verification", function () {
-            it("should maintain correct availability state after multiple purchases", async function () {
-                // Buy some keys in non-sequential order
-                await auction.connect(bidder1).buyNow(saleId, 0, { value: price })
-                await auction.connect(bidder2).buyNow(saleId, 2, { value: price })
-                await auction.connect(bidder3).buyNow(saleId, 4, { value: price })
-
-                // Verify availability of all keys
-                expect(await auction.isKeyAvailable(saleId, 0)).to.be.false
-                expect(await auction.isKeyAvailable(saleId, 1)).to.be.true
-                expect(await auction.isKeyAvailable(saleId, 2)).to.be.false
-                expect(await auction.isKeyAvailable(saleId, 3)).to.be.true
-                expect(await auction.isKeyAvailable(saleId, 4)).to.be.false
-            })
-
-            it("should maintain correct state after sale is filled", async function () {
-                // Buy all available keys
-                for (let i = 0; i < 5; i++) {
-                    await auction.connect(bidder1).buyNow(saleId, i, { value: price })
-                }
-
-                // Verify all keys are unavailable
-                for (let i = 0; i < 5; i++) {
-                    expect(await auction.isKeyAvailable(saleId, i)).to.be.false
-                    const [amount, buyer] = await auction.getKeyBid(saleId, i)
-                    expect(amount).to.equal(price)
-                    expect(buyer).to.equal(bidder1.address)
-                }
-
-                // Verify cannot buy any more keys
-                await expect(
-                    auction.connect(bidder2).buyNow(saleId, 0, { value: price })
-                ).to.be.revertedWith("Key not available")
-            })
-        })
-
-        describe("Settlement Interaction", function () {
-            it("should allow settlement after all keys are purchased", async function () {
-                // Buy all keys
-                for (let i = 0; i < 5; i++) {
-                    await auction.connect(bidder1).buyNow(saleId, i, { value: price })
-                }
-
-                // Advance time
-                await time.increase(3601)
-
-                // Verify the room
-                await auction.connect(auditor).setRoomVerification(1, true)
-
-                // Settlement should succeed
-                await expect(auction.settleSale(saleId)).to.emit(auction, "SaleSettled")
-            })
-
-            it("should allow settlement with partial key sales", async function () {
-                // Buy only some keys
-                await auction.connect(bidder1).buyNow(saleId, 0, { value: price })
-                await auction.connect(bidder2).buyNow(saleId, 2, { value: price })
-
-                // Advance time
-                await time.increase(3601)
-
-                // Verify the room
-                await auction.connect(auditor).setRoomVerification(1, true)
-
-                // Settlement should succeed
-                await expect(auction.settleSale(saleId)).to.emit(auction, "SaleSettled")
-            })
-        })
     })
 
-    describe("Sale Settlement", function () {
-        let contracts
-        let saleId
-        const price = ethers.utils.parseEther("1")
+    describe("Sale State Verification", function () {
+        let auction, bidder1, bidder2, bidder3, roomOwner, ipOwner1, saleId, price
 
         beforeEach(async function () {
-            contracts = await loadFixture(deployContractsFixture)
+            const contracts = await loadFixture(deployContractsFixture)
+            auction = contracts.auction
+            bidder1 = contracts.bidder1
+            bidder2 = contracts.bidder2
+            bidder3 = contracts.bidder3
+            roomOwner = contracts.roomOwner
+            ipOwner1 = contracts.ipOwner1
             saleId = 1
+            price = ethers.utils.parseEther("1")
+
+            // Create a sale for testing
+            await auction
+                .connect(roomOwner)
+                .createSale(1, 1, durationInMinutes, 5, price, 0, 500, ipOwner1.address)
         })
 
-        describe("Auction Settlement", function () {
-            beforeEach(async function () {
-                // Create auction sale
-                await contracts.auction.connect(contracts.roomOwner).createSale(
-                    1, // roomNumber
-                    0, // SaleType.Auction
-                    durationInMinutes,
-                    2, // totalKeys
-                    price, // starting price
-                    100, // minBidIncrement (1%)
-                    500, // ipOwnerShare (5%)
-                    contracts.ipOwner1.address
-                )
+        it("should maintain correct availability state after multiple purchases", async function () {
+            // Buy some keys in non-sequential order
+            await auction.connect(bidder1).buyNow(saleId, 0, { value: price })
+            await auction.connect(bidder2).buyNow(saleId, 2, { value: price })
+            await auction.connect(bidder3).buyNow(saleId, 4, { value: price })
 
-                // Place bids
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(saleId, 0, { value: price.mul(2) })
-                await contracts.auction
-                    .connect(contracts.bidder2)
-                    .placeBid(saleId, 1, { value: price.mul(3) })
-            })
-
-            it("Should settle auction correctly with proper fund distribution", async function () {
-                await time.increase(3600) // Advance time past auction end
-
-                // Verify the room before settlement
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
-
-                const totalAmount = price.mul(5) // 2 ETH + 3 ETH = 5 ETH total
-                const vabbleAmount = totalAmount.mul(15).div(1000) // 1.5%
-                const daoAmount = totalAmount.mul(10).div(1000) // 1%
-                const ipOwnerAmount = totalAmount.mul(50).div(1000) // 5%
-                const roomOwnerAmount = totalAmount
-                    .sub(vabbleAmount)
-                    .sub(daoAmount)
-                    .sub(ipOwnerAmount)
-
-                // Get initial balances
-                const ethReceiverBalanceBefore = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceBefore = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-                const roomOwnerBalanceBefore = await ethers.provider.getBalance(
-                    contracts.roomOwner.address
-                )
-                const stakingPoolVabBalanceBefore = await contracts.mockVabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Settle the sale
-                const tx = await contracts.auction.settleSale(saleId)
-                const receipt = await tx.wait()
-
-                // Check final balances
-                const ethReceiverBalanceAfter = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceAfter = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-                const roomOwnerBalanceAfter = await ethers.provider.getBalance(
-                    contracts.roomOwner.address
-                )
-                const stakingPoolVabBalanceAfter = await contracts.mockVabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Verify distributions
-                expect(ethReceiverBalanceAfter.sub(ethReceiverBalanceBefore)).to.equal(vabbleAmount)
-                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount)
-                expect(roomOwnerBalanceAfter.sub(roomOwnerBalanceBefore)).to.equal(roomOwnerAmount)
-                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(
-                    daoAmount.mul(2)
-                )
-
-                // Verify sale is marked as settled
-                const sale = await contracts.auction.sales(saleId)
-                expect(sale.settled).to.be.true
-            })
-
-            it("Should handle auction with no bids", async function () {
-                // Create new auction without bids
-                await contracts.auction.connect(contracts.roomOwner).createSale(
-                    2, // different roomNumber
-                    0,
-                    60,
-                    2,
-                    price,
-                    100,
-                    500,
-                    contracts.ipOwner1.address
-                )
-
-                await time.increase(3600)
-
-                // Verify the room
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
-
-                await expect(contracts.auction.settleSale(2)).to.be.revertedWith(
-                    "No funds to distribute"
-                )
-            })
-
-            it("Should handle auction with single bid", async function () {
-                // Create new auction
-                await contracts.auction
-                    .connect(contracts.roomOwner)
-                    .createSale(2, 0, 60, 2, price, 100, 500, contracts.ipOwner1.address)
-
-                // Place single bid
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(2, 0, { value: price.mul(2) })
-
-                await time.increase(3600)
-
-                // Verify the room
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
-
-                // Settlement should succeed with single bid
-                await expect(contracts.auction.settleSale(2)).to.emit(
-                    contracts.auction,
-                    "SaleSettled"
-                )
-            })
-
-            it("Should handle multiple key settlements correctly", async function () {
-                // Create auction with more keys
-                await contracts.auction.connect(contracts.roomOwner).createSale(
-                    2,
-                    0,
-                    60,
-                    4, // 4 keys
-                    price,
-                    100,
-                    500,
-                    contracts.ipOwner1.address
-                )
-
-                // Place multiple bids on different keys
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(2, 0, { value: price.mul(2) })
-                await contracts.auction
-                    .connect(contracts.bidder2)
-                    .placeBid(2, 1, { value: price.mul(3) })
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(2, 2, { value: price.mul(4) })
-                await contracts.auction
-                    .connect(contracts.bidder2)
-                    .placeBid(2, 3, { value: price.mul(5) })
-
-                await time.increase(3600)
-
-                // Verify the room
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
-
-                // Calculate expected amounts
-                const totalAmount = price.mul(14) // 2 + 3 + 4 + 5 = 14 ETH
-                const vabbleAmount = totalAmount.mul(15).div(1000)
-                const daoAmount = totalAmount.mul(10).div(1000)
-                const ipOwnerAmount = totalAmount.mul(50).div(1000)
-
-                // Get initial balances
-                const vabbleBalanceBefore = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceBefore = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-
-                // Get VAB token balance for staking pool
-                const vabToken = await ethers.getContractAt(
-                    "MockVabbleToken",
-                    await contracts.auction.vabTokenAddress()
-                )
-                const stakingPoolVabBalanceBefore = await vabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Settle the sale
-                await contracts.auction.settleSale(2)
-
-                // Get final balances
-                const vabbleBalanceAfter = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceAfter = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-                const stakingPoolVabBalanceAfter = await vabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Verify distributions
-                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount)
-                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount)
-                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(
-                    daoAmount.mul(2)
-                )
-            })
+            // Verify availability of all keys
+            expect(await auction.isKeyAvailable(saleId, 0)).to.be.false
+            expect(await auction.isKeyAvailable(saleId, 1)).to.be.true
+            expect(await auction.isKeyAvailable(saleId, 2)).to.be.false
+            expect(await auction.isKeyAvailable(saleId, 3)).to.be.true
+            expect(await auction.isKeyAvailable(saleId, 4)).to.be.false
         })
 
-        describe("Instant Buy Settlement", function () {
-            beforeEach(async function () {
-                // Create instant buy sale
-                await contracts.auction.connect(contracts.roomOwner).createSale(
-                    1,
-                    1, // SaleType.InstantBuy
-                    60,
-                    2,
-                    price,
-                    0, // minBidIncrement not used for instant buy
-                    500,
-                    contracts.ipOwner1.address
-                )
+        it("should maintain correct state after sale is filled", async function () {
+            // Buy all available keys
+            for (let i = 0; i < 5; i++) {
+                await auction.connect(bidder1).buyNow(saleId, i, { value: price })
+            }
 
-                // Make purchases
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .buyNow(saleId, 0, { value: price })
-                await contracts.auction
-                    .connect(contracts.bidder2)
-                    .buyNow(saleId, 1, { value: price })
-            })
+            // Verify all keys are unavailable
+            for (let i = 0; i < 5; i++) {
+                expect(await auction.isKeyAvailable(saleId, i)).to.be.false
+                const [amount, buyer] = await auction.getKeyBid(saleId, i)
+                expect(amount).to.equal(price)
+                expect(buyer).to.equal(bidder1.address)
+            }
 
-            it("Should settle instant buy sale correctly", async function () {
-                await time.increase(3600)
-
-                // Verify the room
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
-
-                const totalAmount = price.mul(2) // 2 keys sold at fixed price
-                const vabbleAmount = totalAmount.mul(15).div(1000)
-                const daoAmount = totalAmount.mul(10).div(1000)
-                const ipOwnerAmount = totalAmount.mul(50).div(1000)
-
-                // Get VAB token instance
-                const vabToken = await ethers.getContractAt(
-                    "MockVabbleToken",
-                    await contracts.auction.vabTokenAddress()
-                )
-
-                // Get initial balances
-                const vabbleBalanceBefore = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceBefore = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-                const stakingPoolVabBalanceBefore = await vabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Settle the sale
-                await contracts.auction.settleSale(saleId)
-
-                // Get final balances
-                const vabbleBalanceAfter = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceAfter = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-                const stakingPoolVabBalanceAfter = await vabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Verify distributions
-                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount)
-                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount)
-                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(
-                    daoAmount.mul(2)
-                )
-            })
-
-            it("Should handle partial key sales in instant buy", async function () {
-                // Create new instant buy sale with more keys
-                await contracts.auction
-                    .connect(contracts.roomOwner)
-                    .createSale(2, 1, 60, 4, price, 0, 500, contracts.ipOwner1.address)
-
-                // Only buy some of the keys
-                await contracts.auction.connect(contracts.bidder1).buyNow(2, 0, { value: price })
-                await contracts.auction.connect(contracts.bidder2).buyNow(2, 1, { value: price })
-                // Keys 2 and 3 remain unsold
-
-                await time.increase(3600)
-
-                // Verify the room
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(2, true)
-
-                const totalAmount = price.mul(2) // Only 2 keys sold
-                const vabbleAmount = totalAmount.mul(15).div(1000)
-                const daoAmount = totalAmount.mul(10).div(1000)
-                const ipOwnerAmount = totalAmount.mul(50).div(1000)
-
-                // Get VAB token instance
-                const vabToken = await ethers.getContractAt(
-                    "MockVabbleToken",
-                    await contracts.auction.vabTokenAddress()
-                )
-
-                // Get initial balances
-                const vabbleBalanceBefore = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceBefore = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-                const stakingPoolVabBalanceBefore = await vabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Settle the sale
-                await contracts.auction.settleSale(2)
-
-                // Get final balances
-                const vabbleBalanceAfter = await ethers.provider.getBalance(
-                    contracts.vabbleReceiver.address
-                )
-                const ipOwnerBalanceAfter = await ethers.provider.getBalance(
-                    contracts.ipOwner1.address
-                )
-                const stakingPoolVabBalanceAfter = await vabToken.balanceOf(
-                    contracts.mockStakingPool.address
-                )
-
-                // Verify distributions
-                expect(vabbleBalanceAfter.sub(vabbleBalanceBefore)).to.equal(vabbleAmount)
-                expect(ipOwnerBalanceAfter.sub(ipOwnerBalanceBefore)).to.equal(ipOwnerAmount)
-                expect(stakingPoolVabBalanceAfter.sub(stakingPoolVabBalanceBefore)).to.equal(
-                    daoAmount.mul(2)
-                )
-            })
-        })
-
-        describe("Settlement Edge Cases", function () {
-            it("Should prevent settling non-existent sale", async function () {
-                await expect(contracts.auction.settleSale(999)).to.be.revertedWith(
-                    "Sale does not exist"
-                )
-            })
-
-            it("Should prevent settling before end time", async function () {
-                await contracts.auction
-                    .connect(contracts.roomOwner)
-                    .createSale(1, 0, 60, 2, price, 100, 500, contracts.ipOwner1.address)
-
-                await expect(contracts.auction.settleSale(saleId)).to.be.revertedWith(
-                    "Sale not ended"
-                )
-            })
-
-            it("Should prevent settling already settled sale", async function () {
-                await contracts.auction
-                    .connect(contracts.roomOwner)
-                    .createSale(1, 0, 60, 2, price, 100, 500, contracts.ipOwner1.address)
-
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(saleId, 0, { value: price })
-
-                await time.increase(3600)
-
-                // Verify the room first
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
-
-                await contracts.auction.settleSale(saleId)
-
-                await expect(contracts.auction.settleSale(saleId)).to.be.revertedWith(
-                    "Sale already settled"
-                )
-            })
-
-            it("Should handle sale with percentage total at maximum", async function () {
-                // Set shares to maximum allowed total
-                const maxVabbleShare = 100 // 10%
-                const maxDaoShare = 100 // 10%
-                const maxIpOwnerShare = 800 // 80%
-                // Total = 100%
-
-                await contracts.auction.connect(contracts.owner).setVabbleShare(maxVabbleShare)
-                await contracts.auction.connect(contracts.owner).setDaoShare(maxDaoShare)
-                await contracts.auction.connect(contracts.owner).setMinIpOwnerShare(maxIpOwnerShare)
-
-                await contracts.auction
-                    .connect(contracts.roomOwner)
-                    .createSale(
-                        1,
-                        0,
-                        60,
-                        1,
-                        price,
-                        100,
-                        maxIpOwnerShare,
-                        contracts.ipOwner1.address
-                    )
-
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(saleId, 0, { value: price.mul(2) })
-
-                await time.increase(3600)
-
-                // Verify the room
-                await contracts.auction.connect(contracts.auditor).setRoomVerification(1, true)
-
-                // Settlement should succeed with maximum shares
-                await expect(contracts.auction.settleSale(saleId)).to.emit(
-                    contracts.auction,
-                    "SaleSettled"
-                )
-            })
-
-            it("Should prevent settlement when share total exceeds 100%", async function () {
-                // Assuming percentagePrecision is 1000 (0.1% precision)
-                // For 100%, the total should be 1000
-                // For 40%, the value should be 400
-                const PERCENTAGE_PRECISION = 10000
-
-                // Each share is 40% * PERCENTAGE_PRECISION
-                const invalidShare = (PERCENTAGE_PRECISION * 40) / 100 // 400 for 40%
-
-                // Set shares that will sum to 120%
-                await contracts.auction.connect(contracts.owner).setVabbleShare(invalidShare)
-                await contracts.auction.connect(contracts.owner).setDaoShare(invalidShare)
-
-                // Create sale with another 40% share for IP owner
-                await contracts.auction.connect(contracts.roomOwner).createSale(
-                    1, // tokenId
-                    0, // startTime
-                    60, // duration
-                    1, // totalKeys
-                    price, // price
-                    100, // minBidIncrement
-                    invalidShare, // ipOwnerShare (40%)
-                    contracts.ipOwner1.address // ipOwnerAddress
-                )
-
-                // Place bid
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(saleId, 0, { value: price.mul(2) })
-
-                // Advance time past sale end
-                await time.increase(3600)
-
-                // Attempt to settle - should fail because 40% + 40% + 40% = 120%
-                await expect(contracts.auction.settleSale(saleId)).to.be.revertedWith(
-                    "Total shares exceed 100%"
-                )
-            })
-
-            it("Should prevent settlement when paused", async function () {
-                await contracts.auction
-                    .connect(contracts.roomOwner)
-                    .createSale(1, 0, 60, 1, price, 100, 500, contracts.ipOwner1.address)
-
-                await contracts.auction
-                    .connect(contracts.bidder1)
-                    .placeBid(saleId, 0, { value: price.mul(2) })
-
-                await time.increase(3600)
-
-                await contracts.auction.connect(contracts.owner).pause()
-
-                await expect(contracts.auction.settleSale(saleId)).to.be.revertedWith(
-                    "Pausable: paused"
-                )
-            })
+            // Verify cannot buy any more keys
+            await expect(
+                auction.connect(bidder2).buyNow(saleId, 0, { value: price })
+            ).to.be.revertedWith("Key not available")
         })
     })
 
-    describe("Administrative Functions", function () {
+    describe("Settlement Interaction", function () {
+        let auction, bidder1, bidder2, auditor, roomOwner, ipOwner1, saleId, price
+
+        beforeEach(async function () {
+            const contracts = await loadFixture(deployContractsFixture)
+            auction = contracts.auction
+            bidder1 = contracts.bidder1
+            bidder2 = contracts.bidder2
+            auditor = contracts.auditor
+            roomOwner = contracts.roomOwner
+            ipOwner1 = contracts.ipOwner1
+            saleId = 1
+            price = ethers.utils.parseEther("1")
+
+            // Create a sale for testing
+            await auction
+                .connect(roomOwner)
+                .createSale(1, 1, durationInMinutes, 5, price, 0, 500, ipOwner1.address)
+        })
+
+        it("should allow settlement after all keys are purchased", async function () {
+            // Buy all keys
+            for (let i = 0; i < 5; i++) {
+                await auction.connect(bidder1).buyNow(saleId, i, { value: price })
+            }
+
+            // Advance time
+            await time.increase(3601)
+
+            // Verify the sale
+            await auction.connect(auditor).setRoomVerification(saleId, true)
+
+            // Settlement should succeed
+            await expect(auction.settleSale(saleId)).to.emit(auction, "SaleSettled")
+        })
+
+        it("should allow settlement with partial key sales", async function () {
+            // Buy only some keys
+            await auction.connect(bidder1).buyNow(saleId, 0, { value: price })
+            await auction.connect(bidder2).buyNow(saleId, 2, { value: price })
+
+            // Advance time
+            await time.increase(3601)
+
+            // Verify the sale
+            await auction.connect(auditor).setRoomVerification(saleId, true)
+
+            // Settlement should succeed
+            await expect(auction.settleSale(saleId)).to.emit(auction, "SaleSettled")
+        })
+    })
+
+    describe("Settlement Edge Cases", function () {
+        let auction, owner, roomOwner, bidder1, auditor, ipOwner1, saleId, price
+
+        beforeEach(async function () {
+            const contracts = await loadFixture(deployContractsFixture)
+            auction = contracts.auction
+            owner = contracts.owner
+            roomOwner = contracts.roomOwner
+            bidder1 = contracts.bidder1
+            auditor = contracts.auditor
+            ipOwner1 = contracts.ipOwner1
+            saleId = 1
+            price = ethers.utils.parseEther("1")
+        })
+
+        it("Should prevent settling non-existent sale", async function () {
+            await expect(auction.settleSale(999)).to.be.revertedWith(
+                "Sale does not exist"
+            )
+        })
+
+        it("Should prevent settling before end time", async function () {
+            await auction
+                .connect(roomOwner)
+                .createSale(1, 0, 60, 2, price, 100, 500, ipOwner1.address)
+
+            await expect(auction.settleSale(saleId)).to.be.revertedWith(
+                "Sale not ended"
+            )
+        })
+
+        it("Should prevent settling already settled sale", async function () {
+            await auction
+                .connect(roomOwner)
+                .createSale(1, 0, 60, 2, price, 100, 500, ipOwner1.address)
+
+            await auction
+                .connect(bidder1)
+                .placeBid(saleId, 0, { value: price })
+
+            await time.increase(3600)
+
+            await auction.connect(auditor).setRoomVerification(saleId, true)
+
+            await auction.settleSale(saleId)
+
+            await expect(auction.settleSale(saleId)).to.be.revertedWith(
+                "Sale already settled"
+            )
+        })
+
+        it("Should prevent settlement when paused", async function () {
+            await auction
+                .connect(roomOwner)
+                .createSale(1, 0, 60, 1, price, 100, 500, ipOwner1.address)
+
+            await auction
+                .connect(bidder1)
+                .placeBid(saleId, 0, { value: price.mul(2) })
+
+            await time.increase(3600)
+
+            await auction.connect(owner).pause()
+
+            await expect(auction.settleSale(saleId)).to.be.revertedWith(
+                "Pausable: paused"
+            )
+        })
+
+        it("Should prevent settlement when share total exceeds 100%", async function () {
+            const PERCENTAGE_PRECISION = 10000
+            const invalidShare = (PERCENTAGE_PRECISION * 40) / 100
+
+            await auction.connect(owner).setVabbleShare(invalidShare)
+            await auction.connect(owner).setDaoShare(invalidShare)
+
+            await auction.connect(roomOwner).createSale(
+                1,
+                0,
+                60,
+                1,
+                price,
+                100,
+                invalidShare,
+                ipOwner1.address
+            )
+
+            await auction
+                .connect(bidder1)
+                .placeBid(saleId, 0, { value: price.mul(2) })
+
+            await time.increase(3600)
+
+            await expect(auction.settleSale(saleId)).to.be.revertedWith(
+                "Total shares exceed 100%"
+            )
+        })
+    })
+
+    describe("Duration and Increment Management", function () {
         let auction, owner, nonOwner
-        let vabbleReceiver, daoAddress, ipOwner1
 
         beforeEach(async function () {
             const contracts = await loadFixture(deployContractsFixture)
             auction = contracts.auction
             owner = contracts.owner
             nonOwner = contracts.bidder1
-            vabbleReceiver = contracts.vabbleReceiver
-            daoAddress = contracts.daoAddress
-            ipOwner1 = contracts.ipOwner1
         })
 
-        describe("Share Management", function () {
-            it("Should allow owner to update vabble share", async function () {
-                const newShare = 20
-                await expect(auction.connect(owner).setVabbleShare(newShare))
-                    .to.emit(auction, "VabbleShareUpdated")
-                    .withArgs(newShare)
-                expect(await auction.vabbleShare()).to.equal(newShare)
-            })
-
-            it("Should allow owner to update dao share", async function () {
-                const newShare = 15
-                await expect(auction.connect(owner).setDaoShare(newShare))
-                    .to.emit(auction, "DaoShareUpdated")
-                    .withArgs(newShare)
-                expect(await auction.daoShare()).to.equal(newShare)
-            })
-
-            it("Should allow owner to update minimum IP owner share", async function () {
-                const newShare = 40
-                await expect(auction.connect(owner).setMinIpOwnerShare(newShare))
-                    .to.emit(auction, "MinIpOwnerShareUpdated")
-                    .withArgs(newShare)
-                expect(await auction.minIpOwnerShare()).to.equal(newShare)
-            })
-
-            it("Should allow owner to update percentage precision", async function () {
-                const newPrecision = 10000
-                await expect(auction.connect(owner).setPercentagePrecision(newPrecision))
-                    .to.emit(auction, "PercentagePrecisionUpdated")
-                    .withArgs(newPrecision)
-                expect(await auction.percentagePrecision()).to.equal(newPrecision)
-            })
-
-            it("Should prevent non-owner from updating shares", async function () {
-                await expect(auction.connect(nonOwner).setVabbleShare(20)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                )
-
-                await expect(auction.connect(nonOwner).setDaoShare(15)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                )
-
-                await expect(auction.connect(nonOwner).setMinIpOwnerShare(40)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                )
-
-                await expect(
-                    auction.connect(nonOwner).setPercentagePrecision(10000)
-                ).to.be.revertedWith("Ownable: caller is not the owner")
-            })
-        })
-
-        describe("Address Management", function () {
-            it("Should allow owner to update vabble address", async function () {
-                const newAddress = nonOwner.address
-                await expect(auction.connect(owner).setVabbleAddress(newAddress))
-                    .to.emit(auction, "VabbleAddressUpdated")
-                    .withArgs(newAddress)
-                expect(await auction.vabbleAddress()).to.equal(newAddress)
-            })
-
-            it("Should allow owner to update dao address", async function () {
-                const newAddress = nonOwner.address
-                await expect(auction.connect(owner).setDaoAddress(newAddress))
-                    .to.emit(auction, "DaoAddressUpdated")
-                    .withArgs(newAddress)
-                expect(await auction.daoAddress()).to.equal(newAddress)
-            })
-        })
-
-        describe("Duration, Bid Increment Management and Max Keys Update", function () {
-            it("Should allow owner to update max allowed room keys", async function () {
-                const newMaxRoomKeys = 6
-                await expect(auction.connect(owner).setMaxRoomKeys(newMaxRoomKeys))
-                    .to.emit(auction, "MaxRoomKeysUpdated")
-                    .withArgs(newMaxRoomKeys)
-                expect(await auction.maxRoomKeys()).to.equal(newMaxRoomKeys)
-            })
-
-            it("Should allow owner to update max duration in minutes", async function () {
-                const newDuration = 4320 // 72 hours
-                await expect(auction.connect(owner).setMaxDurationInMinutes(newDuration))
-                    .to.emit(auction, "MaxDurationInMinutesUpdated")
-                    .withArgs(newDuration)
-                expect(await auction.maxDurationInMinutes()).to.equal(newDuration)
-            })
-
-            it("Should allow owner to update minimum bid increment allowed", async function () {
-                const newIncrement = 5
-                await expect(auction.connect(owner).setMinBidIncrementAllowed(newIncrement))
-                    .to.emit(auction, "MinBidIncrementAllowedUpdated")
-                    .withArgs(newIncrement)
-                expect(await auction.minBidIncrementAllowed()).to.equal(newIncrement)
-            })
-
-            it("Should allow owner to update maximum bid increment allowed", async function () {
-                const newIncrement = 100000
-                await expect(auction.connect(owner).setMaxBidIncrementAllowed(newIncrement))
-                    .to.emit(auction, "MaxBidIncrementAllowedUpdated")
-                    .withArgs(newIncrement)
-                expect(await auction.maxBidIncrementAllowed()).to.equal(newIncrement)
-            })
-
-            it("Should prevent setting max duration to zero", async function () {
-                await expect(auction.connect(owner).setMaxDurationInMinutes(0)).to.be.revertedWith(
-                    "Duration must be greater than 0"
-                )
-            })
-
-            it("Should prevent non-owner from updating duration and increments", async function () {
-                await expect(
-                    auction.connect(nonOwner).setMaxDurationInMinutes(4320)
-                ).to.be.revertedWith("Ownable: caller is not the owner")
-
-                await expect(
-                    auction.connect(nonOwner).setMinBidIncrementAllowed(5)
-                ).to.be.revertedWith("Ownable: caller is not the owner")
-
-                await expect(
-                    auction.connect(nonOwner).setMaxBidIncrementAllowed(100000)
-                ).to.be.revertedWith("Ownable: caller is not the owner")
-            })
-        })
-
-        describe("Pause Functionality", function () {
-            let auction, owner, nonOwner, roomOwner
-
-            beforeEach(async function () {
-                const contracts = await loadFixture(deployContractsFixture)
-                auction = contracts.auction
-                owner = contracts.owner
-                nonOwner = contracts.bidder1
-                roomOwner = contracts.roomOwner
-            })
-
-            it("Should allow owner to pause", async function () {
-                await expect(auction.connect(owner).pause())
-                    .to.emit(auction, "Paused")
-                    .withArgs(owner.address)
-                expect(await auction.paused()).to.be.true
-            })
-
-            it("Should allow owner to unpause", async function () {
-                await auction.connect(owner).pause()
-                await expect(auction.connect(owner).unpause())
-                    .to.emit(auction, "Unpaused")
-                    .withArgs(owner.address)
-                expect(await auction.paused()).to.be.false
-            })
-
-            it("Should prevent non-owner from pausing", async function () {
-                await expect(auction.connect(nonOwner).pause()).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                )
-
-                await expect(auction.connect(roomOwner).pause()).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                )
-            })
-
-            it("Should prevent non-owner from unpausing", async function () {
-                // Owner pauses first
-                await auction.connect(owner).pause()
-
-                await expect(auction.connect(nonOwner).unpause()).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                )
-
-                await expect(auction.connect(roomOwner).unpause()).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                )
-
-                // Cleanup: unpause for other tests
-                await auction.connect(owner).unpause()
-            })
-
-            it("Should prevent pausing when already paused", async function () {
-                await auction.connect(owner).pause()
-                await expect(auction.connect(owner).pause()).to.be.revertedWith("Pausable: paused")
-            })
-
-            it("Should prevent unpausing when not paused", async function () {
-                await expect(auction.connect(owner).unpause()).to.be.revertedWith(
-                    "Pausable: not paused"
-                )
-            })
-
-            it("Should prevent actions when paused", async function () {
-                const { ipOwner1 } = await loadFixture(deployContractsFixture)
-                await auction.connect(owner).pause()
-
-                // Try to create a sale while paused
-                await expect(
-                    auction
-                        .connect(owner)
-                        .createSale(
-                            1,
-                            0,
-                            durationInMinutes,
-                            5,
-                            ethers.utils.parseEther("1"),
-                            100,
-                            50,
-                            ipOwner1.address
-                        )
-                ).to.be.revertedWith("Pausable: paused")
-            })
-        })
-    })
-
-    describe("Final Keys Retrieval", function () {
-        let auction, roomOwner, bidder1, bidder2, bidder3, ipOwner1, auditor
-        const price = ethers.utils.parseEther("1")
-        let saleId = 1
-
-        beforeEach(async function () {
-            const contracts = await loadFixture(deployContractsFixture)
-            auction = contracts.auction
-            roomOwner = contracts.roomOwner
-            bidder1 = contracts.bidder1
-            bidder2 = contracts.bidder2
-            bidder3 = contracts.bidder3
-            ipOwner1 = contracts.ipOwner1
-            auditor = contracts.auditor
-        })
-
-        it("Should return correct final keys for auction sale", async function () {
-            // Create auction sale
-            await auction.connect(roomOwner).createSale(
-                1, // roomNumber
-                0, // SaleType.Auction
-                durationInMinutes,
-                3, // totalKeys
-                price,
-                100, // minBidIncrement
-                500, // ipOwnerShare
-                ipOwner1.address
+        it("Should prevent setting max duration to zero", async function () {
+            await expect(auction.connect(owner).setMaxDurationInMinutes(0)).to.be.revertedWith(
+                "Duration must be greater than 0"
             )
-
-            // Place bids on different keys
-            await auction.connect(bidder1).placeBid(saleId, 0, { value: price.mul(2) })
-            await auction.connect(bidder2).placeBid(saleId, 1, { value: price.mul(3) })
-            // Leave key 2 without a bid
-
-            // Advance time past sale end
-            await time.increase(3600)
-
-            // Get final keys
-            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
-
-            // Verify arrays length
-            expect(keyIds.length).to.equal(2)
-            expect(winners.length).to.equal(2)
-            expect(amounts.length).to.equal(2)
-            expect(claimedStatus.length).to.equal(2)
-
-            // Verify key 0 data
-            expect(keyIds[0]).to.equal(0)
-            expect(winners[0]).to.equal(bidder1.address)
-            expect(amounts[0]).to.equal(price.mul(2))
-            expect(claimedStatus[0]).to.be.false
-
-            // Verify key 1 data
-            expect(keyIds[1]).to.equal(1)
-            expect(winners[1]).to.equal(bidder2.address)
-            expect(amounts[1]).to.equal(price.mul(3))
-            expect(claimedStatus[1]).to.be.false
         })
 
-        it("Should return correct final keys for instant buy sale", async function () {
-            // Create instant buy sale
-            await auction.connect(roomOwner).createSale(
-                1,
-                1, // SaleType.InstantBuy
-                durationInMinutes,
-                3,
-                price,
-                0,
-                500,
-                ipOwner1.address
-            )
+        it("Should prevent non-owner from updating duration and increments", async function () {
+            await expect(
+                auction.connect(nonOwner).setMaxDurationInMinutes(4320)
+            ).to.be.revertedWith("Ownable: caller is not the owner")
 
-            // Make purchases
-            await auction.connect(bidder1).buyNow(saleId, 0, { value: price })
-            await auction.connect(bidder2).buyNow(saleId, 2, { value: price }) // Skip key 1
+            await expect(
+                auction.connect(nonOwner).setMinBidIncrementAllowed(5)
+            ).to.be.revertedWith("Ownable: caller is not the owner")
 
-            // Advance time
-            await time.increase(3600)
-
-            // Get final keys
-            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
-
-            // Verify arrays length
-            expect(keyIds.length).to.equal(2)
-            expect(winners.length).to.equal(2)
-            expect(amounts.length).to.equal(2)
-            expect(claimedStatus.length).to.equal(2)
-
-            // Verify correct order and data
-            expect(keyIds[0]).to.equal(0)
-            expect(keyIds[1]).to.equal(2)
-            expect(winners[0]).to.equal(bidder1.address)
-            expect(winners[1]).to.equal(bidder2.address)
-            expect(amounts[0]).to.equal(price)
-            expect(amounts[1]).to.equal(price)
-            expect(claimedStatus[0]).to.be.false
-            expect(claimedStatus[1]).to.be.false
-        })
-
-        it("Should return empty arrays for sale with no bids", async function () {
-            // Create sale
-            await auction.connect(roomOwner).createSale(
-                1,
-                0,
-                durationInMinutes,
-                3,
-                price,
-                100,
-                500,
-                ipOwner1.address
-            )
-
-            // Advance time
-            await time.increase(3600)
-
-            // Get final keys
-            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
-
-            // Verify all arrays are empty
-            expect(keyIds.length).to.equal(0)
-            expect(winners.length).to.equal(0)
-            expect(amounts.length).to.equal(0)
-            expect(claimedStatus.length).to.equal(0)
-        })
-
-        it("Should reflect claimed status correctly", async function () {
-            // Create auction sale
-            await auction.connect(roomOwner).createSale(
-                1,
-                0,
-                durationInMinutes,
-                2,
-                price,
-                100,
-                500,
-                ipOwner1.address
-            )
-
-            // Place bids
-            await auction.connect(bidder1).placeBid(saleId, 0, { value: price })
-            await auction.connect(bidder2).placeBid(saleId, 1, { value: price })
-
-            // Advance time
-            await time.increase(3600)
-
-            // Verify room and fail it to allow refunds
-            await auction.connect(auditor).setRoomVerification(1, false)
-
-            // Claim refund for first key
-            await auction.connect(bidder1).claimRefund(saleId, 0)
-
-            // Get final keys
-            const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId)
-
-            // Verify claimed status
-            expect(claimedStatus[0]).to.be.true // First key claimed
-            expect(claimedStatus[1]).to.be.false // Second key not claimed
-        })
-
-        it("Should revert when trying to get keys before sale end", async function () {
-            // Create sale
-            await auction.connect(roomOwner).createSale(
-                1,
-                0,
-                durationInMinutes,
-                2,
-                price,
-                100,
-                500,
-                ipOwner1.address
-            )
-
-            // Try to get final keys before sale ends
-            await expect(auction.getFinalKeys(saleId))
-                .to.be.revertedWith("Sale not ended")
+            await expect(
+                auction.connect(nonOwner).setMaxBidIncrementAllowed(100000)
+            ).to.be.revertedWith("Ownable: caller is not the owner")
         })
     })
 })
+
+describe("Administrative Functions", function () {
+    let auction, owner, nonOwner, vabbleReceiver, daoAddress, ipOwner1;
+
+    beforeEach(async function () {
+        const contracts = await loadFixture(deployContractsFixture);
+        auction = contracts.auction;
+        owner = contracts.owner;
+        nonOwner = contracts.bidder1;
+        vabbleReceiver = contracts.vabbleReceiver;
+        daoAddress = contracts.daoAddress;
+        ipOwner1 = contracts.ipOwner1;
+    });
+
+    describe("Share Management", function () {
+        it("Should allow owner to update vabble share", async function () {
+            const newShare = 20;
+            await expect(auction.connect(owner).setVabbleShare(newShare))
+                .to.emit(auction, "VabbleShareUpdated")
+                .withArgs(newShare);
+            expect(await auction.vabbleShare()).to.equal(newShare);
+        });
+
+        it("Should allow owner to update dao share", async function () {
+            const newShare = 15;
+            await expect(auction.connect(owner).setDaoShare(newShare))
+                .to.emit(auction, "DaoShareUpdated")
+                .withArgs(newShare);
+            expect(await auction.daoShare()).to.equal(newShare);
+        });
+
+        it("Should allow owner to update minimum IP owner share", async function () {
+            const newShare = 40;
+            await expect(auction.connect(owner).setMinIpOwnerShare(newShare))
+                .to.emit(auction, "MinIpOwnerShareUpdated")
+                .withArgs(newShare);
+            expect(await auction.minIpOwnerShare()).to.equal(newShare);
+        });
+
+        it("Should allow owner to update percentage precision", async function () {
+            const newPrecision = 10000;
+            await expect(auction.connect(owner).setPercentagePrecision(newPrecision))
+                .to.emit(auction, "PercentagePrecisionUpdated")
+                .withArgs(newPrecision);
+            expect(await auction.percentagePrecision()).to.equal(newPrecision);
+        });
+
+        it("Should prevent non-owner from updating shares", async function () {
+            await expect(auction.connect(nonOwner).setVabbleShare(20))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+
+            await expect(auction.connect(nonOwner).setDaoShare(15))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+
+            await expect(auction.connect(nonOwner).setMinIpOwnerShare(40))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+
+            await expect(auction.connect(nonOwner).setPercentagePrecision(10000))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    });
+
+    describe("Address Management", function () {
+        it("Should allow owner to update vabble address", async function () {
+            const newAddress = nonOwner.address;
+            await expect(auction.connect(owner).setVabbleAddress(newAddress))
+                .to.emit(auction, "VabbleAddressUpdated")
+                .withArgs(newAddress);
+            expect(await auction.vabbleAddress()).to.equal(newAddress);
+        });
+
+        it("Should allow owner to update dao address", async function () {
+            const newAddress = nonOwner.address;
+            await expect(auction.connect(owner).setDaoAddress(newAddress))
+                .to.emit(auction, "DaoAddressUpdated")
+                .withArgs(newAddress);
+            expect(await auction.daoAddress()).to.equal(newAddress);
+        });
+    });
+
+    describe("Duration, Bid Increment Management and Max Keys Update", function () {
+        it("Should allow owner to update max allowed room keys", async function () {
+            const newMaxRoomKeys = 6;
+            await expect(auction.connect(owner).setMaxRoomKeys(newMaxRoomKeys))
+                .to.emit(auction, "MaxRoomKeysUpdated")
+                .withArgs(newMaxRoomKeys);
+            expect(await auction.maxRoomKeys()).to.equal(newMaxRoomKeys);
+        });
+
+        it("Should allow owner to update max duration in minutes", async function () {
+            const newDuration = 4320 // 72 hours
+            await expect(auction.connect(owner).setMaxDurationInMinutes(newDuration))
+                .to.emit(auction, "MaxDurationInMinutesUpdated")
+                .withArgs(newDuration);
+            expect(await auction.maxDurationInMinutes()).to.equal(newDuration);
+        });
+
+        it("Should allow owner to update minimum bid increment allowed", async function () {
+            const newIncrement = 5;
+            await expect(auction.connect(owner).setMinBidIncrementAllowed(newIncrement))
+                .to.emit(auction, "MinBidIncrementAllowedUpdated")
+                .withArgs(newIncrement);
+            expect(await auction.minBidIncrementAllowed()).to.equal(newIncrement);
+        });
+
+        it("Should allow owner to update maximum bid increment allowed", async function () {
+            const newIncrement = 100000;
+            await expect(auction.connect(owner).setMaxBidIncrementAllowed(newIncrement))
+                .to.emit(auction, "MaxBidIncrementAllowedUpdated")
+                .withArgs(newIncrement);
+            expect(await auction.maxBidIncrementAllowed()).to.equal(newIncrement);
+        });
+    });
+});
+
+describe("Pause Functionality", function () {
+    let auction, owner, nonOwner, roomOwner;
+
+    beforeEach(async function () {
+        const contracts = await loadFixture(deployContractsFixture);
+        auction = contracts.auction;
+        owner = contracts.owner;
+        nonOwner = contracts.bidder1;
+        roomOwner = contracts.roomOwner;
+    });
+
+    it("Should allow owner to pause", async function () {
+        await expect(auction.connect(owner).pause())
+            .to.emit(auction, "Paused")
+            .withArgs(owner.address);
+        expect(await auction.paused()).to.be.true;
+    });
+
+    it("Should allow owner to unpause", async function () {
+        await auction.connect(owner).pause();
+        await expect(auction.connect(owner).unpause())
+            .to.emit(auction, "Unpaused")
+            .withArgs(owner.address);
+        expect(await auction.paused()).to.be.false;
+    });
+
+    it("Should prevent non-owner from pausing", async function () {
+        await expect(auction.connect(nonOwner).pause())
+            .to.be.revertedWith("Ownable: caller is not the owner");
+
+        await expect(auction.connect(roomOwner).pause())
+            .to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should prevent non-owner from unpausing", async function () {
+        await auction.connect(owner).pause();
+
+        await expect(auction.connect(nonOwner).unpause())
+            .to.be.revertedWith("Ownable: caller is not the owner");
+
+        await expect(auction.connect(roomOwner).unpause())
+            .to.be.revertedWith("Ownable: caller is not the owner");
+
+        // Cleanup: unpause for other tests
+        await auction.connect(owner).unpause();
+    });
+
+    it("Should prevent pausing when already paused", async function () {
+        await auction.connect(owner).pause();
+        await expect(auction.connect(owner).pause())
+            .to.be.revertedWith("Pausable: paused");
+    });
+
+    it("Should prevent unpausing when not paused", async function () {
+        await expect(auction.connect(owner).unpause())
+            .to.be.revertedWith("Pausable: not paused");
+    });
+
+    it("Should prevent actions when paused", async function () {
+        const { ipOwner1 } = await loadFixture(deployContractsFixture);
+        await auction.connect(owner).pause();
+
+        // Try to create a sale while paused
+        await expect(
+            auction
+                .connect(owner)
+                .createSale(
+                    1,
+                    0,
+                    durationInMinutes,
+                    5,
+                    ethers.utils.parseEther("1"),
+                    100,
+                    50,
+                    ipOwner1.address
+                )
+        ).to.be.revertedWith("Pausable: paused");
+    });
+});
+
+describe("Final Keys Retrieval", function () {
+    let auction, roomOwner, bidder1, bidder2, bidder3, ipOwner1, auditor;
+    const price = ethers.utils.parseEther("1");
+    let saleId = 1;
+
+    beforeEach(async function () {
+        const contracts = await loadFixture(deployContractsFixture);
+        auction = contracts.auction;
+        roomOwner = contracts.roomOwner;
+        bidder1 = contracts.bidder1;
+        bidder2 = contracts.bidder2;
+        bidder3 = contracts.bidder3;
+        ipOwner1 = contracts.ipOwner1;
+        auditor = contracts.auditor;
+    });
+
+    it("Should return correct final keys for auction sale", async function () {
+        // Create auction sale
+        await auction.connect(roomOwner).createSale(
+            1, // roomNumber
+            0, // SaleType.Auction
+            durationInMinutes,
+            3, // totalKeys
+            price,
+            100, // minBidIncrement
+            500, // ipOwnerShare
+            ipOwner1.address
+        );
+
+        // Place bids on different keys
+        await auction.connect(bidder1).placeBid(saleId, 0, { value: price.mul(2) });
+        await auction.connect(bidder2).placeBid(saleId, 1, { value: price.mul(3) });
+        // Leave key 2 without a bid
+
+        // Advance time past sale end
+        await time.increase(3600);
+
+        // Get final keys
+        const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId);
+
+        // Verify arrays length
+        expect(keyIds.length).to.equal(2);
+        expect(winners.length).to.equal(2);
+        expect(amounts.length).to.equal(2);
+        expect(claimedStatus.length).to.equal(2);
+
+        // Verify key 0 data
+        expect(keyIds[0]).to.equal(0);
+        expect(winners[0]).to.equal(bidder1.address);
+        expect(amounts[0]).to.equal(price.mul(2));
+        expect(claimedStatus[0]).to.be.false;
+
+        // Verify key 1 data
+        expect(keyIds[1]).to.equal(1);
+        expect(winners[1]).to.equal(bidder2.address);
+        expect(amounts[1]).to.equal(price.mul(3));
+        expect(claimedStatus[1]).to.be.false;
+    });
+
+    it("Should return correct final keys for instant buy sale", async function () {
+        // Create instant buy sale
+        await auction.connect(roomOwner).createSale(
+            1,
+            1, // SaleType.InstantBuy
+            durationInMinutes,
+            3,
+            price,
+            0,
+            500,
+            ipOwner1.address
+        );
+
+        // Make purchases
+        await auction.connect(bidder1).buyNow(saleId, 0, { value: price });
+        await auction.connect(bidder2).buyNow(saleId, 2, { value: price }); // Skip key 1
+
+        // Advance time
+        await time.increase(3600);
+
+        // Get final keys
+        const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId);
+
+        // Verify arrays length
+        expect(keyIds.length).to.equal(2);
+        expect(winners.length).to.equal(2);
+        expect(amounts.length).to.equal(2);
+        expect(claimedStatus.length).to.equal(2);
+
+        // Verify correct order and data
+        expect(keyIds[0]).to.equal(0);
+        expect(keyIds[1]).to.equal(2);
+        expect(winners[0]).to.equal(bidder1.address);
+        expect(winners[1]).to.equal(bidder2.address);
+        expect(amounts[0]).to.equal(price);
+        expect(amounts[1]).to.equal(price);
+        expect(claimedStatus[0]).to.be.false;
+        expect(claimedStatus[1]).to.be.false;
+    });
+
+    it("Should return empty arrays for sale with no bids", async function () {
+        // Create sale
+        await auction.connect(roomOwner).createSale(
+            1,
+            0,
+            durationInMinutes,
+            3,
+            price,
+            100,
+            500,
+            ipOwner1.address
+        );
+
+        // Advance time
+        await time.increase(3600);
+
+        // Get final keys
+        const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId);
+
+        // Verify all arrays are empty
+        expect(keyIds.length).to.equal(0);
+        expect(winners.length).to.equal(0);
+        expect(amounts.length).to.equal(0);
+        expect(claimedStatus.length).to.equal(0);
+    });
+
+    it("Should reflect claimed status correctly", async function () {
+        // Create auction sale
+        await auction.connect(roomOwner).createSale(
+            1,
+            0,
+            durationInMinutes,
+            2,
+            price,
+            100,
+            500,
+            ipOwner1.address
+        );
+
+        // Place bids
+        await auction.connect(bidder1).placeBid(saleId, 0, { value: price });
+        await auction.connect(bidder2).placeBid(saleId, 1, { value: price });
+
+        // Advance time
+        await time.increase(3600);
+
+        // Verify sale and fail it to allow refunds
+        await auction.connect(auditor).setRoomVerification(saleId, false);
+
+        // Claim refund for first key
+        await auction.connect(bidder1).claimRefund(saleId, 0);
+
+        // Get final keys
+        const [keyIds, winners, amounts, claimedStatus] = await auction.getFinalKeys(saleId);
+
+        // Verify claimed status
+        expect(claimedStatus[0]).to.be.true; // First key claimed
+        expect(claimedStatus[1]).to.be.false; // Second key not claimed
+    });
+
+    it("Should revert when trying to get keys before sale end", async function () {
+        // Create sale
+        await auction.connect(roomOwner).createSale(
+            1,
+            0,
+            durationInMinutes,
+            2,
+            price,
+            100,
+            500,
+            ipOwner1.address
+        );
+
+        // Try to get final keys before sale ends
+        await expect(auction.getFinalKeys(saleId))
+            .to.be.revertedWith("Sale not ended");
+    });
+});

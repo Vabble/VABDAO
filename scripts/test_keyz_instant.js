@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 
 async function main() {
     // Replace with your actual deployed contract address
-    const contractAddress = "0x320c761f0AdEEf28B00D9F664e8BdC6685dF3130";
+    const contractAddress = "0x0e1712e78ab74a9AaBcAd03D3E7648ed380283BB";
 
     // Get signers
     const [owner, buyer, ...others] = await ethers.getSigners();
@@ -132,13 +132,13 @@ async function main() {
         console.log("Waiting for the sale to end...");
         await new Promise((resolve) => setTimeout(resolve, durationInMinutes * 60 * 1000));
 
-        // Verify the room using auditor
-        console.log("Verifying the room...");
+        // Verify the sale using auditor
+        console.log("Verifying the sale...");
         const verifyTx = await contract
             .connect(auditor)
-            .setRoomVerification(roomNumber, true, { gasPrice: maxFeePerGas });
+            .setRoomVerification(saleId, true, { gasPrice: maxFeePerGas });
         await verifyTx.wait();
-        console.log("Room verified successfully");
+        console.log("Sale verified successfully");
 
         // Call settleSale
         console.log("Settling the sale...");

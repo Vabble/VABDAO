@@ -61,7 +61,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
     mapping(uint256 => mapping(uint256 => bool)) public isKeyAvailable;
 
     // Mapping to track room verification status by room number
-    mapping(uint256 => VerificationStatus) public roomVerification;
+    mapping(uint256 => VerificationStatus) public saleVerification;
 
     address public vabTokenAddress; // VAB token address for swaps
     address public auditorAddress; // Auditor address authorized to verify room status
@@ -315,8 +315,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(block.timestamp > sale.endTime, "Sale not ended");
         require(!sale.settled, "Sale already settled");
         require(vabbleShare + daoShare + sale.ipOwnerShare <= percentagePrecision, "Total shares exceed 100%");
-        require(roomVerification[sale.roomNumber] != VerificationStatus.Pending, "Room not verified");
-        require(roomVerification[sale.roomNumber] == VerificationStatus.Verified, "Room verification failed");
+        require(saleVerification[saleId] != VerificationStatus.Pending, "Sale not verified");
+        require(saleVerification[saleId] == VerificationStatus.Verified, "Sale verification failed");
 
         uint256 totalAmount = 0;
 
@@ -386,12 +386,12 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         require(keyBid.amount > 0, "No funds to claim");
 
         // Require verifier to have reported status
-        require(roomVerification[sale.roomNumber] != VerificationStatus.Pending, "Room not verified");
+        require(saleVerification[saleId] != VerificationStatus.Pending, "Sale not verified");
 
         // Allow refunds in two cases:
-        // 1. Room verification failed
+        // 1. Sale verification failed
         // 2. Outbid participants in a settled sale
-        bool canClaimRefund = (roomVerification[sale.roomNumber] == VerificationStatus.Failed) || 
+        bool canClaimRefund = (saleVerification[saleId] == VerificationStatus.Failed) || 
             (sale.settled && isKeyAvailable[saleId][keyId]);
         require(canClaimRefund, "Not eligible for refund");
 
@@ -540,8 +540,8 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
         emit MaxBidIncrementAllowedUpdated(_maxBidIncrementAllowed);
     }
 
-    function setRoomVerification(uint256 roomNumber, bool verified) external onlyVerifier {
-        roomVerification[roomNumber] = verified ? VerificationStatus.Verified : VerificationStatus.Failed;
+    function setRoomVerification(uint256 saleId, bool verified) external onlyVerifier {
+        saleVerification[saleId] = verified ? VerificationStatus.Verified : VerificationStatus.Failed;
     }
 
     function setauditorAddress(address _auditorAddress) external onlyOwner {
