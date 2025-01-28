@@ -109,8 +109,12 @@ async function main() {
         const receipt = await createSaleTx.wait();
         console.log("Transaction confirmed in block:", receipt.blockNumber);
 
-        // Get the new sale ID (it should be the same as roomNumber)
-        const saleId = roomNumber;
+        // Get the saleId from the SaleCreated event
+        const saleCreatedEvent = receipt.events.find(event => event.event === 'SaleCreated');
+        if (!saleCreatedEvent) {
+            throw new Error("SaleCreated event not found in transaction receipt");
+        }
+        const saleId = saleCreatedEvent.args.saleId;
         console.log("Auction sale created with ID:", saleId.toString());
 
         // Add a small delay to ensure the sale is active
