@@ -211,14 +211,14 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
 
         saleCounter++;
         uint256 saleId = saleCounter;
-        uint256 durationInMinutes = _durationInMinutes * 60 seconds;
+        uint256 durationInSeconds = _durationInMinutes * 60 seconds;
 
         Sale storage newSale = sales[saleId];
         newSale.roomOwner = payable(msg.sender);
         newSale.roomNumber = _roomNumber;
         newSale.saleType = _saleType;
         newSale.startTime = block.timestamp;
-        newSale.endTime = block.timestamp + durationInMinutes;
+        newSale.endTime = block.timestamp + durationInSeconds;
         newSale.totalKeys = _totalKeys;
         newSale.price = _price;
         newSale.minBidIncrement = _minBidIncrement;
@@ -237,7 +237,7 @@ contract VabbleKeyzAuction is ReentrancyGuard, Pausable, Ownable {
             msg.sender,
             _saleType,
             block.timestamp,
-            block.timestamp + durationInMinutes,
+            block.timestamp + durationInSeconds,
             _totalKeys,
             _price,
             _minBidIncrement,
